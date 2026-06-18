@@ -4,6 +4,75 @@ import './styles.css';
 
 const preventGesture = (event) => event.preventDefault();
 
+const formatErrorLocation = (filename, lineno, colno) => {
+  if (!filename) {
+    return '未知文件位置';
+  }
+
+  const line = lineno ? `:${lineno}` : '';
+  const column = colno ? `:${colno}` : '';
+  return `${filename}${line}${column}`;
+};
+
+const getErrorDetails = (error) => {
+  if (!error) {
+    return { name: 'Error', message: '未知错误' };
+  }
+
+  if (error instanceof Error) {
+    return {
+      name: error.name || 'Error',
+      message: error.message || String(error),
+    };
+  }
+
+  return {
+    name: typeof error,
+    message: String(error),
+  };
+};
+
+const showGlobalError = ({ name, message, location }) => {
+  const existingPanel = document.getElementById('global-error-panel');
+  const panel = existingPanel || document.createElement('div');
+
+  panel.id = 'global-error-panel';
+  panel.style.position = 'fixed';
+  panel.style.top = '0';
+  panel.style.left = '0';
+  panel.style.right = '0';
+  panel.style.zIndex = '99999';
+  panel.style.padding = '12px 14px';
+  panel.style.background = 'rgba(190, 0, 0, 0.94)';
+  panel.style.color = '#ffffff';
+  panel.style.fontFamily = 'Arial, sans-serif';
+  panel.style.fontSize = '16px';
+  panel.style.lineHeight = '1.35';
+  panel.style.whiteSpace = 'pre-wrap';
+  panel.textContent = `错误名称：${name}\n错误信息：${message}\n文件位置：${location || '未知文件位置'}`;
+
+  if (!existingPanel) {
+    document.body.prepend(panel);
+  }
+};
+
+window.addEventListener('error', (event) => {
+  const details = getErrorDetails(event.error);
+  showGlobalError({
+    ...details,
+    message: details.message || event.message || '未知错误',
+    location: formatErrorLocation(event.filename, event.lineno, event.colno),
+  });
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  const details = getErrorDetails(event.reason);
+  showGlobalError({
+    ...details,
+    location: details.name === 'Error' && event.reason?.stack ? event.reason.stack.split('\n')[1]?.trim() : 'Promise rejection',
+  });
+});
+
 document.addEventListener('gesturestart', preventGesture, { passive: false });
 document.addEventListener('gesturechange', preventGesture, { passive: false });
 document.addEventListener('gestureend', preventGesture, { passive: false });
