@@ -1,6 +1,6 @@
 export const BALANCE = {
   groundTopY: 920, groundHeight: 360,
-  player: { startX:220, startY:850, width:80, height:140, speedX:185, pressSpeedX:32, maxHp:100, attack:10, encounterDistance:520 },
+  player: { startX:220, startY:850, width:80, height:140, bodyWidth:50, bodyHeight:118, speedX:185, pressSpeedX:32, maxHp:100, attack:10, encounterDistance:520 },
   leveling: { baseRequiredXp:50, growth:28 },
   enemyFadeMs: 260,
 };
