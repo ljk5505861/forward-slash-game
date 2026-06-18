@@ -13,13 +13,13 @@ const createDebugStatusBar = () => {
   bar.style.top = '0';
   bar.style.left = '0';
   bar.style.zIndex = '100000';
-  bar.style.padding = '8px 12px';
+  bar.style.padding = '4px 7px';
   bar.style.background = 'rgba(0, 150, 60, 0.92)';
   bar.style.color = '#ffffff';
   bar.style.fontFamily = 'Arial, sans-serif';
-  bar.style.fontSize = '16px';
+  bar.style.fontSize = '11px';
   bar.style.fontWeight = 'bold';
-  bar.style.lineHeight = '1.2';
+  bar.style.lineHeight = '1.1';
   bar.style.pointerEvents = 'none';
   bar.textContent = 'JS 已启动';
 
