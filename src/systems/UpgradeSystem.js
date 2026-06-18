@@ -1,53 +1,61 @@
-import Phaser from 'phaser';
+import { RunStates } from '../config/runStates.js';
+
 export default class UpgradeSystem {
   constructor(scene) {
     this.scene = scene;
+    this.pending = 0;
+    this.panelOpen = false;
   }
 
-  gainExperience(amount) {
-    this.scene.playerStats.xp += amount;
-    this.scene.hud?.updatePlayer(this.scene.playerStats);
-    this.checkLevelUp();
+  reset() {
+    this.pending = 0;
+    this.panelOpen = false;
   }
 
-  checkLevelUp() {
-    if (this.scene.state === 'levelUp') {
-      return;
-    }
-    if (this.scene.playerStats.xp < this.scene.playerStats.xpToNext) {
-      return;
+  gainExperience(amount, { defer = false } = {}) {
+    const data = this.scene.playerData;
+    data.xp += amount;
+
+    while (data.xp >= data.xpToNext) {
+      data.xp -= data.xpToNext;
+      data.level += 1;
+      data.xpToNext += this.scene.balance.leveling.growth;
+      this.pending += 1;
     }
 
-    this.scene.stateBeforeLevelUp = this.scene.state;
-    this.scene.state = 'levelUp';
-    this.scene.player.body.setVelocityX(0);
-    this.scene.showUpgradeChoices();
+    this.scene.hud?.updatePlayer(data);
+    if (!defer) {
+      this.maybeShow();
+    }
+  }
+
+  maybeShow() {
+    if (this.panelOpen || this.pending <= 0) return false;
+    if ([RunStates.REWARD, RunStates.VICTORY, RunStates.DEFEAT].includes(this.scene.runState)) return false;
+    if (this.scene.rewardPanel?.isOpen || this.scene.resultPanel?.isOpen) return false;
+
+    this.panelOpen = true;
+    this.scene.runState = RunStates.LEVEL_UP;
+    this.scene.player?.body?.setVelocityX(0);
+    this.scene.upgradePanel?.show();
+    return true;
   }
 
   applyUpgrade(choice) {
-    const stats = this.scene.playerStats;
-    stats.xp -= stats.xpToNext;
-    stats.level += 1;
-    stats.xpToNext += this.scene.balance.leveling.growth;
+    if (!this.panelOpen) return;
 
-    if (choice === 'damage') stats.damage += 8;
-    if (choice === 'health') stats.maxHp += 20;
-    if (choice === 'health') stats.hp = stats.maxHp;
-    if (choice === 'speed') stats.speedX += 18;
+    const data = this.scene.playerData;
+    if (choice === 'damage') data.damage += 8;
+    if (choice === 'health') {
+      data.maxHp += 20;
+      data.hp = data.maxHp;
+    }
+    if (choice === 'speed') data.speedX += 18;
 
-    this.scene.hideUpgradeChoices();
-    this.scene.hud?.updatePlayer(stats);
-    this.restoreStateAfterLevelUp();
-    this.checkLevelUp();
-  }
-
-  restoreStateAfterLevelUp() {
-    const enemy = this.scene.currentEnemy;
-    const wasRealCombat = ['combat', 'bossCombat'].includes(this.scene.stateBeforeLevelUp)
-      && this.scene.combatSystem.isEncounterable(enemy)
-      && Phaser.Math.Distance.Between(this.scene.player.x, this.scene.player.y, enemy.x, enemy.y) <= this.scene.balance.player.encounterDistance;
-
-    this.scene.state = wasRealCombat ? (enemy.isBoss ? 'bossCombat' : 'combat') : 'running';
-    this.scene.stateBeforeLevelUp = null;
+    this.pending = Math.max(0, this.pending - 1);
+    this.scene.upgradePanel?.hide();
+    this.panelOpen = false;
+    this.scene.hud?.updatePlayer(data);
+    this.scene.resumeModalFlow();
   }
 }

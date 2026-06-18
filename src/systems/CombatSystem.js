@@ -1,24 +1,26 @@
+import { RunStates } from '../config/runStates.js';
+
 export default class CombatSystem {
   constructor(scene) {
     this.scene = scene;
   }
 
   enterCombat(enemy) {
-    if (!this.isEncounterable(enemy)) {
+    if (!this.isEncounterable(enemy) || this.scene.hasOpenModal()) {
       return false;
     }
 
     this.scene.currentEnemy = enemy;
-    this.scene.state = enemy.isBoss ? 'bossCombat' : 'combat';
+    this.scene.runState = enemy.isBoss ? RunStates.BOSS : RunStates.COMBAT;
     this.scene.player.body.setVelocityX(0);
     this.startEnemyAttackTimer(enemy);
-    this.scene.hud?.setStatus(enemy.isBoss ? 'Boss 战开始！' : '遭遇敌人！');
+    this.scene.hud?.setStatus(enemy.isBoss ? 'Boss 战开始！' : (enemy.isElite ? '精英战开始！' : '遭遇敌人！'));
     return true;
   }
 
   playerAttack() {
     const enemy = this.scene.currentEnemy;
-    if (!this.isEncounterable(enemy) || !this.scene.canPlayerAttack) {
+    if (!this.isEncounterable(enemy) || !this.scene.canPlayerAttack || this.scene.hasOpenModal()) {
       return;
     }
 
@@ -27,7 +29,7 @@ export default class CombatSystem {
       this.scene.canPlayerAttack = true;
     });
 
-    enemy.hp = Math.max(0, enemy.hp - this.scene.playerStats.damage);
+    enemy.hp = Math.max(0, enemy.hp - this.scene.playerData.damage);
     this.scene.hud?.updateEnemy(enemy);
 
     if (enemy.hp <= 0) {
@@ -36,9 +38,7 @@ export default class CombatSystem {
   }
 
   defeatCurrentEnemy(enemy = this.scene.currentEnemy) {
-    if (!enemy || enemy.isDefeated) {
-      return;
-    }
+    if (!enemy || enemy.isDefeated) return;
 
     enemy.isDefeated = true;
     enemy.hp = 0;
@@ -53,19 +53,25 @@ export default class CombatSystem {
       this.scene.currentEnemy = null;
     }
 
-    this.scene.defeatedEnemies += enemy.isBoss ? 0 : 1;
+    if (!enemy.isBoss) {
+      this.scene.defeatedEnemies += 1;
+    }
     this.scene.hud?.updateEnemy(null);
-    this.scene.upgradeSystem.gainExperience(enemy.xp || 0);
+
+    if (enemy.isBoss) {
+      this.scene.upgradeSystem.gainExperience(enemy.xp || 0, { defer: true });
+      this.scene.finishRun(true);
+    } else if (enemy.isElite) {
+      this.scene.upgradeSystem.gainExperience(enemy.xp || 0, { defer: true });
+      this.scene.queueArtifactReward(enemy);
+      this.scene.resumeModalFlow();
+    } else {
+      this.scene.upgradeSystem.gainExperience(enemy.xp || 0);
+      this.scene.resumeModalFlow();
+    }
 
     if (!enemy.isBoss && this.scene.defeatedEnemies >= this.scene.balance.enemies.countBeforeBoss) {
       this.scene.spawnBoss();
-    }
-
-    if (enemy.isBoss) {
-      this.scene.finishRun(true);
-    } else if (this.scene.state !== 'levelUp') {
-      this.scene.state = 'running';
-      this.scene.hud?.setStatus('继续前进');
     }
 
     this.scene.tweens.add({
@@ -82,12 +88,10 @@ export default class CombatSystem {
       delay: enemy.attackIntervalMs,
       loop: true,
       callback: () => {
-        if (!this.isEncounterable(enemy) || this.scene.currentEnemy !== enemy || this.scene.state === 'levelUp') {
-          return;
-        }
-        this.scene.playerStats.hp = Math.max(0, this.scene.playerStats.hp - enemy.damage);
-        this.scene.hud?.updatePlayer(this.scene.playerStats);
-        if (this.scene.playerStats.hp <= 0) {
+        if (!this.isEncounterable(enemy) || this.scene.currentEnemy !== enemy || this.scene.hasOpenModal()) return;
+        this.scene.playerData.hp = Math.max(0, this.scene.playerData.hp - enemy.damage);
+        this.scene.hud?.updatePlayer(this.scene.playerData);
+        if (this.scene.playerData.hp <= 0) {
           this.scene.finishRun(false);
         }
       },
@@ -96,9 +100,7 @@ export default class CombatSystem {
 
   cancelEnemyAttackTimer(enemy) {
     enemy?.attackTimer?.remove(false);
-    if (enemy) {
-      enemy.attackTimer = null;
-    }
+    if (enemy) enemy.attackTimer = null;
   }
 
   isEncounterable(enemy) {
