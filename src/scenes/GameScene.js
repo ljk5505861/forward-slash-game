@@ -60,6 +60,7 @@ export default class GameScene extends Phaser.Scene {
     if (!this.player?.body || ['combat', 'bossCombat', 'levelUp', 'ended'].includes(this.state)) return;
     this.player.body.setVelocityX(this.playerStats.speedX);
     this.checkEncounter();
+    this.updateDebugOverlay();
   }
 
   runInitStage(stageName, callback) { this.initStage = stageName; callback(); }
@@ -98,15 +99,16 @@ export default class GameScene extends Phaser.Scene {
 
   createEnemies() {
     for (let i = 0; i < BALANCE.enemies.countBeforeBoss; i += 1) {
-      this.createEnemy(BALANCE.enemies.firstX + i * BALANCE.enemies.spacing, BALANCE.enemies.y, false);
+      this.createEnemy(BALANCE.enemies.firstX + i * BALANCE.enemies.spacing, false);
     }
   }
 
-  createEnemy(x, y, isBoss) {
+  createEnemy(x, isBoss) {
     const cfg = isBoss ? BALANCE.boss : BALANCE.enemies;
-    const enemy = this.add.rectangle(x, y, cfg.width, cfg.height, isBoss ? 0x7b2cff : 0xe84343, 1).setStrokeStyle(6, 0x4b0000, 1).setDepth(20);
+    const enemyY = GROUND_TOP_Y - cfg.height / 2;
+    const enemy = this.add.rectangle(x, enemyY, cfg.width, cfg.height, isBoss ? 0x7b2cff : 0xe84343, 1).setStrokeStyle(6, 0x4b0000, 1).setDepth(20);
     this.physics.add.existing(enemy);
-    enemy.body.setAllowGravity(true);
+    enemy.body.setAllowGravity(false);
     enemy.body.setImmovable(true);
     enemy.isBoss = isBoss;
     enemy.isDefeated = false;
@@ -116,26 +118,43 @@ export default class GameScene extends Phaser.Scene {
     enemy.xp = cfg.xp;
     enemy.attackIntervalMs = cfg.attackIntervalMs;
     enemy.attackTimer = null;
-    this.physics.add.collider(enemy, this.physicsGround);
     this.encounterables.add(enemy);
+
+    if (!isBoss && this.encounterables.size === 1) {
+      this.firstEnemyDebugLabel = this.add.text(enemy.x, enemy.y - cfg.height / 2 - 28, '敌人1', {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '28px',
+        color: '#ffffff',
+        backgroundColor: 'rgba(0, 120, 0, 0.85)',
+        padding: { left: 10, right: 10, top: 4, bottom: 4 },
+      }).setOrigin(0.5, 1).setDepth(25);
+    }
+
     return enemy;
   }
 
   spawnBoss() {
     if (this.boss?.active) return this.boss;
     const bossX = BALANCE.enemies.firstX + (BALANCE.enemies.countBeforeBoss - 1) * BALANCE.enemies.spacing + BALANCE.boss.xOffsetAfterFinalEnemy;
-    this.boss = this.createEnemy(bossX, BALANCE.boss.y, true);
+    this.boss = this.createEnemy(bossX, true);
     this.hud?.setStatus('Boss 已出现，继续前进！');
     return this.boss;
   }
 
-  checkEncounter() {
-    const nextEnemy = [...this.encounterables]
+  getNextEnemyAhead() {
+    return [...this.encounterables]
       .filter((enemy) => this.combatSystem.isEncounterable(enemy))
-      .sort((a, b) => a.x - b.x)
-      .find((enemy) => Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y) <= BALANCE.player.encounterDistance);
+      .filter((enemy) => enemy.x >= this.player.x)
+      .sort((a, b) => a.x - b.x)[0] || null;
+  }
 
-    if (nextEnemy) this.combatSystem.enterCombat(nextEnemy);
+  checkEncounter() {
+    const nextEnemy = this.getNextEnemyAhead();
+    const horizontalDistance = nextEnemy ? nextEnemy.x - this.player.x : Infinity;
+
+    if (nextEnemy && horizontalDistance <= BALANCE.player.encounterDistance) {
+      this.combatSystem.enterCombat(nextEnemy);
+    }
   }
 
   createUi() {
@@ -145,6 +164,31 @@ export default class GameScene extends Phaser.Scene {
     this.createTitle();
     this.createAttackButton();
     this.createRestartButton();
+    this.createDebugOverlay();
+    this.updateDebugOverlay();
+  }
+
+  createDebugOverlay() {
+    this.debugOverlay = this.add.text(18, 12, '', {
+      fontFamily: 'monospace',
+      fontSize: '20px',
+      color: '#00ff66',
+      backgroundColor: 'rgba(0, 0, 0, 0.72)',
+      padding: { left: 10, right: 10, top: 8, bottom: 8 },
+    }).setScrollFactor(0).setDepth(2500);
+  }
+
+  updateDebugOverlay() {
+    if (!this.debugOverlay || !this.player) return;
+    const nextEnemy = this.getNextEnemyAhead();
+    const distance = nextEnemy ? nextEnemy.x - this.player.x : null;
+    this.debugOverlay.setText([
+      `state:${this.state}`,
+      `playerX:${Math.round(this.player.x)}`,
+      `enemies:${this.encounterables.size}`,
+      `nextX:${nextEnemy ? Math.round(nextEnemy.x) : '-'}`,
+      `distance:${distance === null ? '-' : Math.round(distance)}`,
+    ]);
   }
 
   createTitle() {
@@ -197,6 +241,8 @@ export default class GameScene extends Phaser.Scene {
     this.tweens.killAll();
     this.hideUpgradeChoices();
     this.resultPanel?.destroy();
+    this.firstEnemyDebugLabel?.destroy();
+    this.debugOverlay?.destroy();
     this.encounterables?.forEach((enemy) => enemy.destroy());
     this.encounterables?.clear();
     if (this.boss?.active) this.boss.destroy();
