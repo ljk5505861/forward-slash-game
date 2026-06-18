@@ -1,51 +1,8 @@
 export const BALANCE = {
-  worldWidth: 7600,
-  player: {
-    startX: 220,
-    startY: 850,
-    width: 80,
-    height: 140,
-    speedX: 180,
-    maxHp: 120,
-    damage: 28,
-    attackCooldownMs: 420,
-    encounterDistance: 135,
-  },
-  enemies: {
-    countBeforeBoss: 10,
-    spacing: 430,
-    firstX: 760,
-    y: 850,
-    width: 74,
-    height: 118,
-    hp: 46,
-    damage: 9,
-    attackIntervalMs: 1100,
-    xp: 24,
-    fadeMs: 250,
-  },
-  boss: {
-    xOffsetAfterFinalEnemy: 650,
-    y: 825,
-    width: 120,
-    height: 180,
-    hp: 260,
-    damage: 18,
-    attackIntervalMs: 950,
-    xp: 120,
-  },
-  leveling: {
-    baseRequiredXp: 50,
-    growth: 25,
-  },
+  groundTopY: 920, groundHeight: 360,
+  player: { startX:220, startY:850, width:80, height:140, speedX:185, pressSpeedX:32, maxHp:100, attack:10, encounterDistance:520 },
+  leveling: { baseRequiredXp:50, growth:28 },
+  enemyFadeMs: 260,
 };
-
-export const estimateDemoDurationSeconds = () => {
-  const travelDistance = BALANCE.enemies.firstX + (BALANCE.enemies.countBeforeBoss - 1) * BALANCE.enemies.spacing + BALANCE.boss.xOffsetAfterFinalEnemy - BALANCE.player.startX;
-  const travelSeconds = travelDistance / BALANCE.player.speedX;
-  const attacksPerEnemy = Math.ceil(BALANCE.enemies.hp / BALANCE.player.damage);
-  const enemyCombatSeconds = (attacksPerEnemy * BALANCE.player.attackCooldownMs * BALANCE.enemies.countBeforeBoss) / 1000;
-  const bossAttacks = Math.ceil(BALANCE.boss.hp / BALANCE.player.damage);
-  const bossCombatSeconds = (bossAttacks * BALANCE.player.attackCooldownMs) / 1000;
-  return Math.round(travelSeconds + enemyCombatSeconds + bossCombatSeconds);
-};
+export const createPlayerRuntime = () => ({ level:1, xp:0, xpToNext:BALANCE.leveling.baseRequiredXp, hp:100, maxHp:100, attack:10, attackSpeedMultiplier:1, skillDamageMultiplier:1, cooldownReduction:0, critChance:0.05, critMultiplier:1.5, defense:0, damageReduction:0, weaponId:'short_sword', skills:[{ id:'fireball', level:1 }], artifacts:[], upgradesChosen:[] });
+export const estimateDemoDurationSeconds = () => 90;
