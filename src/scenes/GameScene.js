@@ -1,11 +1,8 @@
 import Phaser from 'phaser';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from '../config/gameConfig.js';
 
-const GROUND_Y = Math.round(DESIGN_HEIGHT * 0.72);
 const ATTACK_BUTTON_RADIUS = 72;
 const SAFE_AREA_MARGIN = 34;
-const PLAYER_WIDTH = 56;
-const PLAYER_HEIGHT = 112;
 
 const updateDebugStatus = (message) => {
   window.updateGameDebugStatus?.(message);
@@ -20,19 +17,36 @@ export default class GameScene extends Phaser.Scene {
   create() {
     updateDebugStatus('场景开始创建');
 
-    this.add
-      .text(20, 20, 'SCENE OK', {
-        fontSize: '40px',
-        color: '#ff0000',
-      })
-      .setScrollFactor(0)
-      .setDepth(99999);
-
     try {
-      this.runInitStage('创建纯色背景', () => this.createBackground());
-      this.runInitStage('创建 HUD', () => this.createHud());
-      this.runInitStage('创建可见地面', () => this.createVisibleGround());
-      this.runInitStage('创建普通矩形玩家', () => this.createPlayer());
+      this.runInitStage('设置相机背景色', () => this.createBackground());
+      this.runInitStage('创建绿色地面', () => {
+        this.add
+          .rectangle(
+            DESIGN_WIDTH / 2,
+            1100,
+            DESIGN_WIDTH,
+            360,
+            0x2fa84f,
+            1,
+          )
+          .setDepth(10);
+      });
+      this.runInitStage('创建蓝色玩家', () => {
+        this.player = this.add
+          .rectangle(
+            220,
+            850,
+            80,
+            140,
+            0x1687ff,
+            1,
+          )
+          .setStrokeStyle(8, 0x0b4fb3, 1)
+          .setDepth(20);
+      });
+      this.runInitStage('创建标题', () => this.createTitle());
+      this.runInitStage('创建攻击按钮', () => this.createAttackButton());
+      this.runInitStage('创建红色 SCENE OK', () => this.createSceneOkLabel());
       updateDebugStatus('场景创建完成');
     } catch (error) {
       this.showInitError(error);
@@ -48,14 +62,10 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createBackground() {
-    this.add
-      .rectangle(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT, 0x8fd3ff, 1)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(0);
+    this.cameras.main.setBackgroundColor('#8fd3ff');
   }
 
-  createHud() {
+  createTitle() {
     this.add
       .text(DESIGN_WIDTH / 2, 42, '第一阶段：最小渲染测试', {
         fontFamily: 'Arial, sans-serif',
@@ -67,7 +77,9 @@ export default class GameScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setScrollFactor(0)
       .setDepth(1000);
+  }
 
+  createAttackButton() {
     this.attackButton = this.add
       .circle(0, 0, ATTACK_BUTTON_RADIUS, 0xff6b35, 0.88)
       .setStrokeStyle(6, 0xffffff, 0.95)
@@ -90,28 +102,14 @@ export default class GameScene extends Phaser.Scene {
     this.scale.on('resize', () => this.positionAttackButton());
   }
 
-  createVisibleGround() {
-    const groundHeight = DESIGN_HEIGHT - GROUND_Y;
-
+  createSceneOkLabel() {
     this.add
-      .rectangle(0, GROUND_Y, DESIGN_WIDTH, groundHeight, 0x2fa84f, 1)
-      .setOrigin(0, 0)
+      .text(20, 20, 'SCENE OK', {
+        fontSize: '40px',
+        color: '#ff0000',
+      })
       .setScrollFactor(0)
-      .setDepth(10);
-  }
-
-  createPlayer() {
-    this.player = this.add
-      .rectangle(
-        Math.round(DESIGN_WIDTH * 0.3),
-        GROUND_Y - PLAYER_HEIGHT / 2,
-        PLAYER_WIDTH,
-        PLAYER_HEIGHT,
-        0x1687ff,
-        1,
-      )
-      .setDepth(20);
-    this.player.setStrokeStyle(6, 0x0b4fb3, 1);
+      .setDepth(99999);
   }
 
   positionAttackButton() {
