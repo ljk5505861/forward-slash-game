@@ -4,6 +4,40 @@ import './styles.css';
 
 const preventGesture = (event) => event.preventDefault();
 
+const createDebugStatusBar = () => {
+  const existingBar = document.getElementById('debug-status-bar');
+  const bar = existingBar || document.createElement('div');
+
+  bar.id = 'debug-status-bar';
+  bar.style.position = 'fixed';
+  bar.style.top = '0';
+  bar.style.left = '0';
+  bar.style.zIndex = '100000';
+  bar.style.padding = '8px 12px';
+  bar.style.background = 'rgba(0, 150, 60, 0.92)';
+  bar.style.color = '#ffffff';
+  bar.style.fontFamily = 'Arial, sans-serif';
+  bar.style.fontSize = '16px';
+  bar.style.fontWeight = 'bold';
+  bar.style.lineHeight = '1.2';
+  bar.style.pointerEvents = 'none';
+  bar.textContent = 'JS 已启动';
+
+  if (!existingBar) {
+    document.body.prepend(bar);
+  }
+
+  return bar;
+};
+
+const debugStatusBar = createDebugStatusBar();
+
+const updateDebugStatus = (message) => {
+  debugStatusBar.textContent = message;
+};
+
+window.updateGameDebugStatus = updateDebugStatus;
+
 const formatErrorLocation = (filename, lineno, colno) => {
   if (!filename) {
     return '未知文件位置';
@@ -93,4 +127,11 @@ document.addEventListener(
 
 window.addEventListener('contextmenu', preventGesture);
 
-new Phaser.Game(gameConfig);
+const game = new Phaser.Game(gameConfig);
+updateDebugStatus('Phaser 已创建');
+
+const gameScene = game.scene.getScene('GameScene');
+if (gameScene) {
+  gameScene.events.once(Phaser.Scenes.Events.START, () => updateDebugStatus('GameScene 已启动'));
+  gameScene.events.once(Phaser.Scenes.Events.CREATE, () => updateDebugStatus('场景创建完成'));
+}
