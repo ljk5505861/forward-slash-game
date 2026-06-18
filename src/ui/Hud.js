@@ -1,24 +1,4 @@
-export default class Hud {
-  constructor(scene) {
-    this.scene = scene;
-    this.status = scene.add.text(18, 88, '', { fontFamily: 'Arial, sans-serif', fontSize: '24px', color: '#ffffff', stroke: '#000000', strokeThickness: 4 }).setScrollFactor(0).setDepth(2000);
-    this.player = scene.add.text(18, 122, '', { fontFamily: 'Arial, sans-serif', fontSize: '22px', color: '#ffffff', stroke: '#000000', strokeThickness: 4 }).setScrollFactor(0).setDepth(2000);
-    this.enemy = scene.add.text(18, 154, '', { fontFamily: 'Arial, sans-serif', fontSize: '22px', color: '#ffe5e5', stroke: '#000000', strokeThickness: 4 }).setScrollFactor(0).setDepth(2000);
-  }
-
-  setStatus(message) { this.status.setText(message); }
-
-  updatePlayer(stats) {
-    this.player.setText(`Lv.${stats.level} HP ${stats.hp}/${stats.maxHp} XP ${stats.xp}/${stats.xpToNext} ATK ${stats.damage}`);
-  }
-
-  updateEnemy(enemy) {
-    this.enemy.setText(enemy ? `${enemy.isBoss ? 'Boss' : '敌人'} HP ${enemy.hp}/${enemy.maxHp}` : '');
-  }
-
-  destroy() {
-    this.status.destroy();
-    this.player.destroy();
-    this.enemy.destroy();
-  }
-}
+import { DESIGN_WIDTH } from '../config/gameConfig.js';
+import { SKILLS } from '../config/skills.js';
+import { ARTIFACTS } from '../config/artifacts.js';
+export default class Hud { constructor(scene){ this.scene=scene; this.status=scene.add.text(18,84,'',{fontFamily:'Arial',fontSize:'24px',color:'#fff',stroke:'#000',strokeThickness:4}).setScrollFactor(0).setDepth(2000); this.stage=scene.add.text(18,120,'',{fontFamily:'Arial',fontSize:'22px',color:'#fff',stroke:'#000',strokeThickness:4}).setScrollFactor(0).setDepth(2000); this.player=scene.add.text(18,154,'',{fontFamily:'Arial',fontSize:'22px',color:'#fff',stroke:'#000',strokeThickness:4}).setScrollFactor(0).setDepth(2000); this.skills=scene.add.text(18,190,'',{fontFamily:'Arial',fontSize:'20px',color:'#e8f1ff',stroke:'#000',strokeThickness:3}).setScrollFactor(0).setDepth(2000); this.artifacts=scene.add.text(18,222,'',{fontFamily:'Arial',fontSize:'20px',color:'#ffe7a5',stroke:'#000',strokeThickness:3}).setScrollFactor(0).setDepth(2000); this.boss=scene.add.text(DESIGN_WIDTH/2,78,'',{fontFamily:'Arial',fontSize:'24px',color:'#ffd1ff',stroke:'#000',strokeThickness:4}).setOrigin(0.5).setScrollFactor(0).setDepth(2000); } setStatus(m){this.status.setText(m);} setStage(n){this.stage.setText(`阶段：${n}`);} update(){ const p=this.scene.playerData; this.player.setText(`Lv.${p.level} HP ${p.hp}/${p.maxHp} XP ${p.xp}/${p.xpToNext} 击杀 ${this.scene.killCount}`); this.skills.setText(`技能：${p.skills.map(s=>`${SKILLS[s.id]?.short||'?'}Lv.${s.level}`).join('  ')||'无'}`); this.artifacts.setText(`法宝：${p.artifacts.map(id=>ARTIFACTS[id]?.name).join('、')||'无'}`); const boss=this.scene.enemies.find(e=>e.isBoss); this.boss.setText(boss?`训练场守卫 ${boss.hp}/${boss.maxHp}`:''); } destroy(){ [this.status,this.stage,this.player,this.skills,this.artifacts,this.boss].forEach(x=>x.destroy()); } }

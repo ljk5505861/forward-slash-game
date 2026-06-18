@@ -1,257 +1,37 @@
 import Phaser from 'phaser';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from '../config/gameConfig.js';
-import { BALANCE, estimateDemoDurationSeconds } from '../config/balance.js';
+import { BALANCE, createPlayerRuntime } from '../config/balance.js';
+import { ARTIFACTS } from '../config/artifacts.js';
+import EventBus from '../core/EventBus.js';
+import { CombatEvents, RunStates, ACTIVE_STATES } from '../core/CombatEvents.js';
+import createPlayer from '../entities/createPlayer.js';
+import TargetingSystem from '../systems/TargetingSystem.js';
+import MovementSystem from '../systems/MovementSystem.js';
 import CombatSystem from '../systems/CombatSystem.js';
+import SkillSystem from '../systems/SkillSystem.js';
+import ArtifactSystem from '../systems/ArtifactSystem.js';
 import UpgradeSystem from '../systems/UpgradeSystem.js';
+import StageSystem from '../systems/StageSystem.js';
 import Hud from '../ui/Hud.js';
-
-const GROUND_TOP_Y = 920;
-const GROUND_HEIGHT = 360;
-const ATTACK_BUTTON_RADIUS = 72;
-const SAFE_AREA_MARGIN = 34;
+import UpgradePanel from '../ui/UpgradePanel.js';
+import ResultPanel from '../ui/ResultPanel.js';
 
 const updateDebugStatus = (message) => window.updateGameDebugStatus?.(message);
 
 export default class GameScene extends Phaser.Scene {
-  constructor() {
-    super('GameScene');
-    this.initStage = '尚未开始';
-  }
-
-  create() {
-    this.balance = BALANCE;
-    this.state = 'running';
-    this.stateBeforeLevelUp = null;
-    this.currentEnemy = null;
-    this.boss = null;
-    this.encounterables = new Set();
-    this.defeatedEnemies = 0;
-    this.canPlayerAttack = true;
-    this.playerStats = {
-      level: 1,
-      hp: BALANCE.player.maxHp,
-      maxHp: BALANCE.player.maxHp,
-      damage: BALANCE.player.damage,
-      speedX: BALANCE.player.speedX,
-      xp: 0,
-      xpToNext: BALANCE.leveling.baseRequiredXp,
-    };
-
-    try {
-      this.runInitStage('设置世界边界', () => this.configureWorldBounds());
-      this.runInitStage('设置相机背景色', () => this.createBackground());
-      this.runInitStage('创建路标', () => this.createRoadMarkers());
-      this.runInitStage('创建地面', () => this.createGround());
-      this.runInitStage('创建玩家', () => this.createPlayer());
-      this.runInitStage('设置相机', () => this.configureCameraFollow());
-      this.combatSystem = new CombatSystem(this);
-      this.upgradeSystem = new UpgradeSystem(this);
-      this.runInitStage('创建敌人', () => this.createEnemies());
-      this.runInitStage('创建 UI', () => this.createUi());
-      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanupRun());
-      updateDebugStatus('场景创建完成');
-    } catch (error) {
-      this.showInitError(error);
-      throw error;
-    }
-  }
-
-  update() {
-    if (!this.player?.body || ['combat', 'bossCombat', 'levelUp', 'ended'].includes(this.state)) return;
-    this.player.body.setVelocityX(this.playerStats.speedX);
-    this.checkEncounter();
-    this.updateDebugOverlay();
-  }
-
-  runInitStage(stageName, callback) { this.initStage = stageName; callback(); }
-
-  configureWorldBounds() {
-    this.physics.world.setBounds(0, 0, BALANCE.worldWidth, DESIGN_HEIGHT);
-    this.cameras.main.setBounds(0, 0, BALANCE.worldWidth, DESIGN_HEIGHT);
-  }
-
-  createBackground() { this.cameras.main.setBackgroundColor('#8fd3ff'); }
-
-  createRoadMarkers() {
-    for (let x = 400; x < BALANCE.worldWidth; x += 400) {
-      this.add.rectangle(x, GROUND_TOP_Y - 90, 12, 180, 0x777777, 0.75).setDepth(5);
-      this.add.text(x + 18, GROUND_TOP_Y - 170, String(x), { fontFamily: 'Arial, sans-serif', fontSize: '28px', color: '#555', stroke: '#fff', strokeThickness: 4 }).setOrigin(0, 0.5).setDepth(5);
-    }
-  }
-
-  createGround() {
-    this.add.rectangle(BALANCE.worldWidth / 2, GROUND_TOP_Y + GROUND_HEIGHT / 2, BALANCE.worldWidth, GROUND_HEIGHT, 0x2fa84f, 1).setDepth(10);
-    this.physicsGround = this.add.rectangle(BALANCE.worldWidth / 2, GROUND_TOP_Y + GROUND_HEIGHT / 2, BALANCE.worldWidth, GROUND_HEIGHT, 0x000000, 0);
-    this.physics.add.existing(this.physicsGround, true);
-  }
-
-  createPlayer() {
-    const p = BALANCE.player;
-    this.player = this.add.rectangle(p.startX, p.startY, p.width, p.height, 0x1687ff, 1).setStrokeStyle(8, 0x0b4fb3, 1).setDepth(20);
-    this.physics.add.existing(this.player);
-    this.player.body.setCollideWorldBounds(true);
-    this.player.body.setAllowGravity(true);
-    this.player.body.setSize(p.width, p.height);
-    this.physics.add.collider(this.player, this.physicsGround);
-  }
-
-  configureCameraFollow() { this.cameras.main.startFollow(this.player, false, 1, 0, DESIGN_WIDTH * 0.2, 0); }
-
-  createEnemies() {
-    for (let i = 0; i < BALANCE.enemies.countBeforeBoss; i += 1) {
-      this.createEnemy(BALANCE.enemies.firstX + i * BALANCE.enemies.spacing, false);
-    }
-  }
-
-  createEnemy(x, isBoss) {
-    const cfg = isBoss ? BALANCE.boss : BALANCE.enemies;
-    const enemyY = GROUND_TOP_Y - cfg.height / 2;
-    const enemy = this.add.rectangle(x, enemyY, cfg.width, cfg.height, isBoss ? 0x7b2cff : 0xe84343, 1).setStrokeStyle(6, 0x4b0000, 1).setDepth(20);
-    this.physics.add.existing(enemy);
-    enemy.body.setAllowGravity(false);
-    enemy.body.setImmovable(true);
-    enemy.isBoss = isBoss;
-    enemy.isDefeated = false;
-    enemy.hp = cfg.hp;
-    enemy.maxHp = cfg.hp;
-    enemy.damage = cfg.damage;
-    enemy.xp = cfg.xp;
-    enemy.attackIntervalMs = cfg.attackIntervalMs;
-    enemy.attackTimer = null;
-    this.encounterables.add(enemy);
-
-    if (!isBoss && this.encounterables.size === 1) {
-      this.firstEnemyDebugLabel = this.add.text(enemy.x, enemy.y - cfg.height / 2 - 28, '敌人1', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '28px',
-        color: '#ffffff',
-        backgroundColor: 'rgba(0, 120, 0, 0.85)',
-        padding: { left: 10, right: 10, top: 4, bottom: 4 },
-      }).setOrigin(0.5, 1).setDepth(25);
-    }
-
-    return enemy;
-  }
-
-  spawnBoss() {
-    if (this.boss?.active) return this.boss;
-    const bossX = BALANCE.enemies.firstX + (BALANCE.enemies.countBeforeBoss - 1) * BALANCE.enemies.spacing + BALANCE.boss.xOffsetAfterFinalEnemy;
-    this.boss = this.createEnemy(bossX, true);
-    this.hud?.setStatus('Boss 已出现，继续前进！');
-    return this.boss;
-  }
-
-  getNextEnemyAhead() {
-    return [...this.encounterables]
-      .filter((enemy) => this.combatSystem.isEncounterable(enemy))
-      .filter((enemy) => enemy.x >= this.player.x)
-      .sort((a, b) => a.x - b.x)[0] || null;
-  }
-
-  checkEncounter() {
-    const nextEnemy = this.getNextEnemyAhead();
-    const horizontalDistance = nextEnemy ? nextEnemy.x - this.player.x : Infinity;
-
-    if (nextEnemy && horizontalDistance <= BALANCE.player.encounterDistance) {
-      this.combatSystem.enterCombat(nextEnemy);
-    }
-  }
-
-  createUi() {
-    this.hud = new Hud(this);
-    this.hud.setStatus(`预计 Demo 时长约 ${Math.round(estimateDemoDurationSeconds() / 60)} 分钟`);
-    this.hud.updatePlayer(this.playerStats);
-    this.createTitle();
-    this.createAttackButton();
-    this.createRestartButton();
-    this.createDebugOverlay();
-    this.updateDebugOverlay();
-  }
-
-  createDebugOverlay() {
-    this.debugOverlay = this.add.text(18, 12, '', {
-      fontFamily: 'monospace',
-      fontSize: '20px',
-      color: '#00ff66',
-      backgroundColor: 'rgba(0, 0, 0, 0.72)',
-      padding: { left: 10, right: 10, top: 8, bottom: 8 },
-    }).setScrollFactor(0).setDepth(2500);
-  }
-
-  updateDebugOverlay() {
-    if (!this.debugOverlay || !this.player) return;
-    const nextEnemy = this.getNextEnemyAhead();
-    const distance = nextEnemy ? nextEnemy.x - this.player.x : null;
-    this.debugOverlay.setText([
-      `state:${this.state}`,
-      `playerX:${Math.round(this.player.x)}`,
-      `enemies:${this.encounterables.size}`,
-      `nextX:${nextEnemy ? Math.round(nextEnemy.x) : '-'}`,
-      `distance:${distance === null ? '-' : Math.round(distance)}`,
-    ]);
-  }
-
-  createTitle() {
-    this.add.text(DESIGN_WIDTH / 2, 42, '自动前进动作肉鸽 Demo', { fontFamily: 'Arial, sans-serif', fontSize: '34px', color: '#14324a', stroke: '#ffffff', strokeThickness: 5 }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(1000);
-  }
-
-  createAttackButton() {
-    this.attackButton = this.add.circle(0, 0, ATTACK_BUTTON_RADIUS, 0xff6b35, 0.88).setStrokeStyle(6, 0xffffff, 0.95).setScrollFactor(0).setInteractive({ useHandCursor: true }).setDepth(1000);
-    this.attackLabel = this.add.text(0, 0, '攻击', { fontFamily: 'Arial, sans-serif', fontSize: '30px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(1001);
-    this.attackButton.on('pointerdown', () => this.combatSystem.playerAttack());
-    this.positionAttackButton();
-    this.scale.on('resize', this.positionAttackButton, this);
-  }
-
-  createRestartButton() {
-    this.restartButton = this.add.text(DESIGN_WIDTH - 22, 28, '重新开始', { fontFamily: 'Arial, sans-serif', fontSize: '24px', color: '#fff', backgroundColor: '#333', padding: { left: 12, right: 12, top: 8, bottom: 8 } }).setOrigin(1, 0).setScrollFactor(0).setInteractive({ useHandCursor: true }).setDepth(2000);
-    this.restartButton.on('pointerdown', () => this.scene.restart());
-  }
-
-  showUpgradeChoices() {
-    this.upgradeCards = ['damage', 'health', 'speed'].map((choice, index) => {
-      const labels = { damage: '攻击 +8', health: '满血 +20', speed: '速度 +18' };
-      return this.add.text(DESIGN_WIDTH / 2, 390 + index * 115, labels[choice], { fontFamily: 'Arial, sans-serif', fontSize: '32px', color: '#fff', backgroundColor: '#203a74', padding: { left: 26, right: 26, top: 18, bottom: 18 } }).setOrigin(0.5).setScrollFactor(0).setInteractive({ useHandCursor: true }).setDepth(3000).on('pointerdown', () => this.upgradeSystem.applyUpgrade(choice));
-    });
-  }
-
-  hideUpgradeChoices() {
-    this.upgradeCards?.forEach((card) => card.destroy());
-    this.upgradeCards = [];
-  }
-
-  positionAttackButton() {
-    if (!this.attackButton || !this.attackLabel) return;
-    const x = DESIGN_WIDTH - ATTACK_BUTTON_RADIUS - SAFE_AREA_MARGIN;
-    const y = DESIGN_HEIGHT - ATTACK_BUTTON_RADIUS - SAFE_AREA_MARGIN;
-    this.attackButton.setPosition(x, y);
-    this.attackLabel.setPosition(x, y);
-  }
-
-  finishRun(won) {
-    if (this.state === 'ended') return;
-    this.state = 'ended';
-    this.player?.body?.setVelocityX(0);
-    this.currentEnemy && this.combatSystem.cancelEnemyAttackTimer(this.currentEnemy);
-    this.resultPanel = this.add.text(DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2, won ? '胜利！' : '失败，点击重新开始', { fontFamily: 'Arial, sans-serif', fontSize: '46px', color: '#fff', backgroundColor: '#111', padding: { left: 24, right: 24, top: 18, bottom: 18 } }).setOrigin(0.5).setScrollFactor(0).setDepth(4000);
-  }
-
-  cleanupRun() {
-    this.time.removeAllEvents();
-    this.tweens.killAll();
-    this.hideUpgradeChoices();
-    this.resultPanel?.destroy();
-    this.firstEnemyDebugLabel?.destroy();
-    this.debugOverlay?.destroy();
-    this.encounterables?.forEach((enemy) => enemy.destroy());
-    this.encounterables?.clear();
-    if (this.boss?.active) this.boss.destroy();
-    this.currentEnemy = null;
-    this.boss = null;
-  }
-
-  showInitError(error) {
-    const message = `初始化失败：${this.initStage}\n${error.name || 'Error'}: ${error.message || String(error)}`;
-    this.add.text(24, 220, message, { fontFamily: 'Arial, sans-serif', fontSize: '28px', color: '#ffffff', backgroundColor: 'rgba(190, 0, 0, 0.92)', padding: { left: 18, right: 18, top: 14, bottom: 14 }, wordWrap: { width: DESIGN_WIDTH - 48 } }).setOrigin(0, 0).setScrollFactor(0).setDepth(10000);
-  }
+  constructor(){ super('GameScene'); this.initStage='尚未开始'; }
+  create(){ try { this.balance=BALANCE; this.debugMode=new URLSearchParams(window.location.search).get('debug')==='1'; this.runState=RunStates.RUNNING; this.playerData=createPlayerRuntime(); this.enemies=[]; this.killCount=0; this.currentTarget=null; this.eventBus=new EventBus(); this.configureWorld(); this.createBackground(); this.createGround(); this.player=createPlayer(this,BALANCE.player,BALANCE.groundTopY); this.physics.add.collider(this.player,this.physicsGround); this.cameras.main.startFollow(this.player,false,1,0,DESIGN_WIDTH*0.2,0); this.targeting=new TargetingSystem(this); this.movementSystem=new MovementSystem(this); this.combatSystem=new CombatSystem(this); this.skillSystem=new SkillSystem(this); this.artifactSystem=new ArtifactSystem(this); this.upgradeSystem=new UpgradeSystem(this); this.stageSystem=new StageSystem(this); this.hud=new Hud(this); this.upgradePanel=new UpgradePanel(this); this.rewardPanel=new UpgradePanel(this); this.resultPanel=new ResultPanel(this); this.createTitle(); this.createRestartButton(); this.createDebugOverlay(); this.stageSystem.start(); this.artifactSystem.load(); this.hud.setStatus('自动战斗开始'); this.hud.update(); this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>this.cleanupRun()); updateDebugStatus('场景创建完成'); } catch(e){ this.showInitError(e); throw e; } }
+  update(time){ if(ACTIVE_STATES.has(this.runState)){ this.movementSystem.update(time); this.combatSystem.update(time); this.skillSystem.update(time); this.stageSystem.update(time); } else this.player?.body?.setVelocityX(0); this.hud?.update(); this.updateDebugOverlay(); }
+  configureWorld(){ const width=6500; this.physics.world.setBounds(0,0,width,DESIGN_HEIGHT); this.cameras.main.setBounds(0,0,width,DESIGN_HEIGHT); }
+  createBackground(){ this.cameras.main.setBackgroundColor('#202638'); for(let x=300;x<6500;x+=420){ this.add.rectangle(x,BALANCE.groundTopY-92,12,185,0x2f3547,0.75).setDepth(5); } }
+  createGround(){ this.add.rectangle(3250,BALANCE.groundTopY+BALANCE.groundHeight/2,6500,BALANCE.groundHeight,0x253522,1).setDepth(10); this.physicsGround=this.add.rectangle(3250,BALANCE.groundTopY+BALANCE.groundHeight/2,6500,BALANCE.groundHeight,0x000000,0); this.physics.add.existing(this.physicsGround,true); }
+  createTitle(){ this.add.text(DESIGN_WIDTH/2,34,'自动战斗肉鸽框架 Demo',{fontFamily:'Arial',fontSize:'32px',color:'#e9efff',stroke:'#000',strokeThickness:5}).setOrigin(0.5,0).setScrollFactor(0).setDepth(1000); }
+  createRestartButton(){ this.restartButton=this.add.text(DESIGN_WIDTH-22,28,'重新开始',{fontFamily:'Arial',fontSize:'24px',color:'#fff',backgroundColor:'#333',padding:{left:12,right:12,top:8,bottom:8}}).setOrigin(1,0).setScrollFactor(0).setInteractive({useHandCursor:true}).setDepth(2000); this.restartButton.on('pointerdown',()=>this.scene.restart()); }
+  showArtifactReward(){ if(this.runState===RunStates.VICTORY||this.runState===RunStates.DEFEAT) return; this.runState=RunStates.REWARD; const options=Object.values(ARTIFACTS).map(a=>({ id:a.id, title:`${a.name}\n${a.description}`, artifactId:a.id })).slice(0,3); this.rewardPanel.show('法宝奖励三选一', options, (o)=>{ this.artifactSystem.add(o.artifactId); this.rewardPanel.hide(); this.runState=this.stageSystem.bossSpawned?RunStates.BOSS:RunStates.RUNNING; }); }
+  finishRun(won){ if([RunStates.VICTORY,RunStates.DEFEAT].includes(this.runState)) return; this.runState=won?RunStates.VICTORY:RunStates.DEFEAT; this.player?.body?.setVelocityX(0); this.eventBus.emit(CombatEvents.RUN_ENDED,{ won }); this.resultPanel.show(won,()=>this.scene.restart()); }
+  floatText(x,y,text,color){ const t=this.add.text(x,y,text,{fontFamily:'Arial',fontSize:'24px',color,stroke:'#000',strokeThickness:4}).setOrigin(0.5).setDepth(2500); this.tweens.add({targets:t,y:y-42,alpha:0,duration:650,onComplete:()=>t.destroy()}); }
+  createDebugOverlay(){ if(!this.debugMode) return; this.debugOverlay=this.add.text(18,260,'',{fontFamily:'monospace',fontSize:'18px',color:'#00ff66',backgroundColor:'rgba(0,0,0,0.72)',padding:{left:10,right:10,top:8,bottom:8}}).setScrollFactor(0).setDepth(2500); }
+  updateDebugOverlay(){ if(!this.debugOverlay) return; const cds=[...this.skillSystem.cooldowns.entries()].map(([id,t])=>`${id}:${Math.max(0,Math.ceil((t-this.time.now)/1000))}`).join(' '); this.debugOverlay.setText([`state:${this.runState}`,`playerX:${Math.round(this.player.x)}`,`target:${this.currentTarget?.name||'-'}`,`enemies:${this.enemies.length}`,`skills:${cds||'-'}`,`stage:${this.stageSystem.stage.name}`]); }
+  cleanupRun(){ this.time.removeAllEvents(); this.tweens.killAll(); this.artifactSystem?.cleanup(); this.eventBus?.destroy(); this.upgradePanel?.hide(); this.rewardPanel?.hide(); this.resultPanel?.hide(); this.enemies?.forEach(e=>{ e.burnTick?.remove(false); [e.hpBarBg,e.hpBar,e.nameText,e].forEach(o=>o?.destroy()); }); this.enemies=[]; this.hud?.destroy(); this.debugOverlay?.destroy(); }
+  showInitError(error){ this.add.text(24,220,`初始化失败：${this.initStage}\n${error.name||'Error'}: ${error.message||String(error)}`,{fontFamily:'Arial',fontSize:'28px',color:'#fff',backgroundColor:'rgba(190,0,0,0.92)',padding:{left:18,right:18,top:14,bottom:14},wordWrap:{width:DESIGN_WIDTH-48}}).setOrigin(0,0).setScrollFactor(0).setDepth(10000); }
 }
