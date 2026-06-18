@@ -1,9 +1,12 @@
 import Phaser from 'phaser';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from '../config/gameConfig.js';
 
-const GROUND_Y = 610;
+const GROUND_Y = Math.round(DESIGN_HEIGHT * 0.72);
+const PLAYER_SCREEN_X = Math.round(DESIGN_WIDTH * 0.3);
 const PLAYER_SPEED = 260;
 const WORLD_WIDTH = 12000;
+const ATTACK_BUTTON_RADIUS = 72;
+const SAFE_AREA_MARGIN = 34;
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -16,30 +19,32 @@ export default class GameScene extends Phaser.Scene {
 
     this.createBackground();
     this.createGround();
+    this.createPlayerTexture();
     this.createPlayer();
     this.createHud();
 
-    this.cameras.main.startFollow(this.player, true, 0.08, 0.08, -260, 120);
+    const cameraOffsetX = DESIGN_WIDTH / 2 - PLAYER_SCREEN_X;
+    this.cameras.main.startFollow(this.player, true, 0.08, 0.08, cameraOffsetX, 0);
   }
 
   update() {
     this.player.setVelocityX(PLAYER_SPEED);
-    this.attackButton.setPosition(DESIGN_WIDTH - 130, DESIGN_HEIGHT - 120);
-    this.attackLabel.setPosition(this.attackButton.x, this.attackButton.y);
+    this.positionAttackButton();
   }
 
   createBackground() {
     const sky = this.add.graphics().setScrollFactor(0);
-    sky.fillGradientStyle(0x8fd3ff, 0x8fd3ff, 0xdff7ff, 0xdff7ff, 1);
+    sky.fillGradientStyle(0x8fd3ff, 0x8fd3ff, 0xdff7ff, 0xdff7ff, 1, 1, 1, 1);
     sky.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
 
     for (let x = 120; x < WORLD_WIDTH; x += 520) {
       const cloud = this.add.graphics();
+      const cloudY = 180 + ((x / 13) % 130);
       cloud.fillStyle(0xffffff, 0.72);
-      cloud.fillCircle(x, 150 + ((x / 13) % 90), 42);
-      cloud.fillCircle(x + 48, 130 + ((x / 17) % 60), 54);
-      cloud.fillCircle(x + 104, 154 + ((x / 19) % 70), 38);
-      cloud.fillRoundedRect(x - 18, 154 + ((x / 23) % 50), 150, 32, 16);
+      cloud.fillCircle(x, cloudY + 20, 42);
+      cloud.fillCircle(x + 48, cloudY, 54);
+      cloud.fillCircle(x + 104, cloudY + 24, 38);
+      cloud.fillRoundedRect(x - 18, cloudY + 24, 150, 32, 16);
       cloud.setScrollFactor(0.35);
     }
 
@@ -48,7 +53,7 @@ export default class GameScene extends Phaser.Scene {
     hills.beginPath();
     hills.moveTo(0, GROUND_Y);
     for (let x = 0; x <= WORLD_WIDTH; x += 240) {
-      hills.lineTo(x + 120, 440 + Math.sin(x * 0.002) * 35);
+      hills.lineTo(x + 120, GROUND_Y - 220 + Math.sin(x * 0.002) * 45);
       hills.lineTo(x + 240, GROUND_Y);
     }
     hills.closePath();
@@ -61,40 +66,56 @@ export default class GameScene extends Phaser.Scene {
     groundGraphics.fillStyle(0x2fa84f, 1);
     groundGraphics.fillRect(0, GROUND_Y, WORLD_WIDTH, DESIGN_HEIGHT - GROUND_Y);
     groundGraphics.fillStyle(0x19743a, 1);
-    groundGraphics.fillRect(0, GROUND_Y + 32, WORLD_WIDTH, DESIGN_HEIGHT - GROUND_Y - 32);
+    groundGraphics.fillRect(0, GROUND_Y + 42, WORLD_WIDTH, DESIGN_HEIGHT - GROUND_Y - 42);
 
+    groundGraphics.lineStyle(4, 0x52c96b, 0.8);
     for (let x = 0; x < WORLD_WIDTH; x += 80) {
-      groundGraphics.lineStyle(3, 0x52c96b, 0.8);
-      groundGraphics.lineBetween(x, GROUND_Y + 8, x + 44, GROUND_Y + 8);
+      groundGraphics.lineBetween(x, GROUND_Y + 12, x + 44, GROUND_Y + 12);
     }
 
-    this.ground = this.add.rectangle(WORLD_WIDTH / 2, GROUND_Y + 45, WORLD_WIDTH, 90, 0x000000, 0);
+    this.ground = this.add.rectangle(
+      WORLD_WIDTH / 2,
+      GROUND_Y + (DESIGN_HEIGHT - GROUND_Y) / 2,
+      WORLD_WIDTH,
+      DESIGN_HEIGHT - GROUND_Y,
+      0x000000,
+      0,
+    );
     this.physics.add.existing(this.ground, true);
   }
 
-  createPlayer() {
-    const playerShape = this.add.graphics();
-    playerShape.fillStyle(0x1687ff, 1);
-    playerShape.fillRoundedRect(-28, -70, 56, 70, 14);
-    playerShape.fillStyle(0x0b4fb3, 1);
-    playerShape.fillCircle(0, -92, 25);
-    playerShape.fillStyle(0xffffff, 1);
-    playerShape.fillCircle(9, -98, 5);
-    playerShape.lineStyle(8, 0x0b4fb3, 1);
-    playerShape.lineBetween(-24, -12, -36, 16);
-    playerShape.lineBetween(24, -12, 36, 16);
+  createPlayerTexture() {
+    if (this.textures.exists('runner')) {
+      return;
+    }
 
-    this.player = this.physics.add.existing(playerShape, false);
-    this.player.setPosition(160, GROUND_Y);
-    this.player.body.setSize(56, 96);
-    this.player.body.setOffset(-28, -96);
-    this.player.body.setCollideWorldBounds(true);
+    const playerShape = this.make.graphics({ x: 0, y: 0, add: false });
+    playerShape.fillStyle(0x1687ff, 1);
+    playerShape.fillRoundedRect(18, 44, 56, 70, 14);
+    playerShape.fillStyle(0x0b4fb3, 1);
+    playerShape.fillCircle(46, 22, 25);
+    playerShape.fillStyle(0xffffff, 1);
+    playerShape.fillCircle(55, 16, 5);
+    playerShape.lineStyle(8, 0x0b4fb3, 1);
+    playerShape.lineBetween(22, 102, 10, 130);
+    playerShape.lineBetween(70, 102, 82, 130);
+    playerShape.generateTexture('runner', 92, 136);
+    playerShape.destroy();
+  }
+
+  createPlayer() {
+    this.player = this.physics.add.image(PLAYER_SCREEN_X, GROUND_Y, 'runner');
+    this.player.setOrigin(0.5, 1);
+    this.player.setCollideWorldBounds(true);
+    this.player.body.setSize(56, 112);
+    this.player.body.setOffset(18, 20);
+    this.player.body.setAllowGravity(true);
     this.physics.add.collider(this.player, this.ground);
   }
 
   createHud() {
     this.add
-      .text(DESIGN_WIDTH / 2, 34, '第一阶段：自动前进原型', {
+      .text(DESIGN_WIDTH / 2, 42, '第一阶段：自动前进原型', {
         fontFamily: 'Arial, sans-serif',
         fontSize: '34px',
         color: '#14324a',
@@ -105,7 +126,7 @@ export default class GameScene extends Phaser.Scene {
       .setScrollFactor(0);
 
     this.attackTip = this.add
-      .text(DESIGN_WIDTH / 2, 110, '', {
+      .text(DESIGN_WIDTH / 2, 128, '', {
         fontFamily: 'Arial, sans-serif',
         fontSize: '28px',
         color: '#ffffff',
@@ -116,13 +137,14 @@ export default class GameScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setVisible(false);
 
-    this.attackButton = this.add.circle(DESIGN_WIDTH - 130, DESIGN_HEIGHT - 120, 72, 0xff6b35, 0.88)
+    this.attackButton = this.add
+      .circle(0, 0, ATTACK_BUTTON_RADIUS, 0xff6b35, 0.88)
       .setStrokeStyle(6, 0xffffff, 0.95)
       .setScrollFactor(0)
       .setInteractive({ useHandCursor: true });
 
     this.attackLabel = this.add
-      .text(this.attackButton.x, this.attackButton.y, '攻击', {
+      .text(0, 0, '攻击', {
         fontFamily: 'Arial, sans-serif',
         fontSize: '30px',
         color: '#ffffff',
@@ -131,7 +153,15 @@ export default class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setScrollFactor(0);
 
+    this.positionAttackButton();
     this.attackButton.on('pointerdown', () => this.showAttackTip());
+  }
+
+  positionAttackButton() {
+    const x = DESIGN_WIDTH - ATTACK_BUTTON_RADIUS - SAFE_AREA_MARGIN;
+    const y = DESIGN_HEIGHT - ATTACK_BUTTON_RADIUS - SAFE_AREA_MARGIN;
+    this.attackButton.setPosition(x, y);
+    this.attackLabel.setPosition(x, y);
   }
 
   showAttackTip() {

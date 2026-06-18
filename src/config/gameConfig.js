@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import GameScene from '../scenes/GameScene.js';
 
-export const DESIGN_WIDTH = 1280;
-export const DESIGN_HEIGHT = 720;
+export const DESIGN_WIDTH = 720;
+export const DESIGN_HEIGHT = 1280;
 
 const gameConfig = {
   type: Phaser.AUTO,
@@ -13,7 +13,7 @@ const gameConfig = {
   physics: {
     default: 'arcade',
     arcade: {
-      gravity: { y: 1200 },
+      gravity: { y: 1800 },
       debug: false,
     },
   },
