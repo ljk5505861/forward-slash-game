@@ -22,6 +22,7 @@ export default class GameScene extends Phaser.Scene {
     this.balance = BALANCE;
     this.state = 'running';
     this.stateBeforeLevelUp = null;
+    this.pendingArtifactRewards = 0;
     this.currentEnemy = null;
     this.boss = null;
     this.encounterables = new Set();
@@ -57,7 +58,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   update() {
-    if (!this.player?.body || ['combat', 'bossCombat', 'levelUp', 'ended'].includes(this.state)) return;
+    if (!this.player?.body || ['combat', 'bossCombat', 'levelUp', 'reward', 'victory', 'defeat', 'ended'].includes(this.state)) return;
     this.player.body.setVelocityX(this.playerStats.speedX);
     this.checkEncounter();
     this.updateDebugOverlay();
@@ -111,6 +112,7 @@ export default class GameScene extends Phaser.Scene {
     enemy.body.setAllowGravity(false);
     enemy.body.setImmovable(true);
     enemy.isBoss = isBoss;
+    enemy.isElite = false;
     enemy.isDefeated = false;
     enemy.hp = cfg.hp;
     enemy.maxHp = cfg.hp;
@@ -209,6 +211,10 @@ export default class GameScene extends Phaser.Scene {
   }
 
   showUpgradeChoices() {
+    if (this.rewardPanel?.visible || this.resultPanel?.visible || ['reward', 'victory', 'defeat'].includes(this.state)) {
+      return;
+    }
+
     this.upgradeCards = ['damage', 'health', 'speed'].map((choice, index) => {
       const labels = { damage: '攻击 +8', health: '满血 +20', speed: '速度 +18' };
       return this.add.text(DESIGN_WIDTH / 2, 390 + index * 115, labels[choice], { fontFamily: 'Arial, sans-serif', fontSize: '32px', color: '#fff', backgroundColor: '#203a74', padding: { left: 26, right: 26, top: 18, bottom: 18 } }).setOrigin(0.5).setScrollFactor(0).setInteractive({ useHandCursor: true }).setDepth(3000).on('pointerdown', () => this.upgradeSystem.applyUpgrade(choice));
@@ -218,6 +224,86 @@ export default class GameScene extends Phaser.Scene {
   hideUpgradeChoices() {
     this.upgradeCards?.forEach((card) => card.destroy());
     this.upgradeCards = [];
+    if (this.upgradeSystem) {
+      this.upgradeSystem.panelOpen = false;
+    }
+  }
+
+  showArtifactReward() {
+    if (this.state === 'victory' || this.state === 'defeat' || this.resultPanel?.visible) {
+      return false;
+    }
+    if (this.upgradeSystem?.panelOpen || this.upgradeCards?.length) {
+      return false;
+    }
+
+    this.pendingArtifactRewards += 1;
+    return this.resumeAfterModal();
+  }
+
+  showNextArtifactReward() {
+    if (this.state === 'victory' || this.state === 'defeat' || this.resultPanel?.visible) {
+      return false;
+    }
+    if (this.rewardPanel?.visible || this.upgradeSystem?.panelOpen || this.upgradeCards?.length) {
+      return false;
+    }
+
+    this.state = 'reward';
+    this.player.body.setVelocityX(0);
+    const choices = ['blade', 'heart', 'boots'];
+    this.rewardPanel = this.add.container(DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2).setScrollFactor(0).setDepth(3500);
+    const title = this.add.text(0, -180, '选择法宝奖励', { fontFamily: 'Arial, sans-serif', fontSize: '38px', color: '#fff', backgroundColor: '#5a2a88', padding: { left: 28, right: 28, top: 18, bottom: 18 } }).setOrigin(0.5);
+    const cards = choices.map((choice, index) => {
+      const labels = { blade: '法宝：剑魄 攻击 +6', heart: '法宝：玉佩 生命 +15', boots: '法宝：风靴 速度 +12' };
+      return this.add.text(0, -60 + index * 95, labels[choice], { fontFamily: 'Arial, sans-serif', fontSize: '30px', color: '#fff', backgroundColor: '#6b3fa0', padding: { left: 24, right: 24, top: 16, bottom: 16 } }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.applyArtifactReward(choice));
+    });
+    this.rewardPanel.add([title, ...cards]);
+    return true;
+  }
+
+  applyArtifactReward(choice) {
+    if (!this.rewardPanel?.visible) return;
+
+    if (choice === 'blade') this.playerStats.damage += 6;
+    if (choice === 'heart') {
+      this.playerStats.maxHp += 15;
+      this.playerStats.hp = Math.min(this.playerStats.maxHp, this.playerStats.hp + 15);
+    }
+    if (choice === 'boots') this.playerStats.speedX += 12;
+
+    this.pendingArtifactRewards = Math.max(0, this.pendingArtifactRewards - 1);
+    this.hideArtifactReward();
+    this.hud?.updatePlayer(this.playerStats);
+    this.resumeAfterModal();
+  }
+
+  hideArtifactReward() {
+    this.rewardPanel?.destroy();
+    this.rewardPanel = null;
+  }
+
+  resumeAfterModal() {
+    if (this.state === 'victory' || this.state === 'defeat' || this.resultPanel?.visible) {
+      return false;
+    }
+    if (this.rewardPanel?.visible || this.upgradeSystem?.panelOpen || this.upgradeCards?.length) {
+      return true;
+    }
+
+    if (this.pendingArtifactRewards > 0) {
+      return this.showNextArtifactReward();
+    }
+
+    if (this.upgradeSystem?.maybeShow()) {
+      return true;
+    }
+
+    const combatState = this.upgradeSystem?.restoreStateAfterLevelUp();
+    const bossEncounterActive = this.currentEnemy?.isBoss && this.combatSystem.isEncounterable(this.currentEnemy);
+    this.state = combatState || (bossEncounterActive ? 'bossCombat' : 'running');
+    this.hud?.setStatus(this.state === 'bossCombat' ? 'Boss 战开始！' : '继续前进');
+    return false;
   }
 
   positionAttackButton() {
@@ -229,8 +315,11 @@ export default class GameScene extends Phaser.Scene {
   }
 
   finishRun(won) {
-    if (this.state === 'ended') return;
-    this.state = 'ended';
+    if (this.state === 'victory' || this.state === 'defeat' || this.state === 'ended') return;
+    this.hideUpgradeChoices();
+    this.hideArtifactReward();
+    this.pendingArtifactRewards = 0;
+    this.state = won ? 'victory' : 'defeat';
     this.player?.body?.setVelocityX(0);
     this.currentEnemy && this.combatSystem.cancelEnemyAttackTimer(this.currentEnemy);
     this.resultPanel = this.add.text(DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2, won ? '胜利！' : '失败，点击重新开始', { fontFamily: 'Arial, sans-serif', fontSize: '46px', color: '#fff', backgroundColor: '#111', padding: { left: 24, right: 24, top: 18, bottom: 18 } }).setOrigin(0.5).setScrollFactor(0).setDepth(4000);
@@ -240,6 +329,9 @@ export default class GameScene extends Phaser.Scene {
     this.time.removeAllEvents();
     this.tweens.killAll();
     this.hideUpgradeChoices();
+    this.hideArtifactReward();
+    this.upgradeSystem?.reset();
+    this.pendingArtifactRewards = 0;
     this.resultPanel?.destroy();
     this.firstEnemyDebugLabel?.destroy();
     this.debugOverlay?.destroy();

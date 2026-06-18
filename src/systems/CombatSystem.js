@@ -55,7 +55,7 @@ export default class CombatSystem {
 
     this.scene.defeatedEnemies += enemy.isBoss ? 0 : 1;
     this.scene.hud?.updateEnemy(null);
-    this.scene.upgradeSystem.gainExperience(enemy.xp || 0);
+    this.scene.upgradeSystem.gainExperience(enemy.xp || 0, { defer: enemy.isElite || enemy.isBoss });
 
     if (!enemy.isBoss && this.scene.defeatedEnemies >= this.scene.balance.enemies.countBeforeBoss) {
       this.scene.spawnBoss();
@@ -63,9 +63,10 @@ export default class CombatSystem {
 
     if (enemy.isBoss) {
       this.scene.finishRun(true);
-    } else if (this.scene.state !== 'levelUp') {
-      this.scene.state = 'running';
-      this.scene.hud?.setStatus('继续前进');
+    } else if (enemy.isElite) {
+      this.scene.showArtifactReward();
+    } else {
+      this.scene.resumeAfterModal();
     }
 
     this.scene.tweens.add({
@@ -82,7 +83,7 @@ export default class CombatSystem {
       delay: enemy.attackIntervalMs,
       loop: true,
       callback: () => {
-        if (!this.isEncounterable(enemy) || this.scene.currentEnemy !== enemy || this.scene.state === 'levelUp') {
+        if (!this.isEncounterable(enemy) || this.scene.currentEnemy !== enemy || ['levelUp', 'reward', 'victory', 'defeat', 'ended'].includes(this.scene.state)) {
           return;
         }
         this.scene.playerStats.hp = Math.max(0, this.scene.playerStats.hp - enemy.damage);
