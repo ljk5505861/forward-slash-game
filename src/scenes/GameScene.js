@@ -41,7 +41,7 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.player.setVelocityX(PLAYER_SPEED);
+    this.player.body.setVelocityX(PLAYER_SPEED);
   }
 
   runInitStage(stageName, callback) {
