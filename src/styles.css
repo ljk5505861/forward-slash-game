@@ -1,0 +1,24 @@
+html,
+body,
+#game-container {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #0b1830;
+  touch-action: none;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+}
+
+canvas {
+  display: block;
+}
