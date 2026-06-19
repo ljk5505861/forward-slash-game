@@ -2,7 +2,7 @@ import { CombatEvents } from '../core/CombatEvents.js';
 import { SKILLS } from '../config/skills.js';
 import { ARTIFACTS } from '../config/artifacts.js';
 
-const blank = () => ({ runStartedAt:0, runEndedAt:null, activePlayTimeMs:0, firstSkillObtainedAt:null, firstArtifactObtainedAt:null, levelsGained:0, upgradesChosen:[], artifactChoices:[], enemiesKilled:0, elitesKilled:0, bossesKilled:0, damageDealt:0, attackDamage:0, damageTaken:0, shieldAbsorbed:0, healingDone:0, skillCasts:{}, skillDamage:{}, artifactTriggers:{}, statusDamage:{ burn:0, poison:0 }, playerAttacks:0, criticalHits:0, longestUpgradeGapMs:0, lastUpgradeAt:0, finalSkills:[], finalArtifacts:[], bossFightStartedAt:null, bossFightDurationMs:null, buildTags:[] });
+const blank = () => ({ runStartedAt:0, runEndedAt:null, activePlayTimeMs:0, firstSkillObtainedAt:null, firstArtifactObtainedAt:null, levelsGained:0, upgradesChosen:[], artifactChoices:[], enemiesKilled:0, elitesKilled:0, bossesKilled:0, damageDealt:0, attackDamage:0, damageTaken:0, shieldAbsorbed:0, damageBlockedBySkills:0, healingDone:0, skillCasts:{}, skillDamage:{}, artifactTriggers:{}, statusDamage:{ burn:0, poison:0 }, playerAttacks:0, criticalHits:0, longestUpgradeGapMs:0, lastUpgradeAt:0, finalSkills:[], finalArtifacts:[], bossFightStartedAt:null, bossFightDurationMs:null, buildTags:[] });
 
 export const getBuildTags = (p) => { const ids=p.skills.map(s=>s.id), arts=p.artifacts, tags=[]; if(ids.includes('fireball')||arts.includes('flame_heart')) tags.push('火焰流'); if(ids.includes('lightning')||arts.includes('thunder_orb')) tags.push('雷电流'); if(ids.includes('poison_cloud')||arts.includes('venom_sac')) tags.push('毒系流'); if(ids.includes('spinning_blade')||ids.includes('sword_wave')||arts.includes('wind_wheel')) tags.push('范围流'); if(ids.includes('healing')||arts.includes('blood_jade')) tags.push('生存流'); return tags; };
 
@@ -14,7 +14,7 @@ export default class RunStatsSystem {
     b(CombatEvents.PLAYER_ATTACK,()=>{ this.stats.playerAttacks+=1; });
     b(CombatEvents.PLAYER_CRIT,()=>{ this.stats.criticalHits+=1; });
     b(CombatEvents.ENEMY_HIT,p=>this.recordDamage(p));
-    b(CombatEvents.PLAYER_DAMAGED,p=>{ this.stats.damageTaken+=(p.hpDamage ?? p.damage ?? 0); this.stats.shieldAbsorbed+=(p.shieldAbsorbed||0); });
+    b(CombatEvents.PLAYER_DAMAGED,p=>{ this.stats.damageTaken+=(p.hpDamage ?? p.damage ?? 0); this.stats.shieldAbsorbed+=(p.shieldAbsorbed||0); this.stats.damageBlockedBySkills+=(p.skillBlocked||0); });
     b(CombatEvents.PLAYER_HEALED,p=>{ this.stats.healingDone+=(p.amount||0); });
     b(CombatEvents.SKILL_CAST,p=>{ const id=p.skill?.id||p.skillId; this.stats.skillCasts[id]=(this.stats.skillCasts[id]||0)+1; });
     b(CombatEvents.ARTIFACT_TRIGGERED,p=>{ const id=p.artifact?.id||p.artifactId; this.stats.artifactTriggers[id]=(this.stats.artifactTriggers[id]||0)+1; });
