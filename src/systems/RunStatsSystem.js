@@ -20,6 +20,7 @@ export default class RunStatsSystem {
     b(CombatEvents.ARTIFACT_TRIGGERED,p=>{ const id=p.artifact?.id||p.artifactId; this.stats.artifactTriggers[id]=(this.stats.artifactTriggers[id]||0)+1; });
     b(CombatEvents.ENEMY_KILLED,p=>{ if(p.enemy?.isBoss)this.stats.bossesKilled+=1; else if(p.enemy?.isElite)this.stats.elitesKilled+=1; else this.stats.enemiesKilled+=1; });
     b(CombatEvents.UPGRADE_CHOSEN,p=>this.recordUpgrade(p));
+    b(CombatEvents.STARTING_SKILL_CHOSEN,p=>this.recordStartingSkill(p));
     b(CombatEvents.ARTIFACT_CHOSEN,p=>this.recordArtifact(p));
     b(CombatEvents.BOSS_SPAWNED,()=>{ this.stats.bossFightStartedAt=this.activeMs(); });
     b(CombatEvents.BOSS_KILLED,()=>{ if(this.stats.bossFightStartedAt!=null)this.stats.bossFightDurationMs=this.activeMs()-this.stats.bossFightStartedAt; });
@@ -28,7 +29,8 @@ export default class RunStatsSystem {
   addPausedDuration(ms){ this.pausedDurationMs+=Math.max(0,ms||0); }
   activeMs(){ return (this.locked?this.stats.activePlayTimeMs:Math.max(0,this.now()-this.stats.runStartedAt-this.pausedDurationMs)); }
   recordDamage(p){ const d=p.damage||0; this.stats.damageDealt+=d; if(p.source==='attack') this.stats.attackDamage+=d; if(p.source==='skill'&&p.skillId) this.stats.skillDamage[p.skillId]=(this.stats.skillDamage[p.skillId]||0)+d; if(p.source==='burn'||p.source==='burn_burst') this.stats.statusDamage.burn+=d; if(p.source==='poison') this.stats.statusDamage.poison+=d; }
-  recordUpgrade(p){ const t=this.activeMs(); this.stats.levelsGained+=1; this.stats.upgradesChosen.push(p.optionId); this.stats.longestUpgradeGapMs=Math.max(this.stats.longestUpgradeGapMs,t-this.stats.lastUpgradeAt); this.stats.lastUpgradeAt=t; if(p.type==='newSkill'&&!this.stats.firstSkillObtainedAt)this.stats.firstSkillObtainedAt=t; }
+  recordStartingSkill(p){ const t=this.activeMs(); if(!this.stats.firstSkillObtainedAt)this.stats.firstSkillObtainedAt=t; this.stats.upgradesChosen.push(`start_${p.skillId}`); }
+  recordUpgrade(p){ const t=this.activeMs(); this.stats.levelsGained+=1; this.stats.upgradesChosen.push(p.optionId); this.stats.longestUpgradeGapMs=Math.max(this.stats.longestUpgradeGapMs,t-this.stats.lastUpgradeAt); this.stats.lastUpgradeAt=t; if((p.type==='newSkill'||p.type==='startingSkill')&&!this.stats.firstSkillObtainedAt)this.stats.firstSkillObtainedAt=t; }
   recordArtifact(p){ const t=this.activeMs(); this.stats.artifactChoices.push(p.artifactId); if(!this.stats.firstArtifactObtainedAt)this.stats.firstArtifactObtainedAt=t; }
   lock(){ this.stats.runEndedAt=this.now(); this.stats.activePlayTimeMs=this.activeMs(); this.stats.finalSkills=this.scene.playerData.skills.map(s=>({ ...s, name:SKILLS[s.id]?.name||s.id })); this.stats.finalArtifacts=this.scene.playerData.artifacts.map(id=>({ id, name:ARTIFACTS[id]?.name||id })); this.stats.buildTags=getBuildTags(this.scene.playerData); this.locked=true; }
   snapshot(){ const active=this.activeMs(); return { ...this.stats, activePlayTimeMs:active, msSinceLastUpgrade:active-this.stats.lastUpgradeAt, buildTags:getBuildTags(this.scene.playerData) }; }

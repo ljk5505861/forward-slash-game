@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from '../config/gameConfig.js';
 import { SKILLS } from '../config/skills.js';
+import { getRarity } from '../config/rarities.js';
 
 const SLOTS_PER_PAGE = 3;
 
@@ -66,16 +67,18 @@ export default class SkillBar {
     this.prevButton.setAlpha(pages > 1 ? 1 : 0.35);
     this.nextButton.setAlpha(pages > 1 ? 1 : 0.35);
 
-    this.slotNodes.forEach(({ text }, index) => {
+    this.slotNodes.forEach(({ box, text }, index) => {
       const skillData = skills[this.page * SLOTS_PER_PAGE + index];
       if (!skillData) {
-        text.setText('空技能槽');
+        text.setText('空技能槽'); box.setStrokeStyle(3,0x89a8e8,1);
         return;
       }
       const cfg = SKILLS[skillData.id];
+      const rarity = getRarity(cfg?.rarity);
+      box.setStrokeStyle(4, rarity.color, 1);
       const readyAt = this.scene.skillSystem?.cooldowns.get(skillData.id) || 0;
       const remaining = Math.max(0, Math.ceil((readyAt - this.scene.getGameplayTime()) / 1000));
-      text.setText(`${cfg?.name || skillData.id}\nLv.${skillData.level}\n${remaining > 0 ? `冷却 ${remaining}s` : '就绪'}`);
+      text.setText(`${rarity.name} ${cfg?.name || skillData.id}\nLv.${skillData.level}\n${remaining > 0 ? `冷却 ${remaining}s` : '就绪'}`);
     });
   }
 
