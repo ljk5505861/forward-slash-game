@@ -1,0 +1,12 @@
+export const StatusEffects = Object.freeze({ BURN:'BURN', POISON:'POISON', DAMAGE_REDUCTION:'DAMAGE_REDUCTION', SHIELD:'SHIELD' });
+export default class StatusEffectSystem {
+  constructor(scene){ this.scene=scene; this.effects=new Map(); this.nextId=1; }
+  reset(){ this.effects.clear(); this.nextId=1; const p=this.scene.playerData; if(p){ p.temporaryDamageReduction=0; p.shield=0; } }
+  shiftTimers(pausedDuration, pausedAt){ this.effects.forEach(e=>{ if(e.expiresAt>pausedAt)e.expiresAt+=pausedDuration; if(e.nextTickAt&&e.nextTickAt>pausedAt)e.nextTickAt+=pausedDuration; }); }
+  add(type,target,{ sourceId='', durationMs=1000, intervalMs=0, stacks=1, value=0, maxStacks=5 }={}){ if(!target) return null; const now=this.scene.getGameplayTime(); const old=[...this.effects.values()].find(e=>e.type===type&&e.target===target&&e.sourceId===sourceId); if(old){ old.durationMs=durationMs; old.expiresAt=now+durationMs; old.stacks=Math.min(maxStacks,(old.stacks||1)+stacks); old.value=value||old.value; this.applyDerived(); return old; } const e={ id:this.nextId++, type, target, sourceId, durationMs, expiresAt:now+durationMs, nextTickAt:intervalMs?now+intervalMs:0, intervalMs, stacks, value }; this.effects.set(e.id,e); this.applyDerived(); return e; }
+  update(time){ if(this.scene.isGameplayPaused?.()) return; this.effects.forEach(e=>{ if(!this.validTarget(e.target)){ this.effects.delete(e.id); return; } if(e.intervalMs){ while(time>=e.nextTickAt && time<e.expiresAt && this.validTarget(e.target)){ const source=e.type===StatusEffects.BURN?'burn':'poison'; this.scene.combatSystem.damageEnemy(e.target, Math.round(e.value*(e.stacks||1)), { source, tags:[source], canTriggerArtifacts:false, statusId:e.id }); e.nextTickAt+=e.intervalMs; } } if(time>=e.expiresAt) this.effects.delete(e.id); }); this.applyDerived(); }
+  validTarget(t){ return t===this.scene.playerData || this.scene.targeting?.valid(t); }
+  clearTarget(target){ this.effects.forEach(e=>{ if(e.target===target) this.effects.delete(e.id); }); this.applyDerived(); }
+  has(target,type){ return [...this.effects.values()].some(e=>e.target===target&&e.type===type); }
+  applyDerived(){ const p=this.scene.playerData; if(!p) return; p.temporaryDamageReduction=0; p.shield=Math.min(p.maxShield,p.shield||0); this.effects.forEach(e=>{ if(e.target===p&&e.type===StatusEffects.DAMAGE_REDUCTION) p.temporaryDamageReduction=Math.max(p.temporaryDamageReduction,e.value); }); }
+}
