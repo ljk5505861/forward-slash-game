@@ -1,6 +1,7 @@
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from '../config/gameConfig.js';
 import { SKILLS } from '../config/skills.js';
 import { getRarity } from '../config/rarities.js';
+import { ARTIFACTS, ARTIFACT_CATEGORIES, getArtifactLevelText } from '../config/artifacts.js';
 
 const GREEN = '#62e883';
 const WHITE = '#f2f6ff';
@@ -42,6 +43,7 @@ export default class UpgradePanel {
     this.nodes.push(card);
 
     if(skill) this.createSkillCard(option,skill,rarity,x,y,width,onPick);
+    else if(option.artifactId) this.createArtifactCard(option,x,y,width);
     else this.createAttributeCard(option,x,y,width,onPick);
   }
 
@@ -68,6 +70,25 @@ export default class UpgradePanel {
     this.createText(left,top+32,levelText,{fontSize:'23px',color:GREEN,stroke:'#0b3319',strokeThickness:2});
     this.createText(left,top+62,levelData.desc||skill.description,{fontSize:'20px',color:MUTED,lineSpacing:2});
     if(changes.length) this.createText(left,top+110,changes.join('\n'),{fontSize:'20px',color:GREEN,lineSpacing:1,wordWrap:{width:552}});
+  }
+
+
+  createArtifactCard(option,x,y,width){
+    const left=x-width/2+24;
+    const top=y-104;
+    const artifact=ARTIFACTS[option.artifactId];
+    const category=ARTIFACT_CATEGORIES[artifact?.category]?.name||artifact?.category||'法宝';
+    const levelText=option.type==='upgrade'?`Lv.${option.level} → Lv.${option.nextLevel}`:`Lv.${option.nextLevel||1}`;
+    this.createText(left,top,`${artifact?.name||option.artifactId}｜${category}`,{fontSize:'25px',color:WHITE,stroke:'#000',strokeThickness:3});
+    this.createText(left,top+32,levelText,{fontSize:'23px',color:option.type==='upgrade'?GREEN:WHITE,stroke:'#0b3319',strokeThickness:2});
+    if(option.requiredSkillName) this.createText(left,top+62,`关联技能：${option.requiredSkillName}`,{fontSize:'19px',color:'#ffd866'});
+    const effectY=option.requiredSkillName?92:66;
+    if(option.type==='upgrade'){
+      this.createText(left,top+effectY,`当前：${getArtifactLevelText(option.artifactId,option.level)}`,{fontSize:'19px',color:MUTED,lineSpacing:1});
+      this.createText(left,top+effectY+58,`升级后：${getArtifactLevelText(option.artifactId,option.nextLevel)}`,{fontSize:'20px',color:GREEN,lineSpacing:1,wordWrap:{width:552}});
+    } else {
+      this.createText(left,top+effectY,getArtifactLevelText(option.artifactId,option.nextLevel||1),{fontSize:'21px',color:GREEN,lineSpacing:2,wordWrap:{width:552}});
+    }
   }
 
   createAttributeCard(option,x,y,width,onPick){
