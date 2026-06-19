@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import gameConfig from './config/gameConfig.js';
+import { GAME_VERSION_LABEL } from './config/version.js';
 import './styles.css';
 
 const preventGesture = (event) => event.preventDefault();
@@ -21,7 +22,7 @@ const createDebugStatusBar = () => {
   bar.style.fontWeight = 'bold';
   bar.style.lineHeight = '1.2';
   bar.style.pointerEvents = 'none';
-  bar.textContent = 'JS 已启动';
+  bar.textContent = GAME_VERSION_LABEL;
 
   if (!existingBar) {
     document.body.prepend(bar);
@@ -128,10 +129,10 @@ document.addEventListener(
 window.addEventListener('contextmenu', preventGesture);
 
 const game = new Phaser.Game(gameConfig);
-updateDebugStatus('Phaser 已创建');
+updateDebugStatus(GAME_VERSION_LABEL);
 
 const gameScene = game.scene.getScene('GameScene');
 if (gameScene) {
-  gameScene.events.once(Phaser.Scenes.Events.START, () => updateDebugStatus('GameScene 已启动'));
-  gameScene.events.once(Phaser.Scenes.Events.CREATE, () => updateDebugStatus('场景创建完成'));
+  gameScene.events.once(Phaser.Scenes.Events.START, () => updateDebugStatus(GAME_VERSION_LABEL));
+  gameScene.events.once(Phaser.Scenes.Events.CREATE, () => updateDebugStatus(GAME_VERSION_LABEL));
 }
