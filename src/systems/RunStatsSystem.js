@@ -2,7 +2,7 @@ import { CombatEvents } from '../core/CombatEvents.js';
 import { SKILLS } from '../config/skills.js';
 import { ARTIFACTS } from '../config/artifacts.js';
 
-const blank = () => ({ runStartedAt:0, runEndedAt:null, activePlayTimeMs:0, firstSkillObtainedAt:null, firstArtifactObtainedAt:null, levelsGained:0, upgradesChosen:[], artifactChoices:[], enemiesKilled:0, elitesKilled:0, bossesKilled:0, damageDealt:0, attackDamage:0, damageTaken:0, shieldAbsorbed:0, damageBlockedBySkills:0, healingDone:0, skillCasts:{}, skillDamage:{}, artifactTriggers:{}, statusDamage:{ burn:0, poison:0 }, playerAttacks:0, criticalHits:0, longestUpgradeGapMs:0, lastUpgradeAt:0, finalSkills:[], finalArtifacts:[], bossFightStartedAt:null, bossFightDurationMs:null, buildTags:[] });
+const blank = () => ({ runStartedAt:0, runEndedAt:null, activePlayTimeMs:0, firstSkillObtainedAt:null, firstArtifactObtainedAt:null, levelsGained:0, upgradesChosen:[], artifactChoices:[], enemiesKilled:0, elitesKilled:0, bossesKilled:0, damageDealt:0, attackDamage:0, damageTaken:0, shieldAbsorbed:0, damageBlockedBySkills:0, healingDone:0, skillCasts:{}, skillDamage:{}, artifactTriggers:{}, statusDamage:{ burn:0, poison:0 }, playerAttacks:0, criticalHits:0, longestUpgradeGapMs:0, lastUpgradeAt:0, finalSkills:[], finalArtifacts:[], bossFightStartedAt:null, bossFightDurationMs:null, finalBossFightStartedAt:null, finalBossFightDurationMs:null, midBossesKilled:0, midBossFightStartedAt:null, midBossFightDurationMs:null, restChoice:null, restHealing:0, restSkillChosen:null, enemyKillsByType:{}, buildTags:[] });
 
 export const getBuildTags = (p) => { const ids=p.skills.map(s=>s.id), arts=p.artifacts, tags=[]; if(ids.includes('fireball')||arts.includes('flame_heart')) tags.push('火焰流'); if(ids.includes('lightning')||arts.includes('thunder_orb')) tags.push('雷电流'); if(ids.includes('poison_cloud')||arts.includes('venom_sac')) tags.push('毒系流'); if(ids.includes('spinning_blade')||ids.includes('sword_wave')||arts.includes('wind_wheel')) tags.push('范围流'); if(ids.includes('healing')||arts.includes('blood_jade')) tags.push('生存流'); return tags; };
 
@@ -18,13 +18,16 @@ export default class RunStatsSystem {
     b(CombatEvents.PLAYER_HEALED,p=>{ this.stats.healingDone+=(p.amount||0); });
     b(CombatEvents.SKILL_CAST,p=>{ const id=p.skill?.id||p.skillId; this.stats.skillCasts[id]=(this.stats.skillCasts[id]||0)+1; });
     b(CombatEvents.ARTIFACT_TRIGGERED,p=>{ const id=p.artifact?.id||p.artifactId; this.stats.artifactTriggers[id]=(this.stats.artifactTriggers[id]||0)+1; });
-    b(CombatEvents.ENEMY_KILLED,p=>{ if(p.enemy?.isBoss)this.stats.bossesKilled+=1; else if(p.enemy?.isElite)this.stats.elitesKilled+=1; else this.stats.enemiesKilled+=1; });
+    b(CombatEvents.ENEMY_KILLED,p=>{ const id=p.enemy?.enemyId||'unknown'; this.stats.enemyKillsByType[id]=(this.stats.enemyKillsByType[id]||0)+1; if(p.enemy?.isMidBoss){this.stats.midBossesKilled+=1; this.stats.bossesKilled+=1;} else if(p.enemy?.isBoss)this.stats.bossesKilled+=1; else if(p.enemy?.isElite)this.stats.elitesKilled+=1; else this.stats.enemiesKilled+=1; });
     b(CombatEvents.UPGRADE_CHOSEN,p=>this.recordUpgrade(p));
     b(CombatEvents.STARTING_SKILL_CHOSEN,p=>this.recordStartingSkill(p));
     b(CombatEvents.ARTIFACT_CHOSEN,p=>this.recordArtifact(p));
-    b(CombatEvents.BOSS_SPAWNED,()=>{ this.stats.bossFightStartedAt=this.activeMs(); });
-    b(CombatEvents.BOSS_KILLED,()=>{ if(this.stats.bossFightStartedAt!=null)this.stats.bossFightDurationMs=this.activeMs()-this.stats.bossFightStartedAt; });
+    b(CombatEvents.BOSS_SPAWNED,p=>{ this.stats.bossFightStartedAt=this.activeMs(); if(p.bossType==='mid')this.stats.midBossFightStartedAt=this.activeMs(); if(p.bossType==='final')this.stats.finalBossFightStartedAt=this.activeMs(); });
+    b(CombatEvents.BOSS_KILLED,p=>{ if(this.stats.bossFightStartedAt!=null)this.stats.bossFightDurationMs=this.activeMs()-this.stats.bossFightStartedAt; if(p.bossType==='mid'&&this.stats.midBossFightStartedAt!=null)this.stats.midBossFightDurationMs=this.activeMs()-this.stats.midBossFightStartedAt; if(p.bossType==='final'&&this.stats.finalBossFightStartedAt!=null)this.stats.finalBossFightDurationMs=this.activeMs()-this.stats.finalBossFightStartedAt; });
+    b(CombatEvents.REST_CHOSEN,p=>{ this.stats.restChoice=p.choice||this.stats.restChoice; this.stats.restHealing+=p.healing||0; if(p.skillId)this.stats.restSkillChosen=p.skillId; });
     b(CombatEvents.RUN_ENDED,()=>this.lock()); }
+  startMidBossFight(){ if(this.stats.midBossFightStartedAt==null)this.stats.midBossFightStartedAt=this.activeMs(); }
+  endMidBossFight(){ if(this.stats.midBossFightStartedAt!=null)this.stats.midBossFightDurationMs=this.activeMs()-this.stats.midBossFightStartedAt; }
   now(){ return this.scene.getGameplayTime?.() ?? this.scene.time.now; }
   addPausedDuration(ms){ this.pausedDurationMs+=Math.max(0,ms||0); }
   activeMs(){ return (this.locked?this.stats.activePlayTimeMs:Math.max(0,this.now()-this.stats.runStartedAt-this.pausedDurationMs)); }

@@ -1,5 +1,10 @@
 export const ENEMIES = {
-  grunt: { id:'grunt', name:'训练傀儡', kind:'normal', width:74, height:118, bodyWidth:64, bodyHeight:108, hp:46, damage:7, attackIntervalMs:1200, attackRange:92, xp:26, color:0xe84343, stroke:0x4b0000 },
-  elite: { id:'elite', name:'精英傀儡', kind:'elite', width:106, height:150, bodyWidth:92, bodyHeight:138, hp:150, damage:13, attackIntervalMs:1050, attackRange:105, xp:55, color:0xcc7832, stroke:0x5a2600 },
-  boss: { id:'boss', name:'训练场守卫', kind:'boss', width:134, height:190, bodyWidth:122, bodyHeight:178, hp:360, damage:18, attackIntervalMs:980, enragedAttackIntervalMs:560, attackRange:118, xp:120, color:0x7b2cff, stroke:0x24005b },
+  grunt: { id:'grunt', name:'训练傀儡', kind:'normal', width:74, height:118, bodyWidth:64, bodyHeight:108, hp:46, damage:7, attackIntervalMs:1200, attackRange:92, xp:28, speed:58, color:0xe84343, stroke:0x4b0000 },
+  elite: { id:'elite', name:'精英傀儡', kind:'elite', width:106, height:150, bodyWidth:92, bodyHeight:138, hp:150, damage:13, attackIntervalMs:1050, attackRange:105, xp:70, speed:46, color:0xcc7832, stroke:0x5a2600 },
+  armored_guard: { id:'armored_guard', name:'重甲守卫', kind:'normal', behavior:'armored', width:98, height:148, bodyWidth:86, bodyHeight:136, hp:126, defense:4, damageReduction:0.18, damage:10, attackIntervalMs:1350, attackRange:104, xp:42, speed:26, color:0x667085, stroke:0x1f2937 },
+  charger: { id:'charger', name:'冲锋兽', kind:'normal', behavior:'charger', width:84, height:106, bodyWidth:76, bodyHeight:96, hp:54, damage:8, chargeDamage:20, attackIntervalMs:1250, attackRange:86, xp:34, speed:72, chargeTriggerRange:360, color:0xf97316, stroke:0x7c2d12 },
+  bomber: { id:'bomber', name:'投弹怪', kind:'normal', behavior:'bomber', width:82, height:118, bodyWidth:72, bodyHeight:106, hp:64, damage:6, bombDamage:16, attackIntervalMs:1800, attackRange:520, preferredRange:390, xp:40, speed:38, color:0xfacc15, stroke:0x713f12 },
+  healer: { id:'healer', name:'治疗祭司', kind:'normal', behavior:'healer', width:78, height:124, bodyWidth:68, bodyHeight:112, hp:58, damage:5, healAmount:22, attackIntervalMs:2100, attackRange:500, preferredRange:460, xp:44, speed:34, color:0x22c55e, stroke:0x14532d },
+  mid_boss: { id:'mid_boss', name:'铁甲暴君', kind:'boss', bossType:'mid', behavior:'midBoss', width:128, height:178, bodyWidth:114, bodyHeight:166, hp:520, damage:16, slamDamage:18, chargeDamage:24, attackIntervalMs:1200, enragedAttackIntervalMs:760, attackRange:118, xp:180, speed:34, color:0x475569, stroke:0x020617 },
+  boss: { id:'boss', name:'训练场守卫', kind:'boss', bossType:'final', width:134, height:190, bodyWidth:122, bodyHeight:178, hp:360, damage:18, attackIntervalMs:980, enragedAttackIntervalMs:560, attackRange:118, xp:120, speed:36, color:0x7b2cff, stroke:0x24005b },
 };
