@@ -1,3 +1,4 @@
+export const RARITY_IDS = Object.freeze({ COMMON:'COMMON', FINE:'FINE', RARE:'RARE', EPIC:'EPIC', LEGENDARY:'LEGENDARY', MYTHIC:'MYTHIC' });
 export const RARITIES = {
   COMMON:{id:'COMMON',name:'普通',color:0xffffff,uiColor:'#ffffff',weight:60},
   FINE:{id:'FINE',name:'精良',color:0x48d46a,uiColor:'#48d46a',weight:28},
