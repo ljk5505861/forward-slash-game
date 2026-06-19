@@ -1,8 +1,9 @@
 import { ARTIFACTS } from '../config/artifacts.js';
 import { CombatEvents } from '../core/CombatEvents.js';
 import { StatusEffects } from './StatusEffectSystem.js';
-export default class ArtifactSystem { constructor(scene){ this.scene=scene; this.unsubs=[]; this.cooldowns=new Map(); this.windHits=0; } load(){ this.cleanup(); this.scene.playerData.artifacts.forEach(id=>this.register(id)); } add(id){ if(!this.scene.playerData.artifacts.includes(id)) this.scene.playerData.artifacts.push(id); this.register(id); this.scene.hud?.update(); }
-  register(id){ const cfg=ARTIFACTS[id]; if(!cfg) return; const off=this.scene.eventBus.on(cfg.listenEvent,(p)=>this.tryTrigger(cfg,p)); this.unsubs.push(off); }
+export default class ArtifactSystem { constructor(scene){ this.scene=scene; this.unsubs=[]; this.cooldowns=new Map(); this.windHits=0; this.appliedBonuses=new Set(); } load(){ this.cleanup(); this.scene.playerData.artifacts.forEach(id=>this.register(id)); } add(id){ if(!this.scene.playerData.artifacts.includes(id)) this.scene.playerData.artifacts.push(id); this.applyStatBonus(id); this.register(id); this.scene.hud?.update(); }
+  register(id){ const cfg=ARTIFACTS[id]; if(!cfg) return; this.applyStatBonus(id); const off=this.scene.eventBus.on(cfg.listenEvent,(p)=>this.tryTrigger(cfg,p)); this.unsubs.push(off); }
+  applyStatBonus(id){ const cfg=ARTIFACTS[id]; if(!cfg?.statBonus||this.appliedBonuses.has(id)) return; const p=this.scene.playerData; Object.entries(cfg.statBonus).forEach(([key,value])=>{ p[key]=(p[key]||0)+value; }); this.appliedBonuses.add(id); }
   shiftTimers(pausedDuration, pausedAt){ this.cooldowns.forEach((readyAt,id)=>{ if(readyAt>pausedAt) this.cooldowns.set(id, readyAt+pausedDuration); }); }
   tryTrigger(cfg,payload){ const now=this.scene.getGameplayTime(); if(now<(this.cooldowns.get(cfg.id)||0)) return; if(cfg.id==='flame_heart' && (!payload.tags?.includes('fire')||payload.source==='burn')) return; if(cfg.id==='venom_sac' && !payload.tags?.includes('poison')) return; if(cfg.id==='wind_wheel' && payload.skill?.id!=='spinning_blade') return; this.cooldowns.set(cfg.id, now+(cfg.internalCooldownMs||0)); this.scene.eventBus.emit(CombatEvents.ARTIFACT_TRIGGERED,{ artifact:cfg, payload });
     if(cfg.id==='thunder_orb') this.thunder(payload); if(cfg.id==='blood_jade') this.blood(payload); if(cfg.id==='flame_heart'&&payload.enemy) this.burn(payload.enemy); if(cfg.id==='wind_wheel') this.wind(); if(cfg.id==='battle_mark') this.battle(); }
@@ -12,5 +13,5 @@ export default class ArtifactSystem { constructor(scene){ this.scene=scene; this
   wind(){ if(this.windHits>=4) return; this.windHits+=1; const cd=this.scene.skillSystem.cooldowns.get('spinning_blade'); if(cd) this.scene.skillSystem.cooldowns.set('spinning_blade',Math.max(this.scene.getGameplayTime()+250,cd-180)); }
   battle(){ const p=this.scene.playerData; p.battleMarkStacks=Math.min(5,(p.battleMarkStacks||0)+1); this.scene.hud?.update(); }
   update(){ if(this.scene.isGameplayPaused?.()) return; }
-  cleanup(){ this.unsubs.forEach(off=>off()); this.unsubs=[]; this.cooldowns.clear(); this.windHits=0; }
+  cleanup(){ this.unsubs.forEach(off=>off()); this.unsubs=[]; this.cooldowns.clear(); this.windHits=0; this.appliedBonuses.clear(); }
 }

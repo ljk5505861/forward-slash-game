@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from '../config/gameConfig.js';
 import { BALANCE, createPlayerRuntime } from '../config/balance.js';
-import { ARTIFACTS } from '../config/artifacts.js';
+import { ARTIFACTS, ARTIFACT_CATEGORIES } from '../config/artifacts.js';
 import EventBus from '../core/EventBus.js';
 import { CombatEvents, RunStates, ACTIVE_STATES } from '../core/CombatEvents.js';
 import createPlayer from '../entities/createPlayer.js';
@@ -44,7 +44,7 @@ export default class GameScene extends Phaser.Scene {
   showStartingSkillChoice(){ this.beginGameplayPause(); const options=this.upgradeSystem.rollStartingOptions(); this.upgradePanel.show('开局技能三选一', options, (o)=>this.claimStartingSkill(o)); }
   claimStartingSkill(option){ this.skillSystem.addOrLevel(option.skillId,{starting:true}); this.upgradePanel.hide(); this.hud?.setStatus('自动战斗开始'); this.runState=RunStates.RUNNING; this.endGameplayPause(); }
   queueArtifactReward(enemy){ if(this.pendingArtifactReward||[RunStates.VICTORY,RunStates.DEFEAT].includes(this.runState)) return; this.pendingArtifactReward={ enemyId:enemy.id, enemyName:enemy.name }; }
-  showArtifactReward(){ if(!this.pendingArtifactReward||[RunStates.VICTORY,RunStates.DEFEAT].includes(this.runState)||this.rewardPanel.isOpen) return; this.beginGameplayPause(); this.runState=RunStates.REWARD; const options=Object.values(ARTIFACTS).sort(()=>Math.random()-0.5).map(a=>({ id:a.id, title:`${a.name}\n${a.description}`, artifactId:a.id })).slice(0,3); this.rewardPanel.show('法宝奖励三选一', options, (o)=>this.claimArtifactReward(o)); }
+  showArtifactReward(){ if(!this.pendingArtifactReward||[RunStates.VICTORY,RunStates.DEFEAT].includes(this.runState)||this.rewardPanel.isOpen) return; this.beginGameplayPause(); this.runState=RunStates.REWARD; const ownedSkills=new Set(this.playerData.skills.map(skill=>skill.id)); const ownedArtifacts=new Set(this.playerData.artifacts); const options=Object.values(ARTIFACTS).filter(a=>!ownedArtifacts.has(a.id)&&(!a.requiredSkillId||ownedSkills.has(a.requiredSkillId))).sort(()=>Math.random()-0.5).map(a=>({ id:a.id, title:`${a.name}｜${ARTIFACT_CATEGORIES[a.category]?.name||a.category}\n${a.description}`, artifactId:a.id })).slice(0,3); this.rewardPanel.show('法宝奖励三选一', options, (o)=>this.claimArtifactReward(o)); }
   claimArtifactReward(option){ if(!this.pendingArtifactReward) return; this.artifactSystem.add(option.artifactId); this.eventBus.emit(CombatEvents.ARTIFACT_CHOSEN,{ artifactId:option.artifactId, option }); this.pendingArtifactReward=null; this.rewardPanel.hide(); this.resumeModalFlow(); }
   resumeModalFlow(){ if([RunStates.VICTORY,RunStates.DEFEAT].includes(this.runState)) return; if(this.resultPanel?.isOpen||this.rewardPanel?.isOpen||this.upgradePanel?.isOpen||this.playtestPanel?.isOpen||this.restPanel?.isOpen) return; if(this.pendingArtifactReward){ this.showArtifactReward(); return; } const activeState=this.enemies?.some(e=>e.isFinalBoss&&!e.isDefeated)?RunStates.BOSS:RunStates.RUNNING; if(this.upgradeSystem?.pending>0){ this.runState=activeState; this.upgradeSystem.panelOpen=false; this.upgradeSystem.maybeShow(); return; } this.runState=activeState; this.endGameplayPause(); }
 
