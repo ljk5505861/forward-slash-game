@@ -3,7 +3,7 @@ import { SKILLS } from '../config/skills.js';
 import { UPGRADE_RARITY_WEIGHTS, STARTING_RARITIES } from '../config/rarities.js';
 import { RunStates, CombatEvents } from '../core/CombatEvents.js';
 export const ATTRIBUTE_UPGRADES = [
-  { id:'attack_15', title:'攻击强化\n攻击力 +15%', apply:p=>{p.attack=Math.round(p.attack*1.15);} }, { id:'hp_20', title:'生命强化\n最大生命 +20', apply:p=>{p.maxHp+=20;p.hp=Math.min(p.maxHp,p.hp+20);} }, { id:'as_10', title:'攻速强化\n攻击速度 +10%', apply:p=>{p.attackSpeedMultiplier+=0.1;} }, { id:'skill_15', title:'技能强化\n技能伤害 +15%', apply:p=>{p.skillDamageMultiplier+=0.15;} }, { id:'cdr_8', title:'冷却强化\n冷却缩减 +8%', apply:p=>{p.cooldownReduction=Math.min(0.5,p.cooldownReduction+0.08);} }, { id:'crit_5', title:'暴击强化\n暴击率 +5%', apply:p=>{p.critChance=Math.min(0.8,p.critChance+0.05);} },
+  { id:'attack_15', title:'攻击力 +15%', apply:p=>{p.attack=Math.round(p.attack*1.15);} }, { id:'hp_20', title:'最大生命 +20', apply:p=>{p.maxHp+=20;p.hp=Math.min(p.maxHp,p.hp+20);} }, { id:'as_10', title:'攻击速度 +10%', apply:p=>{p.attackSpeedMultiplier+=0.1;} }, { id:'skill_15', title:'技能伤害 +15%', apply:p=>{p.skillDamageMultiplier+=0.15;} }, { id:'cdr_8', title:'冷却缩减 +8%', apply:p=>{p.cooldownReduction=Math.min(0.5,p.cooldownReduction+0.08);} }, { id:'crit_5', title:'暴击率 +5%', apply:p=>{p.critChance=Math.min(0.8,p.critChance+0.05);} },
 ];
 export default class UpgradeSystem {
   constructor(scene){ this.scene=scene; this.pending=0; this.panelOpen=false; this.attrOnlyStreak=0; }
