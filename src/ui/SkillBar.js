@@ -74,7 +74,7 @@ export default class SkillBar {
       }
       const cfg = SKILLS[skillData.id];
       const readyAt = this.scene.skillSystem?.cooldowns.get(skillData.id) || 0;
-      const remaining = Math.max(0, Math.ceil((readyAt - this.scene.time.now) / 1000));
+      const remaining = Math.max(0, Math.ceil((readyAt - this.scene.getGameplayTime()) / 1000));
       text.setText(`${cfg?.name || skillData.id}\nLv.${skillData.level}\n${remaining > 0 ? `冷却 ${remaining}s` : '就绪'}`);
     });
   }
