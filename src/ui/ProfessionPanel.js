@@ -2,8 +2,8 @@ import { DESIGN_WIDTH, DESIGN_HEIGHT } from '../config/gameConfig.js';
 import { getProfessionChoices } from '../config/professions.js';
 
 const bonusLines = (id) => ({
-  warrior: ['攻击力 +15%', '最大生命 +20'],
-  mage: ['技能伤害 +20%', '冷却缩减 +10%'],
+  warrior: ['基础伤害 +12%', '最大生命 +24'],
+  mage: ['技能伤害 +16%', '冷却缩减 +10%'],
   ranger: ['攻击速度 +15%', '暴击率 +8%'],
 }[id] || []);
 
