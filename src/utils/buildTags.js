@@ -10,8 +10,10 @@ const addCounts = (counts, tags, weight = 1) => {
 
 export const collectBuildTagStats = ({ skills = [], artifacts = [], professionId = null, dominantLimit = 3 } = {}) => {
   const counts = {};
-  skills.forEach(skillEntry => addCounts(counts, SKILLS[entryId(skillEntry)]?.tags));
-  artifacts.forEach(artifactEntry => {
+  const safeSkills = Array.isArray(skills) ? skills : [];
+  const safeArtifacts = Array.isArray(artifacts) ? artifacts : [];
+  safeSkills.forEach(skillEntry => addCounts(counts, SKILLS[entryId(skillEntry)]?.tags));
+  safeArtifacts.forEach(artifactEntry => {
     const artifact = ARTIFACTS[entryId(artifactEntry)];
     if (!artifact) return;
     addCounts(counts, mergeTags(artifact.tags, artifact.supportedTags, artifact.affectedTags, artifact.synergyTags));
