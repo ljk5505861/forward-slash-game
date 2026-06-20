@@ -2,6 +2,7 @@ import { ARTIFACTS, getArtifactLevelText } from '../config/artifacts.js';
 import { SKILLS } from '../config/skills.js';
 import { CombatEvents } from '../core/CombatEvents.js';
 import { StatusEffects } from './StatusEffectSystem.js';
+import { TAGS } from '../config/tags.js';
 
 const FALLBACK_OPTIONS = [
   { id:'fallback_attack', title:'临时磨炼｜通用成长型\n攻击力 +10%', statBonus:{ attackMultiplier:1.1 } },
@@ -37,7 +38,7 @@ export default class ArtifactSystem {
   highHpDamageMultiplier(){ if(!this.has('army_breaker_token')) return 1; return this.scene.playerData.hp/this.scene.playerData.maxHp>0.8 ? (this.level('army_breaker_token')>=2?1.25:1.18) : 1; }
   tryTrigger(cfg,payload){ const now=this.scene.getGameplayTime(); if(now<(this.cooldowns.get(cfg.id)||0)) return; if(cfg.id==='flame_heart' && (!payload.tags?.includes('fire')||payload.source==='burn')) return; if(cfg.id==='venom_sac' && !payload.tags?.includes('poison')) return; if(cfg.id==='wind_wheel' && payload.skill?.id!=='spinning_blade') return; this.cooldowns.set(cfg.id, now+(cfg.internalCooldownMs||0)); this.scene.eventBus.emit(CombatEvents.ARTIFACT_TRIGGERED,{ artifact:cfg, payload });
     if(cfg.id==='thunder_orb') this.thunder(payload); if(cfg.id==='blood_jade') this.blood(payload); if(cfg.id==='flame_heart'&&payload.enemy) this.burn(payload.enemy); if(cfg.id==='wind_wheel') this.wind(); if(cfg.id==='battle_mark') this.battle(); if(cfg.id==='rejuvenation_jade') this.rejuvenation(payload); if(cfg.id==='heart_guard_mirror') this.heartMirror(payload); }
-  thunder(payload){ if(payload.source==='artifact') return; const s=this.scene; const lv=s.skillSystem.getLevel('lightning'); const hits=lv>=3?2:1; for(let i=0;i<hits;i++){ const e=s.targeting.random(); if(e) s.combatSystem.damageEnemy(e, lv?28:18, { source:'artifact', artifactId:'thunder_orb', tags:['lightning'] }); } }
+  thunder(payload){ if(payload.source==='artifact') return; const s=this.scene; const lv=s.skillSystem.getLevel('lightning'); const hits=lv>=3?2:1; for(let i=0;i<hits;i++){ const e=s.targeting.random(); if(e) s.combatSystem.damageEnemy(e, lv?28:18, { source:'artifact', artifactId:'thunder_orb', tags:[TAGS.LIGHTNING] }); } }
   blood(payload){ const s=this.scene; const mult=this.level('blood_jade')>=2?{b:24,e:16,n:8}:{b:18,e:12,n:6}; const bonus=payload.enemy?.isBoss?mult.b:payload.enemy?.isElite?mult.e:mult.n; this.healOrShield(bonus,'blood_jade'); }
   healOrShield(amount,id){ const s=this.scene; const missing=s.playerData.maxHp-s.playerData.hp; const heal=Math.min(missing,amount); s.playerData.hp+=heal; if(heal>0) s.eventBus.emit(CombatEvents.PLAYER_HEALED,{ amount:heal, source:'artifact', artifactId:id }); const overflow=amount-heal; if(overflow>0) s.statusEffects?.addPermanentShield(Math.min(8, overflow)); s.floatText(s.player.x,s.player.y-96,heal?`+${heal}`:`盾+${Math.min(8, overflow)}`,'#ff6f9f'); s.hud?.update(); }
   rejuvenation(payload){ this.rejuvenationKills += payload.enemy?.isBoss ? 2 : 1; if(this.rejuvenationKills>=5){ this.rejuvenationKills-=5; this.healOrShield(this.level('rejuvenation_jade')>=2?12:8,'rejuvenation_jade'); } }
