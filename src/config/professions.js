@@ -15,7 +15,6 @@ export const PROFESSION_STATE_DEFAULTS = Object.freeze({
   mageCastCount: 0,
   mageEmpoweredNext: false,
   rangerHitCount: 0,
-  rangerMarks: null,
   rangerLastTargetId: null,
   rangerLastTargetMarks: 0,
 });
