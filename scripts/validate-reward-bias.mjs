@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import { SKILLS } from '../src/config/skills.js';
+import { ARTIFACTS } from '../src/config/artifacts.js';
+import { REWARD_BIAS } from '../src/config/rewardBias.js';
+import { calculateBuildBiasWeight, createWeightedCandidates, getBuildBiasContext } from '../src/utils/rewardWeighting.js';
+import { mergeTags } from '../src/utils/tagUtils.js';
+
+const ctx = (skills=[], artifacts=[], professionId=null) => getBuildBiasContext({ skills, artifacts, professionId, config:REWARD_BIAS });
+const weight = (tags, context, baseWeight=1) => calculateBuildBiasWeight({ tags, context, baseWeight }).weight;
+const artifactTags = (id) => mergeTags(ARTIFACTS[id].tags, ARTIFACTS[id].supportedTags, ARTIFACTS[id].affectedTags, ARTIFACTS[id].synergyTags);
+
+assert.equal(weight(SKILLS.fireball.tags, ctx([])), 1, 'empty build keeps base weight');
+assert.ok(weight(SKILLS.fireball.tags, ctx([{ id:'fireball' }])) > weight(SKILLS.lightning.tags, ctx([{ id:'fireball' }])), 'fire build raises fire skill');
+assert.ok(weight(artifactTags('flame_heart'), ctx([{ id:'fireball' }])) > weight(artifactTags('thunder_orb'), ctx([{ id:'fireball' }])), 'fire build raises fire artifact');
+const poisonCtx = ctx([{ id:'poison_cloud' }, { id:'parasite_lantern' }]);
+assert.ok(weight(SKILLS.poison_cloud.tags, poisonCtx) > weight(SKILLS.sword_wave.tags, poisonCtx), 'poison/dot build raises poison skill');
+assert.ok(weight(artifactTags('venom_sac'), poisonCtx) > weight(artifactTags('blood_jade'), poisonCtx), 'poison/dot build raises poison artifact');
+const attackCtx = ctx([{ id:'shadow_fist' }, { id:'mirror_march' }], [{ id:'battle_mark' }]);
+assert.ok(weight(SKILLS.shadow_fist.tags, attackCtx) > weight(SKILLS.fireball.tags, attackCtx), 'normal attack build raises normalAttack rewards');
+assert.ok(weight(artifactTags('thunder_orb'), ctx([{ id:'shadow_fist' }], [{ id:'battle_mark' }], 'ranger')) > 1, 'critical reference can add small reward weight');
+const duplicate = calculateBuildBiasWeight({ tags:['poison','poison','dot'], context:poisonCtx, baseWeight:1 }).weight;
+const deduped = calculateBuildBiasWeight({ tags:['poison','dot'], context:poisonCtx, baseWeight:1 }).weight;
+assert.equal(duplicate, deduped, 'duplicate related tags are deduped');
+const skillCandidates = Object.values(SKILLS).filter(skill => ![{ id:'fireball', level:skill.maxLevel }].some(own => own.id === skill.id && own.level >= skill.maxLevel));
+assert.ok(!skillCandidates.some(s=>s.id==='fireball'), 'max level skill excluded by legality filter');
+const artifactCandidates = Object.values(ARTIFACTS).filter(a => ![{ id:'blood_jade', level:2 }].some(own => own.id === a.id && own.level >= 2));
+assert.ok(!artifactCandidates.some(a=>a.id==='blood_jade'), 'capped artifact excluded by legality filter');
+const picked = createWeightedCandidates([{id:'a',weight:1},{id:'a2',weight:1, skillId:'a'},{id:'b',weight:1},{id:'c',weight:1}], { count:3, random:()=>0, uniqueKey:o=>o.skillId||o.id });
+assert.equal(new Set(picked.map(o=>o.skillId||o.id)).size, picked.length, 'three-choice picks are unique');
+assert.equal(createWeightedCandidates([{id:'a',weight:1}], { count:3 }).length, 1, 'short candidates do not throw');
+assert.equal(createWeightedCandidates([{id:'a',weight:NaN},{id:'b',weight:Infinity}], { count:1, random:()=>0.7 })[0].id, 'b', 'invalid weights fall back to random');
+assert.doesNotThrow(()=>ctx([], [], null), 'missing profession is safe');
+assert.doesNotThrow(()=>ctx(null, null, null), 'empty skills/artifacts are safe');
+console.log('reward bias validation passed');

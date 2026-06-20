@@ -3,6 +3,9 @@ import { SKILLS } from '../config/skills.js';
 import { CombatEvents } from '../core/CombatEvents.js';
 import { StatusEffects } from './StatusEffectSystem.js';
 import { TAGS } from '../config/tags.js';
+import { REWARD_BIAS } from '../config/rewardBias.js';
+import { getBuildBiasContext, calculateBuildBiasWeight, createWeightedCandidates } from '../utils/rewardWeighting.js';
+import { mergeTags } from '../utils/tagUtils.js';
 
 const FALLBACK_OPTIONS = [
   { id:'fallback_attack', title:'临时磨炼｜通用成长型\n攻击力 +10%', statBonus:{ attackMultiplier:1.1 } },
@@ -10,7 +13,6 @@ const FALLBACK_OPTIONS = [
   { id:'fallback_crit', title:'鹰眼符｜通用成长型\n暴击率 +4%', statBonus:{ critChance:0.04 } },
 ];
 
-const shuffle = (items) => items.map(v=>({ v, r:Math.random() })).sort((a,b)=>a.r-b.r).map(x=>x.v);
 
 export const artifactIdOf = (entry) => typeof entry === 'string' ? entry : entry?.id;
 export const artifactLevelOf = (entry) => typeof entry === 'string' ? 1 : (entry?.level || 1);
@@ -22,8 +24,8 @@ export default class ArtifactSystem {
   has(id){ return this.scene.playerData.artifacts.some(a=>artifactIdOf(a)===id); }
   level(id){ const entry=this.scene.playerData.artifacts.find(a=>artifactIdOf(a)===id); return entry ? artifactLevelOf(entry) : 0; }
   isValid(cfg){ if(!cfg) return false; if(!cfg.requiredSkillId) return true; return this.scene.playerData.skills.some(s=>s.id===cfg.requiredSkillId); }
-  rollRewardOptions(count=3){ const ownedIds=new Set(this.scene.playerData.artifacts.map(artifactIdOf)); const fresh=shuffle(Object.values(ARTIFACTS).filter(a=>!ownedIds.has(a.id)&&this.isValid(a))).map(a=>this.optionFor(a.id,'new')); const upgrades=shuffle(this.scene.playerData.artifacts.map(artifactIdOf).filter(id=>this.level(id)<2&&this.isValid(ARTIFACTS[id])).map(id=>this.optionFor(id,'upgrade'))); const picked=[]; const add=(o)=>{ if(o && !picked.some(x=>x.id===o.id)) picked.push(o); };
-    fresh.forEach(add); if(picked.length<count) upgrades.forEach(add); if(picked.length<count) shuffle(FALLBACK_OPTIONS).forEach(f=>add({ ...f, type:'fallback' })); return picked.slice(0,count); }
+  rollRewardOptions(count=3){ const p=this.scene.playerData; const context=getBuildBiasContext({ skills:p.skills, artifacts:p.artifacts, professionId:p.professionId, config:REWARD_BIAS }); const ownedIds=new Set(p.artifacts.map(artifactIdOf)); const candidates=[]; const addCandidate=(artifact,type,baseWeight)=>{ const option=this.optionFor(artifact.id,type); const tags=mergeTags(artifact.tags, artifact.supportedTags, artifact.affectedTags, artifact.synergyTags); const bias=calculateBuildBiasWeight({ baseWeight, tags, context }); candidates.push({ ...option, tags, baseWeight, ...bias }); };
+    Object.values(ARTIFACTS).filter(a=>!ownedIds.has(a.id)&&this.isValid(a)).forEach(a=>addCandidate(a,'new',1)); p.artifacts.map(artifactIdOf).filter(id=>this.level(id)<2&&this.isValid(ARTIFACTS[id])).forEach(id=>addCandidate(ARTIFACTS[id],'upgrade',0.85)); const picked=createWeightedCandidates(candidates,{count,uniqueKey:o=>o.artifactId||o.id}); if(picked.length<count) createWeightedCandidates(FALLBACK_OPTIONS.map(f=>({ ...f, type:'fallback', baseWeight:1, weight:1, tags:[] })),{count:count-picked.length,uniqueKey:o=>o.id}).forEach(o=>{ if(!picked.some(x=>x.id===o.id)) picked.push(o); }); if(this.scene.debugMode) this.scene.lastRewardBiasDebug={ kind:'artifact', enabled:context.enabled, dominantTags:context.dominantTags, candidates:candidates.map(c=>({ id:c.id, title:c.title, tags:c.tags, weight:Number(c.weight.toFixed(3)), baseWeight:c.baseWeight, matchedBuildTags:c.matchedBuildTags, matchedProfessionTags:c.matchedProfessionTags })), picked:picked.map(o=>o.id) }; return picked.slice(0,count); }
   optionFor(id,type){ const cfg=ARTIFACTS[id]; const lv=this.level(id)||0; const next=type==='upgrade'?lv+1:1; const skill=cfg.requiredSkillId ? SKILLS[cfg.requiredSkillId]?.name || cfg.requiredSkillId : ''; return { id:`${type}_${id}_${next}`, type, artifactId:id, level:lv, nextLevel:next, title:`${cfg.name}\n${getArtifactLevelText(id,next)}`, category:cfg.category, requiredSkillName:skill }; }
   add(id){ if(this.has(id)) return this.upgrade(id); this.normalizeArtifacts(); const p=this.scene.playerData; p.artifacts.push({ id, level:1 }); p.artifactLevels[id]=1; this.applyLevelEffects(id,1,0); this.register(id); this.scene.hud?.update(); }
   upgrade(id){ const entry=this.scene.playerData.artifacts.find(a=>artifactIdOf(a)===id); if(!entry || artifactLevelOf(entry)>=2) return; const old=artifactLevelOf(entry); entry.level=old+1; this.scene.playerData.artifactLevels[id]=entry.level; this.applyLevelEffects(id,entry.level,old); this.scene.hud?.update(); }
