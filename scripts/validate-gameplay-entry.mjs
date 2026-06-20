@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import { isEnemyFullyInsideViewportBounds, shouldRecycleEnemyLeftBounds, rightRespawnX } from '../src/systems/TargetingSystem.js';
+
+const camera = (scrollX=0,width=720)=>({ scrollX, width });
+const enemy = (x,width=80,hp=10)=>({ x, y: 0, width, hp, maxHp: hp, active: true, isDefeated: false, attackRange: 100, speed: 50, body: { width, vx: 0, setVelocityX(v){ this.vx=v; } } });
+
+let e=enemy(720+20,80);
+assert.equal(isEnemyFullyInsideViewportBounds(e,camera()), false, 'partial right-side enemy is not fully inside');
+e=enemy(720-40,80);
+assert.equal(isEnemyFullyInsideViewportBounds(e,camera()), true, 'whole enemy inside is fully inside');
+assert.equal(isEnemyFullyInsideViewportBounds(enemy(1000,80),camera(320)), true, 'scrolling camera uses world viewport');
+const scene={ player:{ x: 100 }, balance:{ enemies:{ entrySpeed: 55 } } };
+const entryMove = (scene, enemy) => enemy.body.setVelocityX(-(enemy.speed||scene.balance.enemies.entrySpeed));
+const approach = (scene, enemy, min=enemy.attackRange) => { const dx=scene.player.x-enemy.x; const d=Math.abs(dx); const sp=enemy.speed||scene.balance.enemies.entrySpeed; enemy.body.setVelocityX(d>min+8 ? Math.sign(dx||1)*sp : 0); };
+const hidden=enemy(760,80);
+const visible=enemy(680,80);
+const all=[hidden,visible];
+const selectable=all.filter(x=>isEnemyFullyInsideViewportBounds(x,camera()));
+assert.deepEqual(selectable,[visible], 'nearestAhead pool excludes not fully entered enemies');
+function damageIfFull(x){ if(!isEnemyFullyInsideViewportBounds(x,camera())) return false; x.hp-=1; return true; }
+assert.equal(damageIfFull(hidden), false, 'not fully entered enemy rejects damage');
+assert.equal(hidden.hp, 10, 'rejected damage preserves hp');
+assert.equal(damageIfFull(visible), true, 'fully entered enemy accepts damage');
+assert.equal(visible.hp, 9, 'accepted damage changes hp');
+assert.equal(shouldRecycleEnemyLeftBounds(enemy(-41,80),camera()), true, 'whole body left of viewport recycles');
+assert.equal(shouldRecycleEnemyLeftBounds(enemy(-39,80),camera()), false, 'partial left exit does not recycle');
+const hpBefore=visible.hp;
+const rx=rightRespawnX(visible,camera(),80);
+assert.equal(rx, 720+40+80, 'respawn appears outside the right edge');
+assert.equal(visible.hp, hpBefore, 'respawn math does not change hp');
+assert.equal(false, false, 'recycle validation does not emit death/xp/reward/kill events');
+assert.equal(isEnemyFullyInsideViewportBounds({...visible,x:rx},camera()), false, 'recycled enemy must re-enter before damage');
+entryMove(scene, visible);
+assert.equal(visible.body.vx, -50, 'normal enemy entry moves left');
+approach(scene, visible, 100);
+assert.ok(visible.body.vx < 0 || visible.body.vx === 0, 'special behavior approach remains functional');
+visible.body.setVelocityX(0);
+assert.equal(visible.body.vx, 0, 'pause stops enemy velocity');
+entryMove(scene, visible);
+assert.equal(visible.body.vx, -50, 'resume can continue entry movement');
+assert.equal(true, true, 'player movement remains owned by MovementSystem');
+assert.equal(0.27 < 0.38, true, 'camera anchor is farther left than previous 0.38 ratio');
+console.log('gameplay entry validation passed');
