@@ -5,11 +5,12 @@
     "preview": "vite preview --host 0.0.0.0",
     "validate:tags": "node scripts/validate-tags.mjs",
     "validate:reward-bias": "node scripts/validate-reward-bias.mjs",
-    "validate:gameplay-entry": "node scripts/validate-gameplay-entry.mjs"
+    "validate:gameplay-entry": "node scripts/validate-gameplay-entry.mjs",
+    "validate:selection-ui": "node scripts/validate-selection-ui.mjs"
   },
   "dependencies": {
-    "vite": "latest",
-    "phaser": "latest"
+    "phaser": "latest",
+    "vite": "latest"
   },
   "devDependencies": {}
 }
