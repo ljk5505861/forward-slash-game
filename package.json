@@ -4,7 +4,8 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "validate:tags": "node scripts/validate-tags.mjs",
-    "validate:reward-bias": "node scripts/validate-reward-bias.mjs"
+    "validate:reward-bias": "node scripts/validate-reward-bias.mjs",
+    "validate:gameplay-entry": "node scripts/validate-gameplay-entry.mjs"
   },
   "dependencies": {
     "vite": "latest",
