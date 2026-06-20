@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import { SKILLS } from '../src/config/skills.js';
 import { ARTIFACTS } from '../src/config/artifacts.js';
 import { REWARD_BIAS } from '../src/config/rewardBias.js';
+import ArtifactSystem from '../src/systems/ArtifactSystem.js';
 import { calculateBuildBiasWeight, createWeightedCandidates, getBuildBiasContext } from '../src/utils/rewardWeighting.js';
 import { mergeTags } from '../src/utils/tagUtils.js';
 
 const ctx = (skills=[], artifacts=[], professionId=null) => getBuildBiasContext({ skills, artifacts, professionId, config:REWARD_BIAS });
 const weight = (tags, context, baseWeight=1) => calculateBuildBiasWeight({ tags, context, baseWeight }).weight;
 const artifactTags = (id) => mergeTags(ARTIFACTS[id].tags, ARTIFACTS[id].supportedTags, ARTIFACTS[id].affectedTags, ARTIFACTS[id].synergyTags);
+const artifactSystemFor = ({ skills = [], artifacts = [], debugMode = false } = {}) => new ArtifactSystem({ playerData:{ skills, artifacts }, debugMode });
 
 assert.equal(weight(SKILLS.fireball.tags, ctx([])), 1, 'empty build keeps base weight');
 assert.ok(weight(SKILLS.fireball.tags, ctx([{ id:'fireball' }])) > weight(SKILLS.lightning.tags, ctx([{ id:'fireball' }])), 'fire build raises fire skill');
@@ -31,4 +33,25 @@ assert.equal(createWeightedCandidates([{id:'a',weight:1}], { count:3 }).length, 
 assert.equal(createWeightedCandidates([{id:'a',weight:NaN},{id:'b',weight:Infinity}], { count:1, random:()=>0.7 })[0].id, 'b', 'invalid weights fall back to random');
 assert.doesNotThrow(()=>ctx([], [], null), 'missing profession is safe');
 assert.doesNotThrow(()=>ctx(null, null, null), 'empty skills/artifacts are safe');
+
+const freshFirst = artifactSystemFor({ artifacts:[{ id:'blood_jade', level:1 }] }).rollRewardOptions(3);
+assert.equal(freshFirst.length, 3, 'artifact rewards fill to three when enough fresh artifacts exist');
+assert.ok(freshFirst.every(option => option.type === 'new'), 'fresh artifacts are preferred over upgrades when fresh count is enough');
+const ownedExceptTwo = Object.keys(ARTIFACTS).filter(id => !['thunder_orb','gale_feather'].includes(id)).map(id => ({ id, level:id === 'blood_jade' ? 1 : 2 }));
+const upgradeOnlyAfterFreshShortage = artifactSystemFor({ skills:[{ id:'fireball' }, { id:'poison_cloud' }, { id:'spinning_blade' }], artifacts:ownedExceptTwo }).rollRewardOptions(3);
+assert.equal(upgradeOnlyAfterFreshShortage.filter(option => option.type === 'new').length, 2, 'all available fresh artifacts are picked first when fewer than three exist');
+assert.ok(upgradeOnlyAfterFreshShortage.some(option => option.type === 'upgrade'), 'upgrades appear only after fresh artifacts are short');
+const allArtifactsCapped = Object.keys(ARTIFACTS).map(id => ({ id, level:2 }));
+const fallbackAfterPoolsEmpty = artifactSystemFor({ skills:[{ id:'fireball' }, { id:'poison_cloud' }, { id:'spinning_blade' }], artifacts:allArtifactsCapped }).rollRewardOptions(3);
+assert.equal(fallbackAfterPoolsEmpty.length, 3, 'fallback fills when fresh and upgrade pools are empty');
+assert.ok(fallbackAfterPoolsEmpty.every(option => option.type === 'fallback'), 'fallback appears only after artifact pools are exhausted');
+assert.ok(weight(artifactTags('flame_heart'), ctx([{ id:'fireball' }])) > weight(artifactTags('blood_jade'), ctx([{ id:'fireball' }])), 'fresh pool members still receive build bias internally');
+assert.ok(weight(artifactTags('blood_jade'), ctx([], [{ id:'blood_jade' }]), 0.85) > 0.85, 'upgrade pool members still receive build bias internally');
+const attrPool = ['attack_15','hp_20','as_10'].map(id => ({ id, weight:1 }));
+const attrPicked = createWeightedCandidates(attrPool, { count:3, random:()=>0, uniqueKey:o=>o.id });
+assert.deepEqual(attrPicked.map(option => option.id), ['attack_15','hp_20','as_10'], 'repeated random index still fills unique attributes without early break');
+const regularModeled = createWeightedCandidates([{ id:'skill', skillId:'skill', weight:1 }, ...attrPool], { count:3, random:()=>0, uniqueKey:o=>o.skillId||o.id });
+const highQualityModeled = createWeightedCandidates([{ id:'rareSkill', skillId:'rareSkill', weight:1 }, ...attrPool], { count:3, random:()=>0, uniqueKey:o=>o.skillId||o.id });
+assert.equal(regularModeled.length, 3, 'regular upgrade modeled candidate filling reaches three');
+assert.equal(highQualityModeled.length, 3, 'high-quality reward modeled candidate filling reaches three');
 console.log('reward bias validation passed');
