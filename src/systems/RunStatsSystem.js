@@ -36,7 +36,7 @@ export default class RunStatsSystem {
   now(){ return this.scene.getGameplayTime?.() ?? this.scene.time.now; }
   addPausedDuration(ms){ this.pausedDurationMs+=Math.max(0,ms||0); }
   activeMs(){ return (this.locked?this.stats.activePlayTimeMs:Math.max(0,this.now()-this.stats.runStartedAt-this.pausedDurationMs)); }
-  recordDamage(p){ const d=p.damage||0; this.stats.professionBonusDamage+=p.professionBonusDamage||0; this.stats.damageDealt+=d; if(p.source==='attack') this.stats.attackDamage+=d; if(p.source==='skill'&&p.skillId) this.stats.skillDamage[p.skillId]=(this.stats.skillDamage[p.skillId]||0)+d; if(p.source==='burn'||p.source==='burn_burst') this.stats.statusDamage.burn+=d; if(p.source==='poison') this.stats.statusDamage.poison+=d; }
+  recordDamage(p){ const d=p.damage||0; this.stats.professionBonusDamage+=p.professionBonusDamage||0; if(p.source==='profession') this.stats.professionBonusDamage+=d; this.stats.damageDealt+=d; if(p.source==='attack') this.stats.attackDamage+=d; if(p.source==='skill'&&p.skillId) this.stats.skillDamage[p.skillId]=(this.stats.skillDamage[p.skillId]||0)+d; if(p.source==='burn'||p.source==='burn_burst') this.stats.statusDamage.burn+=d; if(p.source==='poison') this.stats.statusDamage.poison+=d; }
   setProfession(id){ this.stats.professionId=id; }
   recordProfessionTrigger(){ this.stats.professionMechanicTriggers+=1; }
   recordStartingSkill(p){ const t=this.activeMs(); if(!this.stats.firstSkillObtainedAt)this.stats.firstSkillObtainedAt=t; this.stats.upgradesChosen.push(`start_${p.skillId}`); }
