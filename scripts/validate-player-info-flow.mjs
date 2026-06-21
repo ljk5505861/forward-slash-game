@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const game = readFileSync(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
+const hud = readFileSync(new URL('../src/ui/Hud.js', import.meta.url), 'utf8');
+const panel = readFileSync(new URL('../src/ui/PlayerInfoPanel.js', import.meta.url), 'utf8');
+assert.match(game, /new PlayerInfoPanel\(this\)/);
+assert.match(game, /createPlayerInfoButton\(\).*'角色'/s);
+assert.match(panel, /beginGameplayPause/);
+assert.match(panel, /resumeModalFlow/);
+assert.match(panel, /pageText.*1\/2|\$\{this\.page\+1\}\/2/s);
+assert.match(panel, /攻击力/); assert.match(panel, /当前状态|runState/);
+assert.doesNotMatch(hud, /技能：|职业：|法宝：|破军/);
+console.log('player info modal validation passed');
