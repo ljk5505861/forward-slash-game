@@ -1,5 +1,5 @@
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from '../config/gameConfig.js';
-import { formatArtifactSelectionOption, formatSkillSelectionOption, SELECTION_ICON_STYLE, SelectionState } from './selectionFormatters.js';
+import { formatArtifactSelectionOption, formatSkillSelectionOption, resolveSelectionMode, SELECTION_ICON_STYLE, SelectionState } from './selectionFormatters.js';
 
 const WHITE='#f2f6ff', MUTED='#cbd6ee', GREEN='#62e883';
 const DEPTH=3000;
@@ -8,14 +8,13 @@ export default class UpgradePanel {
   constructor(scene){ this.scene=scene; this.nodes=[]; this.cards=[]; this.detailNodes=[]; this.state=new SelectionState(); this.isOpen=false; }
   show(titleOrConfig, optionsArg, onPickArg){
     const config=typeof titleOrConfig==='object'?titleOrConfig:{ title:titleOrConfig, options:optionsArg, onConfirm:onPickArg };
-    this.hide(); this.isOpen=true; this.state.open(); this.options=config.options||[]; this.mode=config.mode||this.detectMode(this.options); this.onConfirm=config.onConfirm; this.formatted=this.options.map(o=>this.mode==='icon'?formatArtifactSelectionOption(o):formatSkillSelectionOption(o,this.scene.playerData));
+    this.hide(); this.isOpen=true; this.state.open(); this.options=config.options||[]; this.mode=resolveSelectionMode(this.options, config.mode); this.onConfirm=config.onConfirm; this.formatted=this.options.map(o=>this.mode==='icon'?formatArtifactSelectionOption(o):formatSkillSelectionOption(o,this.scene.playerData));
     const bg=this.scene.add.rectangle(DESIGN_WIDTH/2,DESIGN_HEIGHT/2,682,1120,0x10172a,0.96).setScrollFactor(0).setDepth(DEPTH);
     const label=this.scene.add.text(DESIGN_WIDTH/2,118,config.title||'选择奖励',{fontFamily:'Arial',fontSize:'36px',color:'#fff',stroke:'#000',strokeThickness:4,wordWrap:{width:650}}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+1);
     this.nodes.push(bg,label);
     if(this.mode==='icon') this.createIconOptions(); else this.createCardOptions();
     this.createDetails(null); this.createConfirm(); this.createDebug();
   }
-  detectMode(options){ return options?.some(o=>o.artifactId||o.kind==='artifact')?'icon':'card'; }
   makeText(x,y,text,style={},origin=[0,0]){ const n=this.scene.add.text(x,y,text,{fontFamily:'Arial',fontSize:'22px',color:WHITE,wordWrap:{width:540,useAdvancedWrap:true},...style}).setOrigin(...origin).setScrollFactor(0).setDepth(DEPTH+2); this.nodes.push(n); return n; }
   createIcon(x,y,f,index,size=86){ const color=f.iconColor||SELECTION_ICON_STYLE.colors[index%SELECTION_ICON_STYLE.colors.length]; const g=this.scene.add.circle(x,y,size/2,color,0.86).setStrokeStyle(4,0xffffff,0.28).setScrollFactor(0).setDepth(DEPTH+2); const t=this.scene.add.text(x,y,f.iconText||'?',{fontFamily:'Arial',fontSize:'34px',color:'#10172a',fontStyle:'bold'}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+3); this.nodes.push(g,t); return [g,t]; }
   wire(nodes,index){ nodes.forEach(n=>n.setInteractive?.({useHandCursor:true}).on('pointerdown',()=>this.select(index))); }
