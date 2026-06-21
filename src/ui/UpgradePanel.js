@@ -1,106 +1,30 @@
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from '../config/gameConfig.js';
-import { SKILLS } from '../config/skills.js';
-import { getRarity } from '../config/rarities.js';
-import { ARTIFACTS, ARTIFACT_CATEGORIES, getArtifactLevelText } from '../config/artifacts.js';
+import { formatArtifactSelectionOption, formatSkillSelectionOption, resolveSelectionMode, SELECTION_ICON_STYLE, SelectionState } from './selectionFormatters.js';
 
-const GREEN = '#62e883';
-const WHITE = '#f2f6ff';
-const MUTED = '#cbd6ee';
-const ATTRIBUTE_CARD_LABELS = {
-  attack_15: ['攻击强化', '攻击力 +15%'],
-  hp_20: ['生命强化', '最大生命 +20'],
-  as_10: ['速度强化', '攻击速度 +10%'],
-  skill_15: ['技能强化', '技能伤害 +15%'],
-  cdr_8: ['冷却强化', '冷却缩减 +8%'],
-  crit_5: ['暴击强化', '暴击率 +5%'],
-};
+const WHITE='#f2f6ff', MUTED='#cbd6ee', GREEN='#62e883';
+const DEPTH=3000;
 
 export default class UpgradePanel {
-  constructor(scene){ this.scene=scene; this.nodes=[]; this.isOpen=false; }
-
-  show(title, options, onPick){
-    this.hide();
-    this.isOpen=true;
-    const bg=this.scene.add.rectangle(DESIGN_WIDTH/2,DESIGN_HEIGHT/2,670,880,0x10172a,0.94).setScrollFactor(0).setDepth(3000);
-    const label=this.scene.add.text(DESIGN_WIDTH/2,235,title,{fontFamily:'Arial',fontSize:'38px',color:'#fff'}).setOrigin(0.5).setScrollFactor(0).setDepth(3001);
+  constructor(scene){ this.scene=scene; this.nodes=[]; this.cards=[]; this.detailNodes=[]; this.state=new SelectionState(); this.isOpen=false; }
+  show(titleOrConfig, optionsArg, onPickArg){
+    const config=typeof titleOrConfig==='object'?titleOrConfig:{ title:titleOrConfig, options:optionsArg, onConfirm:onPickArg };
+    this.hide(); this.isOpen=true; this.state.open(); this.options=config.options||[]; this.mode=resolveSelectionMode(this.options, config.mode); this.onConfirm=config.onConfirm; this.formatted=this.options.map(o=>this.mode==='icon'?formatArtifactSelectionOption(o):formatSkillSelectionOption(o,this.scene.playerData));
+    const bg=this.scene.add.rectangle(DESIGN_WIDTH/2,DESIGN_HEIGHT/2,682,1120,0x10172a,0.96).setScrollFactor(0).setDepth(DEPTH);
+    const label=this.scene.add.text(DESIGN_WIDTH/2,118,config.title||'选择奖励',{fontFamily:'Arial',fontSize:'36px',color:'#fff',stroke:'#000',strokeThickness:4,wordWrap:{width:650}}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+1);
     this.nodes.push(bg,label);
-    options.forEach((option,index)=>this.createCard(option,index,onPick));
+    if(this.mode==='icon') this.createIconOptions(); else this.createCardOptions();
+    this.createDetails(null); this.createConfirm(); this.createDebug();
   }
-
-  createCard(option,index,onPick){
-    const x=DESIGN_WIDTH/2;
-    const y=360+index*242;
-    const width=604;
-    const height=236;
-    const skill=option.skillId&&SKILLS[option.skillId];
-    const rarity=skill&&getRarity(skill.rarity);
-    const card=this.scene.add.rectangle(x,y,width,height,0x1b2c55,0.96)
-      .setStrokeStyle(4,rarity?.color||0x5278c8,1)
-      .setScrollFactor(0)
-      .setInteractive({useHandCursor:true})
-      .setDepth(3001);
-    card.on('pointerdown',()=>onPick(option));
-    this.nodes.push(card);
-
-    if(skill) this.createSkillCard(option,skill,rarity,x,y,width,onPick);
-    else if(option.artifactId) this.createArtifactCard(option,x,y,width);
-    else this.createAttributeCard(option,x,y,width,onPick);
-  }
-
-  createText(x,y,text,style={}){
-    const node=this.scene.add.text(x,y,text,{fontFamily:'Arial',fontSize:'22px',color:WHITE,wordWrap:{width:540},...style})
-      .setOrigin(0,0)
-      .setScrollFactor(0)
-      .setDepth(3002);
-    this.nodes.push(node);
-    return node;
-  }
-
-  createSkillCard(option,skill,rarity,x,y,width,onPick){
-    const left=x-width/2+24;
-    const top=y-104;
-    const owned=this.scene.playerData.skills.find(s=>s.id===skill.id);
-    const currentLevel=owned?.level||0;
-    const targetLevel=option.type==='skillLevel'?Math.min(skill.maxLevel,currentLevel+1):1;
-    const levelData=skill.levels[targetLevel-1]||skill.levels[0];
-    const changes=(levelData.changes||[]).slice(0,4);
-    const levelText=option.type==='skillLevel'?`Lv.${currentLevel} → Lv.${targetLevel}`:'获得 Lv.1';
-
-    this.createText(left,top,`${rarity.name}｜${skill.name}`,{fontSize:'25px',color:rarity.uiColor,stroke:'#000',strokeThickness:3});
-    this.createText(left,top+32,levelText,{fontSize:'23px',color:GREEN,stroke:'#0b3319',strokeThickness:2});
-    this.createText(left,top+62,levelData.desc||skill.description,{fontSize:'20px',color:MUTED,lineSpacing:2});
-    if(changes.length) this.createText(left,top+110,changes.join('\n'),{fontSize:'20px',color:GREEN,lineSpacing:1,wordWrap:{width:552}});
-  }
-
-
-  createArtifactCard(option,x,y,width){
-    const left=x-width/2+24;
-    const top=y-104;
-    const artifact=ARTIFACTS[option.artifactId];
-    const category=ARTIFACT_CATEGORIES[artifact?.category]?.name||artifact?.category||'法宝';
-    const levelText=option.type==='upgrade'?`Lv.${option.level} → Lv.${option.nextLevel}`:`Lv.${option.nextLevel||1}`;
-    this.createText(left,top,`${artifact?.name||option.artifactId}｜${category}`,{fontSize:'25px',color:WHITE,stroke:'#000',strokeThickness:3});
-    this.createText(left,top+32,levelText,{fontSize:'23px',color:option.type==='upgrade'?GREEN:WHITE,stroke:'#0b3319',strokeThickness:2});
-    if(option.requiredSkillName) this.createText(left,top+62,`关联技能：${option.requiredSkillName}`,{fontSize:'19px',color:'#ffd866'});
-    const effectY=option.requiredSkillName?92:66;
-    if(option.type==='upgrade'){
-      this.createText(left,top+effectY,`当前：${getArtifactLevelText(option.artifactId,option.level)}`,{fontSize:'19px',color:MUTED,lineSpacing:1});
-      this.createText(left,top+effectY+58,`升级后：${getArtifactLevelText(option.artifactId,option.nextLevel)}`,{fontSize:'20px',color:GREEN,lineSpacing:1,wordWrap:{width:552}});
-    } else {
-      this.createText(left,top+effectY,getArtifactLevelText(option.artifactId,option.nextLevel||1),{fontSize:'21px',color:GREEN,lineSpacing:2,wordWrap:{width:552}});
-    }
-  }
-
-  createAttributeCard(option,x,y,width,onPick){
-    const left=x-width/2+24;
-    const top=y-72;
-    const fallback=String(option.title||'属性提升').split('\n');
-    const mapped=ATTRIBUTE_CARD_LABELS[option.id];
-    const title=mapped?.[0]||fallback[0]||'属性强化';
-    const change=mapped?.[1]||fallback.slice(1).join('\n')||fallback[0]||'属性提升';
-    this.createText(left,top,title,{fontSize:'28px',color:WHITE,stroke:'#000',strokeThickness:3});
-    this.createText(left,top+52,change,{fontSize:'25px',color:GREEN,stroke:'#0b3319',strokeThickness:2});
-  }
-
-  hide(){ this.nodes.forEach(n=>{ n.removeAllListeners?.(); n.destroy(); }); this.nodes=[]; this.isOpen=false; }
+  makeText(x,y,text,style={},origin=[0,0]){ const n=this.scene.add.text(x,y,text,{fontFamily:'Arial',fontSize:'22px',color:WHITE,wordWrap:{width:540,useAdvancedWrap:true},...style}).setOrigin(...origin).setScrollFactor(0).setDepth(DEPTH+2); this.nodes.push(n); return n; }
+  createIcon(x,y,f,index,size=86){ const color=f.iconColor||SELECTION_ICON_STYLE.colors[index%SELECTION_ICON_STYLE.colors.length]; const g=this.scene.add.circle(x,y,size/2,color,0.86).setStrokeStyle(4,0xffffff,0.28).setScrollFactor(0).setDepth(DEPTH+2); const t=this.scene.add.text(x,y,f.iconText||'?',{fontFamily:'Arial',fontSize:'34px',color:'#10172a',fontStyle:'bold'}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+3); this.nodes.push(g,t); return [g,t]; }
+  wire(nodes,index){ nodes.forEach(n=>n.setInteractive?.({useHandCursor:true}).on('pointerdown',()=>this.select(index))); }
+  createCardOptions(){ this.formatted.forEach((f,i)=>{ const x=DESIGN_WIDTH/2, y=244+i*208, w=620, h=188; const r=this.scene.add.rectangle(x,y,w,h,0x1b2c55,0.96).setStrokeStyle(4,f.rarityColor||0x5278c8,0.9).setScrollFactor(0).setDepth(DEPTH+1); this.nodes.push(r); const [ic,it]=this.createIcon(x-w/2+58,y-44,f,i,64); this.makeText(x-w/2+104,y-78,f.title,{fontSize:'28px',color:f.rarityUiColor||WHITE,stroke:'#000',strokeThickness:3,wordWrap:{width:360}}); this.makeText(x-w/2+104,y-39,`${f.rarity}｜${f.levelText}`,{fontSize:'21px',color:GREEN}); this.makeText(x-w/2+104,y-8,f.acquireText||f.subtitle,{fontSize:'20px',color:'#ffd166'}); this.makeText(x-w/2+24,y+36,(f.summaryLines||[]).slice(0,2).join('\n'),{fontSize:'20px',color:MUTED,lineSpacing:3,wordWrap:{width:570}}); const badge=this.makeText(x+w/2-104,y-82,'已选中',{fontSize:'19px',color:'#10172a',backgroundColor:'#80ffb0',padding:{left:8,right:8,top:4,bottom:4}},[0.5,0]); badge.setVisible(false); const group=[r,ic,it,badge]; this.cards[i]={root:r,nodes:group,badge,x,y}; this.wire(group,i); }); }
+  createIconOptions(){ this.formatted.forEach((f,i)=>{ const x=160+i*200, y=290; const hit=this.scene.add.rectangle(x,y,150,170,0x1b2c55,0.45).setStrokeStyle(4,0x5278c8,0.8).setScrollFactor(0).setDepth(DEPTH+1); const icon=this.createIcon(x,y-32,f,i,88); const name=this.makeText(x,y+28,f.title,{fontSize:'24px',align:'center',wordWrap:{width:140}},[0.5,0]); const level=this.makeText(x,y+63,`${f.subtitle} ${f.levelText||''}`,{fontSize:'18px',color:GREEN,align:'center',wordWrap:{width:150}},[0.5,0]); const badge=this.makeText(x,y-118,'已选中',{fontSize:'17px',color:'#10172a',backgroundColor:'#80ffb0',padding:{left:7,right:7,top:3,bottom:3}},[0.5,0]); badge.setVisible(false); const group=[hit,...icon,name,level,badge]; this.nodes.push(hit); this.cards[i]={root:hit,nodes:group,badge,x,y}; this.wire(group,i); }); }
+  select(index){ if(!this.state.select(index,this.options[index])) return; this.cards.forEach((c,i)=>{ c.badge?.setVisible(i===index); c.root.setStrokeStyle(i===index?6:4,i===index?0x9fffb6:0x5278c8,i===index?1:0.55); c.nodes.forEach(n=>n.setAlpha?.(i===index?1:0.72)); c.nodes.forEach(n=>{ if(n!==c.root) this.scene.tweens.add({targets:n,scale:i===index?1.04:1,yoyo:false,duration:150}); }); c.root.y=c.y+(i===index?-8:0); }); this.createDetails(this.formatted[index]); this.updateConfirm(); this.updateDebug(); }
+  createDetails(f){ this.detailNodes.forEach(n=>{n.removeAllListeners?.();n.destroy();}); this.detailNodes=[]; const top=this.mode==='icon'?465:870; const box=this.scene.add.rectangle(DESIGN_WIDTH/2,top+100,620,200,0x0b1020,0.9).setStrokeStyle(3,0x46639b,0.8).setScrollFactor(0).setDepth(DEPTH+1); this.detailNodes.push(box); this.nodes.push(box); const content=f?`${f.title}\n${f.levelText||f.category||''}  ${f.rarity||f.category||''}\n${(f.detailLines||[]).slice(0,4).join('\n')}\n标签：${(f.tags||[]).slice(0,8).join('、')||'无'}`:'点击一个选项预览详情，确认后才会领取。'; const t=this.scene.add.text(74,top+16,content,{fontFamily:'Arial',fontSize:'20px',color:f?WHITE:MUTED,lineSpacing:5,wordWrap:{width:572,useAdvancedWrap:true}}).setScrollFactor(0).setDepth(DEPTH+2); this.detailNodes.push(t); this.nodes.push(t); }
+  createConfirm(){ this.confirmButton=this.scene.add.text(DESIGN_WIDTH/2,1180,'确认选择',{fontFamily:'Arial',fontSize:'30px',color:'#8b93a8',backgroundColor:'#2a3144',padding:{left:38,right:38,top:16,bottom:16}}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+2).setInteractive({useHandCursor:true}); this.confirmButton.on('pointerdown',()=>{ if(this.state.selectedIndex<0||this.state.confirmed) return; const f=this.formatted[this.state.selectedIndex]; this.confirmButton.setText('处理中...'); this.confirmButton.disableInteractive(); const ok=this.state.confirm((o)=>this.onConfirm?.(o)); if(ok) this.hide(); }); this.nodes.push(this.confirmButton); this.updateConfirm(); }
+  updateConfirm(){ if(!this.confirmButton)return; const enabled=this.state.selectedIndex>=0&&!this.state.confirmed; const f=this.formatted?.[this.state.selectedIndex]; this.confirmButton.setText(enabled?(f?.confirmText||'确认选择'):'确认选择'); this.confirmButton.setColor(enabled?'#ffffff':'#8b93a8'); this.confirmButton.setBackgroundColor(enabled?'#2d8f55':'#2a3144'); }
+  createDebug(){ if(!this.scene.debugMode) return; this.debugText=this.makeText(28,1220,'',{fontSize:'14px',color:'#ffd166',wordWrap:{width:400}}); this.updateDebug(); }
+  updateDebug(){ if(this.debugText) this.debugText.setText(`mode=${this.mode} index=${this.state.selectedIndex} id=${this.state.selectedOption?.skillId||this.state.selectedOption?.artifactId||this.state.selectedOption?.id||'-'} locked=${this.state.confirmed}`); }
+  hide(){ this.nodes.forEach(n=>{ n.removeAllListeners?.(); n.destroy(); }); this.nodes=[]; this.cards=[]; this.detailNodes=[]; this.state.close(); this.isOpen=false; }
 }
