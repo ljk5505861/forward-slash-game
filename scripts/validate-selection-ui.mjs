@@ -27,6 +27,7 @@ assert.match(gameSceneSource,/if\(option\.type==='fallback'\) this\.artifactSyst
 let count=0; const st=new SelectionState(); st.open(); assert.equal(st.selectedIndex,-1); assert.equal(st.selectOrConfirm(0,{id:'a'},()=>count++),'selected'); assert.equal(count,0); assert.equal(st.selectOrConfirm(1,{id:'b'},()=>count++),'selected'); assert.equal(count,0); assert.equal(st.selectOrConfirm(1,{id:'b'},()=>count++),'confirmed'); assert.equal(count,1); assert.equal(st.selectOrConfirm(1,{id:'b'},()=>count++),'locked'); assert.equal(st.selectOrConfirm(2,{id:'c'},()=>count++),'locked'); assert.equal(count,1); st.close(); st.open(); assert.equal(st.selectedIndex,-1);
 const st2=new SelectionState(); st2.open(); assert.equal(st2.confirm(()=>count++),false); assert.equal(count,1);
 const st3=new SelectionState(); st3.open(); st3.select(0,{id:'a'}); st3.select(2,{id:'c'}); let picked; st3.confirm(o=>picked=o.id); assert.equal(picked,'c'); st3.close(); st3.open(); assert.equal(st3.selectedIndex,-1);
+const st4=new SelectionState(); st4.open(); assert.equal(st4.selectOrConfirm(0,{id:'retry'},()=>{ throw new Error('first click must not confirm'); }),'selected'); let retryCalls=0; assert.equal(st4.selectOrConfirm(0,{id:'retry'},()=>{ retryCalls += 1; return false; }),'rejected'); assert.equal(st4.confirmed,false); assert.equal(st4.selectedIndex,0); assert.equal(st4.selectedOption.id,'retry'); assert.equal(st4.selectOrConfirm(0,{id:'retry'},()=>{ retryCalls += 1; return true; }),'confirmed'); assert.equal(retryCalls,2); assert.equal(st4.selectOrConfirm(0,{id:'retry'},()=>{ retryCalls += 1; }),'locked'); assert.equal(retryCalls,2);
 
 const skill=formatSkillSelectionOption({type:'skillLevel',skillId:'fireball'},playerData);
 assert.ok(skill.detailLines.some(line=>line.includes('冷却')));
@@ -46,4 +47,7 @@ assert.match(upgradePanelSource,/0\.34/);
 assert.match(professionPanelSource,/0\.34/);
 assert.ok(Number(upgradePanelSource.match(/0x07101f,0\.(\d+)/)?.[1]||99) < 50);
 
+assert.match(upgradePanelSource,/result==='rejected'\)\{ this\.updateDebug\(\); return; \}/);
+assert.match(professionPanelSource,/result==='rejected'\)\{ this\.updateDebug\(\); return; \}/);
+assert.match(gameSceneSource,/if\(!selected\)\{ this\.claimingProfession=false;/);
 console.log('selection ui validation passed');
