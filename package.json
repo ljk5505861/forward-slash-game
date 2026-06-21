@@ -6,7 +6,8 @@
     "validate:tags": "node scripts/validate-tags.mjs",
     "validate:reward-bias": "node scripts/validate-reward-bias.mjs",
     "validate:gameplay-entry": "node scripts/validate-gameplay-entry.mjs",
-    "validate:selection-ui": "node scripts/validate-selection-ui.mjs"
+    "validate:selection-ui": "node scripts/validate-selection-ui.mjs",
+    "validate:profession-flow": "node scripts/validate-profession-flow.mjs"
   },
   "dependencies": {
     "phaser": "latest",
