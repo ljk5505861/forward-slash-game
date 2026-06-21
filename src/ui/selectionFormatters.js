@@ -37,7 +37,7 @@ export function formatSkillSelectionOption(option={}, playerData={}){
   const owned=(playerData.skills||[]).find(s=>s.id===skill.id); const cur=owned?.level||0; const target=option.type==='skillLevel'?Math.min(skill.maxLevel||cur+1,cur+1):1;
   const data=skill.levels?.[Math.max(0,target-1)]||skill.levels?.[0]||{}; const rarity=getRarity(skill.rarity)||{};
   const milestoneLines=extractMilestoneChanges(skill,target).filter(line=>/^Lv\.(3|6|9)：/.test(line)); const detail=unique([skill.name, data.desc||skill.description, cooldownText(skill,data), ...milestoneLines]);
-  return { ...option, kind:'skill', title:skill.name||option.skillId||'未知技能', subtitle:rarity.name||skill.rarity||'普通', iconText:skill.short||skill.name?.[0]||'技', iconColor:skill.color, rarity:rarity.name||skill.rarity||'普通', rarityColor:rarity.color||0x5278c8, rarityUiColor:rarity.uiColor, levelText: option.type==='skillLevel'?`Lv.${cur} → Lv.${target}`:'新技能', optionLines:[rarity.name||skill.rarity||'普通', option.type==='skillLevel'?`Lv.${cur} → Lv.${target}`:'新技能'], detailLines:detail, confirmText:'' };
+  return { ...option, kind:'skill', title:skill.name||option.skillId||'未知技能', subtitle:rarity.name||skill.rarity||'普通', iconText:skill.short||skill.name?.[0]||'技', iconColor:skill.color, rarity:rarity.name||skill.rarity||'普通', rarityId:skill.rarity, rarityColor:rarity.color||0x5278c8, rarityUiColor:rarity.uiColor, levelText: option.type==='skillLevel'?`Lv.${cur} → Lv.${target}`:'新技能', optionLines:[rarity.name||skill.rarity||'普通', option.type==='skillLevel'?`Lv.${cur} → Lv.${target}`:'新技能'], detailLines:detail, confirmText:'' };
 }
 export function formatArtifactSelectionOption(option={}){
   if(option.type==='fallback'){
