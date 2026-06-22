@@ -48,7 +48,8 @@ assert.match(upgradePanelSource,/0\.18/);
 assert.match(professionPanelSource,/0\.20/);
 assert.ok(Number(upgradePanelSource.match(/0x07101f,0\.(\d+)/)?.[1]||99) < 50);
 
-assert.match(upgradePanelSource,/result==='rejected'\)\{ this\.updateDebug\(\); return; \}/);
+assert.match(upgradePanelSource,/this\.hide\(\); const result=this\.onConfirm\?\.\(option\)/, 'upgrade panel closes the current selection before callbacks can open the next panel');
+assert.match(upgradePanelSource,/if\(result===false\)\{ this\.show\(this\.lastConfig\); this\.state\.select\(index,option\); this\.updateDebug\(\); \}/, 'upgrade panel restores retry state when a confirmation is rejected');
 assert.match(professionPanelSource,/result==='rejected'\)\{ this\.updateDebug\(\); return; \}/);
 assert.match(gameSceneSource,/if\(!selected\)\{ this\.claimingProfession=false;/);
 assert.match(artifactPanelSource,/获得一个法宝奖励/);
