@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from '../config/gameConfig.js';
 import { SKILLS } from '../config/skills.js';
 import { getRarity } from '../config/rarities.js';
+import { makeInteractive } from './interactive.js';
 
 const SLOTS_PER_PAGE = 3;
 
@@ -44,9 +45,9 @@ export default class SkillBar {
   }
 
   createButton(x, y, label, onClick) {
-    return this.scene.add.text(x, y + 10, label, {
+    return makeInteractive(this.scene.add.text(x, y + 10, label, {
       fontFamily: 'Arial', fontSize: '42px', color: '#fff', backgroundColor: '#263a68', padding: { left: 16, right: 16, top: 4, bottom: 8 },
-    }).setOrigin(0.5).setScrollFactor(0).setInteractive({ useHandCursor: true }).setDepth(2102).on('pointerdown', onClick);
+    }).setOrigin(0.5).setScrollFactor(0)).setDepth(2102).on('pointerdown', onClick);
   }
 
   turnPage(delta) {
