@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { formatSkillSelectionOption, formatArtifactSelectionOption, formatProfessionSelectionOption, resolveSelectionMode, SelectionState } from '../src/ui/selectionFormatters.js';
+import Hud from '../src/ui/Hud.js';
+import PlayerHealthBar from '../src/ui/PlayerHealthBar.js';
 const playerData={ skills:[{id:'fireball',level:1},{id:'lightning',level:3}] };
 assert.equal(formatSkillSelectionOption({type:'newSkill',skillId:'healing'},playerData).title,'治愈术');
 assert.match(formatSkillSelectionOption({type:'skillLevel',skillId:'fireball'},playerData).levelText,/Lv\.1 → Lv\.2/);
@@ -56,7 +58,57 @@ assert.match(artifactPanelSource,/获得一个法宝奖励/);
 assert.doesNotMatch(formatArtifactSelectionOption({type:'new',artifactId:'flame_heart',nextLevel:1}).detailLines.join('\n'),/Lv\.|升级|标签|再次点击/);
 assert.doesNotMatch(formatSkillSelectionOption({type:'newSkill',skillId:'healing'},playerData).detailLines.join('\n'),/再次点击/);
 assert.doesNotMatch(formatProfessionSelectionOption('warrior').detailLines.join('\n'),/再次点击/);
+
 assert.doesNotMatch(upgradePanelSource,/再次点击确认/);
+assert.doesNotMatch(upgradePanelSource,/f\.rarity\|\|f\.subtitle|y\+70/);
+assert.match(upgradePanelSource,/config\.hideTitle\?null/);
+const hudSource=readFileSync(new URL('../src/ui/Hud.js', import.meta.url),'utf8');
+const gameSceneUiSource=gameSceneSource;
+assert.doesNotMatch(hudSource,/Lv\.\$\{p\.level\}|HP \${p\.hp}|MP \${p\.mana|XP \${p\.xp}|阶段：/);
+assert.match(hudSource,/hpFill/);
+assert.match(hudSource,/mpFill/);
+assert.match(hudSource,/GAME_VERSION_LABEL/);
+assert.match(gameSceneUiSource,/hideTitle:true/);
+assert.doesNotMatch(gameSceneUiSource,/setStatus\('选择开局技能'\)|upgradePanel\.show\('开局技能三选一'/);
+const playerHealthBarSource=readFileSync(new URL('../src/ui/PlayerHealthBar.js', import.meta.url),'utf8');
+assert.match(playerHealthBarSource,/class PlayerHealthBar/);
+assert.match(playerHealthBarSource,/player\.x/);
+assert.match(playerHealthBarSource,/p\.hp\/p\.maxHp/);
+assert.doesNotMatch(hudSource,/\bPhaser\b/);
+assert.doesNotMatch(playerHealthBarSource,/\bPhaser\b/);
+
+const makeNode=()=>({
+  width:0, height:0, displayWidth:0, displayHeight:0, visible:true, text:'', x:0, y:0,
+  setOrigin(){ return this; }, setScrollFactor(){ return this; }, setDepth(){ return this; }, setStrokeStyle(){ return this; },
+  setDisplaySize(w,h){ this.displayWidth=w; this.displayHeight=h; return this; },
+  setText(text){ this.text=text; return this; }, setPosition(x,y){ this.x=x; this.y=y; return this; },
+  setVisible(v){ this.visible=v; return this; }, destroy(){ this.destroyed=true; return this; }
+});
+const makeScene=()=>({
+  playerData:{ hp:120, maxHp:120, mana:0, maxMana:0, xp:0, xpToNext:50, gold:0 },
+  enemies:[],
+  player:{ x:220, y:850, height:140, active:true },
+  add:{
+    rectangle(x,y,w,h){ const n=makeNode(); n.x=x; n.y=y; n.width=w; n.height=h; n.displayWidth=w; n.displayHeight=h; return n; },
+    text(x,y,text){ const n=makeNode(); n.x=x; n.y=y; n.text=text; return n; }
+  }
+});
+const assertWidthInRange=(node,max,label)=>assert.ok(node.displayWidth>=0&&node.displayWidth<=max, `${label} width ${node.displayWidth} should be within 0..${max}`);
+const hudScene=makeScene();
+const hud=new Hud(hudScene);
+assert.doesNotThrow(()=>hud.update());
+assertWidthInRange(hud.hpFill,210,'hud hp full');
+hudScene.playerData.hp=0; assert.doesNotThrow(()=>hud.update()); assertWidthInRange(hud.hpFill,210,'hud hp zero');
+hudScene.playerData.hp=180; hudScene.playerData.maxHp=120; assert.doesNotThrow(()=>hud.update()); assertWidthInRange(hud.hpFill,210,'hud hp over max'); assert.equal(hud.hpFill.displayWidth,210);
+hudScene.playerData.maxHp=0; assert.doesNotThrow(()=>hud.update()); assertWidthInRange(hud.hpFill,210,'hud max hp zero'); assert.equal(hud.hpFill.displayWidth,0);
+const healthScene=makeScene();
+const playerHealthBar=new PlayerHealthBar(healthScene);
+assert.doesNotThrow(()=>playerHealthBar.update());
+assertWidthInRange(playerHealthBar.fill,82,'player health full');
+healthScene.playerData.hp=0; assert.doesNotThrow(()=>playerHealthBar.update()); assertWidthInRange(playerHealthBar.fill,82,'player health zero'); assert.equal(playerHealthBar.fill.visible,false);
+healthScene.playerData.hp=180; healthScene.playerData.maxHp=120; assert.doesNotThrow(()=>playerHealthBar.update()); assertWidthInRange(playerHealthBar.fill,82,'player health over max'); assert.equal(playerHealthBar.fill.displayWidth,82);
+healthScene.playerData.maxHp=0; assert.doesNotThrow(()=>playerHealthBar.update()); assertWidthInRange(playerHealthBar.fill,82,'player max hp zero'); assert.equal(playerHealthBar.fill.displayWidth,0);
+
 assert.doesNotMatch(artifactPanelSource,/再次点击确认|通用成长型|独立机制型/);
 assert.doesNotMatch(professionPanelSource,/再次点击确认/);
 assert.doesNotMatch(upgradePanelSource,/const name=this\.makeText/);
