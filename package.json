@@ -8,7 +8,12 @@
     "validate:gameplay-entry": "node scripts/validate-gameplay-entry.mjs",
     "validate:selection-ui": "node scripts/validate-selection-ui.mjs",
     "validate:profession-flow": "node scripts/validate-profession-flow.mjs",
-    "validate:player-info-flow": "node scripts/validate-player-info-flow.mjs"
+    "validate:player-info-flow": "node scripts/validate-player-info-flow.mjs",
+    "validate:shop-flow": "node scripts/validate-shop-flow.mjs",
+    "validate:enemy-population": "node scripts/validate-enemy-population.mjs",
+    "validate:midboss-reward-flow": "node scripts/validate-midboss-reward-flow.mjs",
+    "validate:final-shop-flow": "node scripts/validate-final-shop-flow.mjs",
+    "validate:life-steal": "node scripts/validate-life-steal.mjs"
   },
   "dependencies": {
     "phaser": "latest",
