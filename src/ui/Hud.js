@@ -1,8 +1,9 @@
-import { DESIGN_WIDTH } from '../config/gameConfig.js';
 import { GAME_VERSION_LABEL } from '../config/version.js';
 
+const DESIGN_WIDTH=720;
 const DEPTH=2000;
 const BAR_W=210, BAR_H=16;
+const clamp01=value=>Math.max(0,Math.min(1,value));
 
 export default class Hud {
   constructor(scene){
@@ -29,7 +30,7 @@ export default class Hud {
   }
   setStatus(m){ this.statusMessage=m||''; }
   setStage(n){ this.stageName=n||''; }
-  setBar(fill,width,current,max){ const ratio=max>0?Phaser.Math.Clamp(current/max,0,1):0; fill.setDisplaySize(Math.round(width*ratio), fill.height); }
+  setBar(fill,width,current,max){ const ratio=max>0?clamp01(current/max):0; fill.setDisplaySize(Math.round(width*ratio), fill.height); }
   update(){
     const p=this.scene.playerData;
     this.setBar(this.hpFill,BAR_W,p.hp,p.maxHp);

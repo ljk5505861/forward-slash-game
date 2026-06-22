@@ -1,6 +1,7 @@
 const WIDTH=82;
 const HEIGHT=9;
 const DEPTH=1200;
+const clamp01=value=>Math.max(0,Math.min(1,value));
 
 export default class PlayerHealthBar {
   constructor(scene){
@@ -17,7 +18,7 @@ export default class PlayerHealthBar {
     if(!player||!p){ this.setVisible(false); return; }
     const x=player.x;
     const y=player.y-(player.height||140)/2-26;
-    const ratio=p.maxHp>0?Phaser.Math.Clamp(p.hp/p.maxHp,0,1):0;
+    const ratio=p.maxHp>0?clamp01(p.hp/p.maxHp):0;
     this.bg.setPosition(x,y);
     this.outline.setPosition(x,y);
     this.fill.setPosition(x-WIDTH/2,y).setDisplaySize(Math.round(WIDTH*ratio),HEIGHT);
