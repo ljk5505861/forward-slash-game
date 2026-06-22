@@ -24,20 +24,15 @@ assertRange('waveSize.mixed', p.waveSize?.mixed, [4, 6]);
 assertRange('waveSize.late', p.waveSize?.late, [5, 8]);
 assert.deepEqual(p.waveTriggerRemaining, { early:2, mixed:3, late:4 }, 'bad wave trigger thresholds');
 assertRange('midBossInitial', p.midBossInitial, [5, 7]);
-assertRange('midBossSummonGapMs', p.midBossSummonGapMs, [8000, 12000]);
-assertRange('midBossSummonSize', p.midBossSummonSize, [3, 5]);
-assert.equal(p.midBossMinionCap, 8, 'mid boss minion cap must be 8');
 assertRange('finalBossInitial', p.finalBossInitial, [6, 9]);
-assertRange('finalBossSummonGapMs', p.finalBossSummonGapMs, [7000, 10000]);
-assertRange('finalBossSummonSize', p.finalBossSummonSize, [4, 6]);
-assertRange('finalBossMinionCap', p.finalBossMinionCap, [10, 12]);
+assert.equal(p.bossIntroDelayMs, 5000, 'boss intro delay must be fixed at 5000ms');
 assertRange('bossWaveSpawnIntervalMs', p.bossWaveSpawnIntervalMs, [100, 250]);
 
 const savedBetween = Phaser.Math.Between;
 const useBetween = (value) => { Phaser.Math.Between = (min, max) => Math.min(max, Math.max(min, value)); };
 const restoreBetween = () => { Phaser.Math.Between = savedBetween; };
 const minion = (id='grunt') => ({ id:`${id}_${Math.random()}`, enemyId:id, active:true, isDefeated:false, isBoss:false, isElite:false, hp:10, maxHp:10, width:80, x:0, y:0 });
-const boss = (hp=100, maxHp=100) => ({ id:'boss', enemyId:'boss', active:true, isDefeated:false, isBoss:true, isElite:false, hp, maxHp, width:120, x:0, y:0 });
+const boss = (hp=100, maxHp=100, enemyId='boss') => ({ id:enemyId, enemyId, active:true, isDefeated:false, isBoss:true, isMidBoss:enemyId==='mid_boss', isFinalBoss:enemyId==='boss', isElite:false, hp, maxHp, width:120, x:0, y:0 });
 const makeSystem = (phaseId='early') => {
   let now = 0;
   const scene = {
@@ -56,11 +51,12 @@ const makeSystem = (phaseId='early') => {
     enemyBehaviors:{ attach(){}, update(){}, destroyEnemy(){} },
     statusEffects:{ clearTarget(){} },
     showRestPoint(){},
+    finishRun(won){ this.finishedWon = won; },
   };
   const system = new StageSystem(scene);
   system.phaseIndex = system.phaseIndexById(phaseId);
   system.spawnAhead = (id='grunt') => { const e = minion(id); scene.enemies.push(e); return e; };
-  system.spawn = (id) => { const e = id === 'boss' || id === 'mid_boss' ? boss() : minion(id); scene.enemies.push(e); return e; };
+  system.spawn = (id) => { const e = id === 'boss' || id === 'mid_boss' ? boss(100,100,id) : minion(id); scene.enemies.push(e); return e; };
   system.separateEnemies = () => {};
   return { scene, system, setNow:(v)=>scene.setNow(v) };
 };
@@ -149,51 +145,93 @@ try {
   }
 
   {
-    const { scene, system, setNow } = makeSystem('midBoss');
-    scene.enemies = [boss()];
-    system.nextBossSummonAt = 8000;
-    setNow(7999);
-    system.maintainPopulation(7999);
-    assert.equal(system.waveQueue.length, 0, 'mid boss must not summon before 8-12s timer');
-    setNow(8000);
-    system.maintainPopulation(8000);
-    assert.ok(system.waveQueue.length >= p.midBossSummonSize[0] && system.waveQueue.length <= p.midBossSummonSize[1], 'mid boss summon wave must be 3-5');
-    system.waveQueue = [];
-    scene.enemies = [boss(), ...Array.from({ length:p.midBossMinionCap }, () => minion())];
-    system.nextBossSummonAt = 9000;
-    system.maintainPopulation(9000);
-    assert.equal(system.waveQueue.length, 0, 'mid boss minion cap must prevent summon');
+    const { scene, system, setNow } = makeSystem('early');
+    setNow(50000);
+    const entered = system.enterPhaseById('midBoss');
+    assert.equal(entered, true, 'midBoss phase should be reachable through real enterPhaseById');
+    assert.equal(phaseId(system), 'midBoss', 'phase should now be midBoss');
+    assert.equal(scene.enemies.some((e) => e.isBoss), false, 'mid boss must not spawn immediately on phase entry');
+    assert.equal(system.bossIntroType, 'mid', 'mid boss intro type should be explicit');
+    assert.equal(system.bossIntroState, 'spawningMinions', 'mid boss intro starts by spawning minions');
+    assert.ok(system.waveQueue.length >= p.midBossInitial[0] && system.waveQueue.length <= p.midBossInitial[1], 'mid boss intro minion count must be 5-7');
+    assertStrictlyIncreasing(system.waveQueue);
+    intervals(system.waveQueue, 50000).forEach((gap) => assert.ok(gap >= 100 && gap <= 250, 'mid boss intro minions must be 100-250ms apart'));
+    const finalMinionAt = system.waveQueue.at(-1).at;
+    setNow(finalMinionAt - 1);
+    system.update(finalMinionAt - 1);
+    assert.equal(system.bossIntroState, 'spawningMinions', '5s boss timer cannot start before the last intro minion is generated');
+    assert.equal(system.bossSpawnAt, 0, 'bossSpawnAt must not be set before intro queue finishes');
+    setNow(finalMinionAt);
+    system.update(finalMinionAt);
+    assert.equal(system.bossIntroState, 'waitingBoss', 'intro should wait for boss after the final minion is generated');
+    assert.equal(system.bossIntroQueueDoneAt, finalMinionAt, 'intro completion time should be the final minion spawn time');
+    assert.equal(system.bossSpawnAt, finalMinionAt + 5000, 'mid boss should spawn exactly 5s after final intro minion');
+    const minionsStillAlive = scene.enemies.filter((e) => !e.isBoss).length;
+    setNow(system.bossSpawnAt - 1);
+    system.update(system.bossSpawnAt - 1);
+    assert.equal(scene.enemies.filter((e) => e.isBoss).length, 0, 'mid boss must not spawn before bossSpawnAt');
+    setNow(system.bossSpawnAt);
+    system.update(system.bossSpawnAt);
+    assert.equal(scene.enemies.filter((e) => e.isBoss && e.enemyId === 'mid_boss').length, 1, 'exactly one mid boss should spawn at bossSpawnAt');
+    assert.equal(scene.enemies.filter((e) => !e.isBoss).length, minionsStillAlive, 'living intro minions must not block boss spawn');
+    const countAfterBoss = scene.enemies.length;
+    setNow(system.bossSpawnAt + 60000);
+    system.update(system.bossSpawnAt + 60000);
+    assert.equal(scene.enemies.length, countAfterBoss, 'mid boss active phase must not generate more minions later');
+    assert.equal(scene.enemies.filter((e) => e.isBoss && e.enemyId === 'mid_boss').length, 1, 'mid boss must not spawn twice');
   }
 
   {
-    const { scene, system, setNow } = makeSystem('finalBoss');
-    system.bossSummonCap = 10;
-    scene.enemies = [boss(100, 100)];
-    system.nextBossSummonAt = 7000;
-    setNow(6999);
-    system.maintainPopulation(6999);
-    assert.equal(system.waveQueue.length, 0, 'final boss must not summon before 7-10s timer');
-    setNow(7000);
-    system.maintainPopulation(7000);
-    assert.ok(system.waveQueue.length >= p.finalBossSummonSize[0] && system.waveQueue.length <= p.finalBossSummonSize[1], 'final boss summon wave must be 4-6');
-    assert.ok(system.nextBossSummonAt - 7000 >= 7000 && system.nextBossSummonAt - 7000 <= 10000, 'full-health final boss interval should be 7-10s');
-    system.waveQueue = [];
-    scene.enemies = [boss(40, 100)];
-    system.nextBossSummonAt = 15000;
-    setNow(15000);
-    system.maintainPopulation(15000);
-    assert.ok(system.nextBossSummonAt - 15000 >= 5600 && system.nextBossSummonAt - 15000 <= 8000, 'half-health final boss interval should be shortened by about 20%');
-    const queued = system.waveQueue.length;
-    system.maintainPopulation(15001);
-    assert.equal(system.waveQueue.length, queued, 'half-health shortening must not become per-frame continuous refill');
-    system.waveQueue = [];
-    scene.enemies = [boss(40, 100), ...Array.from({ length:system.bossSummonCap }, () => minion())];
-    system.nextBossSummonAt = 25000;
-    system.maintainPopulation(25000);
-    assert.equal(system.waveQueue.length, 0, 'final boss per-fight minion cap must prevent summon');
+    const { scene, system, setNow } = makeSystem('early');
+    setNow(90000);
+    const entered = system.enterPhaseById('finalBoss');
+    assert.equal(entered, true, 'finalBoss phase should be reachable through real enterPhaseById');
+    assert.equal(phaseId(system), 'finalBoss', 'phase should now be finalBoss');
+    assert.equal(scene.enemies.some((e) => e.isFinalBoss), false, 'final boss must not spawn immediately on phase entry');
+    assert.equal(system.bossIntroType, 'final', 'final boss intro type should be explicit');
+    assert.ok(system.waveQueue.length >= p.finalBossInitial[0] && system.waveQueue.length <= p.finalBossInitial[1], 'final boss intro minion count must be 6-9');
+    assertStrictlyIncreasing(system.waveQueue);
+    intervals(system.waveQueue, 90000).forEach((gap) => assert.ok(gap >= 100 && gap <= 250, 'final boss intro minions must be 100-250ms apart'));
+    const finalMinionAt = system.waveQueue.at(-1).at;
+    setNow(finalMinionAt - 1);
+    system.update(finalMinionAt - 1);
+    assert.equal(system.bossSpawnAt, 0, 'final boss timer cannot start before the last intro minion is generated');
+    setNow(finalMinionAt);
+    system.update(finalMinionAt);
+    assert.equal(system.bossIntroQueueDoneAt, finalMinionAt, 'final intro completion time should be the final minion spawn time');
+    assert.equal(system.bossSpawnAt, finalMinionAt + 5000, 'final boss should spawn exactly 5s after final intro minion');
+    setNow(system.bossSpawnAt - 1);
+    system.update(system.bossSpawnAt - 1);
+    assert.equal(scene.enemies.filter((e) => e.isFinalBoss).length, 0, 'final boss must not spawn before bossSpawnAt');
+    const minionsStillAlive = scene.enemies.filter((e) => !e.isBoss).length;
+    setNow(system.bossSpawnAt);
+    system.update(system.bossSpawnAt);
+    assert.equal(scene.enemies.filter((e) => e.isFinalBoss).length, 1, 'exactly one final boss should spawn at bossSpawnAt');
+    assert.equal(scene.enemies.filter((e) => !e.isBoss).length, minionsStillAlive, 'living intro minions must not block final boss spawn');
+    const countAfterBoss = scene.enemies.length;
+    setNow(system.bossSpawnAt + 60000);
+    system.update(system.bossSpawnAt + 60000);
+    assert.equal(scene.enemies.length, countAfterBoss, 'final boss active phase must not generate more minions later');
+    assert.equal(scene.enemies.filter((e) => e.isFinalBoss).length, 1, 'final boss must not spawn twice');
+    scene.enemies.find((e) => e.isFinalBoss).isDefeated = true;
+    scene.finishRun(true);
+    assert.equal(scene.finishedWon, true, 'final boss death path should still be able to enter victory settlement');
   }
+
+  {
+    const { scene, system, setNow } = makeSystem('early');
+    setNow(120000);
+    system.enterPhaseById('finalBoss');
+    assert.equal(system.bossIntroState, 'spawningMinions', 'final intro should be active before cleanup');
+    system.clearEnemies();
+    setNow(200000);
+    system.update(200000);
+    assert.equal(scene.enemies.some((e) => e.isBoss), false, 'cleanup/restart state must not later spawn a stale boss');
+    assert.equal(system.bossIntroState, 'idle', 'cleanup should reset boss intro state');
+  }
+
 } finally {
   restoreBetween();
 }
 
-console.log('[validate:enemy-population] PASS behavioral wave spawning, phase progression, caps, boss summons, and reset checks');
+console.log('[validate:enemy-population] PASS behavioral wave spawning, phase progression, caps, boss intro, and reset checks');
