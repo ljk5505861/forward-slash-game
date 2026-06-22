@@ -56,7 +56,23 @@ assert.match(artifactPanelSource,/获得一个法宝奖励/);
 assert.doesNotMatch(formatArtifactSelectionOption({type:'new',artifactId:'flame_heart',nextLevel:1}).detailLines.join('\n'),/Lv\.|升级|标签|再次点击/);
 assert.doesNotMatch(formatSkillSelectionOption({type:'newSkill',skillId:'healing'},playerData).detailLines.join('\n'),/再次点击/);
 assert.doesNotMatch(formatProfessionSelectionOption('warrior').detailLines.join('\n'),/再次点击/);
+
 assert.doesNotMatch(upgradePanelSource,/再次点击确认/);
+assert.doesNotMatch(upgradePanelSource,/f\.rarity\|\|f\.subtitle|y\+70/);
+assert.match(upgradePanelSource,/config\.hideTitle\?null/);
+const hudSource=readFileSync(new URL('../src/ui/Hud.js', import.meta.url),'utf8');
+const gameSceneUiSource=gameSceneSource;
+assert.doesNotMatch(hudSource,/Lv\.\$\{p\.level\}|HP \${p\.hp}|MP \${p\.mana|XP \${p\.xp}|阶段：/);
+assert.match(hudSource,/hpFill/);
+assert.match(hudSource,/mpFill/);
+assert.match(hudSource,/GAME_VERSION_LABEL/);
+assert.match(gameSceneUiSource,/hideTitle:true/);
+assert.doesNotMatch(gameSceneUiSource,/setStatus\('选择开局技能'\)|upgradePanel\.show\('开局技能三选一'/);
+const playerHealthBarSource=readFileSync(new URL('../src/ui/PlayerHealthBar.js', import.meta.url),'utf8');
+assert.match(playerHealthBarSource,/class PlayerHealthBar/);
+assert.match(playerHealthBarSource,/player\.x/);
+assert.match(playerHealthBarSource,/p\.hp\/p\.maxHp/);
+
 assert.doesNotMatch(artifactPanelSource,/再次点击确认|通用成长型|独立机制型/);
 assert.doesNotMatch(professionPanelSource,/再次点击确认/);
 assert.doesNotMatch(upgradePanelSource,/const name=this\.makeText/);
