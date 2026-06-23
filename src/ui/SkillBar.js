@@ -38,7 +38,7 @@ export default class SkillBar {
       const text = this.scene.add.text(x, y + 10, '', {
         fontFamily: 'Arial', fontSize: '20px', color: '#ffffff', align: 'center', stroke: '#000', strokeThickness: 3, wordWrap: { width: 132 },
       }).setOrigin(0.5).setScrollFactor(0).setDepth(2102);
-      box.setInteractive({useHandCursor:true}).on('pointerdown',()=>{ if(this.scene.upgradeSystem?.replacingSkillId) this.scene.upgradeSystem.confirmReplacement(index); }); this.slotNodes.push({ box, text });
+      box.setInteractive({useHandCursor:true}).on('pointerdown',()=>{ if(this.scene.upgradeSystem?.pendingReplacement) this.scene.upgradeSystem.confirmReplacement(index); }); this.slotNodes.push({ box, text });
       this.nodes.push(box, text);
     }
     this.update();
@@ -69,7 +69,7 @@ export default class SkillBar {
     this.nextButton.setAlpha(0.15);
 
     this.slotNodes.forEach(({ box, text }, index) => {
-      const replacing=!!this.scene.upgradeSystem?.replacingSkillId; const skillData = skills[index];
+      const replacing=!!this.scene.upgradeSystem?.pendingReplacement; const skillData = skills[index];
       if (!skillData) {
         text.setText('空技能槽'); box.setStrokeStyle(replacing?5:3,replacing?0xffd166:0x89a8e8,1);
         return;
