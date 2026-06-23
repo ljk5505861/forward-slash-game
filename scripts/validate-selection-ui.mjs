@@ -87,7 +87,7 @@ const makeNode=()=>({
 const makeScene=()=>({
   playerData:{ hp:120, maxHp:120, mana:0, maxMana:0, xp:0, xpToNext:50, gold:0 },
   enemies:[],
-  player:{ x:220, y:850, height:140, active:true },
+  player:{ x:220, y:850, width:45, height:78, active:true },
   add:{
     rectangle(x,y,w,h){ const n=makeNode(); n.x=x; n.y=y; n.width=w; n.height=h; n.displayWidth=w; n.displayHeight=h; return n; },
     text(x,y,text){ const n=makeNode(); n.x=x; n.y=y; n.text=text; return n; }
@@ -104,9 +104,9 @@ hudScene.playerData.maxHp=0; assert.doesNotThrow(()=>hud.update()); assertWidthI
 const healthScene=makeScene();
 const playerHealthBar=new PlayerHealthBar(healthScene);
 assert.doesNotThrow(()=>playerHealthBar.update());
-assertWidthInRange(playerHealthBar.fill,82,'player health full');
-healthScene.playerData.hp=0; assert.doesNotThrow(()=>playerHealthBar.update()); assertWidthInRange(playerHealthBar.fill,82,'player health zero'); assert.equal(playerHealthBar.fill.visible,false);
-healthScene.playerData.hp=180; healthScene.playerData.maxHp=120; assert.doesNotThrow(()=>playerHealthBar.update()); assertWidthInRange(playerHealthBar.fill,82,'player health over max'); assert.equal(playerHealthBar.fill.displayWidth,82);
+assertWidthInRange(playerHealthBar.fill,56,'player health full');
+healthScene.playerData.hp=0; assert.doesNotThrow(()=>playerHealthBar.update()); assertWidthInRange(playerHealthBar.fill,56,'player health zero'); assert.equal(playerHealthBar.fill.visible,false);
+healthScene.playerData.hp=180; healthScene.playerData.maxHp=120; assert.doesNotThrow(()=>playerHealthBar.update()); assertWidthInRange(playerHealthBar.fill,56,'player health over max'); assert.equal(playerHealthBar.fill.displayWidth,56);
 healthScene.playerData.maxHp=0; assert.doesNotThrow(()=>playerHealthBar.update()); assertWidthInRange(playerHealthBar.fill,82,'player max hp zero'); assert.equal(playerHealthBar.fill.displayWidth,0);
 
 assert.doesNotMatch(artifactPanelSource,/再次点击确认|通用成长型|独立机制型/);

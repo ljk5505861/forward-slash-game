@@ -54,6 +54,6 @@ export default class StageSystem{
   shiftTimers(delta, after){ if(this.nextWaveAt>after) this.nextWaveAt+=delta; this.waveQueue.forEach(i=>{ if(i.at>after)i.at+=delta; }); }
   updateHud(){ this.scene.hud?.setStage(`阶段${this.currentStage} 第${this.currentGroup}组 第${this.currentWave||1}/3波`); this.scene.hud?.update(); }
   shouldHoldPlayerForBossIntro(){ return false; }
-  clearBossMinions(){ this.scene.enemies.filter(e=>!e.isBoss&&!e.isDefeated).forEach(e=>{ e.isDefeated=true; this.scene.enemyBehaviors?.destroyEnemy(e); this.scene.statusEffects?.clearTarget(e); [e.hpBarBg,e.hpBar,e.nameText,e].forEach(o=>o?.destroy()); e.destroy(); }); this.scene.enemies=this.scene.enemies.filter(e=>e.isBoss&&!e.isDefeated); }
-  clearEnemies(){ this.waveQueue=[]; this.scene.enemies.forEach(e=>{ this.scene.enemyBehaviors?.destroyEnemy(e); [e.hpBarBg,e.hpBar,e.nameText,e].forEach(o=>o?.destroy()); e.destroy(); }); this.scene.enemies=[]; }
+  clearBossMinions(){ this.scene.enemies.filter(e=>!e.isBoss&&!e.isDefeated).forEach(e=>{ e.isDefeated=true; this.scene.combatSystem?.clearKnockback?.(e); this.scene.enemyBehaviors?.destroyEnemy(e); this.scene.statusEffects?.clearTarget(e); [e.hpBarBg,e.hpBar,e.nameText,e].forEach(o=>o?.destroy()); e.destroy(); }); this.scene.enemies=this.scene.enemies.filter(e=>e.isBoss&&!e.isDefeated); }
+  clearEnemies(){ this.waveQueue=[]; this.scene.enemies.forEach(e=>{ this.scene.combatSystem?.clearKnockback?.(e); this.scene.enemyBehaviors?.destroyEnemy(e); [e.hpBarBg,e.hpBar,e.nameText,e].forEach(o=>o?.destroy()); e.destroy(); }); this.scene.enemies=[]; }
 }
