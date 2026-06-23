@@ -18,9 +18,9 @@ function makeScene(){
   return scene;
 }
 
-assert.equal(GAME_VERSION, '0.10.2');
+assert.equal(GAME_VERSION, '0.10.3');
 assert.equal(BALANCE.camera.playerScreenAnchorX, 0.15);
-assert.equal(BALANCE.enemies.entrySpeed, 280);
+assert.equal('entrySpeed' in BALANCE.enemies, false);
 assert.equal(BALANCE.enemyPopulation.waveClearDelayMs, 1500);
 assert.deepEqual(FLOW_GROUPS.map(g=>g.waves), [[3,3,3],[4,4,4],[5,5,5],[6,6,6],[7,7,7],[8,8,8],[9,9,9],[10,10,10],[11,12,12]]);
 ['GROUP_COMBAT','SKILL_REWARD','SHOP','BOSS_RUSH','BOSS_FIGHT','ARTIFACT_REWARD','PROFESSION_REWARD','ADVANCED_PROFESSION_STATUE','CAMPFIRE','VICTORY'].forEach(k=>assert.equal(LevelFlowStates[k], k));
