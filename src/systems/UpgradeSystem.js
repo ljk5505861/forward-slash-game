@@ -4,10 +4,7 @@ import { REWARD_BIAS } from '../config/rewardBias.js';
 import { getBuildBiasContext, calculateBuildBiasWeight, createWeightedCandidates } from '../utils/rewardWeighting.js';
 
 export const SKILL_MILESTONES = Object.freeze({ 3:'机制强化 I', 6:'机制强化 II', 9:'机制质变' });
-export const skillMilestoneText = (skill, level) => {
-  const map={fireball:['爆炸范围扩大并点燃','额外火球','燃烧目标爆裂'], lightning:['额外弹射目标','重复命中衰减降低','雷击可连锁更多敌人'], spinning_blade:['旋转范围扩大','持续次数增加','命中附带轻击退'], poison_cloud:['毒云扩散','持续时间延长','毒层爆发'], sword_wave:['穿透增加','剑气宽度扩大','远距离斩击强化'], healing:['额外护盾','冷却降低','低血回复增强']};
-  return (map[skill?.id]||['额外目标','冷却缩短','机制强化'])[{3:0,6:1,9:2}[level]];
-};
+export const skillMilestoneText = (skill, level) => skill?.milestones?.[level] || skill?.levels?.[level - 1]?.milestoneText || '';
 export default class UpgradeSystem{
   constructor(scene){ this.scene=scene; this.pending=0; this.panelOpen=false; this.replacingSkillId=null; }
   reset(){ this.pending=0; this.panelOpen=false; this.replacingSkillId=null; }
