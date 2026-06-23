@@ -26,5 +26,17 @@ export default class UpgradePanel {
   createDetails(f){ this.detailNodes.forEach(n=>{n.removeAllListeners?.();n.destroy();}); this.detailNodes=[]; const top=500; const lines=f?(f.detailLines||[]):[]; const title=lines[0]||'点击上方选项查看详情'; const body=lines.slice(1).join('\n'); const titleNode=this.scene.add.text(DESIGN_WIDTH/2,top,title,{fontFamily:'Arial',fontSize:f?'42px':'24px',color:f?WHITE:MUTED,stroke:'#000',strokeThickness:5,align:'center',wordWrap:{width:620,useAdvancedWrap:true}}).setOrigin(0.5,0).setScrollFactor(0).setDepth(DEPTH+2); const bodyNode=this.scene.add.text(DESIGN_WIDTH/2,top+72,body,{fontFamily:'Arial',fontSize:'23px',color:WHITE,stroke:'#000',strokeThickness:3,lineSpacing:9,align:'center',wordWrap:{width:620,useAdvancedWrap:true}}).setOrigin(0.5,0).setScrollFactor(0).setDepth(DEPTH+2); this.detailNodes.push(titleNode,bodyNode); this.nodes.push(titleNode,bodyNode); }
   createDebug(){ if(!this.scene.debugMode) return; this.debugText=this.makeText(28,1220,'',{fontSize:'14px',color:'#ffd166',wordWrap:{width:400}}); this.updateDebug(); }
   updateDebug(){ if(this.debugText) this.debugText.setText(`mode=${this.mode} index=${this.state.selectedIndex} id=${this.state.selectedOption?.skillId||this.state.selectedOption?.artifactId||this.state.selectedOption?.id||'-'} locked=${this.state.confirmed}`); }
+
+  showReplacement(option, onReplace, onCancel){
+    this.hide(); this.isOpen=true; this.onReplace=onReplace; this.onCancel=onCancel;
+    const bg=this.scene.add.rectangle(DESIGN_WIDTH/2,DESIGN_HEIGHT/2,DESIGN_WIDTH,DESIGN_HEIGHT,0x07101f,0.28).setScrollFactor(0).setDepth(DEPTH);
+    const title=this.scene.add.text(DESIGN_WIDTH/2,132,'点击选择交换一个技能',{fontFamily:'Arial',fontSize:'36px',color:'#fff',stroke:'#000',strokeThickness:5}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+1);
+    const hint=this.scene.add.text(DESIGN_WIDTH/2,188,'新技能不会立即替换；可取消返回三选一界面',{fontFamily:'Arial',fontSize:'22px',color:'#cbd6ee',stroke:'#000',strokeThickness:3}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+1);
+    const cancel=makeInteractive(this.scene.add.text(DESIGN_WIDTH/2,260,'取消 / 返回',{fontFamily:'Arial',fontSize:'26px',color:'#fff',backgroundColor:'#4a2d38',padding:{left:18,right:18,top:10,bottom:10}}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+2)).on('pointerdown',()=>this.onCancel?.());
+    this.nodes.push(bg,title,hint,cancel);
+    (this.scene.playerData.skills||[]).slice(0,4).forEach((skillData,i)=>{ const cfg=SKILLS[skillData.id]||{}; const x=116+i*164,y=438; const box=makeInteractive(this.scene.add.rectangle(x,y,142,128,0x263f70,0.96).setStrokeStyle(5,0xffd166,1).setScrollFactor(0).setDepth(DEPTH+2)).on('pointerdown',()=>this.onReplace?.(i)); const text=this.scene.add.text(x,y,`${cfg.name||skillData.id}
+Lv.${skillData.level}`,{fontFamily:'Arial',fontSize:'20px',color:'#fff',align:'center',stroke:'#000',strokeThickness:3,wordWrap:{width:124}}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+3); this.nodes.push(box,text); });
+  }
+
   hide(){ this.nodes.forEach(n=>{ n.removeAllListeners?.(); n.destroy(); }); this.nodes=[]; this.cards=[]; this.detailNodes=[]; this.state.close(); this.isOpen=false; }
 }

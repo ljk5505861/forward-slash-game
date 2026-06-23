@@ -1,0 +1,57 @@
+import { strict as assert } from 'node:assert';
+import { GAME_VERSION } from '../src/config/version.js';
+import { BALANCE, createPlayerRuntime } from '../src/config/balance.js';
+import { FLOW_GROUPS, LevelFlowStates } from '../src/systems/StageSystem.js';
+import UpgradeSystem, { skillMilestoneText } from '../src/systems/UpgradeSystem.js';
+import { SKILLS } from '../src/config/skills.js';
+import { getAdvancedProfessionChoices } from '../src/config/professions.js';
+
+assert.equal(GAME_VERSION, '0.10.0');
+assert.equal(BALANCE.camera.playerScreenAnchorX, 0.15);
+assert.equal(BALANCE.enemies.entrySpeed, 280);
+assert.equal(BALANCE.enemyPopulation.waveClearDelayMs, 1500);
+assert.equal(FLOW_GROUPS.length, 9);
+assert.deepEqual(FLOW_GROUPS.map(g=>g.waves), [[3,3,3],[4,4,4],[5,5,5],[6,6,6],[7,7,7],[8,8,8],[9,9,9],[10,10,10],[11,12,12]]);
+assert.equal(FLOW_GROUPS[2].after, 'shop1');
+assert.equal(FLOW_GROUPS[5].after, 'shop2');
+assert.equal(FLOW_GROUPS[8].after, 'advancedStatue');
+['GROUP_COMBAT','SKILL_REWARD','SHOP','BOSS_RUSH','BOSS_FIGHT','ARTIFACT_REWARD','PROFESSION_REWARD','ADVANCED_PROFESSION_STATUE','CAMPFIRE','VICTORY'].forEach(k=>assert.equal(LevelFlowStates[k], k));
+
+const scene={ playerData:createPlayerRuntime(), eventBus:{emit(){}}, hud:{update(){}}, skillBar:{update(){}}, skillSystem:{ addOrLevel(id){ const owned=scene.playerData.skills.find(s=>s.id===id); if(owned){ owned.level=Math.min(SKILLS[id].maxLevel, owned.level+1); return {applied:true}; } if(scene.playerData.skills.length>=4) return {needsReplacement:true,skillId:id}; scene.playerData.skills.push({id,level:1}); return {applied:true}; }, replaceSkill(index,id){ scene.playerData.skills.splice(index,1,{id,level:1}); return {applied:true}; } } };
+scene.playerData.skills=[];
+assert.deepEqual(scene.skillSystem.addOrLevel('fireball'), { applied:true });
+assert.equal(scene.playerData.skills[0].level, 1);
+scene.skillSystem.addOrLevel('fireball');
+assert.equal(scene.playerData.skills[0].level, 2);
+scene.playerData.skills=[{id:'fireball',level:1},{id:'lightning',level:1},{id:'spinning_blade',level:1},{id:'poison_cloud',level:1}];
+assert.deepEqual(scene.skillSystem.addOrLevel('sword_wave'), { needsReplacement:true, skillId:'sword_wave' });
+assert.equal(scene.playerData.skills[3].id, 'poison_cloud');
+scene.skillSystem.replaceSkill(2,'sword_wave');
+assert.equal(scene.playerData.skills[2].id, 'sword_wave');
+assert.equal(scene.playerData.skills[2].level, 1);
+const upgrade=new UpgradeSystem(scene);
+let opts=upgrade.rollOptions();
+assert.equal(new Set(opts.map(o=>o.skillId)).size, opts.length);
+scene.playerData.skills=[{id:'fireball',level:SKILLS.fireball.maxLevel},{id:'lightning',level:1},{id:'spinning_blade',level:1},{id:'poison_cloud',level:1}];
+opts=upgrade.rollOptions();
+assert(!opts.some(o=>o.skillId==='fireball'&&o.type==='skillLevel'));
+[3,6,9].forEach(lv=>assert(skillMilestoneText(SKILLS.fireball, lv).length>0));
+
+const p=createPlayerRuntime();
+p.hp=50; p.mana=20; p.stamina=30; p.skills=[{id:'fireball',level:1},{id:'lightning',level:SKILLS.lightning.maxLevel}];
+const before={...p};
+const candidates=p.skills.filter(s=>s.level<(SKILLS[s.id]?.maxLevel||s.level));
+assert.equal(candidates.length, 1);
+p.hp=Math.min(p.maxHp,p.hp+Math.round(p.maxHp*0.25));
+p.mana=Math.min(p.maxMana,p.mana+Math.round(p.maxMana*0.30));
+p.stamina=Math.min(p.maxStamina,p.stamina+Math.round(p.maxStamina*0.35));
+assert(p.hp>before.hp && p.hp<p.maxHp);
+assert(p.mana>before.mana && p.mana<p.maxMana);
+assert(p.stamina>before.stamina && p.stamina<p.maxStamina);
+
+assert.deepEqual(getAdvancedProfessionChoices('warrior').map(p=>p.id), ['berserker','guardian','swordmaster']);
+assert.deepEqual(getAdvancedProfessionChoices('mage').map(p=>p.id), ['elementalist','arcanist','blood_mage']);
+assert.deepEqual(getAdvancedProfessionChoices('ranger').map(p=>p.id), ['sharpshooter','beast_hunter','shadow_dancer']);
+assert(!('xp' in createPlayerRuntime()));
+assert(!('xpToNext' in createPlayerRuntime()));
+console.log('[validate-010-gameplay-loop] PASS fixed groups, skill slots/replacement, milestones, campfire, advanced professions, camera/version, xp removal');

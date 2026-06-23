@@ -24,3 +24,17 @@ export const PROFESSION_STATE_DEFAULTS = Object.freeze({
 export const getProfession = (id) => PROFESSIONS[id] || null;
 export const getProfessionAttackProfile = (id) => PROFESSION_ATTACK_PROFILES[id] || null;
 export const getProfessionChoices = ({ routeId = null, currentSkills = [], currentArtifacts = [] } = {}) => ['warrior','mage','ranger'].map(getProfession).filter(Boolean);
+
+export const ADVANCED_PROFESSIONS = Object.freeze({
+  berserker:{ id:'berserker', base:'warrior', name:'狂战士', description:'低血高伤、攻速、吸血与击杀恢复。', color:0xff3b30, icon:'狂' },
+  guardian:{ id:'guardian', base:'warrior', name:'守护者', description:'周期护盾、防御减伤与更强击退。', color:0x8fd7ff, icon:'盾' },
+  swordmaster:{ id:'swordmaster', base:'warrior', name:'剑圣', description:'连击提高攻速暴击，满层范围斩击。', color:0xffe08a, icon:'剑' },
+  elementalist:{ id:'elementalist', base:'mage', name:'元素使', description:'火冰雷联动，双元素触发范围爆炸。', color:0xb56cff, icon:'元' },
+  arcanist:{ id:'arcanist', base:'mage', name:'奥术师', description:'法力循环、免费施法、概率重复释放。', color:0x768cff, icon:'奥' },
+  blood_mage:{ id:'blood_mage', base:'mage', name:'血法师', description:'生命施法、高伤害与法术吸血。', color:0xb91c1c, icon:'血' },
+  sharpshooter:{ id:'sharpshooter', base:'ranger', name:'神射手', description:'远距离增伤、暴击、穿透与 Boss 单体输出。', color:0x93c5fd, icon:'射' },
+  beast_hunter:{ id:'beast_hunter', base:'ranger', name:'猎兽师', description:'标记、陷阱、控场与怪潮处理。', color:0x84cc16, icon:'猎' },
+  shadow_dancer:{ id:'shadow_dancer', base:'ranger', name:'影舞者', description:'高攻速、毒层、闪避与近距离爆发。', color:0xa855f7, icon:'影' },
+});
+export const getAdvancedProfession = id => ADVANCED_PROFESSIONS[id] || null;
+export const getAdvancedProfessionChoices = professionId => Object.values(ADVANCED_PROFESSIONS).filter(p=>p.base===professionId);
