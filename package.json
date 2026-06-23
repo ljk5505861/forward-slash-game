@@ -13,7 +13,8 @@
     "validate:enemy-population": "node scripts/validate-enemy-population.mjs",
     "validate:midboss-reward-flow": "node scripts/validate-midboss-reward-flow.mjs",
     "validate:final-shop-flow": "node scripts/validate-final-shop-flow.mjs",
-    "validate:life-steal": "node scripts/validate-life-steal.mjs"
+    "validate:life-steal": "node scripts/validate-life-steal.mjs",
+    "validate:010-gameplay-loop": "node scripts/validate-010-gameplay-loop.mjs"
   },
   "dependencies": {
     "phaser": "latest",

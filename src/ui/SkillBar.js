@@ -4,7 +4,7 @@ import { SKILLS } from '../config/skills.js';
 import { getRarity } from '../config/rarities.js';
 import { makeInteractive } from './interactive.js';
 
-const SLOTS_PER_PAGE = 3;
+const SLOTS_PER_PAGE = 4;
 
 export default class SkillBar {
   constructor(scene) {
@@ -30,15 +30,15 @@ export default class SkillBar {
 
     this.nodes.push(bg, this.prevButton, this.nextButton, this.pageText);
     for (let i = 0; i < SLOTS_PER_PAGE; i += 1) {
-      const x = 154 + i * 206;
-      const box = this.scene.add.rectangle(x, y + 10, 176, 112, 0x1f3158, 0.96)
+      const x = 108 + i * 168;
+      const box = this.scene.add.rectangle(x, y + 10, 146, 112, 0x1f3158, 0.96)
         .setStrokeStyle(3, 0x89a8e8, 1)
         .setScrollFactor(0)
         .setDepth(2101);
       const text = this.scene.add.text(x, y + 10, '', {
-        fontFamily: 'Arial', fontSize: '20px', color: '#ffffff', align: 'center', stroke: '#000', strokeThickness: 3, wordWrap: { width: 154 },
+        fontFamily: 'Arial', fontSize: '20px', color: '#ffffff', align: 'center', stroke: '#000', strokeThickness: 3, wordWrap: { width: 132 },
       }).setOrigin(0.5).setScrollFactor(0).setDepth(2102);
-      this.slotNodes.push({ box, text });
+      box.setInteractive({useHandCursor:true}).on('pointerdown',()=>{ if(this.scene.upgradeSystem?.replacingSkillId) this.scene.upgradeSystem.confirmReplacement(index); }); this.slotNodes.push({ box, text });
       this.nodes.push(box, text);
     }
     this.update();
@@ -64,19 +64,19 @@ export default class SkillBar {
     const skills = this.scene.playerData.skills;
     const pages = this.getPageCount();
     this.page = Phaser.Math.Clamp(this.page, 0, pages - 1);
-    this.pageText.setText(`技能 ${this.page + 1}/${pages}`);
-    this.prevButton.setAlpha(pages > 1 ? 1 : 0.35);
-    this.nextButton.setAlpha(pages > 1 ? 1 : 0.35);
+    this.pageText.setText('技能槽 4/4');
+    this.prevButton.setAlpha(0.15);
+    this.nextButton.setAlpha(0.15);
 
     this.slotNodes.forEach(({ box, text }, index) => {
-      const skillData = skills[this.page * SLOTS_PER_PAGE + index];
+      const replacing=!!this.scene.upgradeSystem?.replacingSkillId; const skillData = skills[index];
       if (!skillData) {
-        text.setText('空技能槽'); box.setStrokeStyle(3,0x89a8e8,1);
+        text.setText('空技能槽'); box.setStrokeStyle(replacing?5:3,replacing?0xffd166:0x89a8e8,1);
         return;
       }
       const cfg = SKILLS[skillData.id];
       const rarity = getRarity(cfg?.rarity);
-      box.setStrokeStyle(4, rarity.color, 1);
+      box.setStrokeStyle(replacing?5:4, replacing?0xffd166:rarity.color, 1);
       const readyAt = this.scene.skillSystem?.cooldowns.get(skillData.id) || 0;
       const remaining = Math.max(0, Math.ceil((readyAt - this.scene.getGameplayTime()) / 1000));
       text.setText(`${rarity.name} ${cfg?.name || skillData.id}\nLv.${skillData.level}\n${remaining > 0 ? `冷却 ${remaining}s` : '就绪'}`);

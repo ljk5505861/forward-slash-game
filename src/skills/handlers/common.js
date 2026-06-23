@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+const Phaser = globalThis.Phaser || { Math:{ Distance:{ Between:(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1), }, Angle:{ Between:(x1,y1,x2,y2)=>Math.atan2(y2-y1,x2-x1) } } };
 export const validEnemies = (s) => s.targeting.all();
 export const dist = Phaser.Math.Distance.Between;
 export function ring(s,x,y,r,c){ const o=s.add.circle(x,y,r,c,0.16).setStrokeStyle(4,c,0.9).setDepth(150); s.tweens.add({targets:o,alpha:0,scale:1.15,duration:360,onComplete:()=>o.destroy()}); return o; }
