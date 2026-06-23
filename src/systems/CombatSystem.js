@@ -27,11 +27,63 @@ export default class CombatSystem {
   damageEnemy(enemy, amount, meta={}){ if(!this.scene.targeting.valid(enemy)) return false; if(!this.scene.targeting.isEnemyFullyInsideViewport(enemy)) return false; const professionMult=meta.professionApplied ? (meta.professionMultiplier||1) : (this.scene.professionSystem?.getDamageMultiplier?.({ type:meta.source==='skill'?'activeSkill':meta.source, damaging:true })||1); const baseBeforeProfession=Math.max(0, Math.round(meta.baseAmountBeforeProfession ?? (meta.professionApplied && professionMult>0 ? amount/professionMult : amount))); const boosted=meta.professionApplied ? Math.round(amount) : Math.round(amount*professionMult); const reduced=Math.max(0, Math.round(boosted*(1-(enemy.damageReduction||0))-(enemy.defense||0))); const baseReduced=Math.max(0, Math.round(baseBeforeProfession*(1-(enemy.damageReduction||0))-(enemy.defense||0))); const hpBefore=enemy.hp; enemy.hp=Math.max(0, enemy.hp-reduced); const actualDamage=hpBefore-enemy.hp; const actualWithoutProfession=Math.min(hpBefore,baseReduced); const professionBonus=professionMult>1 ? Math.min(actualDamage, Math.max(0, actualDamage-actualWithoutProfession)) : 0; if(actualDamage>0){ this.scene.floatText(enemy.x, enemy.y-60, `-${actualDamage}`, meta.source==='burn'?'#ff8a33':'#fff'); syncEnemyUi(enemy); this.scene.eventBus.emit(CombatEvents.ENEMY_HIT,{ enemy, damage:actualDamage, professionBonusDamage:professionBonus, ...meta }); if(meta.source==='attack'||meta.source==='normalAttack') this.applyKnockback(enemy, meta); this.applyLifeSteal(actualDamage, meta); } else syncEnemyUi(enemy); if(enemy.hp<=0) this.handleDeathReactions(enemy, meta); if(enemy.hp<=0) this.killEnemy(enemy, meta); return actualDamage > 0; }
 
 
-  applyKnockback(enemy, meta={}){ if(!enemy?.body||enemy.isDefeated) return; const base=meta.knockback ?? 0; const mult=enemy.isBoss?0.12:(enemy.isElite?0.35:(enemy.enemyId==='armored_guard'?0.6:1)); const dx=Math.max(2,Math.round(base*mult)); const maxX=(this.scene.balance.stageWorldWidth||14900)-enemy.width/2-8; enemy.x=Math.min(maxX, enemy.x+dx); enemy.body?.reset?.(enemy.x, enemy.y); }
+  clearKnockback(enemy){
+    if(!enemy) return;
+    enemy.knockbackTween?.stop?.();
+    enemy.knockbackTween?.remove?.();
+    enemy.knockbackTween=null;
+    enemy.isKnockbackActive=false;
+    enemy.knockbackUntil=0;
+  }
+
+  applyKnockback(enemy, meta={}){
+    if(!enemy?.body||enemy.isDefeated) return;
+    const base=meta.knockback ?? 0;
+    if(base<=0) return;
+    const mult=enemy.isBoss?0.12:(enemy.isElite?0.35:(enemy.enemyId==='armored_guard'?0.6:1));
+    const dx=Math.max(2,Math.round(base*mult));
+    const minX=enemy.width/2+8;
+    const maxX=(this.scene.balance.stageWorldWidth||14900)-enemy.width/2-8;
+    const startX=enemy.x;
+    const groundY=enemy.knockbackGroundY ?? enemy.y;
+    const endX=Math.max(minX,Math.min(maxX,startX+dx));
+    const duration=220;
+    const lift=24;
+    this.clearKnockback(enemy);
+    enemy.knockbackGroundY=groundY;
+    enemy.isKnockbackActive=true;
+    enemy.knockbackUntil=(this.scene.getGameplayTime?.()??0)+duration;
+    enemy.body?.setVelocityX?.(0);
+    const state={ t:0 };
+    const sync=()=>syncEnemyUi(enemy);
+    enemy.knockbackTween=this.scene.tweens.add({
+      targets:state,
+      t:1,
+      duration,
+      ease:'Sine.easeOut',
+      onUpdate:()=>{
+        if(enemy.isDefeated||!enemy.active){ this.clearKnockback(enemy); return; }
+        const t=Math.max(0,Math.min(1,state.t));
+        enemy.x=startX+(endX-startX)*t;
+        enemy.y=groundY-Math.sin(Math.PI*t)*lift;
+        enemy.body?.reset?.(enemy.x,enemy.y);
+        enemy.body?.setVelocityX?.(0);
+        sync();
+      },
+      onComplete:()=>{
+        if(enemy.isDefeated||!enemy.active){ this.clearKnockback(enemy); return; }
+        enemy.x=endX; enemy.y=groundY;
+        enemy.body?.reset?.(enemy.x,enemy.y);
+        enemy.body?.setVelocityX?.(0);
+        sync();
+        this.clearKnockback(enemy);
+      }
+    });
+  }
 
   applyLifeSteal(actualDamage, meta={}){ return applyLifeStealFromDamage(this.scene, actualDamage, meta); }
   damagePlayer(enemy, rawDamage, meta={}){ const s=this.scene; if(s.isGameplayPaused?.()||s.playerData.hp<=0) return; const base=Math.max(1, Math.round(rawDamage*(1-s.playerData.damageReduction)-s.playerData.defense)); const damage=Math.max(1, Math.round(base*(1-(s.playerData.temporaryDamageReduction||0)))); const intercepted=s.skillSystem?.beforePlayerDamage({ enemy, damage, rawDamage, ...meta }); if(intercepted?.blocked){ const blocked=intercepted.absorbed||damage; s.floatText(s.player.x, s.player.y-92, '吞弹抵挡', '#58d7ff'); s.eventBus.emit(CombatEvents.PLAYER_DAMAGED,{ enemy, damage, hpDamage:0, shieldAbsorbed:0, skillBlocked:blocked, blocked:true, blockedBySkillId:intercepted.blockedBySkillId||'bullet_eater', ...meta }); s.hud?.update(); return; } const shieldResult=s.statusEffects?.absorbShield(damage)||{absorbed:0,remainingDamage:damage}; const absorbed=shieldResult.absorbed; const hpDmg=shieldResult.remainingDamage; s.playerData.hp=Math.max(0,s.playerData.hp-hpDmg); s.floatText(s.player.x, s.player.y-80, absorbed&&hpDmg?`盾-${absorbed} -${hpDmg}`:absorbed?`盾-${absorbed}`:`-${hpDmg}`, absorbed?'#8fd7ff':'#ff7777'); s.eventBus.emit(CombatEvents.PLAYER_DAMAGED,{ enemy, damage, hpDamage:hpDmg, shieldAbsorbed:absorbed, ...meta }); if(s.playerData.hp/s.playerData.maxHp <=0.3) s.eventBus.emit(CombatEvents.PLAYER_LOW_HP,{ hp:s.playerData.hp }); s.hud?.update(); if(s.playerData.hp<=0) s.finishRun(false); }
-  killEnemy(enemy, meta={}){ if(!enemy||enemy.isDefeated) return; const s=this.scene; enemy.isDefeated=true; s.statusEffects?.clearTarget(enemy); enemy.body&&(enemy.body.enable=false); s.enemies=s.enemies.filter(e=>e!==enemy); s.killCount += enemy.isBoss ? 0 : 1; const gold=enemy.isMidBoss?40:enemy.isElite?15:(enemy.isBoss?0:1); if(gold) s.awardGold?.(gold, enemy.isMidBoss?'midBoss':enemy.isElite?'eliteEnemy':'normalEnemy'); s.eventBus.emit(CombatEvents.ENEMY_KILLED,{ enemy, ...meta }); if(enemy.isBoss){ const flowBossType=enemy.enemyId==='berserker_boss'?'boss1':(enemy.isMidBoss?'boss2':'boss3'); s.eventBus.emit(CombatEvents.BOSS_KILLED,{ enemy, bossType:enemy.isMidBoss?'mid':(enemy.isFinalBoss?'final':'boss1'), flowBossType }); s.stageSystem?.clearBossMinions?.(); s.stageSystem?.onBossKilled?.(flowBossType); if(enemy.isMidBoss) s.runStats?.endMidBossFight?.(); } else if(enemy.isElite){ /* no experience in 0.10.0 */ } else { /* no experience in 0.10.0 */ } [enemy.hpBarBg, enemy.hpBar, enemy.nameText].forEach(o=>o?.destroy()); s.tweens.add({ targets:enemy, alpha:0, duration:s.balance.enemyFadeMs, onComplete:()=>enemy.destroy() }); }
+  killEnemy(enemy, meta={}){ if(!enemy||enemy.isDefeated) return; const s=this.scene; enemy.isDefeated=true; this.clearKnockback(enemy); s.statusEffects?.clearTarget(enemy); enemy.body&&(enemy.body.enable=false); s.enemies=s.enemies.filter(e=>e!==enemy); s.killCount += enemy.isBoss ? 0 : 1; const gold=enemy.isMidBoss?40:enemy.isElite?15:(enemy.isBoss?0:1); if(gold) s.awardGold?.(gold, enemy.isMidBoss?'midBoss':enemy.isElite?'eliteEnemy':'normalEnemy'); s.eventBus.emit(CombatEvents.ENEMY_KILLED,{ enemy, ...meta }); if(enemy.isBoss){ const flowBossType=enemy.enemyId==='berserker_boss'?'boss1':(enemy.isMidBoss?'boss2':'boss3'); s.eventBus.emit(CombatEvents.BOSS_KILLED,{ enemy, bossType:enemy.isMidBoss?'mid':(enemy.isFinalBoss?'final':'boss1'), flowBossType }); s.stageSystem?.clearBossMinions?.(); s.stageSystem?.onBossKilled?.(flowBossType); if(enemy.isMidBoss) s.runStats?.endMidBossFight?.(); } else if(enemy.isElite){ /* no experience in 0.10.0 */ } else { /* no experience in 0.10.0 */ } [enemy.hpBarBg, enemy.hpBar, enemy.nameText].forEach(o=>o?.destroy()); s.tweens.add({ targets:enemy, alpha:0, duration:s.balance.enemyFadeMs, onComplete:()=>enemy.destroy() }); }
   handleDeathReactions(enemy, meta={}){ const s=this.scene; if(enemy._deathReacted) return; enemy._deathReacted=true; const all=s.targeting.all().filter(e=>e!==enemy); if(s.statusEffects?.has(enemy,'BURN')&&!meta.noDeathExplosion){ all.filter(e=>Phaser.Math.Distance.Between(e.x,e.y,enemy.x,enemy.y)<=95).forEach(e=>this.damageEnemy(e,8,{source:'burn_burst',tags:[TAGS.FIRE,TAGS.DOT],noDeathExplosion:true})); } const spreadingPoison=s.statusEffects?.getEffects(enemy,'POISON').find(e=>e.canSpread); if(spreadingPoison&&!meta.noPoisonSpread){ const r=spreadingPoison.spreadRadius||105; all.filter(e=>Phaser.Math.Distance.Between(e.x,e.y,enemy.x,enemy.y)<=r).forEach(e=>s.statusEffects.add('POISON',e,{durationMs:spreadingPoison.spreadDurationMs||2200,intervalMs:650,value:spreadingPoison.spreadDamage||5,sourceId:'poison_spread',canSpread:false,damageMultiplier:spreadingPoison.damageMultiplier||1,baseDamageMultiplierWithoutProfession:spreadingPoison.baseDamageMultiplierWithoutProfession||spreadingPoison.damageMultiplier||1,professionMultiplier:spreadingPoison.professionMultiplier||1,professionApplied:!!spreadingPoison.professionApplied})); } }
   updateEnemyAttack(enemy,time){ const s=this.scene; if(!s.targeting.valid(enemy)) return; if(BEHAVIOR_ATTACKERS.has(enemy.behavior)) return; if(enemy.isBoss && !enemy.enraged && enemy.hp <= enemy.maxHp/2){ enemy.enraged=true; enemy.attackIntervalMs=enemy.enragedAttackIntervalMs; s.hud?.setStatus('Boss 半血狂暴：攻击速度提升！'); } const d=Math.abs(enemy.x-s.player.x); if(d>enemy.attackRange) return; if(time < enemy.nextAttackAt) return; enemy.nextAttackAt=time+enemy.attackIntervalMs; this.damagePlayer(enemy, enemy.damage, { source:'enemyMelee' }); }
 }
