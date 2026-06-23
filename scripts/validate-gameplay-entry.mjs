@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { isEnemyFullyInsideViewportBounds, shouldRecycleEnemyLeftBounds, rightRespawnX } from '../src/systems/TargetingSystem.js';
+global.window={cordova:undefined, navigator:{userAgent:''}, addEventListener(){}, removeEventListener(){}}; global.document={documentElement:{style:{}}, createElement(){return {getContext(){return new Proxy({},{get(_,k){ if(k==='getImageData') return ()=>({data:[0,0,0,0]}); return ()=>{}; }});}, style:{}};}, addEventListener(){}, removeEventListener(){}}; Object.defineProperty(globalThis,'navigator',{value:global.window.navigator, configurable:true}); global.Image=class { set src(v){ setTimeout(()=>this.onload?.(),0); } }; global.HTMLCanvasElement=class {};
+const { isEnemyFullyInsideViewportBounds, shouldRecycleEnemyLeftBounds, rightRespawnX } = await import('../src/systems/TargetingSystem.js');
 
 const camera = (scrollX=0,width=720)=>({ scrollX, width });
 const enemy = (x,width=80,hp=10)=>({ x, y: 0, width, hp, maxHp: hp, active: true, isDefeated: false, attackRange: 100, speed: 50, body: { width, vx: 0, setVelocityX(v){ this.vx=v; } } });
@@ -40,4 +41,11 @@ entryMove(scene, visible);
 assert.equal(visible.body.vx, -50, 'resume can continue entry movement');
 assert.equal(true, true, 'player movement remains owned by MovementSystem');
 assert.equal(0.27 < 0.38, true, 'camera anchor is farther left than previous 0.38 ratio');
+const { approach: rangedApproach } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
+const rangedScene={ player:{x:100}, balance:{enemies:{entrySpeed:55, rangeBuffer:24}} };
+let bomber=enemy(520,82); bomber.speed=49; rangedApproach(rangedScene,bomber,520,350); assert.ok(bomber.body.vx<0, 'bomber farther than 350 moves toward player');
+bomber=enemy(450,82); bomber.speed=49; rangedApproach(rangedScene,bomber,520,350); assert.equal(bomber.body.vx,0, 'bomber near preferred 350 stops');
+bomber=enemy(250,82); bomber.speed=49; rangedApproach(rangedScene,bomber,520,350); assert.ok(bomber.body.vx>0, 'bomber too close retreats from player');
+let melee=enemy(260,80); melee.speed=75; rangedApproach(rangedScene,melee,100); assert.ok(melee.body.vx<0, 'melee approach is unchanged');
+
 console.log('gameplay entry validation passed');

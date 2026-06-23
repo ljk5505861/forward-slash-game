@@ -26,8 +26,8 @@ const assertOutsideRight=(x,id,scene,label)=>assert.ok(x>scene.cameras.main.worl
 const scene=makeScene(); const sys=new StageSystem(scene); sys.start();
 assert.equal(scene.enemies.length,0,'skill choice pause/opening must have no enemies');
 scene.paused=true; now=10000; sys.update(now); assert.equal(scene.enemies.length,0,'paused opening timer must not advance');
-scene.paused=false; now=0; sys.update(now); now=2999; sys.update(now); assert.equal(scene.enemies.length,0,'2999ms no enemies');
-now=3000; sys.update(now); assert.ok(sys.waveQueue.length>0||scene.enemies.length>0,'3000ms queues first wave');
+scene.paused=false; now=0; sys.update(now); now=1999; sys.update(now); assert.equal(scene.enemies.length,0,'1999ms no enemies');
+now=2000; sys.update(now); assert.ok(sys.waveQueue.length>0||scene.enemies.length>0,'2000ms queues first wave');
 const q=[...sys.waveQueue]; assert.equal(new Set(q.map(i=>i.id)).size,2,'wave has exactly two types');
 for(let i=1;i<q.length;i++) assert.ok(q[i].at>q[i-1].at,'queue times strictly increasing');
 const startCount=scene.enemies.length; for (const item of q){ now=item.at; sys.update(now); }
@@ -44,7 +44,7 @@ const generated=endSys.spawn('armored_guard'); assertOutsideRight(generated.x,'a
 
 const boss3Scene=makeScene(); boss3Scene.cameras.main.scrollX=11460; boss3Scene.cameras.main.worldView.right=12180; const boss3Sys=new StageSystem(boss3Scene); boss3Sys.start(); boss3Sys.enterPhaseById('boss3');
 assert.equal(boss3Sys.bossIntroState,'spawningMinions'); const intro=[...boss3Sys.waveQueue]; assert.ok(intro.length>=6&&intro.length<=9,'boss3 intro queues 6-9 minions'); assert.equal(new Set(intro.map(i=>i.id)).size,2,'boss3 intro uses two types');
-for(let i=1;i<intro.length;i++){ const gap=intro[i].at-intro[i-1].at; const switched=intro[i].id!==intro[i-1].id; assert.equal(gap, switched?300:150, 'boss3 intro intervals are 150ms same-type / 300ms switch'); }
+for(let i=1;i<intro.length;i++){ const gap=intro[i].at-intro[i-1].at; const switched=intro[i].id!==intro[i-1].id; assert.equal(gap, switched?1000:150, 'boss3 intro intervals are 150ms same-type / 1000ms switch'); }
 const spawnedIntro=[]; while(boss3Sys.waveQueue.length){ now=boss3Sys.waveQueue[0].at; boss3Sys.update(now); spawnedIntro.push(boss3Scene.enemies.at(-1)); }
 spawnedIntro.forEach(e=>assertOutsideRight(e.x,e.enemyId,boss3Scene,'boss3 intro')); assert.ok(spawnedIntro.every(e=>!boss3Scene.targeting.isEnemyFullyInsideViewport(e)),'no boss3 intro minion starts visible');
 assert.equal(boss3Sys.bossSpawnAt, intro.at(-1).at+5000,'boss3 spawns 5s after final intro minion'); now=boss3Sys.bossSpawnAt-1; boss3Sys.update(now); assert.equal(boss3Scene.enemies.filter(e=>e.isBoss).length,0); now=boss3Sys.bossSpawnAt; boss3Sys.update(now); assert.equal(boss3Scene.enemies.filter(e=>e.enemyId==='boss').length,1,'boss3 appears normally after intro delay');

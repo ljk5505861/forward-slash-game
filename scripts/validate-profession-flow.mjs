@@ -7,8 +7,8 @@ assert.match(panel, /this\.hide\(\); this\.scene\.onProfessionPanelClosed\?\.\(\
 assert.match(game, /midBossFlowStep='profession'/, 'mid-boss flow records profession step');
 assert.match(game, /if\(!this\.playerData\.professionId\|\|this\.midBossFlowStep==='profession'\)\{ this\.showProfessionChoice\(\); return; \}/, 'resumeModalFlow cannot skip profession');
 assert.match(game, /showProfessionChoice\(\).*playerInfoPanel\?\.isOpen.*midBossFlowStep='profession'.*return false/s, 'player info occupancy leaves profession step pending');
-assert.match(game, /onProfessionPanelClosed\(\).*midBossFlowStep='levelUps'.*resumeModalFlow/s, 'profession close advances to level-ups');
-assert.match(game, /finishMidBossRewardFlow\(\).*midBossFlowStep='complete'/, 'unique finish exit completes flow');
+assert.match(game, /onProfessionPanelClosed\(\).*midBossFlowStep='levelUps'.*resumeModalFlow/s, 'profession close resumes modal flow');
+assert.match(game, /claimArtifactReward\(option\).*reward\.afterBoss==='boss2'.*midBossFlowStep='complete'/s, 'boss2 artifact claim completes profession flow');
 assert.match(game, /debugTest==='profession-flow'/, 'debug browser entry is wired');
 assert.match(game, /runDebugProfessionFlowTest\(\)/, 'real scene debug profession flow runner exists');
 assert.match(game, /\[0,1,3\]\.forEach/, 'debug runner covers pending 0/1/3');
