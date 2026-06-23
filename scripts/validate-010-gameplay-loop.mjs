@@ -18,7 +18,7 @@ function makeScene(){
   return scene;
 }
 
-assert.equal(GAME_VERSION, '0.10.1');
+assert.equal(GAME_VERSION, '0.10.2');
 assert.equal(BALANCE.camera.playerScreenAnchorX, 0.15);
 assert.equal(BALANCE.enemies.entrySpeed, 280);
 assert.equal(BALANCE.enemyPopulation.waveClearDelayMs, 1500);
@@ -66,7 +66,7 @@ const emptyCampfireScene=makeScene(); emptyCampfireScene.stageSystem=new StageSy
 let opts=scene.upgradeSystem.rollOptions(); assert.equal(new Set(opts.map(o=>o.skillId)).size, opts.length);
 scene.playerData.skills=[{id:'fireball',level:9},{id:'lightning',level:1},{id:'spinning_blade',level:1},{id:'poison_cloud',level:1}]; opts=scene.upgradeSystem.rollOptions(); assert(!opts.some(o=>o.skillId==='fireball'&&o.type==='skillLevel'));
 
-const stageScene=makeScene(); const stage=new StageSystem(stageScene); stageScene.stageSystem=stage; stage.start(); stage.update(0); assert.equal(stage.waveQueue.length,3); assert.equal(stage.makeWaveIds(['grunt','bomber'],5,1).filter(x=>x.role==='back').length,1); assert(stage.makeWaveIds(['grunt','bomber'],6,2).slice(0,4).every(x=>x.role==='front')); assert(stage.makeWaveIds(['grunt','bomber'],6,2).slice(4).every(x=>x.role==='back'));
+const stageScene=makeScene(); const stage=new StageSystem(stageScene); stageScene.stageSystem=stage; stage.start(); stage.update(0); assert.equal(stage.waveQueue.length,3); assert.equal(stage.makeWaveIds(['grunt','bomber'],5,1).filter(x=>x.role==='back').length,1); assert.equal(stage.makeWaveIds(['grunt','charger'],5,0).filter(x=>x.role==='back').length,0); assert(stage.makeWaveIds(['grunt','bomber'],6,2).slice(0,4).every(x=>x.role==='front')); assert(stage.makeWaveIds(['grunt','bomber'],6,2).slice(4).every(x=>x.role==='back'));
 for(let i=0;i<3;i+=1){ stage.currentWave=i+1; stage.waveSpawnFinished=true; stage.waveQueue=[]; stageScene.enemies=[]; if(i<2){ stage.updateGroup(i*2000); assert.equal(stage.flowState,LevelFlowStates.GROUP_COMBAT); } }
 stage.finishGroup(); assert.equal(stage.flowState,LevelFlowStates.SKILL_REWARD); assert.equal(stageScene.skillRewards.length,1); stage.onSkillRewardClosed(); assert.equal(stage.groupIndex,1); stage.onSkillRewardClosed(); assert.equal(stage.groupIndex,1);
 stage.groupIndex=2; stage.currentWave=3; stage.finishGroup(); stage.onSkillRewardClosed(); assert.deepEqual(stageScene.shopRequests,['first']); stage.onShopClosed('first'); assert.equal(stage.flowState,LevelFlowStates.BOSS_RUSH); stage.onBossKilled('boss1'); stage.onBossKilled('boss1'); assert.deepEqual(stageScene.artifactRequests,['boss1']); stage.beginAfterBossReward('boss1'); assert.deepEqual(stageScene.campfires,['boss1']); stage.onCampfireClosed('boss1'); assert.equal(stage.groupIndex,3);
