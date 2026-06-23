@@ -38,6 +38,12 @@ scene.enemies[0].isDefeated=true; scene.enemies=scene.enemies.slice(1); now+=500
 scene.enemies.forEach(e=>e.isDefeated=true); scene.enemies=[]; now+=1; sys.update(now); const next=sys.nextWaveAt; assert.equal(sys.waveState,'waitingNextWave','last death starts 5s timer');
 now=next-1; sys.update(now); assert.equal(sys.waveQueue.length,0,'4999ms no next wave'); now=next; sys.update(now); assert.ok(sys.waveQueue.length>0,'5000ms starts next wave');
 
+
+const eliteOrderScene=makeScene(); const eliteOrderSys=new StageSystem(eliteOrderScene); eliteOrderSys.start(); eliteOrderSys.queueTwoTypeWave(4, ['grunt','bomber'], 5000, ['elite']);
+const eliteOrder=eliteOrderSys.waveQueue.map(i=>i.id); const firstRangedIndex=eliteOrder.findIndex(id=>id==='bomber'); const eliteIndex=eliteOrder.indexOf('elite');
+assert.ok(eliteIndex>=0&&firstRangedIndex>eliteIndex, 'elite is grouped with frontline before ranged units');
+for(let i=1;i<eliteOrderSys.waveQueue.length;i++){ const gap=eliteOrderSys.waveQueue[i].at-eliteOrderSys.waveQueue[i-1].at; const switched=eliteOrderSys.waveQueue[i].id==='bomber'&&eliteOrderSys.waveQueue[i-1].id!=='bomber'; assert.equal(gap, switched?1000:150, 'elite wave intervals keep 150ms inside frontline and 1000ms before ranged'); }
+
 const endScene=makeScene(); endScene.cameras.main.scrollX=11460; endScene.cameras.main.worldView.right=12180; const endSys=new StageSystem(endScene); endSys.start();
 for (const id of ['grunt','armored_guard']) { const x=endSys.spawnXFor(id); assertOutsideRight(x,id,endScene,'late-map spawnXFor'); assert.ok(x <= STAGES[0].worldWidth-ENEMIES[id].width/2-8, `${id} spawn remains inside world`); }
 const generated=endSys.spawn('armored_guard'); assertOutsideRight(generated.x,'armored_guard',endScene,'actual generated late normal'); assert.equal(endScene.targeting.isEnemyFullyInsideViewport(generated),false,'actual generated enemy starts invisible'); endScene.enemyBehaviors.update(now+=16); assert.ok(generated.body.velocity.x<0,'offscreen generated enemy moves left on behavior update');
