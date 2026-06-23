@@ -5,19 +5,20 @@ const { STAGES } = await import('../src/config/stages.js');
 const { ENEMIES } = await import('../src/config/enemies.js');
 const { default: StageSystem } = await import('../src/systems/StageSystem.js');
 const { default: EnemyBehaviorManager } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
+const { default: CombatSystem } = await import('../src/systems/CombatSystem.js');
 
 let now=0;
-const maxNormalWidth=Math.max(...Object.values(ENEMIES).filter(e=>e.kind==='normal').map(e=>e.width));
 const makeDisplayObject=(x=0,y=0,width=10,height=10)=>({ x,y,width,height,active:true,alpha:1, setStrokeStyle(){return this;}, setDepth(){return this;}, setOrigin(){return this;}, setFillStyle(){return this;}, setScale(v){this.scale=v; return this;}, setPosition(x2,y2){this.x=x2; this.y=y2; return this;}, setDisplaySize(w,h){this.displayWidth=w; this.displayHeight=h; return this;}, destroy(){this.active=false;}, removeAllListeners(){return this;} });
 const makeScene=()=>{
   const scene={
-    balance:BALANCE, scale:{height:1280}, time:{get now(){return now}}, player:{x:220,y:850}, enemies:[],
+    balance:BALANCE, scale:{height:1280}, time:{get now(){return now}}, player:{x:220,y:850}, playerData:{hp:120,maxHp:120,damageReduction:0,defense:0,temporaryDamageReduction:0,attack:10,attackSpeedMultiplier:1,critChance:0,critMultiplier:1,weaponId:'short_sword'}, enemies:[],
     cameras:{main:{scrollX:0,width:720,worldView:{right:720},setBounds(x,y,w,h){this.bounds={x,y,w,h};}}}, physics:{world:{setBounds(x,y,w,h){this.bounds={x,y,w,h};}}, add:{existing(obj){ obj.body={ width:obj.width, height:obj.height, velocity:{x:0}, setAllowGravity(){return this;}, setImmovable(){return this;}, setSize(w,h){this.width=w; this.height=h; return this;}, setOffset(){return this;}, setVelocityX(v){this.velocity.x=v; obj.velocityX=v; return this;}, reset(x,y){obj.x=x; obj.y=y; this.velocity.x=0;} }; }}},
-    add:{ rectangle(x,y,w,h){return makeDisplayObject(x,y,w,h);}, text(x,y){return makeDisplayObject(x,y,0,0);}, circle(x,y,r){return makeDisplayObject(x,y,r*2,r*2);}, triangle(x,y){return makeDisplayObject(x,y,40,40);}, line(){return makeDisplayObject();} },
-    tweens:{add(){}}, hud:{setStage(){},setStatus(){}}, eventBus:{emit(){}}, runStats:{startMidBossFight(){}}, statusEffects:{clearTarget(){}},
-    getGameplayTime(){return now;}, isGameplayPaused(){return this.paused||false;}, queueShop(reason){this.queuedShop=reason;}, finishRun(won){this.finishedWon=won;}
+    add:{ rectangle(x,y,w,h){return makeDisplayObject(x,y,w,h);}, text(x,y){return makeDisplayObject(x,y,0,0);}, circle(x,y,r){return makeDisplayObject(x,y,r*2,r*2);}, triangle(x,y){return makeDisplayObject(x,y,40,40);}, line(){return makeDisplayObject();}, arc(x,y,r){return makeDisplayObject(x,y,r*2,r*2);}, graphics(){return { active:true, setDepth(){return this;}, lineStyle(){return this;}, lineBetween(){return this;}, destroy(){this.active=false;} };} },
+    tweens:{add(cfg){ cfg?.onComplete?.(); }}, hud:{setStage(){},setStatus(){},update(){}}, eventBus:{emit(){}}, runStats:{startMidBossFight(){}}, statusEffects:{clearTarget(){}, absorbShield(damage){return {absorbed:0,remainingDamage:damage};}},
+    skillSystem:{beforePlayerDamage(){return null;}}, floatText(){}, getGameplayTime(){return now;}, isGameplayPaused(){return this.paused||false;}, queueShop(reason){this.queuedShop=reason;}, finishRun(won){this.finishedWon=won;}
   };
-  scene.targeting={ isEnemyFullyInsideViewport(e){ return e.x + (e.width||0)/2 <= scene.cameras.main.worldView.right; }, shouldRecycleEnemyLeft(){ return false; } };
+  scene.targeting={ valid(e){ return !!(e?.active && !e.isDefeated && e.hp > 0); }, isEnemyFullyInsideViewport(e){ return e.x + (e.width||0)/2 <= scene.cameras.main.worldView.right; }, shouldRecycleEnemyLeft(){ return false; }, all(){ return scene.enemies.filter(e=>this.valid(e)&&this.isEnemyFullyInsideViewport(e)); }, nearestAhead(){ return null; } };
+  scene.combatSystem=new CombatSystem(scene);
   scene.enemyBehaviors=new EnemyBehaviorManager(scene);
   return scene;
 };
@@ -34,6 +35,21 @@ const drainIntroAndAssertBoss=(phaseId, enemyId, right=720)=>{
   if(behavior){ behavior.state='idle'; behavior.next=now+10000; behavior.nextChargeAt=now+10000; } s.player.x=boss.x-(boss.attackRange-4); s.enemyBehaviors.update(now+=16); assert.equal(boss.body.velocity.x,0,`${phaseId} boss stops in attack range`);
   s.player.x=boss.x-600; s.enemyBehaviors.update(now+=16); assert.ok(boss.body.velocity.x<0,`${phaseId} boss resumes chase when player pulls away`);
   return { s, st, boss };
+};
+const assertBossDamagesPlayer=(phaseId, enemyId, attackKind)=>{
+  const { s, boss } = drainIntroAndAssertBoss(phaseId, enemyId, phaseId==='boss1'?5200:phaseId==='boss2'?10000:12800);
+  s.cameras.main.worldView.right=boss.x+boss.width+10;
+  s.player.x=boss.x-(boss.attackRange-8);
+  s.player.y=boss.y;
+  const hpBefore=s.playerData.hp;
+  if(attackKind==='berserkerCharge'){
+    const behavior=s.enemyBehaviors.items.get(boss); behavior.state='idle'; behavior.nextChargeAt=now; s.enemyBehaviors.update(now+=16); now=behavior.windupUntil; s.enemyBehaviors.update(now); s.player.x=boss.x-10; s.enemyBehaviors.update(now+=16);
+  } else if(attackKind==='midBossSlam'){
+    const behavior=s.enemyBehaviors.items.get(boss); behavior.state='idle'; behavior.next=now; const random=Math.random; Math.random=()=>0; s.enemyBehaviors.update(now+=16); Math.random=random; now=behavior.fireAt; s.enemyBehaviors.update(now);
+  } else {
+    boss.nextAttackAt=0; s.combatSystem.updateEnemyAttack(boss, now+=16);
+  }
+  assert.ok(s.playerData.hp<hpBefore, `${phaseId} real attack lowers player hp`);
 };
 
 const scene=makeScene(); const sys=new StageSystem(scene); sys.start();
@@ -74,8 +90,9 @@ const spawnedIntro=[]; while(boss3Sys.waveQueue.length){ now=boss3Sys.waveQueue[
 spawnedIntro.forEach(e=>assertOutsideRight(e.x,e.enemyId,boss3Scene,'boss3 intro')); assert.ok(spawnedIntro.every(e=>!boss3Scene.targeting.isEnemyFullyInsideViewport(e)),'no boss3 intro minion starts visible');
 assert.equal(boss3Sys.bossSpawnAt, intro.at(-1).at+BALANCE.enemyPopulation.bossIntroDelayMs,'boss3 spawns 1s after final intro minion'); now=boss3Sys.bossSpawnAt-1; boss3Sys.update(now); assert.equal(boss3Scene.enemies.filter(e=>e.isBoss).length,0,'999ms no boss3'); now=boss3Sys.bossSpawnAt; boss3Sys.update(now); const boss3=boss3Scene.enemies.find(e=>e.enemyId==='boss'); assert.ok(boss3,'boss3 appears normally after intro delay'); assertOutsideRight(boss3.x,'boss',boss3Scene,'boss3'); assert.equal(boss3Scene.targeting.isEnemyFullyInsideViewport(boss3),false,'boss3 starts invisible'); boss3Scene.enemyBehaviors.update(now+=16); assert.ok(boss3.body.velocity.x<0,'boss3 actively enters from the right');
 drainIntroAndAssertBoss('boss1','berserker_boss',5200); drainIntroAndAssertBoss('boss2','mid_boss',10000); drainIntroAndAssertBoss('boss3','boss',12800);
+assertBossDamagesPlayer('boss1','berserker_boss','berserkerCharge'); assertBossDamagesPlayer('boss2','mid_boss','midBossSlam'); assertBossDamagesPlayer('boss3','boss','basicAttack');
 
-const lateScene=makeScene(), lateSys=new StageSystem(lateScene); lateSys.start(); lateSys.enterPhaseById('late'); lateSys.phaseWaveCounts.late=BALANCE.enemyPopulation.phaseWaveLimit.late; lateSys.waveSpawnFinished=true; lateSys.waveState='fighting'; lateScene.enemies=[]; const playerX=lateScene.player.x; lateSys.maintainPopulation(now); assert.equal(lateSys.phase().id,'boss3','late final clear immediately enters boss3'); assert.equal(lateScene.player.x,playerX,'boss3 transition does not require player movement'); assert.equal(lateSys.bossIntroState,'spawningMinions','boss3 intro queue starts immediately'); assert.ok(lateSys.waveQueue.length>0,'boss3 precursor queue is scheduled'); const queuedOnce=lateSys.waveQueue.length; lateSys.maintainPopulation(now-1); assert.equal(lateSys.waveQueue.length,queuedOnce,'boss3 precursor queue is not duplicated'); assert.equal(lateScene.enemies.filter(e=>e.enemyId==='boss').length,0,'boss3 does not duplicate before intro delay');
+const lateScene=makeScene(), lateSys=new StageSystem(lateScene); lateSys.start(); lateSys.enterPhaseById('late'); lateScene.player.x=11950; lateSys.phaseWaveCounts.late=0; lateSys.update(now); assert.equal(lateSys.phase().id,'late','late cannot enter boss3 from player X coordinate'); lateSys.waveQueue=[]; lateScene.enemies=[]; lateSys.waveSpawnFinished=true; lateSys.waveState='fighting'; lateSys.phaseWaveCounts.late=BALANCE.enemyPopulation.phaseWaveLimit.late; const playerX=lateScene.player.x; lateSys.update(now+1); assert.equal(lateSys.phase().id,'boss3','late final clear immediately enters boss3'); assert.equal(lateScene.player.x,playerX,'boss3 transition does not require player movement'); assert.equal(lateSys.bossIntroState,'spawningMinions','boss3 intro queue starts immediately'); assert.ok(lateSys.waveQueue.length>0,'boss3 precursor queue is scheduled'); const queuedOnce=lateSys.waveQueue.length; lateSys.update(now-1); assert.equal(lateSys.waveQueue.length,queuedOnce,'boss3 precursor queue is not duplicated'); assert.equal(lateScene.enemies.filter(e=>e.enemyId==='boss').length,0,'boss3 does not duplicate before intro delay');
 
 assert.ok(STAGES[0].worldWidth >= STAGES[0].phases.find(p=>p.id==='boss3').boss.x + 720 + ENEMIES.boss.width + BALANCE.enemies.respawnPadding, 'world reserves right-side spawn runway past boss3');
 assert.equal(BALANCE.stageWorldWidth,STAGES[0].worldWidth,'balance/world stage width stays synced'); assert.equal(scene.physics.world.bounds.w,STAGES[0].worldWidth,'physics bounds cover expanded map'); assert.equal(scene.cameras.main.bounds.w,STAGES[0].worldWidth,'camera bounds cover expanded map'); assert.ok(STAGES[0].phases.find(p=>p.id==='boss3').boss.x < STAGES[0].worldWidth-720, 'boss3 has fight room before the map end');
