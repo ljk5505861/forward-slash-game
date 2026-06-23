@@ -1,5 +1,5 @@
 export const STAGES = [{
-  id:'stage_1', name:'训练场 v0.6', worldWidth:12400,
+  id:'stage_1', name:'训练场 v0.6', worldWidth:13400,
   phases:[
     { id:'early', name:'阶段1：基础战斗' },
     { id:'boss1', name:'阶段2：狂暴巨兽', boss:{ enemyId:'berserker_boss', x:4850 } },

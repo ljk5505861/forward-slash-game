@@ -1,38 +1,56 @@
 import assert from 'node:assert/strict';
-global.window={cordova:undefined, navigator:{userAgent:''}, addEventListener(){}, removeEventListener(){}}; global.document={documentElement:{style:{}}, createElement(){return {getContext(){return new Proxy({},{get(_,k){ if(k==='getImageData') return ()=>({data:[0,0,0,0]}); return ()=>{}; }});}, style:{}};}, addEventListener(){}, removeEventListener(){}}; Object.defineProperty(globalThis,'navigator',{value:global.window.navigator, configurable:true}); global.Image=class { set src(v){ setTimeout(()=>this.onload?.(),0); } }; global.HTMLCanvasElement=class {}; 
+global.window={cordova:undefined, navigator:{userAgent:''}, addEventListener(){}, removeEventListener(){}}; global.document={documentElement:{style:{}}, createElement(){return {getContext(){return new Proxy({},{get(_,k){ if(k==='getImageData') return ()=>({data:[0,0,0,0]}); return ()=>{}; }});}, style:{}};}, addEventListener(){}, removeEventListener(){}}; Object.defineProperty(globalThis,'navigator',{value:global.window.navigator, configurable:true}); global.Image=class { set src(v){ setTimeout(()=>this.onload?.(),0); } }; global.HTMLCanvasElement=class {};
 const { BALANCE } = await import('../src/config/balance.js');
 const { STAGES } = await import('../src/config/stages.js');
 const { ENEMIES } = await import('../src/config/enemies.js');
 const { default: StageSystem } = await import('../src/systems/StageSystem.js');
+const { default: EnemyBehaviorManager } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
 
 let now=0;
-const spawned=[];
-const makeScene=()=>({
-  balance:BALANCE, scale:{height:1280}, time:{get now(){return now}}, player:{x:220}, enemies:[],
-  cameras:{main:{scrollX:0,width:720,worldView:{right:720},setBounds(){}}}, physics:{world:{setBounds(){}}},
-  hud:{setStage(){},setStatus(){}}, eventBus:{emit(){}}, runStats:{startMidBossFight(){}},
-  enemyBehaviors:{attach(){},update(){},destroyEnemy(){}}, statusEffects:{clearTarget(){}},
-  getGameplayTime(){return now;}, isGameplayPaused(){return this.paused||false;}, queueShop(reason){this.queuedShop=reason;}, finishRun(won){this.finishedWon=won;}
-});
-const scene=makeScene(); const sys=new StageSystem(scene); sys.spawn=(id,x)=>{ const cfg=ENEMIES[id]; const e={id:`${id}_${spawned.length}`,enemyId:id,active:true,isDefeated:false,isBoss:cfg.kind==='boss',isElite:cfg.kind==='elite',isMidBoss:id==='mid_boss',isFinalBoss:id==='boss',width:cfg.width,x:x??sys.spawnXFor(id),speed:cfg.speed,hp:cfg.hp,maxHp:cfg.hp,damage:cfg.damage}; scene.enemies.push(e); spawned.push({id,at:now,x:e.x,speed:e.speed}); return e; };
-sys.start();
+const maxNormalWidth=Math.max(...Object.values(ENEMIES).filter(e=>e.kind==='normal').map(e=>e.width));
+const makeDisplayObject=(x=0,y=0,width=10,height=10)=>({ x,y,width,height,active:true,alpha:1, setStrokeStyle(){return this;}, setDepth(){return this;}, setOrigin(){return this;}, setFillStyle(){return this;}, setScale(v){this.scale=v; return this;}, setPosition(x2,y2){this.x=x2; this.y=y2; return this;}, setDisplaySize(w,h){this.displayWidth=w; this.displayHeight=h; return this;}, destroy(){this.active=false;}, removeAllListeners(){return this;} });
+const makeScene=()=>{
+  const scene={
+    balance:BALANCE, scale:{height:1280}, time:{get now(){return now}}, player:{x:220,y:850}, enemies:[],
+    cameras:{main:{scrollX:0,width:720,worldView:{right:720},setBounds(x,y,w,h){this.bounds={x,y,w,h};}}}, physics:{world:{setBounds(x,y,w,h){this.bounds={x,y,w,h};}}, add:{existing(obj){ obj.body={ width:obj.width, height:obj.height, velocity:{x:0}, setAllowGravity(){return this;}, setImmovable(){return this;}, setSize(w,h){this.width=w; this.height=h; return this;}, setOffset(){return this;}, setVelocityX(v){this.velocity.x=v; obj.velocityX=v; return this;}, reset(x,y){obj.x=x; obj.y=y; this.velocity.x=0;} }; }}},
+    add:{ rectangle(x,y,w,h){return makeDisplayObject(x,y,w,h);}, text(x,y){return makeDisplayObject(x,y,0,0);}, circle(x,y,r){return makeDisplayObject(x,y,r*2,r*2);}, triangle(x,y){return makeDisplayObject(x,y,40,40);}, line(){return makeDisplayObject();} },
+    tweens:{add(){}}, hud:{setStage(){},setStatus(){}}, eventBus:{emit(){}}, runStats:{startMidBossFight(){}}, statusEffects:{clearTarget(){}},
+    getGameplayTime(){return now;}, isGameplayPaused(){return this.paused||false;}, queueShop(reason){this.queuedShop=reason;}, finishRun(won){this.finishedWon=won;}
+  };
+  scene.targeting={ isEnemyFullyInsideViewport(e){ return e.x + (e.width||0)/2 <= scene.cameras.main.worldView.right; }, shouldRecycleEnemyLeft(){ return false; } };
+  scene.enemyBehaviors=new EnemyBehaviorManager(scene);
+  return scene;
+};
+const assertOutsideRight=(x,id,scene,label)=>assert.ok(x>scene.cameras.main.worldView.right+ENEMIES[id].width/2, `${label} ${id} spawn ${x} must be outside right ${scene.cameras.main.worldView.right}`);
+
+const scene=makeScene(); const sys=new StageSystem(scene); sys.start();
 assert.equal(scene.enemies.length,0,'skill choice pause/opening must have no enemies');
 scene.paused=true; now=10000; sys.update(now); assert.equal(scene.enemies.length,0,'paused opening timer must not advance');
 scene.paused=false; now=0; sys.update(now); now=2999; sys.update(now); assert.equal(scene.enemies.length,0,'2999ms no enemies');
 now=3000; sys.update(now); assert.ok(sys.waveQueue.length>0||scene.enemies.length>0,'3000ms queues first wave');
-const q=[...sys.waveQueue]; assert.ok(new Set(q.map(i=>i.id)).size<=2,'wave has at most two types'); assert.ok(new Set(q.map(i=>i.id)).size===2,'wave has exactly two types');
+const q=[...sys.waveQueue]; assert.equal(new Set(q.map(i=>i.id)).size,2,'wave has exactly two types');
 for(let i=1;i<q.length;i++) assert.ok(q[i].at>q[i-1].at,'queue times strictly increasing');
-for (const item of q){ now=item.at; sys.update(now); }
-assert.ok(spawned.every(s=>s.x>720+ENEMIES[s.id].width/2),'spawns are outside camera right edge');
-assert.ok(spawned.every(s=>s.speed===ENEMIES[s.id].speed),'spawned normals preserve configured speeds');
-assert.equal(sys.waveQueue.length,0,'wave drains once with no refill');
-assert.equal(sys.waveState,'fighting');
+const startCount=scene.enemies.length; for (const item of q){ now=item.at; sys.update(now); }
+scene.enemies.slice(startCount).forEach(e=>assertOutsideRight(e.x,e.enemyId,scene,'opening wave'));
+assert.ok(scene.enemies.slice(startCount).every(e=>e.speed===ENEMIES[e.enemyId].speed),'spawned normals preserve configured speeds');
+assert.equal(sys.waveQueue.length,0,'wave drains once with no refill'); assert.equal(sys.waveState,'fighting');
 scene.enemies[0].isDefeated=true; scene.enemies=scene.enemies.slice(1); now+=5000; sys.update(now); assert.notEqual(sys.waveState,'waitingNextWave','alive enemy blocks clear timer');
 scene.enemies.forEach(e=>e.isDefeated=true); scene.enemies=[]; now+=1; sys.update(now); const next=sys.nextWaveAt; assert.equal(sys.waveState,'waitingNextWave','last death starts 5s timer');
-now=next-1; sys.update(now); assert.equal(sys.waveQueue.length,0,'4999ms no next wave');
-now=next; sys.update(now); assert.ok(sys.waveQueue.length>0,'5000ms starts next wave');
-for (const phase of ['boss1','boss2','boss3']) { scene.enemies=[]; sys.enterPhaseById(phase); assert.equal(sys.bossIntroState,'spawningMinions'); const intro=[...sys.waveQueue]; assert.ok(intro.length>= (phase==='boss3'?6:5) && intro.length <= (phase==='boss3'?9:7)); const last=intro.at(-1).at; now=last; while(sys.waveQueue.length){ now=sys.waveQueue[0].at; sys.update(now); } assert.equal(sys.bossSpawnAt, last+5000); now=sys.bossSpawnAt-1; sys.update(now); assert.equal(scene.enemies.filter(e=>e.isBoss).length,0); now=sys.bossSpawnAt; sys.update(now); assert.equal(scene.enemies.filter(e=>e.isBoss).length,1,`${phase} spawns once after intro delay`); }
-assert.equal(STAGES[0].worldWidth,12400,'map width extended');
+now=next-1; sys.update(now); assert.equal(sys.waveQueue.length,0,'4999ms no next wave'); now=next; sys.update(now); assert.ok(sys.waveQueue.length>0,'5000ms starts next wave');
+
+const endScene=makeScene(); endScene.cameras.main.scrollX=11460; endScene.cameras.main.worldView.right=12180; const endSys=new StageSystem(endScene); endSys.start();
+for (const id of ['grunt','armored_guard']) { const x=endSys.spawnXFor(id); assertOutsideRight(x,id,endScene,'late-map spawnXFor'); assert.ok(x <= STAGES[0].worldWidth-ENEMIES[id].width/2-8, `${id} spawn remains inside world`); }
+const generated=endSys.spawn('armored_guard'); assertOutsideRight(generated.x,'armored_guard',endScene,'actual generated late normal'); assert.equal(endScene.targeting.isEnemyFullyInsideViewport(generated),false,'actual generated enemy starts invisible'); endScene.enemyBehaviors.update(now+=16); assert.ok(generated.body.velocity.x<0,'offscreen generated enemy moves left on behavior update');
+
+const boss3Scene=makeScene(); boss3Scene.cameras.main.scrollX=11460; boss3Scene.cameras.main.worldView.right=12180; const boss3Sys=new StageSystem(boss3Scene); boss3Sys.start(); boss3Sys.enterPhaseById('boss3');
+assert.equal(boss3Sys.bossIntroState,'spawningMinions'); const intro=[...boss3Sys.waveQueue]; assert.ok(intro.length>=6&&intro.length<=9,'boss3 intro queues 6-9 minions'); assert.equal(new Set(intro.map(i=>i.id)).size,2,'boss3 intro uses two types');
+for(let i=1;i<intro.length;i++){ const gap=intro[i].at-intro[i-1].at; const switched=intro[i].id!==intro[i-1].id; assert.equal(gap, switched?300:150, 'boss3 intro intervals are 150ms same-type / 300ms switch'); }
+const spawnedIntro=[]; while(boss3Sys.waveQueue.length){ now=boss3Sys.waveQueue[0].at; boss3Sys.update(now); spawnedIntro.push(boss3Scene.enemies.at(-1)); }
+spawnedIntro.forEach(e=>assertOutsideRight(e.x,e.enemyId,boss3Scene,'boss3 intro')); assert.ok(spawnedIntro.every(e=>!boss3Scene.targeting.isEnemyFullyInsideViewport(e)),'no boss3 intro minion starts visible');
+assert.equal(boss3Sys.bossSpawnAt, intro.at(-1).at+5000,'boss3 spawns 5s after final intro minion'); now=boss3Sys.bossSpawnAt-1; boss3Sys.update(now); assert.equal(boss3Scene.enemies.filter(e=>e.isBoss).length,0); now=boss3Sys.bossSpawnAt; boss3Sys.update(now); assert.equal(boss3Scene.enemies.filter(e=>e.enemyId==='boss').length,1,'boss3 appears normally after intro delay');
+
+assert.ok(STAGES[0].worldWidth >= STAGES[0].phases.find(p=>p.id==='boss3').boss.x + 720 + maxNormalWidth + BALANCE.enemies.respawnPadding, 'world reserves right-side spawn runway past boss3');
+assert.equal(BALANCE.stageWorldWidth,STAGES[0].worldWidth,'balance/world stage width stays synced'); assert.equal(scene.physics.world.bounds.w,STAGES[0].worldWidth,'physics bounds cover expanded map'); assert.equal(scene.cameras.main.bounds.w,STAGES[0].worldWidth,'camera bounds cover expanded map'); assert.ok(STAGES[0].phases.find(p=>p.id==='boss3').boss.x < STAGES[0].worldWidth-720, 'boss3 has fight room before the map end');
 assert.equal(STAGES[0].phases.find(p=>p.id==='boss2').boss.x-STAGES[0].phases.find(p=>p.id==='boss1').boss.x,4850,'boss1-boss2 spacing equals original segment');
 assert.equal(ENEMIES.berserker_boss.hp,1000); assert.equal(ENEMIES.mid_boss.hp,1500); assert.equal(ENEMIES.boss.hp,2200);
-console.log('[validate:enemy-population] PASS real StageSystem opening delay, strict waves, right-edge spawning, boss intros, map and boss values');
+console.log('[validate:enemy-population] PASS real StageSystem opening delay, strict waves, right-edge/end-map spawning, boss intros, map bounds, and boss values');

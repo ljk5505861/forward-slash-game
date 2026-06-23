@@ -1,7 +1,7 @@
 import { TUNING } from './tuning.js';
 
 export const BALANCE = {
-  stageWorldWidth:12400, groundTopY: 920, groundHeight: 360,
+  stageWorldWidth:13400, groundTopY: 920, groundHeight: 360,
   player: { startX:220, startY:850, width:80, height:140, bodyWidth:58, bodyHeight:126, speedX:185, pressSpeedX:32, maxHp:120, attack:10, encounterDistance:520, stopBuffer:12 },
   leveling: { baseRequiredXp:TUNING.xp.baseRequired, growth:TUNING.xp.growthPerLevel },
   enemyFadeMs: 260,
