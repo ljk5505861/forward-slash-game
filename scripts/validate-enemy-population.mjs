@@ -26,8 +26,8 @@ const assertOutsideRight=(x,id,scene,label)=>assert.ok(x>scene.cameras.main.worl
 const scene=makeScene(); const sys=new StageSystem(scene); sys.start();
 assert.equal(scene.enemies.length,0,'skill choice pause/opening must have no enemies');
 scene.paused=true; now=10000; sys.update(now); assert.equal(scene.enemies.length,0,'paused opening timer must not advance');
-scene.paused=false; now=0; sys.update(now); now=2999; sys.update(now); assert.equal(scene.enemies.length,0,'2999ms no enemies');
-now=3000; sys.update(now); assert.ok(sys.waveQueue.length>0||scene.enemies.length>0,'3000ms queues first wave');
+scene.paused=false; now=0; sys.update(now); now=1999; sys.update(now); assert.equal(scene.enemies.length,0,'1999ms no enemies');
+now=2000; sys.update(now); assert.ok(sys.waveQueue.length>0||scene.enemies.length>0,'2000ms queues first wave');
 const q=[...sys.waveQueue]; assert.equal(new Set(q.map(i=>i.id)).size,2,'wave has exactly two types');
 for(let i=1;i<q.length;i++) assert.ok(q[i].at>q[i-1].at,'queue times strictly increasing');
 const startCount=scene.enemies.length; for (const item of q){ now=item.at; sys.update(now); }
@@ -38,13 +38,22 @@ scene.enemies[0].isDefeated=true; scene.enemies=scene.enemies.slice(1); now+=500
 scene.enemies.forEach(e=>e.isDefeated=true); scene.enemies=[]; now+=1; sys.update(now); const next=sys.nextWaveAt; assert.equal(sys.waveState,'waitingNextWave','last death starts 5s timer');
 now=next-1; sys.update(now); assert.equal(sys.waveQueue.length,0,'4999ms no next wave'); now=next; sys.update(now); assert.ok(sys.waveQueue.length>0,'5000ms starts next wave');
 
+
+const queuedIds=(ids,extraIds=[])=>{ const s=makeScene(), st=new StageSystem(s); st.start(); st.queueTwoTypeWave(4, ids, 5000, extraIds); return st.waveQueue; };
+const gapAt=(q,i)=>q[i].at-q[i-1].at;
+let typeQueue=queuedIds(['grunt','charger']); assert.deepEqual(typeQueue.map(i=>i.id), ['grunt','grunt','charger','charger'], 'two melee types remain two separate groups'); assert.equal(gapAt(typeQueue,1),150,'grunt group interval 150ms'); assert.equal(gapAt(typeQueue,2),1000,'grunt to charger switch interval 1000ms'); assert.equal(gapAt(typeQueue,3),150,'charger group interval 150ms');
+typeQueue=queuedIds(['bomber','healer']); assert.deepEqual(typeQueue.map(i=>i.id), ['bomber','bomber','healer','healer'], 'two ranged types remain two separate groups'); assert.equal(gapAt(typeQueue,1),150,'bomber group interval 150ms'); assert.equal(gapAt(typeQueue,2),1000,'bomber to healer switch interval 1000ms'); assert.equal(gapAt(typeQueue,3),150,'healer group interval 150ms');
+for (const ids of [['bomber','grunt'],['grunt','bomber']]) { typeQueue=queuedIds(ids); assert.deepEqual(typeQueue.map(i=>i.id), ['grunt','grunt','bomber','bomber'], `${ids.join('+')} resolves to melee group before ranged group`); assert.equal(gapAt(typeQueue,2),1000,'melee to ranged switch interval 1000ms'); }
+const eliteOrderQueue=queuedIds(['grunt','bomber'], ['elite']); const eliteOrder=eliteOrderQueue.map(i=>i.id); assert.deepEqual([...eliteOrder].sort(), ['bomber','bomber','elite','grunt','grunt'].sort(), 'elite wave contains only two base types plus one elite'); const firstRangedIndex=eliteOrder.indexOf('bomber'); const eliteIndex=eliteOrder.indexOf('elite'); assert.ok(eliteIndex>=0&&firstRangedIndex>eliteIndex, 'elite is grouped with frontline before ranged units'); assert.equal(gapAt(eliteOrderQueue,eliteIndex),150,'elite is 150ms from adjacent frontline unit'); assert.equal(gapAt(eliteOrderQueue,firstRangedIndex),1000,'frontline group to first ranged remains 1000ms');
+const onceScene=makeScene(), onceSys=new StageSystem(onceScene); onceSys.start(); onceSys.queueNormalWave('early',0); onceSys.queueNormalWave('early',10000); onceSys.queueNormalWave('early',20000); assert.equal(onceSys.waveQueue.filter(i=>i.id==='elite').length,1,'elite still appears once per phase across normal waves');
+
 const endScene=makeScene(); endScene.cameras.main.scrollX=11460; endScene.cameras.main.worldView.right=12180; const endSys=new StageSystem(endScene); endSys.start();
 for (const id of ['grunt','armored_guard']) { const x=endSys.spawnXFor(id); assertOutsideRight(x,id,endScene,'late-map spawnXFor'); assert.ok(x <= STAGES[0].worldWidth-ENEMIES[id].width/2-8, `${id} spawn remains inside world`); }
 const generated=endSys.spawn('armored_guard'); assertOutsideRight(generated.x,'armored_guard',endScene,'actual generated late normal'); assert.equal(endScene.targeting.isEnemyFullyInsideViewport(generated),false,'actual generated enemy starts invisible'); endScene.enemyBehaviors.update(now+=16); assert.ok(generated.body.velocity.x<0,'offscreen generated enemy moves left on behavior update');
 
 const boss3Scene=makeScene(); boss3Scene.cameras.main.scrollX=11460; boss3Scene.cameras.main.worldView.right=12180; const boss3Sys=new StageSystem(boss3Scene); boss3Sys.start(); boss3Sys.enterPhaseById('boss3');
 assert.equal(boss3Sys.bossIntroState,'spawningMinions'); const intro=[...boss3Sys.waveQueue]; assert.ok(intro.length>=6&&intro.length<=9,'boss3 intro queues 6-9 minions'); assert.equal(new Set(intro.map(i=>i.id)).size,2,'boss3 intro uses two types');
-for(let i=1;i<intro.length;i++){ const gap=intro[i].at-intro[i-1].at; const switched=intro[i].id!==intro[i-1].id; assert.equal(gap, switched?300:150, 'boss3 intro intervals are 150ms same-type / 300ms switch'); }
+for(let i=1;i<intro.length;i++){ const gap=intro[i].at-intro[i-1].at; const switched=intro[i].id!==intro[i-1].id; assert.equal(gap, switched?1000:150, 'boss3 intro intervals are 150ms same-type / 1000ms switch'); }
 const spawnedIntro=[]; while(boss3Sys.waveQueue.length){ now=boss3Sys.waveQueue[0].at; boss3Sys.update(now); spawnedIntro.push(boss3Scene.enemies.at(-1)); }
 spawnedIntro.forEach(e=>assertOutsideRight(e.x,e.enemyId,boss3Scene,'boss3 intro')); assert.ok(spawnedIntro.every(e=>!boss3Scene.targeting.isEnemyFullyInsideViewport(e)),'no boss3 intro minion starts visible');
 assert.equal(boss3Sys.bossSpawnAt, intro.at(-1).at+5000,'boss3 spawns 5s after final intro minion'); now=boss3Sys.bossSpawnAt-1; boss3Sys.update(now); assert.equal(boss3Scene.enemies.filter(e=>e.isBoss).length,0); now=boss3Sys.bossSpawnAt; boss3Sys.update(now); assert.equal(boss3Scene.enemies.filter(e=>e.enemyId==='boss').length,1,'boss3 appears normally after intro delay');

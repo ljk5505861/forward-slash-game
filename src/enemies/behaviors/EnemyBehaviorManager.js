@@ -3,7 +3,7 @@ import { CombatEvents } from '../../core/CombatEvents.js';
 
 const alive = e => e?.active && !e.isDefeated;
 const playerDamage = (scene, enemy, amount) => scene.combatSystem?.damagePlayer?.(enemy, amount);
-export const approach = (scene, enemy, min=enemy.attackRange, max=null) => { if(!alive(enemy)||!enemy.body) return; const dx=scene.player.x-enemy.x; const d=Math.abs(dx); const sp=enemy.speed||scene.balance.enemies?.entrySpeed||40; const buffer=8; if(max&&d<max-buffer) enemy.body.setVelocityX(-Math.sign(dx||1)*sp); else if(d>min+buffer) enemy.body.setVelocityX(Math.sign(dx||1)*sp); else enemy.body.setVelocityX(0); };
+export const approach = (scene, enemy, min=enemy.attackRange, max=null) => { if(!alive(enemy)||!enemy.body) return; const dx=scene.player.x-enemy.x; const d=Math.abs(dx); const sp=enemy.speed||scene.balance.enemies?.entrySpeed||40; const buffer=enemy.rangeBuffer ?? scene.balance.enemies?.rangeBuffer ?? 24; if(max){ if(d>max+buffer) enemy.body.setVelocityX(Math.sign(dx||1)*sp); else if(d<max-buffer) enemy.body.setVelocityX(-Math.sign(dx||1)*sp); else enemy.body.setVelocityX(0); return; } if(d>min+8) enemy.body.setVelocityX(Math.sign(dx||1)*sp); else enemy.body.setVelocityX(0); };
 export const entryMove = (scene, enemy) => { if(alive(enemy)&&enemy.body) enemy.body.setVelocityX(-(enemy.speed||scene.balance.enemies?.entrySpeed||40)); };
 export const resetBodyPosition = (enemy,x,y=enemy.y) => { if(enemy.body?.reset) enemy.body.reset(x,y); else { enemy.x=x; enemy.y=y; } enemy.body?.setVelocityX?.(0); };
 
