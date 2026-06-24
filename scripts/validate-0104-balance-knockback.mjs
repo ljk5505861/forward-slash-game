@@ -3,7 +3,7 @@ import { ENEMIES } from '../src/config/enemies.js';
 import { SKILLS } from '../src/config/skills.js';
 import { BALANCE } from '../src/config/balance.js';
 import { WEAPONS } from '../src/config/weapons.js';
-import CombatSystem from '../src/systems/CombatSystem.js';
+import CombatSystem, { MIN_PLAYER_ATTACK_INTERVAL_MS } from '../src/systems/CombatSystem.js';
 import { playerHealthBarSize, playerHealthBarY } from '../src/ui/PlayerHealthBar.js';
 
 global.window={cordova:undefined,navigator:{userAgent:''},addEventListener(){},removeEventListener(){}};
@@ -32,7 +32,11 @@ assert.equal(ENEMIES.charger.chargeDamage, 9); assert.equal(ENEMIES.berserker_bo
 assert.equal(SKILLS.time_loan.cooldownMs, 10000); assert.equal(SKILLS.judgment_pendulum.cooldownMs, 5000); assert.equal(SKILLS.parasite_lantern.cooldownMs, 4200); assert.equal(SKILLS.hanging_blade.cooldownMs, 4500); assert.equal(SKILLS.mirror_march.cooldownMs, 6000);
 assert.equal(SKILLS.healing.cooldownMs, 6500); assert.equal(SKILLS.shadow_fist.cooldownMs, 999999); assert.equal(SKILLS.bullet_eater.cooldownMs, 999999);
 assert.equal(SKILLS.judgment_pendulum.levels[0].damage, 34); assert.equal(SKILLS.judgment_pendulum.levels[0].width, 520); assert.equal(SKILLS.parasite_lantern.levels[0].damage, 9);
-assert.equal(WEAPONS.short_sword.knockback, 72);
+assert.equal(WEAPONS.short_sword.attackIntervalMs, 333);
+assert(Math.abs(1000 / WEAPONS.short_sword.attackIntervalMs - 3) < 0.01, 'short sword attacks about 3 times per second');
+assert.equal(WEAPONS.short_sword.damageMultiplier, 1, 'normal attack damage unchanged');
+assert.equal(WEAPONS.short_sword.attackRange, 88, 'normal attack range unchanged');
+assert.equal(WEAPONS.short_sword.knockback, 72, 'normal attack knockback unchanged');
 
 const player={x:100,y:200,width:BALANCE.player.width,height:BALANCE.player.height}; const size=playerHealthBarSize(player);
 assert.equal(size.width, Math.round(BALANCE.player.width*1.25)); assert.notEqual(size.width, 82); assert(size.height<=8 && size.height>=5); assert.equal(playerHealthBarY(player), player.y-player.height/2-10);
@@ -40,9 +44,17 @@ assert.equal(size.width, Math.round(BALANCE.player.width*1.25)); assert.notEqual
 const makeEnemy=(props={})=>({x:500,y:800,width:52,height:83,active:true,isDefeated:false,hp:10,maxHp:10,damage:3,attackRange:999,nextAttackAt:1000,body:{vx:0,velocity:{x:0},setVelocityX(v){this.vx=v; this.velocity.x=v;},reset(x,y){this.owner.x=x;this.owner.y=y;}},hpBarBg:{setPosition(x,y){this.x=x;this.y=y;return this;},destroy(){this.destroyed=true;}},hpBar:{setPosition(x,y){this.x=x;this.y=y;return this;},setDisplaySize(w,h){this.w=w;this.h=h;return this;},destroy(){this.destroyed=true;}},nameText:{setPosition(x,y){this.x=x;this.y=y;return this;},destroy(){this.destroyed=true;}},destroy(){this.active=false;},...props});
 const makeScene=()=>({balance:BALANCE,player:{x:100},enemies:[],killCount:0,awardGold(){},stageSystem:{},runStats:{},playerData:{hp:100},getGameplayTime(){return 1000;},targeting:{valid:e=>!!e&&!e.isDefeated,isEnemyFullyInsideViewport(){return true;}},professionSystem:{getDamageMultiplier(){return 1;}},eventBus:{emit(){}},floatText(){},damageLog:[],isGameplayPaused(){return false;},skillSystem:{beforePlayerDamage(){}},statusEffects:{clearTarget(){},absorbShield(d){return {absorbed:0,remainingDamage:d};}},hud:{update(){},setStatus(){}},finishRun(){},tweens:{items:[],last:null,add(cfg){ const tween={cfg,paused:false,stopped:false,removed:false,pause(){this.paused=true;},resume(){this.paused=false;},stop(){this.stopped=true;},remove(){this.removed=true;}}; this.last=cfg; this.items.push(tween); return tween;}}});
 const scene=makeScene(); const combat=new CombatSystem(scene);
+assert.equal(MIN_PLAYER_ATTACK_INTERVAL_MS, 180, 'minimum normal attack interval is 180ms');
+scene.playerData.attackSpeedMultiplier=1;
+assert.equal(combat.getPlayerAttackInterval(WEAPONS.short_sword), 333, 'base normal attack interval has no speed bonus');
+scene.playerData.attackSpeedMultiplier=10;
+assert.equal(combat.getPlayerAttackInterval(WEAPONS.short_sword), 180, 'high attack speed is clamped to minimum interval');
+scene.playerData.attackSpeedMultiplier=10;
+assert.equal(combat.getPlayerAttackInterval(WEAPONS.short_sword,{intervalMultiplier:0.82}), 180, 'profession attack profiles also use minimum interval');
+scene.playerData.attackSpeedMultiplier=1;
 const complete = enemy => { scene.tweens.last.targets.t=1; scene.tweens.last.onComplete(); return enemy; };
 
-const right=makeEnemy({x:500}); right.body.owner=right; combat.applyKnockback(right,{knockback:WEAPONS.short_sword.knockback}); assert.equal(right.isKnockbackActive,true); assert.equal(scene.tweens.last.duration,220); assert.equal(right.x,500,'does not jump instantly'); scene.tweens.last.targets.t=0.5; scene.tweens.last.onUpdate(); assert(right.x>500 && right.x<572); assert(right.y<800); complete(right); assert.equal(right.x,572); assert.equal(right.y,800); assert.equal(right.isKnockbackActive,false); assert(right.hpBarBg.x===right.x && right.nameText.x===right.x);
+const right=makeEnemy({x:500}); right.body.owner=right; combat.applyKnockback(right,{knockback:WEAPONS.short_sword.knockback}); assert.equal(right.isKnockbackActive,true); assert.equal(scene.tweens.last.duration,220, 'arced knockback duration unchanged'); assert.equal(right.x,500,'does not jump instantly'); scene.tweens.last.targets.t=0.5; scene.tweens.last.onUpdate(); assert(right.x>500 && right.x<572); assert(right.y<800); complete(right); assert.equal(right.x,572); assert.equal(right.y,800); assert.equal(right.isKnockbackActive,false); assert(right.hpBarBg.x===right.x && right.nameText.x===right.x);
 
 scene.player.x=500; const left=makeEnemy({x:420}); left.body.owner=left; combat.applyKnockback(left,{knockback:72}); complete(left); assert.equal(left.x,348, 'enemy left of player is knocked left');
 const sameX=makeEnemy({x:500}); sameX.body.owner=sameX; combat.applyKnockback(sameX,{knockback:72}); complete(sameX); assert.equal(sameX.x,572, 'same X defaults to right when no direction is reliable');
@@ -54,7 +66,7 @@ scene.player.x=100; let playerDamageCalls=0; combat.damagePlayer=()=>{ playerDam
 scene.player.x=100; const pauseEnemy=makeEnemy({x:500}); pauseEnemy.body.owner=pauseEnemy; combat.applyKnockback(pauseEnemy,{knockback:72}); scene.tweens.last.targets.t=0.25; scene.tweens.last.onUpdate(); const pausedX=pauseEnemy.x, pausedY=pauseEnemy.y; combat.pauseKnockbacks(); const activeTween=scene.tweens.items.at(-1); assert.equal(activeTween.paused,true); for(let i=0;i<5;i+=1){ if(!activeTween.paused){ scene.tweens.last.targets.t+=0.2; scene.tweens.last.onUpdate(); } } assert.equal(pauseEnemy.x,pausedX); assert.equal(pauseEnemy.y,pausedY); combat.resumeKnockbacks(); assert.equal(activeTween.paused,false); scene.tweens.last.targets.t=0.5; scene.tweens.last.onUpdate(); assert(pauseEnemy.x>pausedX && pauseEnemy.x<572, 'resume continues from paused progress'); scene.tweens.last.targets.t=1; scene.tweens.last.onComplete(); assert.equal(pauseEnemy.x,572);
 
 const dying=makeEnemy({x:500}); dying.body.owner=dying; combat.applyKnockback(dying,{knockback:72}); const dyingTween=dying.knockbackTween; combat.killEnemy(dying,{}); assert.equal(dying.isKnockbackActive,false); assert.equal(dying.knockbackTween,null); assert.equal(dyingTween.stopped,true);
-const repeat=makeEnemy({x:500}); repeat.body.owner=repeat; combat.applyKnockback(repeat,{knockback:72}); const firstTween=repeat.knockbackTween; scene.tweens.last.targets.t=0.4; scene.tweens.last.onUpdate(); combat.applyKnockback(repeat,{knockback:72}); assert.equal(firstTween.stopped,true); assert.equal(repeat.isKnockbackActive,true); assert.notEqual(repeat.knockbackTween,firstTween);
+const repeat=makeEnemy({x:500}); repeat.body.owner=repeat; combat.applyKnockback(repeat,{knockback:72}); const firstTween=repeat.knockbackTween; scene.tweens.last.targets.t=0.4; scene.tweens.last.onUpdate(); const repeatY=repeat.y; combat.applyKnockback(repeat,{knockback:72}); assert.equal(firstTween.stopped,true, 'repeated knockback clears previous tween'); assert.equal(firstTween.removed,true, 'repeated knockback removes previous tween'); assert.equal(repeat.isKnockbackActive,true); assert.notEqual(repeat.knockbackTween,firstTween, 'repeated knockback creates one replacement tween'); assert.equal(repeat.knockbackGroundY,800, 'repeated knockback keeps original ground Y'); assert(repeatY<800, 'second knockback can start while target is airborne'); scene.tweens.last.targets.t=1; scene.tweens.last.onComplete(); assert.equal(repeat.y,800, 'repeated knockback lands on original ground Y');
 
 const boss=makeEnemy({x:500,isBoss:true}); boss.body.owner=boss; scene.player.x=100; combat.applyKnockback(boss,{knockback:72}); complete(boss); assert.equal(boss.x,509);
 const elite=makeEnemy({x:500,isElite:true}); elite.body.owner=elite; combat.applyKnockback(elite,{knockback:72}); complete(elite); assert.equal(elite.x,525);
