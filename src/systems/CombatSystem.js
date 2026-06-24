@@ -9,13 +9,16 @@ import { applyLifeStealFromDamage } from './LifeSteal.js';
 const BEHAVIOR_ATTACKERS = new Set(['charger', 'bomber', 'healer', 'midBoss', 'berserkerBoss']);
 export const MIN_PLAYER_ATTACK_INTERVAL_MS = 180;
 export const NORMAL_ATTACK_KNOCKBACK_DURATION_MS = 440;
+export const NORMAL_ATTACK_KNOCKBACK_LIFT_PX = 24;
+export const NORMAL_ATTACK_KNOCKBACK_BOUNCE_MS = 140;
+export const NORMAL_ATTACK_KNOCKBACK_BOUNCE_LIFT_PX = 8;
 
 
 export default class CombatSystem {
   constructor(scene){ this.scene=scene; this.nextPlayerAttackAt=0; this.knockbackTargets=new Set(); }
   reset(){ this.nextPlayerAttackAt=0; this.clearAllKnockbacks(); }
   shiftTimers(pausedDuration, pausedAt){ if(this.nextPlayerAttackAt>pausedAt) this.nextPlayerAttackAt+=pausedDuration; this.scene.enemies?.forEach(e=>{ if(!e.isDefeated&&e.nextAttackAt>pausedAt) e.nextAttackAt+=pausedDuration; }); }
-  update(time){ const s=this.scene; if(s.isGameplayPaused?.()||s.playerData.hp<=0) return; const enemies=s.targeting.all(); enemies.forEach(e=>this.updateEnemyAttack(e,time)); const weapon=getWeapon(s.playerData.weaponId); const profile=s.professionSystem?.currentAttackProfile?.(); const range=profile?.range ?? weapon.attackRange; const target=s.targeting.nearestAhead(range); if(target && time>=this.nextPlayerAttackAt){ const interval=this.getPlayerAttackInterval(weapon, profile); this.nextPlayerAttackAt=time+interval; this.performAttack(target, weapon, profile); } }
+  update(time){ const s=this.scene; if(s.isGameplayPaused?.()||s.playerData.hp<=0) return; const enemies=s.targeting.all(); const weapon=getWeapon(s.playerData.weaponId); const profile=s.professionSystem?.currentAttackProfile?.(); const range=profile?.range ?? weapon.attackRange; const target=s.targeting.nearestAhead(range); if(target && time>=this.nextPlayerAttackAt){ const interval=this.getPlayerAttackInterval(weapon, profile); this.nextPlayerAttackAt=time+interval; this.performAttack(target, weapon, profile); } enemies.forEach(e=>this.updateEnemyAttack(e,time)); }
   getPlayerAttackInterval(weapon, profile=null){ const multiplier=Math.max(0.2,this.scene.playerData.attackSpeedMultiplier); const interval=(weapon.attackIntervalMs*(profile?.intervalMultiplier||1))/multiplier; return Math.max(MIN_PLAYER_ATTACK_INTERVAL_MS, interval); }
   performAttack(target, weapon, profile){ if(!profile) return this.performDefaultAttack(target, weapon); if(profile.type==='swordSlash') return this.performSwordSlashAttack(profile, weapon); if(profile.type==='arcaneBolt') return this.performArcaneBoltAttack(target, profile, weapon); if(profile.type==='hunterArrow') return this.performHunterArrowAttack(target, profile, weapon); return this.performDefaultAttack(target, weapon); }
   calcAttackDamage(weapon, profile=null){ const s=this.scene; const crit=Math.random()<s.playerData.critChance; const artifactMult=s.artifactSystem?.highHpDamageMultiplier?.() || 1; const professionMult=s.professionSystem?.getDamageMultiplier?.({ type:'normalAttack' })||1; const baseBeforeProfession=Math.round(s.playerData.attack*weapon.damageMultiplier*(profile?.damageMultiplier||1)*(crit?s.playerData.critMultiplier:1)*artifactMult); return { crit, professionMult, baseBeforeProfession, damage:Math.round(baseBeforeProfession*professionMult) }; }
@@ -36,20 +39,26 @@ export default class CombatSystem {
     enemy.knockbackTween?.stop?.();
     enemy.knockbackTween?.remove?.();
     enemy.knockbackTween=null;
+    enemy.knockbackBounceTween?.stop?.();
+    enemy.knockbackBounceTween?.remove?.();
+    enemy.knockbackBounceTween=null;
     enemy.isKnockbackActive=false;
     enemy.knockbackUntil=0;
+    delete enemy.knockbackGroundY;
     this.knockbackTargets?.delete?.(enemy);
   }
 
   pauseKnockbacks(){
     this.knockbackTargets?.forEach(enemy=>{
       if(enemy?.isKnockbackActive) enemy.knockbackTween?.pause?.();
+      if(enemy?.isKnockbackActive) enemy.knockbackBounceTween?.pause?.();
     });
   }
 
   resumeKnockbacks(){
     this.knockbackTargets?.forEach(enemy=>{
       if(enemy?.isKnockbackActive) enemy.knockbackTween?.resume?.();
+      if(enemy?.isKnockbackActive) enemy.knockbackBounceTween?.resume?.();
     });
   }
 
@@ -71,13 +80,15 @@ export default class CombatSystem {
     const direction=Math.sign(startX-(this.scene.player?.x ?? startX)) || Math.sign(enemy.body?.velocity?.x||0) || Math.sign(enemy.body?.vx||0) || (enemy.flipX?-1:1) || 1;
     const endX=Math.max(minX,Math.min(maxX,startX+direction*dx));
     const duration=NORMAL_ATTACK_KNOCKBACK_DURATION_MS;
-    const lift=24;
+    const lift=NORMAL_ATTACK_KNOCKBACK_LIFT_PX;
+    const bounceDuration=NORMAL_ATTACK_KNOCKBACK_BOUNCE_MS;
+    const bounceLift=NORMAL_ATTACK_KNOCKBACK_BOUNCE_LIFT_PX;
     const startY=enemy.y;
     this.clearKnockback(enemy);
     enemy.knockbackGroundY=groundY;
     enemy.isKnockbackActive=true;
     this.knockbackTargets.add(enemy);
-    enemy.knockbackUntil=(this.scene.getGameplayTime?.()??0)+duration;
+    enemy.knockbackUntil=(this.scene.getGameplayTime?.()??0)+duration+bounceDuration;
     enemy.body?.setVelocityX?.(0);
     const state={ t:0 };
     const sync=()=>syncEnemyUi(enemy);
@@ -101,7 +112,31 @@ export default class CombatSystem {
         enemy.body?.reset?.(enemy.x,enemy.y);
         enemy.body?.setVelocityX?.(0);
         sync();
-        this.clearKnockback(enemy);
+        enemy.knockbackTween=null;
+        const bounceState={ t:0 };
+        enemy.knockbackBounceTween=this.scene.tweens.add({
+          targets:bounceState,
+          t:1,
+          duration:bounceDuration,
+          ease:'Sine.easeInOut',
+          onUpdate:()=>{
+            if(enemy.isDefeated||!enemy.active){ this.clearKnockback(enemy); return; }
+            const t=Math.max(0,Math.min(1,bounceState.t));
+            enemy.x=endX;
+            enemy.y=groundY-Math.sin(Math.PI*t)*bounceLift;
+            enemy.body?.reset?.(enemy.x,enemy.y);
+            enemy.body?.setVelocityX?.(0);
+            sync();
+          },
+          onComplete:()=>{
+            if(enemy.isDefeated||!enemy.active){ this.clearKnockback(enemy); return; }
+            enemy.x=endX; enemy.y=groundY;
+            enemy.body?.reset?.(enemy.x,enemy.y);
+            enemy.body?.setVelocityX?.(0);
+            sync();
+            this.clearKnockback(enemy);
+          }
+        });
       }
     });
   }
