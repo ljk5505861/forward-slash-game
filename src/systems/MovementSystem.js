@@ -31,7 +31,6 @@ export default class MovementSystem {
       const stopDistance=getStopDistance(s,target,weapon);
       if(d<=stopDistance){
         s.player.body.setVelocityX(0);
-        if(d<stopDistance-2) s.player.x=Math.max(0,target.x-stopDistance);
       } else {
         s.player.body.setVelocityX(d>weapon.attackRange ? s.balance.player.speedX : s.balance.player.pressSpeedX);
       }
