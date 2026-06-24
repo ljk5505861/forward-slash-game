@@ -1,4 +1,5 @@
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from '../config/gameConfig.js';
+import { SKILLS } from '../config/skills.js';
 import { formatArtifactSelectionOption, formatSkillSelectionOption, resolveSelectionMode, SELECTION_ICON_STYLE, SelectionState } from './selectionFormatters.js';
 import { drawRarityFrame, rarityStyle } from './selectionFrameRenderer.js';
 import { centeredHitArea, makeInteractive } from './interactive.js';
@@ -34,8 +35,7 @@ export default class UpgradePanel {
     const hint=this.scene.add.text(DESIGN_WIDTH/2,188,'新技能不会立即替换；可取消返回三选一界面',{fontFamily:'Arial',fontSize:'22px',color:'#cbd6ee',stroke:'#000',strokeThickness:3}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+1);
     const cancel=makeInteractive(this.scene.add.text(DESIGN_WIDTH/2,260,'取消 / 返回',{fontFamily:'Arial',fontSize:'26px',color:'#fff',backgroundColor:'#4a2d38',padding:{left:18,right:18,top:10,bottom:10}}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+2)).on('pointerdown',()=>this.onCancel?.());
     this.nodes.push(bg,title,hint,cancel);
-    (this.scene.playerData.skills||[]).slice(0,4).forEach((skillData,i)=>{ const cfg=SKILLS[skillData.id]||{}; const x=116+i*164,y=438; const box=makeInteractive(this.scene.add.rectangle(x,y,142,128,0x263f70,0.96).setStrokeStyle(5,0xffd166,1).setScrollFactor(0).setDepth(DEPTH+2)).on('pointerdown',()=>this.onReplace?.(i)); const text=this.scene.add.text(x,y,`${cfg.name||skillData.id}
-Lv.${skillData.level}`,{fontFamily:'Arial',fontSize:'20px',color:'#fff',align:'center',stroke:'#000',strokeThickness:3,wordWrap:{width:124}}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+3); this.nodes.push(box,text); });
+    (this.scene.playerData.skills||[]).slice(0,4).forEach((skillData,i)=>{ const cfg=SKILLS[skillData.id]||{}; const x=116+i*164,y=438; const box=makeInteractive(this.scene.add.rectangle(x,y,142,128,0x263f70,0.96).setStrokeStyle(5,0xffd166,1).setScrollFactor(0).setDepth(DEPTH+2)).on('pointerdown',()=>this.onReplace?.(i)); const text=this.scene.add.text(x,y,`${cfg.name||skillData.id}\nLv.${skillData.level}`,{fontFamily:'Arial',fontSize:'20px',color:'#fff',align:'center',stroke:'#000',strokeThickness:3,wordWrap:{width:124}}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+3); this.nodes.push(box,text); });
   }
 
   hide(){ this.nodes.forEach(n=>{ n.removeAllListeners?.(); n.destroy(); }); this.nodes=[]; this.cards=[]; this.detailNodes=[]; this.state.close(); this.isOpen=false; }
