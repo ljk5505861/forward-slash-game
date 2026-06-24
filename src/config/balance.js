@@ -1,6 +1,6 @@
 export const BALANCE = {
   stageWorldWidth:50000, groundTopY: 920, groundHeight: 360,
-  player: { startX:220, startY:850, width:45, height:78, bodyWidth:32, bodyHeight:71, speedX:185, pressSpeedX:32, maxHp:120, attack:10, encounterDistance:520, stopBuffer:8 },
+  player: { startX:220, startY:850, width:45, height:78, bodyWidth:32, bodyHeight:71, speedX:185, pressSpeedX:32, maxHp:500, attack:10, encounterDistance:520, stopBuffer:8 },
   enemyFadeMs: 260,
   camera: { playerScreenAnchorX: 0.15 },
   enemies: { respawnPadding: 96, fullEntryPadding: 0, rangeBuffer: 24 },
