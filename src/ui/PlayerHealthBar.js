@@ -10,13 +10,15 @@ const clamp01=value=>Math.max(0,Math.min(1,value));
 
 const basePlayerWidth = player => Math.max(1, player?.body?.width || player?.width || DEFAULT_PLAYER_WIDTH);
 const basePlayerHeight = player => Math.max(1, player?.body?.height || player?.height || DEFAULT_PLAYER_HEIGHT);
+const playerBodyX = player => player?.body?.center?.x ?? player?.x ?? 0;
+const playerBodyTop = player => player?.body?.top ?? ((player?.y ?? 0)-basePlayerHeight(player)/2);
 
 export const playerHealthBarSize = player => {
   const width = Math.round(Math.max(MIN_WIDTH, basePlayerWidth(player) * WIDTH_RATIO));
   const height = Math.round(Math.max(MIN_HEIGHT, width * HEIGHT_RATIO));
   return { width, height, outlineWidth:width+OUTLINE_PAD*2, outlineHeight:height+OUTLINE_PAD*2 };
 };
-export const playerHealthBarY = player => player.y-basePlayerHeight(player)/2-10;
+export const playerHealthBarY = player => playerBodyTop(player)-10;
 
 export default class PlayerHealthBar {
   constructor(scene){
@@ -34,7 +36,7 @@ export default class PlayerHealthBar {
     const p=this.scene.playerData;
     if(!player||!p){ this.setVisible(false); return; }
     const { width, height, outlineWidth, outlineHeight } = this.size;
-    const x=player.x;
+    const x=playerBodyX(player);
     const y=playerHealthBarY(player);
     const ratio=p.maxHp>0?clamp01(p.hp/p.maxHp):0;
     this.bg.setPosition(x,y).setDisplaySize(width,height);
