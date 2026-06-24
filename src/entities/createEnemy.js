@@ -1,6 +1,11 @@
+import { ENEMIES } from '../config/enemies.js';
+
 export default function createEnemy(scene, config, x, groundTopY) {
   const enemy = scene.add.rectangle(x, groundTopY - config.height / 2, config.width, config.height, config.color, 1).setStrokeStyle(6, config.stroke, 1).setDepth(20);
   scene.physics.add.existing(enemy); enemy.body.setAllowGravity(false); enemy.body.setImmovable(true); enemy.body.setSize(config.bodyWidth || Math.round(config.width * 0.86), config.bodyHeight || Math.round(config.height * 0.92)); enemy.body.setOffset((config.width - enemy.body.width) / 2, config.height - enemy.body.height);
+  const baseConfig=ENEMIES[config.id]||config;
+  const specialDamageScale=(config.damage||1)/(baseConfig.damage||1);
+  const scaledSpecialDamage=value=>value===undefined?undefined:Math.max(1,Math.round(value*specialDamageScale));
   Object.assign(enemy, {
     enemyId:config.id,
     name:config.name,
@@ -18,9 +23,9 @@ export default function createEnemy(scene, config, x, groundTopY) {
     hp:config.hp,
     maxHp:config.hp,
     damage:config.damage,
-    chargeDamage:config.chargeDamage,
-    bombDamage:config.bombDamage,
-    slamDamage:config.slamDamage,
+    chargeDamage:scaledSpecialDamage(config.chargeDamage),
+    bombDamage:scaledSpecialDamage(config.bombDamage),
+    slamDamage:scaledSpecialDamage(config.slamDamage),
     healAmount:config.healAmount,
     preferredRange:config.preferredRange,
     chargeTriggerRange:config.chargeTriggerRange,
