@@ -38,7 +38,9 @@ export default class SkillBar {
       const text = this.scene.add.text(x, y + 10, '', {
         fontFamily: 'Arial', fontSize: '20px', color: '#ffffff', align: 'center', stroke: '#000', strokeThickness: 3, wordWrap: { width: 132 },
       }).setOrigin(0.5).setScrollFactor(0).setDepth(2102);
-      box.setInteractive({useHandCursor:true}).on('pointerdown',()=>{ if(this.scene.upgradeSystem?.pendingReplacement) this.scene.upgradeSystem.confirmReplacement(index); }); this.slotNodes.push({ box, text });
+      const slotIndex = i;
+      box.setInteractive({useHandCursor:true}).on('pointerdown',()=>{ if(this.scene.upgradeSystem?.pendingReplacement) this.scene.upgradeSystem.confirmReplacement(slotIndex); });
+      this.slotNodes.push({ box, text });
       this.nodes.push(box, text);
     }
     this.update();
