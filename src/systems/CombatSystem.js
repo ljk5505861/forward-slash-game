@@ -10,9 +10,6 @@ const BEHAVIOR_ATTACKERS = new Set(['charger', 'bomber', 'healer', 'midBoss', 'b
 export const MIN_PLAYER_ATTACK_INTERVAL_MS = 180;
 export const NORMAL_ATTACK_KNOCKBACK_DURATION_MS = 440;
 export const NORMAL_ATTACK_KNOCKBACK_LIFT_PX = 24;
-export const NORMAL_ATTACK_KNOCKBACK_BOUNCE_MS = 140;
-export const NORMAL_ATTACK_KNOCKBACK_BOUNCE_LIFT_PX = 8;
-
 
 export default class CombatSystem {
   constructor(scene){ this.scene=scene; this.nextPlayerAttackAt=0; this.knockbackTargets=new Set(); }
@@ -33,15 +30,11 @@ export default class CombatSystem {
   pierceHit(e){ const g=this.scene.add.graphics().setDepth(150); g.lineStyle(5,0xd8f5ff,1).lineBetween(e.x-32,e.y-58,e.x+32,e.y-34); this.scene.tweens.add({targets:g,alpha:0,duration:160,onComplete:()=>g.destroy()}); }
   damageEnemy(enemy, amount, meta={}){ if(!this.scene.targeting.valid(enemy)) return false; if(!this.scene.targeting.isEnemyFullyInsideViewport(enemy)) return false; const professionMult=meta.professionApplied ? (meta.professionMultiplier||1) : (this.scene.professionSystem?.getDamageMultiplier?.({ type:meta.source==='skill'?'activeSkill':meta.source, damaging:true })||1); const baseBeforeProfession=Math.max(0, Math.round(meta.baseAmountBeforeProfession ?? (meta.professionApplied && professionMult>0 ? amount/professionMult : amount))); const boosted=meta.professionApplied ? Math.round(amount) : Math.round(amount*professionMult); const reduced=Math.max(0, Math.round(boosted*(1-(enemy.damageReduction||0))-(enemy.defense||0))); const baseReduced=Math.max(0, Math.round(baseBeforeProfession*(1-(enemy.damageReduction||0))-(enemy.defense||0))); const hpBefore=enemy.hp; enemy.hp=Math.max(0, enemy.hp-reduced); const actualDamage=hpBefore-enemy.hp; const actualWithoutProfession=Math.min(hpBefore,baseReduced); const professionBonus=professionMult>1 ? Math.min(actualDamage, Math.max(0, actualDamage-actualWithoutProfession)) : 0; if(actualDamage>0){ this.scene.floatText(enemy.x, enemy.y-60, `-${actualDamage}`, meta.source==='burn'?'#ff8a33':'#fff'); syncEnemyUi(enemy); this.scene.eventBus.emit(CombatEvents.ENEMY_HIT,{ enemy, damage:actualDamage, professionBonusDamage:professionBonus, ...meta }); if(meta.source==='attack'||meta.source==='normalAttack') this.applyKnockback(enemy, meta); this.applyLifeSteal(actualDamage, meta); } else syncEnemyUi(enemy); if(enemy.hp<=0) this.handleDeathReactions(enemy, meta); if(enemy.hp<=0) this.killEnemy(enemy, meta); return actualDamage > 0; }
 
-
   clearKnockback(enemy){
     if(!enemy) return;
     enemy.knockbackTween?.stop?.();
     enemy.knockbackTween?.remove?.();
     enemy.knockbackTween=null;
-    enemy.knockbackBounceTween?.stop?.();
-    enemy.knockbackBounceTween?.remove?.();
-    enemy.knockbackBounceTween=null;
     enemy.isKnockbackActive=false;
     enemy.knockbackUntil=0;
     delete enemy.knockbackGroundY;
@@ -51,14 +44,12 @@ export default class CombatSystem {
   pauseKnockbacks(){
     this.knockbackTargets?.forEach(enemy=>{
       if(enemy?.isKnockbackActive) enemy.knockbackTween?.pause?.();
-      if(enemy?.isKnockbackActive) enemy.knockbackBounceTween?.pause?.();
     });
   }
 
   resumeKnockbacks(){
     this.knockbackTargets?.forEach(enemy=>{
       if(enemy?.isKnockbackActive) enemy.knockbackTween?.resume?.();
-      if(enemy?.isKnockbackActive) enemy.knockbackBounceTween?.resume?.();
     });
   }
 
@@ -74,21 +65,19 @@ export default class CombatSystem {
     const mult=enemy.isBoss?0.12:(enemy.isElite?0.35:(enemy.enemyId==='armored_guard'?0.6:1));
     const dx=Math.max(2,Math.round(base*mult));
     const minX=enemy.width/2+8;
-    const maxX=(this.scene.balance.stageWorldWidth||14900)-enemy.width/2-8;
+    const maxX=(this.scene.balance.stageWorldWidth||50000)-enemy.width/2-8;
     const startX=enemy.x;
     const groundY=enemy.knockbackGroundY ?? enemy.y;
     const direction=Math.sign(startX-(this.scene.player?.x ?? startX)) || Math.sign(enemy.body?.velocity?.x||0) || Math.sign(enemy.body?.vx||0) || (enemy.flipX?-1:1) || 1;
     const endX=Math.max(minX,Math.min(maxX,startX+direction*dx));
     const duration=NORMAL_ATTACK_KNOCKBACK_DURATION_MS;
     const lift=NORMAL_ATTACK_KNOCKBACK_LIFT_PX;
-    const bounceDuration=NORMAL_ATTACK_KNOCKBACK_BOUNCE_MS;
-    const bounceLift=NORMAL_ATTACK_KNOCKBACK_BOUNCE_LIFT_PX;
     const startY=enemy.y;
     this.clearKnockback(enemy);
     enemy.knockbackGroundY=groundY;
     enemy.isKnockbackActive=true;
     this.knockbackTargets.add(enemy);
-    enemy.knockbackUntil=(this.scene.getGameplayTime?.()??0)+duration+bounceDuration;
+    enemy.knockbackUntil=(this.scene.getGameplayTime?.()??0)+duration;
     enemy.body?.setVelocityX?.(0);
     const state={ t:0 };
     const sync=()=>syncEnemyUi(enemy);
@@ -112,31 +101,7 @@ export default class CombatSystem {
         enemy.body?.reset?.(enemy.x,enemy.y);
         enemy.body?.setVelocityX?.(0);
         sync();
-        enemy.knockbackTween=null;
-        const bounceState={ t:0 };
-        enemy.knockbackBounceTween=this.scene.tweens.add({
-          targets:bounceState,
-          t:1,
-          duration:bounceDuration,
-          ease:'Sine.easeInOut',
-          onUpdate:()=>{
-            if(enemy.isDefeated||!enemy.active){ this.clearKnockback(enemy); return; }
-            const t=Math.max(0,Math.min(1,bounceState.t));
-            enemy.x=endX;
-            enemy.y=groundY-Math.sin(Math.PI*t)*bounceLift;
-            enemy.body?.reset?.(enemy.x,enemy.y);
-            enemy.body?.setVelocityX?.(0);
-            sync();
-          },
-          onComplete:()=>{
-            if(enemy.isDefeated||!enemy.active){ this.clearKnockback(enemy); return; }
-            enemy.x=endX; enemy.y=groundY;
-            enemy.body?.reset?.(enemy.x,enemy.y);
-            enemy.body?.setVelocityX?.(0);
-            sync();
-            this.clearKnockback(enemy);
-          }
-        });
+        this.clearKnockback(enemy);
       }
     });
   }
