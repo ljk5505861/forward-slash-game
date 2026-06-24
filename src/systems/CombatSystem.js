@@ -8,6 +8,7 @@ import { applyLifeStealFromDamage } from './LifeSteal.js';
 
 const BEHAVIOR_ATTACKERS = new Set(['charger', 'bomber', 'healer', 'midBoss', 'berserkerBoss']);
 export const MIN_PLAYER_ATTACK_INTERVAL_MS = 180;
+export const NORMAL_ATTACK_KNOCKBACK_DURATION_MS = 440;
 
 
 export default class CombatSystem {
@@ -69,8 +70,9 @@ export default class CombatSystem {
     const groundY=enemy.knockbackGroundY ?? enemy.y;
     const direction=Math.sign(startX-(this.scene.player?.x ?? startX)) || Math.sign(enemy.body?.velocity?.x||0) || Math.sign(enemy.body?.vx||0) || (enemy.flipX?-1:1) || 1;
     const endX=Math.max(minX,Math.min(maxX,startX+direction*dx));
-    const duration=220;
+    const duration=NORMAL_ATTACK_KNOCKBACK_DURATION_MS;
     const lift=24;
+    const startY=enemy.y;
     this.clearKnockback(enemy);
     enemy.knockbackGroundY=groundY;
     enemy.isKnockbackActive=true;
@@ -88,7 +90,7 @@ export default class CombatSystem {
         if(enemy.isDefeated||!enemy.active){ this.clearKnockback(enemy); return; }
         const t=Math.max(0,Math.min(1,state.t));
         enemy.x=startX+(endX-startX)*t;
-        enemy.y=groundY-Math.sin(Math.PI*t)*lift;
+        enemy.y=startY+(groundY-startY)*t-Math.sin(Math.PI*t)*lift;
         enemy.body?.reset?.(enemy.x,enemy.y);
         enemy.body?.setVelocityX?.(0);
         sync();
