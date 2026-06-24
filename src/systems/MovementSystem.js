@@ -1,9 +1,7 @@
 import { getWeapon } from '../config/weapons.js';
 
-const getStopDistance = (scene, target, weapon) => {
-  const playerHalf = (scene.player?.body?.width || scene.player?.width || 0) / 2;
-  const enemyHalf = (target?.body?.width || target?.width || 0) / 2;
-  return Math.max(weapon.attackRange * 0.72, playerHalf + enemyHalf + (scene.balance.player.stopBuffer || 10));
+const getStopDistance = (_scene, _target, weapon) => {
+  return weapon.attackRange;
 };
 
 export default class MovementSystem {
