@@ -18,7 +18,7 @@ function makeScene(){
   return scene;
 }
 
-assert.equal(GAME_VERSION, '0.10.5');
+assert.equal(GAME_VERSION, '0.10.6');
 assert.equal(BALANCE.camera.playerScreenAnchorX, 0.15);
 assert.equal(BALANCE.stageWorldWidth, 50000);
 assert.equal('entrySpeed' in BALANCE.enemies, false);

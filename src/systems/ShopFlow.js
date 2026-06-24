@@ -5,7 +5,6 @@ export function onShopClosed(scene, reason){
   scene.pendingShop=null;
   scene.runState=RunStates.RUNNING;
   scene.delayedUpgradeUnlockAt=0;
-  if(reason==='second') scene.stageSystem?.enterPhaseById('late');
   scene.endGameplayPause?.();
   return reason==='second';
 }
