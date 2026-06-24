@@ -10,6 +10,7 @@ const BEHAVIOR_ATTACKERS = new Set(['charger', 'bomber', 'healer', 'midBoss', 'b
 export const MIN_PLAYER_ATTACK_INTERVAL_MS = 180;
 export const NORMAL_ATTACK_KNOCKBACK_DURATION_MS = 440;
 export const NORMAL_ATTACK_KNOCKBACK_LIFT_PX = 24;
+export const BOSS_KNOCKBACK_MULTIPLIER = 0.05;
 
 export default class CombatSystem {
   constructor(scene){ this.scene=scene; this.nextPlayerAttackAt=0; this.knockbackTargets=new Set(); }
@@ -62,7 +63,7 @@ export default class CombatSystem {
     if(!enemy?.body||enemy.isDefeated) return;
     const base=meta.knockback ?? 0;
     if(base<=0) return;
-    const mult=enemy.isBoss?0.12:(enemy.isElite?0.35:(enemy.enemyId==='armored_guard'?0.6:1));
+    const mult=enemy.isBoss?BOSS_KNOCKBACK_MULTIPLIER:(enemy.isElite?0.35:(enemy.enemyId==='armored_guard'?0.6:1));
     const dx=Math.max(2,Math.round(base*mult));
     const minX=enemy.width/2+8;
     const maxX=(this.scene.balance.stageWorldWidth||50000)-enemy.width/2-8;
