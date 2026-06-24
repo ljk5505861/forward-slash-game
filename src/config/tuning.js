@@ -8,7 +8,7 @@ export const TUNING = {
     normalDamageMultiplier: 0.75,
     eliteDamageMultiplier: 0.75,
     bossDamageMultiplier: 0.8,
-    waveHpGrowth: 0.06,
-    waveDamageGrowth: 0.02,
+    waveHpGrowth: 0.07,
+    waveDamageGrowth: 0.025,
   },
 };
