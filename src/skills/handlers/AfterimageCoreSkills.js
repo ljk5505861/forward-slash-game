@@ -50,7 +50,7 @@ export const PhantomStepSkill={
     return system.scene.eventBus.on(CombatEvents.PLAYER_DODGED,()=>{
       const s=system.scene;
       const data=system.getData('phantom_step');
-      if(!data) return;
+      if(!data||!s.afterimages) return;
       const now=s.getGameplayTime();
       if(now-lastDodgeAt<=data.streakWindowMs) streak+=1;
       else streak=1;
@@ -68,24 +68,20 @@ export const PhantomStepSkill={
 export const ShadowAssaultSkill={
   bind(system){
     const s=system.scene;
-    const echoId='shadow_assault';
-    s.afterimages.registerEchoHandler(echoId,({afterimage,index,target,damage,heavyHit,tags})=>{
+    return s.eventBus.on(CombatEvents.PLAYER_HIT,payload=>{
       const data=system.getData('shadow_assault');
-      if(!data||!s.targeting.valid(target)) return false;
-      s.time.delayedCall(index*data.echoDelayMs,()=>{
-        if(!s.targeting.valid(target)||!s.afterimages.getById(afterimage.id)) return;
-        const amount=Math.max(1,Math.round((damage||0)*data.damageRatio));
-        s.combatSystem.damageEnemy(target,amount,{ source:'skill', damageKind:'afterimageAttack', skillId:'shadow_assault', tags:[...(tags||[]),'shadow',TAGS.BUILD_AFTERIMAGE], afterimage:true, heavyHit:!!heavyHit, allowLifeSteal:true, lifeStealScale:data.lifeStealScale, noKnockback:true });
-        const slash=s.add.rectangle(target.x-12-index*5,target.y-52,54,7,0xa9a3ff,0.65).setDepth(148);
-        slash.rotation=-0.45;
-        s.tweens.add({targets:slash,x:target.x+22,alpha:0,duration:150,onComplete:()=>slash.destroy()});
+      if(!data||payload.source!=='attack'||!s.targeting.valid(payload.enemy)||!s.afterimages) return;
+      const afterimages=s.afterimages.getAll();
+      afterimages.forEach((afterimage,index)=>{
+        s.time.delayedCall(index*data.echoDelayMs,()=>{
+          if(!s.targeting.valid(payload.enemy)||!s.afterimages?.getById(afterimage.id)) return;
+          const amount=Math.max(1,Math.round((payload.damage||0)*data.damageRatio));
+          s.combatSystem.damageEnemy(payload.enemy,amount,{ source:'skill', damageKind:'afterimageAttack', skillId:'shadow_assault', tags:[...(payload.tags||[]),'shadow',TAGS.BUILD_AFTERIMAGE], afterimage:true, heavyHit:!!payload.heavyHit, allowLifeSteal:true, lifeStealScale:data.lifeStealScale, noKnockback:true });
+          const slash=s.add.rectangle(payload.enemy.x-12-index*5,payload.enemy.y-52,54,7,0xa9a3ff,0.65).setDepth(148);
+          slash.rotation=-0.45;
+          s.tweens.add({targets:slash,x:payload.enemy.x+22,alpha:0,duration:150,onComplete:()=>slash.destroy()});
+        });
       });
-      return true;
     });
-    const off=s.eventBus.on(CombatEvents.PLAYER_HIT,payload=>{
-      if(payload.source!=='attack'||!s.targeting.valid(payload.enemy)) return;
-      s.afterimages.triggerEcho(echoId,{ target:payload.enemy, damage:payload.damage, heavyHit:payload.heavyHit, tags:payload.tags });
-    });
-    return ()=>{ off(); s.afterimages.unregisterEchoHandler(echoId); };
   }
 };
