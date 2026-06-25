@@ -71,7 +71,7 @@ export const EternalFlameHeartSkill={ bind(system){
     burnEffects(s,p.target).forEach(effect=>{ effect.expiresAt=Math.min(now+data.maxRemainingMs,(effect.expiresAt||now)+data.extendPerTickMs); });
     if(p.effect.noEternalBurnPulse||p.noEternalBurnPulse) return;
     const pulse=Math.min(data.pulseDamageCap,Math.max(1,Math.round(p.actualDamage*data.pulseRatio)));
-    s.combatSystem.damageEnemy(p.target,pulse,{ source:'skill', skillId:SKILL_ID, damageKind:'eternalBurnPulse', tags:[TAGS.FIRE,TAGS.DOT,TAGS.BUILD_FIRE], allowLifeSteal:false, noKnockback:true, noEternalBurnPulse:true, noEternalSpread:true });
+    s.combatSystem.damageEnemy(p.target,pulse,{ source:'skill', skillId:SKILL_ID, damageKind:'eternalBurnPulse', tags:[TAGS.FIRE,TAGS.DOT,TAGS.BUILD_FIRE], allowLifeSteal:false, noKnockback:true, noEternalBurnPulse:true, noEternalSpread:true, professionApplied:true, professionMultiplier:1, baseAmountBeforeProfession:pulse });
   });
 
   const spreadFromDeath=(payload)=>{
