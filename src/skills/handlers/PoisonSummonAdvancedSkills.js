@@ -116,19 +116,35 @@ function infectionSnapshot(system){
 }
 
 function reducePoison(system,target,ratio){
-  const s=system.scene, now=s.getGameplayTime(), boss=isBoss(target), before=s.statusEffects.getStackCount(target,StatusEffects.POISON);
+  const s=system.scene, now=s.getGameplayTime(), boss=isBoss(target);
+  const effects=s.statusEffects.getEffects(target,StatusEffects.POISON).filter(effect=>(effect.stacks||1)>0);
+  const before=effects.reduce((sum,effect)=>sum+(effect.stacks||1),0);
   if(before<=0) return {stacks:0,seconds:0};
-  const bossRatio=ratio*0.5; const actualRatio=boss?bossRatio:ratio;
-  let remove=Math.floor(before*actualRatio);
-  if(boss) remove=Math.min(remove,Math.max(0,before-Math.ceil(before*0.70)));
-  remove=Math.min(remove,Math.max(0,before-1));
-  const after=before-remove; if(remove>0) s.statusEffects.setStacks(target,StatusEffects.POISON,after);
-  let consumedMs=0; const minRemain=boss?1800:900;
+  const actualRatio=boss?ratio*0.5:ratio;
+  const minimumTotal=boss?Math.ceil(before*0.70):1;
+  let remainingToConsume=Math.min(Math.floor(before*actualRatio),Math.max(0,before-minimumTotal));
+  let consumedStacks=0, consumedMs=0;
+  const ordered=[...effects].sort((a,b)=>(b.stacks||1)-(a.stacks||1)||((a.expiresAt||now)-(b.expiresAt||now))||((a.id||0)-(b.id||0)));
+  for(const effect of ordered){
+    if(remainingToConsume<=0) break;
+    const previousStacks=effect.stacks||1;
+    const consume=Math.min(previousStacks,remainingToConsume);
+    const nextStacks=previousStacks-consume;
+    remainingToConsume-=consume; consumedStacks+=consume;
+    if(nextStacks<=0){
+      s.statusEffects.removeEffect(effect,'poisonKingConsumed');
+    } else {
+      effect.stacks=nextStacks;
+      s.statusEffects.emit?.(CombatEvents.STATUS_STACK_CHANGED,{ effect, target, type:StatusEffects.POISON, previousStacks, stacks:nextStacks, delta:nextStacks-previousStacks, sourceId:effect.sourceId });
+    }
+  }
+  const minRemain=boss?1800:900;
   s.statusEffects.getEffects(target,StatusEffects.POISON).forEach(effect=>{
-    const remain=Math.max(0,(effect.expiresAt||now)-now); const reduce=Math.min(Math.floor(remain*actualRatio),Math.max(0,remain-minRemain));
+    const remain=Math.max(0,(effect.expiresAt||now)-now);
+    const reduce=Math.min(Math.floor(remain*actualRatio),Math.max(0,remain-minRemain));
     if(reduce>0){ effect.expiresAt-=reduce; consumedMs+=reduce; }
   });
-  return {stacks:remove,seconds:consumedMs/1000};
+  return {stacks:consumedStacks,seconds:consumedMs/1000};
 }
 
 function applyKingAura(system,data,form){
@@ -144,12 +160,23 @@ function applyKingAura(system,data,form){
 function clearKingAura(scene){ const p=scene.playerData; ['parasiticGuAbsorbBonuses','parasiticGuGrowthCapBonuses','parasiticGuDamageBonuses','poisonInsectDamageBonuses','poisonInsectAttackSpeedBonuses','poisonInsectExtendBonuses'].forEach(k=>{ if(p?.[k]) delete p[k][SOURCE_POISON_KING]; }); }
 
 export const PoisonKingSkill={
+  canCast(system){
+    const s=system.scene, runtime=ensurePoisonRuntime(s), now=s.getGameplayTime();
+    if(runtime.hasPoisonKing()) return failPrecast(s,'毒王已存在',now);
+    if(now<(s._poisonKingCanCastRetryUntil||0)) return { failed:true, throttled:true, reason:s._poisonKingCanCastFailure||'感染不足' };
+    const snap=infectionSnapshot(system);
+    const hasGuHost=!!(snap.gu.host&&s.targeting.valid(snap.gu.host));
+    if(!snap.enemies.length) return failPrecast(s,'感染不足',now);
+    if(!snap.poisoned.length&&!hasGuHost) return failPrecast(s,'感染不足',now);
+    if(snap.score<MIN_INFECTION_SCORE) return failPrecast(s,'感染不足',now);
+    s._poisonKingCanCastRetryUntil=0; s._poisonKingCanCastFailure='';
+    return { success:true, snapshot:snap };
+  },
   cast(system,cfg,data,level){
     const s=system.scene, runtime=ensurePoisonRuntime(s), now=s.getGameplayTime();
-    if(runtime.hasPoisonKing()) return fail(s,'毒王已存在');
+    if(runtime.hasPoisonKing()) return { failed:true, reason:'毒王已存在' };
     const snap=infectionSnapshot(system);
-    if(!snap.enemies.length||(!snap.poisoned.length||snap.score<MIN_INFECTION_SCORE)&&!(snap.gu.host&&s.targeting.valid(snap.gu.host))) return fail(s,'感染不足');
-    if(snap.score<MIN_INFECTION_SCORE) return fail(s,'感染不足');
+    if(!snap.enemies.length||(!snap.poisoned.length&&!(snap.gu.host&&s.targeting.valid(snap.gu.host)))||snap.score<MIN_INFECTION_SCORE) return { failed:true, reason:'感染不足' };
     let consumedPoisonStacks=0, consumedPoisonSeconds=0;
     snap.poisoned.forEach(e=>{ const c=reducePoison(system,e,data.consumeRatio); consumedPoisonStacks+=c.stacks; consumedPoisonSeconds+=c.seconds; });
     const parasiticGrowthContribution=Math.min(snap.gu.growth||0,(snap.gu.growth||0)*data.guGrowthContributionRatio);
@@ -169,7 +196,7 @@ export const PoisonKingSkill={
   cleanup(system){ endKing(system,'skillRemoved'); }
 };
 
-function fail(s,text){ const now=s.getGameplayTime?.()||0; s._poisonKingFailTextAt??=0; if(now>=s._poisonKingFailTextAt){ s.floatText?.(s.player.x,s.player.y-118,text,'#9aff79'); s._poisonKingFailTextAt=now+650; } return { failed:true, reason:text }; }
+function failPrecast(s,text,now=s.getGameplayTime?.()||0){ s._poisonKingCanCastRetryUntil=now+350; s._poisonKingCanCastFailure=text; s._poisonKingFailTextAt??=0; if(now>=s._poisonKingFailTextAt){ s.floatText?.(s.player.x,s.player.y-118,text,'#9aff79'); s._poisonKingFailTextAt=now+650; } return { failed:true, reason:text }; }
 function addPoison(system,target,stacks,durationMs,value,sourceId){ const data=poisonNeedleData(system); system.scene.statusEffects.add(StatusEffects.POISON,target,{ durationMs, intervalMs:data.poisonIntervalMs||700, value:value||data.poisonDamage||3, stacks, maxStacks:Math.max(data.maxStacks||15,stacks), sourceId, damageMultiplier:1, baseDamageMultiplierWithoutProfession:1, professionMultiplier:1, professionApplied:true, noPoisonKingBurst:true }); }
 
 function spawnKing(system,data,level,power,form,absorbedPoison){
