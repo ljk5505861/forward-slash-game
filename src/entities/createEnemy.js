@@ -41,10 +41,12 @@ export default function createEnemy(scene, config, x, groundTopY) {
     nextAttackAt:0,
     enraged:false,
     burnTick:null,
+    level:config.level||1,
   });
   enemy.hpBarBg = scene.add.rectangle(x, enemy.y - config.height / 2 - 18, config.width, 8, 0x221111).setDepth(21);
   enemy.hpBar = scene.add.rectangle(x - config.width / 2, enemy.y - config.height / 2 - 18, config.width, 8, 0xff4444).setOrigin(0, 0.5).setDepth(22);
   enemy.nameText = scene.add.text(x, enemy.y - config.height / 2 - 42, config.name, { fontFamily:'Arial', fontSize:'18px', color:'#fff', stroke:'#000', strokeThickness:3 }).setOrigin(0.5).setDepth(22);
+  enemy.levelText = scene.add.text(x, enemy.y - config.height / 2 - 62, `Lv.${enemy.level}`, { fontFamily:'Arial', fontSize:'15px', color:'#dbeafe', stroke:'#000', strokeThickness:3 }).setOrigin(0.5).setDepth(22);
   return enemy;
 }
-export function syncEnemyUi(enemy) { if (!enemy?.active) return; const w = enemy.width; enemy.hpBarBg?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 18); enemy.hpBar?.setPosition(enemy.x - w / 2, enemy.y - enemy.height / 2 - 18).setDisplaySize(w * Math.max(0, enemy.hp / enemy.maxHp), 8); enemy.nameText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 42); }
+export function syncEnemyUi(enemy) { if (!enemy?.active) return; const w = enemy.width; enemy.hpBarBg?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 18); enemy.hpBar?.setPosition(enemy.x - w / 2, enemy.y - enemy.height / 2 - 18).setDisplaySize(w * Math.max(0, enemy.hp / enemy.maxHp), 8); enemy.nameText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 42); enemy.levelText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 62); }
