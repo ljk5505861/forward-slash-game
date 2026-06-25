@@ -4,6 +4,7 @@ import { getWeapon } from '../config/weapons.js';
 import { syncEnemyUi } from '../entities/createEnemy.js';
 import { TAGS } from '../config/tags.js';
 import { mergeTags } from '../utils/tagUtils.js';
+import { StatusEffects } from './StatusEffectSystem.js';
 
 const BEHAVIOR_ATTACKERS = new Set(['charger', 'bomber', 'healer', 'midBoss', 'berserkerBoss']);
 const NON_LIFESTEAL_SOURCES = new Set(['burn','poison','burn_burst','reflect','shield_break','afterimage']);
@@ -34,7 +35,29 @@ export default class CombatSystem {
   slashHit(e){ const o=this.scene.add.circle(e.x,e.y-50,34,0xffffff,0.22).setStrokeStyle(5,0xcff5ff,1).setDepth(150); this.scene.tweens.add({targets:o,alpha:0,scale:1.25,duration:180,onComplete:()=>o.destroy()}); }
   arcaneHit(e){ const o=this.scene.add.circle(e.x,e.y-48,42,0x7d6fff,0.2).setStrokeStyle(5,0xb7fbff,1).setDepth(150); this.scene.tweens.add({targets:o,alpha:0,scale:1.35,duration:240,onComplete:()=>o.destroy()}); }
   pierceHit(e){ const g=this.scene.add.graphics().setDepth(150); g.lineStyle(5,0xd8f5ff,1).lineBetween(e.x-32,e.y-58,e.x+32,e.y-34); this.scene.tweens.add({targets:g,alpha:0,duration:160,onComplete:()=>g.destroy()}); }
-  damageEnemy(enemy, amount, meta={}){ if(!this.scene.targeting.valid(enemy)) return false; if(!this.scene.targeting.isEnemyFullyInsideViewport(enemy)) return false; const professionMult=meta.professionApplied ? (meta.professionMultiplier||1) : (this.scene.professionSystem?.getDamageMultiplier?.({ type:meta.source==='skill'?'activeSkill':meta.source, damaging:true })||1); const baseBeforeProfession=Math.max(0, Math.round(meta.baseAmountBeforeProfession ?? (meta.professionApplied && professionMult>0 ? amount/professionMult : amount))); const boosted=meta.professionApplied ? Math.round(amount) : Math.round(amount*professionMult); const physicalTakenBonus=(meta.tags||[]).includes('physical')?Math.max(0,Math.min(PHYSICAL_DAMAGE_TAKEN_BONUS_CAP,sumBonuses(enemy.physicalDamageTakenBonuses))):0; const physicalTakenMultiplier=1+physicalTakenBonus; const enemyReduction=Math.max(0,Math.min(0.95,enemy.damageReduction||0)); const reducedBeforeTaken=Math.max(0, Math.round(boosted*(1-enemyReduction)-(enemy.defense||0))); const baseReducedBeforeTaken=Math.max(0, Math.round(baseBeforeProfession*(1-enemyReduction)-(enemy.defense||0))); const reduced=Math.max(0,Math.round(reducedBeforeTaken*physicalTakenMultiplier)); const baseReduced=Math.max(0,Math.round(baseReducedBeforeTaken*physicalTakenMultiplier)); const hpBefore=enemy.hp; enemy.hp=Math.max(0, enemy.hp-reduced); const actualDamage=hpBefore-enemy.hp; const actualWithoutProfession=Math.min(hpBefore,baseReduced); const professionBonus=professionMult>1 ? Math.min(actualDamage, Math.max(0, actualDamage-actualWithoutProfession)) : 0; if(actualDamage>0){ this.scene.floatText(enemy.x, enemy.y-60, `-${actualDamage}`, meta.source==='burn'?'#ff8a33':'#fff'); syncEnemyUi(enemy); this.scene.eventBus.emit(CombatEvents.ENEMY_HIT,{ enemy, damage:actualDamage, professionBonusDamage:professionBonus, ...meta }); if(!meta.noKnockback&&(meta.source==='attack'||meta.source==='normalAttack')) this.applyKnockback(enemy, meta); this.applyLifeSteal(actualDamage, meta); } else syncEnemyUi(enemy); if(enemy.hp<=0 && meta.poisonStacksBeforeDeath===undefined) meta.poisonStacksBeforeDeath=this.scene.statusEffects?.getStackCount?.(enemy,'POISON')||0; if(enemy.hp<=0) this.handleDeathReactions(enemy, meta); if(enemy.hp<=0) this.killEnemy(enemy, meta); return actualDamage > 0; }
+
+  snapshotBurnBeforeDeath(enemy){
+    const effects=this.scene.statusEffects?.getEffects?.(enemy,StatusEffects.BURN)||[];
+    if(!effects.length) return null;
+    const now=this.scene.getGameplayTime?.()||0;
+    const primary=[...effects].sort((a,b)=>(b.stacks||1)-(a.stacks||1)||((b.expiresAt||now)-now)-((a.expiresAt||now)-now)||((a.id||0)-(b.id||0)))[0];
+    const spreadDepths=effects.map(effect=>effect.eternalSpreadDepth).filter(Number.isFinite);
+    return {
+      stacks:effects.reduce((sum,e)=>sum+(e.stacks||1),0),
+      value:primary?.value||0,
+      intervalMs:primary?.intervalMs||0,
+      damageMultiplier:primary?.damageMultiplier||1,
+      baseDamageMultiplierWithoutProfession:primary?.baseDamageMultiplierWithoutProfession||primary?.damageMultiplier||1,
+      professionMultiplier:primary?.professionMultiplier||1,
+      professionApplied:!!primary?.professionApplied,
+      eternalSpreadDepth:spreadDepths.length?Math.max(...spreadDepths):0
+    };
+  }
+  damageEnemy(enemy, amount, meta={}){ if(!this.scene.targeting.valid(enemy)) return false; if(!this.scene.targeting.isEnemyFullyInsideViewport(enemy)) return false; const professionMult=meta.professionApplied ? (meta.professionMultiplier||1) : (this.scene.professionSystem?.getDamageMultiplier?.({ type:meta.source==='skill'?'activeSkill':meta.source, damaging:true })||1); const baseBeforeProfession=Math.max(0, Math.round(meta.baseAmountBeforeProfession ?? (meta.professionApplied && professionMult>0 ? amount/professionMult : amount))); const boosted=meta.professionApplied ? Math.round(amount) : Math.round(amount*professionMult); const physicalTakenBonus=(meta.tags||[]).includes('physical')?Math.max(0,Math.min(PHYSICAL_DAMAGE_TAKEN_BONUS_CAP,sumBonuses(enemy.physicalDamageTakenBonuses))):0; const physicalTakenMultiplier=1+physicalTakenBonus; const enemyReduction=Math.max(0,Math.min(0.95,enemy.damageReduction||0)); const reducedBeforeTaken=Math.max(0, Math.round(boosted*(1-enemyReduction)-(enemy.defense||0))); const baseReducedBeforeTaken=Math.max(0, Math.round(baseBeforeProfession*(1-enemyReduction)-(enemy.defense||0))); const reduced=Math.max(0,Math.round(reducedBeforeTaken*physicalTakenMultiplier)); const baseReduced=Math.max(0,Math.round(baseReducedBeforeTaken*physicalTakenMultiplier)); const hpBefore=enemy.hp; enemy.hp=Math.max(0, enemy.hp-reduced); const actualDamage=hpBefore-enemy.hp; const actualWithoutProfession=Math.min(hpBefore,baseReduced); const professionBonus=professionMult>1 ? Math.min(actualDamage, Math.max(0, actualDamage-actualWithoutProfession)) : 0; if(actualDamage>0){ this.scene.floatText(enemy.x, enemy.y-60, `-${actualDamage}`, meta.source==='burn'?'#ff8a33':'#fff'); syncEnemyUi(enemy); this.scene.eventBus.emit(CombatEvents.ENEMY_HIT,{ enemy, damage:actualDamage, professionBonusDamage:professionBonus, ...meta }); if(!meta.noKnockback&&(meta.source==='attack'||meta.source==='normalAttack')) this.applyKnockback(enemy, meta); this.applyLifeSteal(actualDamage, meta); } else syncEnemyUi(enemy); if(enemy.hp<=0){
+      if(meta.burnSnapshotBeforeDeath===undefined) meta.burnSnapshotBeforeDeath=this.snapshotBurnBeforeDeath(enemy);
+      if(meta.burnStacksBeforeDeath===undefined) meta.burnStacksBeforeDeath=meta.burnSnapshotBeforeDeath?.stacks ?? (this.scene.statusEffects?.getStackCount?.(enemy,StatusEffects.BURN)||0);
+      if(meta.poisonStacksBeforeDeath===undefined) meta.poisonStacksBeforeDeath=this.scene.statusEffects?.getStackCount?.(enemy,StatusEffects.POISON)||0;
+    } if(enemy.hp<=0) this.handleDeathReactions(enemy, meta); if(enemy.hp<=0) this.killEnemy(enemy, meta); return actualDamage > 0; }
   clearKnockback(enemy){ if(!enemy) return; enemy.knockbackTween?.stop?.(); enemy.knockbackTween?.remove?.(); enemy.knockbackTween=null; enemy.isKnockbackActive=false; enemy.knockbackUntil=0; delete enemy.knockbackGroundY; this.knockbackTargets?.delete?.(enemy); }
   pauseKnockbacks(){ this.knockbackTargets?.forEach(enemy=>{ if(enemy?.isKnockbackActive) enemy.knockbackTween?.pause?.(); }); }
   resumeKnockbacks(){ this.knockbackTargets?.forEach(enemy=>{ if(enemy?.isKnockbackActive) enemy.knockbackTween?.resume?.(); }); }

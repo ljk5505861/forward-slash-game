@@ -30,12 +30,17 @@ export default class StatusEffectSystem {
     const old=type===StatusEffects.SHIELD?null:[...this.effects.values()].find(e=>e.type===type&&e.target===target&&e.sourceId===sourceId);
     if(old){
       const previousStacks=old.stacks||1;
+      const previousEternalSpreadDepth=Number.isFinite(old.eternalSpreadDepth)?old.eternalSpreadDepth:null;
+      const incomingEternalSpreadDepth=Number.isFinite(options.eternalSpreadDepth)?options.eternalSpreadDepth:null;
       old.durationMs=durationMs;
       old.expiresAt=now+durationMs;
       old.stacks=Math.min(maxStacks,previousStacks+stacks);
       old.value=value||old.value;
       const { stacks:_ignoredStacks, ...restOptions }=options;
       Object.assign(old, restOptions);
+      if(previousEternalSpreadDepth!==null||incomingEternalSpreadDepth!==null){
+        old.eternalSpreadDepth=Math.max(previousEternalSpreadDepth??0,incomingEternalSpreadDepth??0);
+      }
       if(old.stacks!==previousStacks){
         this.emit(CombatEvents.STATUS_STACK_CHANGED,{ effect:old, target, type, previousStacks, stacks:old.stacks, delta:old.stacks-previousStacks, sourceId:old.sourceId });
       }
