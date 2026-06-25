@@ -10,6 +10,7 @@ import { configureStrengthAdvancedSkills, FrenzySkill, BloodRageBurstSkill } fro
 import { configureStrengthUltimateSkills, LastStandSkill } from './StrengthUltimateSkills.js';
 import { configureDefenseCoreSkills, ThornArmorSkill, GuardianShieldSkill } from './DefenseCoreSkills.js';
 import { configureDefenseAdvancedSkills, ArmorBreakShockwaveSkill, ImmovableMountainSkill } from './DefenseAdvancedSkills.js';
+import { configureDefenseUltimateSkills, BlackTortoiseBodySkill } from './DefenseUltimateSkills.js';
 import { configureAfterimageCoreSkills, PhantomStepSkill, ShadowAssaultSkill } from './AfterimageCoreSkills.js';
 import { configureAfterimageAdvancedSkills, SwiftShadowSkill, InstantStepSkill } from './AfterimageAdvancedSkills.js';
 import { configurePoisonSummonCoreSkills, ParasiticGuSkill, BoneEatingInsectSkill } from './PoisonSummonCoreSkills.js';
@@ -27,9 +28,10 @@ configureStrengthAdvancedSkills();
 configureStrengthUltimateSkills();
 configureDefenseCoreSkills();
 configureDefenseAdvancedSkills();
+configureDefenseUltimateSkills();
 configureAfterimageCoreSkills();
 configureAfterimageAdvancedSkills();
 configurePoisonSummonCoreSkills();
 configurePoisonSummonAdvancedSkills();
 
-export const SKILL_HANDLERS={entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_heavy_hit:EntryHeavyHitSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,flame_spray:FlameSpraySkill,burn_burst:BurnBurstSkill,wildfire:WildfireSkill,meteor:MeteorSkill,eternal_flame_heart:EternalFlameHeartSkill,split_sword:SplitSwordSkill,rotating_sword:RotatingSwordSkill,execution_sword:ExecutionSwordSkill,myriad_swords:MyriadSwordsSkill,heaven_splitting_sword:HeavenSplittingSwordSkill,giant_force:GiantForceSkill,bloodthirst:BloodthirstSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,armor_break_shockwave:ArmorBreakShockwaveSkill,immovable_mountain:ImmovableMountainSkill,phantom_step:PhantomStepSkill,shadow_assault:ShadowAssaultSkill,swift_shadow:SwiftShadowSkill,instant_step:InstantStepSkill,parasitic_gu:ParasiticGuSkill,bone_eating_insect:BoneEatingInsectSkill,poison_chain:PoisonChainSkill,poison_king:PoisonKingSkill,frenzy:FrenzySkill,blood_rage_burst:BloodRageBurstSkill,last_stand:LastStandSkill};
+export const SKILL_HANDLERS={entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_heavy_hit:EntryHeavyHitSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,flame_spray:FlameSpraySkill,burn_burst:BurnBurstSkill,wildfire:WildfireSkill,meteor:MeteorSkill,eternal_flame_heart:EternalFlameHeartSkill,split_sword:SplitSwordSkill,rotating_sword:RotatingSwordSkill,execution_sword:ExecutionSwordSkill,myriad_swords:MyriadSwordsSkill,heaven_splitting_sword:HeavenSplittingSwordSkill,giant_force:GiantForceSkill,bloodthirst:BloodthirstSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,armor_break_shockwave:ArmorBreakShockwaveSkill,immovable_mountain:ImmovableMountainSkill,black_tortoise_body:BlackTortoiseBodySkill,phantom_step:PhantomStepSkill,shadow_assault:ShadowAssaultSkill,swift_shadow:SwiftShadowSkill,instant_step:InstantStepSkill,parasitic_gu:ParasiticGuSkill,bone_eating_insect:BoneEatingInsectSkill,poison_chain:PoisonChainSkill,poison_king:PoisonKingSkill,frenzy:FrenzySkill,blood_rage_burst:BloodRageBurstSkill,last_stand:LastStandSkill};
