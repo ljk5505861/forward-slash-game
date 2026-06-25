@@ -70,15 +70,15 @@ export const ShadowAssaultSkill={
     const s=system.scene;
     return s.eventBus.on(CombatEvents.PLAYER_HIT,payload=>{
       const data=system.getData('shadow_assault');
-      if(!data||payload.source!=='attack'||!s.targeting.valid(payload.enemy)||!s.afterimages) return;
+      if(!data||payload.fromMyriadAfterimage||payload.afterimage||payload.source!=='attack'||!s.targeting.valid(payload.enemy)||!s.afterimages) return;
       const afterimages=s.afterimages.getAll();
       afterimages.forEach((afterimage,index)=>{
         s.time.delayedCall(index*data.echoDelayMs,()=>{
           if(!s.targeting.valid(payload.enemy)||!s.afterimages?.getById(afterimage.id)) return;
           const afterimageDamageBonus=Object.values(s.playerData.afterimageDamageBonuses||{}).reduce((sum,value)=>sum+(Number(value)||0),0);
           const amount=Math.max(1,Math.round((payload.damage||0)*data.damageRatio*(1+afterimageDamageBonus)));
-          s.combatSystem.damageEnemy(payload.enemy,amount,{ source:'skill', damageKind:'afterimageAttack', skillId:'shadow_assault', tags:[...(payload.tags||[]),'shadow',TAGS.BUILD_AFTERIMAGE], afterimage:true, heavyHit:!!payload.heavyHit, allowLifeSteal:true, lifeStealScale:data.lifeStealScale, noKnockback:true });
-          const slash=s.add.rectangle(payload.enemy.x-12-index*5,payload.enemy.y-52,54,7,0xa9a3ff,0.65).setDepth(148);
+          s.combatSystem.damageEnemy(payload.enemy,amount,{ source:'skill', damageKind:'afterimageAttack', skillId:'shadow_assault', tags:[...(payload.tags||[]),'shadow',TAGS.BUILD_AFTERIMAGE], afterimage:true, heavyHit:!!payload.heavyHit, allowLifeSteal:true, lifeStealScale:data.lifeStealScale, noKnockback:true, fromMyriadAfterimage:!!payload.fromMyriadAfterimage, noInstantStep:true });
+          const slash=s.add.rectangle(payload.enemy.x-12-index*5,payload.enemy.y-52,payload.heavyHit?66:54,payload.heavyHit?10:7,0xa9a3ff,0.65).setDepth(148);
           slash.rotation=-0.45;
           s.tweens.add({targets:slash,x:payload.enemy.x+22,alpha:0,duration:150,onComplete:()=>slash.destroy()});
         });

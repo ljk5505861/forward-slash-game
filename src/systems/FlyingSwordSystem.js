@@ -10,8 +10,8 @@ export default class FlyingSwordSystem {
 
   createSword(options={}){
     const config={ ...DEFAULTS, ...options };
-    const sword={ id:this.nextId++, type:config.type||'base', ownerSkillId:config.ownerSkillId||'', temporary:!!config.temporary, damageScale:config.damageScale, state:'orbit', target:null, angle:config.angle??0, orbitRadius:config.orbitRadius, orbitSpeed:config.orbitSpeed, expiresAt:config.durationMs?this.scene.getGameplayTime()+config.durationMs:0, inheritedTags:[...(config.inheritedTags||[])], affinities:normalizeAffinities(config.affinities), view:null };
-    if(config.visible!==false){ sword.view=this.scene.add.rectangle(this.scene.player.x-58,this.scene.player.y-72,44,8,config.color??0xcff5ff,0.95).setStrokeStyle(2,0xffffff,0.8).setDepth(145); }
+    const sword={ id:this.nextId++, type:config.type||'base', ownerSkillId:config.ownerSkillId||'', temporary:!!config.temporary, damageScale:config.damageScale, state:'orbit', target:null, angle:config.angle??0, orbitRadius:config.orbitRadius, orbitSpeed:config.orbitSpeed, expiresAt:config.durationMs?this.scene.getGameplayTime()+config.durationMs:0, inheritedTags:[...(config.inheritedTags||[])], affinities:normalizeAffinities(config.affinities), shadowSword:!!config.shadowSword, sourceAfterimageId:config.sourceAfterimageId||null, view:null };
+    if(config.visible!==false){ sword.view=this.scene.add.rectangle(this.scene.player.x-58,this.scene.player.y-72,config.shadowSword?34:44,config.shadowSword?6:8,config.color??0xcff5ff,config.shadowSword?0.55:0.95).setStrokeStyle(2,config.shadowSword?0xc8c2ff:0xffffff,config.shadowSword?0.45:0.8).setDepth(145); }
     this.swords.push(sword);
     this.scene.eventBus?.emit?.(CombatEvents.SWORD_CREATED,{ sword });
     return sword;
@@ -48,7 +48,7 @@ export default class FlyingSwordSystem {
 
   getAffinitySnapshot(swords=this.getAll()){
     const affinityCounts=Object.fromEntries(STANDARD_AFFINITIES.map(key=>[key,0]));
-    const validSwords=(Array.isArray(swords)?swords:[]).filter(sword=>sword&&this.getById(sword.id));
+    const validSwords=(Array.isArray(swords)?swords:[]).filter(sword=>sword&&!sword.shadowSword&&this.getById(sword.id));
     let normalSwordCount=0;
     validSwords.forEach(sword=>{
       const affinities=normalizeAffinities(sword.affinities);
@@ -80,7 +80,12 @@ export default class FlyingSwordSystem {
     return true;
   }
 
-  formationPosition(index,time){
+  formationPosition(index,time,sword=null){
+    if(sword?.shadowSword&&sword.sourceAfterimageId){
+      const a=this.scene.afterimages?.getById?.(sword.sourceAfterimageId);
+      const v=a?.view;
+      if(v) return { x:v.x-22+Math.sin(time*0.004+index)*8, y:v.y-34+Math.cos(time*0.004+index)*5, rotation:-0.12 };
+    }
     const player=this.scene.player;
     const facingLeft=!!player.flipX;
     const behindDirection=facingLeft?1:-1;
@@ -100,7 +105,7 @@ export default class FlyingSwordSystem {
       if(sword.state==='gathered') return;
       if(!sword.view) return;
       if(sword.state==='orbit'){
-        const slot=this.formationPosition(index,time);
+        const slot=this.formationPosition(index,time,sword);
         sword.view.x+=(slot.x-sword.view.x)*0.24;
         sword.view.y+=(slot.y-sword.view.y)*0.24;
         sword.view.rotation+=(slot.rotation-sword.view.rotation)*0.28;

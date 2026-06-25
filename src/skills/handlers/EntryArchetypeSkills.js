@@ -106,6 +106,7 @@ export const EntryFireballSkill={
     const s=system.scene;
     const target=s.targeting.nearestAhead(760);
     if(!target) return;
+    ctx.originalTarget=target;
     system.projectile(s.player.x,s.player.y-60,target.x,target.y-45,cfg.color);
     system.hit(target,system.damageValue(data.damage,ctx),cfg,level,ctx,system.baseDamageValue(data.damage,ctx));
     s.statusEffects.add(StatusEffects.BURN,target,{ durationMs:data.burnMs,intervalMs:data.burnIntervalMs,value:data.burnDamage,stacks:data.burnStacks,maxStacks:data.maxStacks,sourceId:'entry_fireball',damageMultiplier:ctx.damageMultiplier,baseDamageMultiplierWithoutProfession:ctx.baseDamageMultiplierWithoutProfession,professionMultiplier:ctx.professionMultiplier,professionApplied:true });
@@ -116,6 +117,8 @@ export const EntryPoisonNeedleSkill={
   cast(system,cfg,data,level,ctx){
     const s=system.scene;
     const targets=s.targeting.all().filter(e=>e.x>=s.player.x-30).sort((a,b)=>a.x-b.x).slice(0,data.pierce);
+    ctx.originalTargets=targets;
+    ctx.originalTarget=targets[0]||null;
     targets.forEach((target,index)=>{
       system.projectile(s.player.x,s.player.y-55-index*5,target.x,target.y-45,0x60e878);
       system.hit(target,system.damageValue(data.damage,ctx),cfg,level,ctx,system.baseDamageValue(data.damage,ctx));

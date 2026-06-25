@@ -41,7 +41,7 @@ export function configureSwordAdvancedSkills(){
   Object.entries(SWORD_ADVANCED_SKILLS).forEach(([id,config])=>{ SKILLS[id]={...config}; });
 }
 
-const isSwordEvent = (payload) => payload?.sword && mergeTags(payload.tags, payload.sword.inheritedTags).includes(TAGS.BUILD_SWORD);
+const isSwordEvent = (payload) => payload?.sword && !payload.sword.shadowSword && mergeTags(payload.tags, payload.sword.inheritedTags).includes(TAGS.BUILD_SWORD);
 
 export const ExecutionSwordSkill = {
   bind(system){
@@ -97,7 +97,7 @@ export const MyriadSwordsSkill = {
       sword.nextMyriadAttackAt=s.getGameplayTime()+attackInterval+index*45;
     });
     if(data.instantExisting){
-      const existing=s.flyingSwords.getAll().filter(sword=>sword.ownerSkillId!=='myriad_swords'&&sword.ownerSkillId);
+      const existing=s.flyingSwords.getAll().filter(sword=>!sword.shadowSword&&sword.ownerSkillId!=='myriad_swords'&&sword.ownerSkillId);
       attackAll(existing,0.72);
     }
     const active={ skillId:cfg.id,cfg,data,level,ctx,nextAt:now,endAt:now+data.durationMs,ended:false,
