@@ -8,7 +8,13 @@ export const TUNING = {
     normalDamageMultiplier: 0.75,
     eliteDamageMultiplier: 0.75,
     bossDamageMultiplier: 0.8,
-    waveHpGrowth: 0.07,
-    waveDamageGrowth: 0.025,
+  },
+  leveling: {
+    wavesPerLevel: 3,
+    playerHpPerLevel: 8,
+    playerManaPerLevel: 5,
+    initialPlayerMana: 20,
+    enemyHpGrowthPerLevel: 0.12,
+    enemyDamageGrowthPerLevel: 0.04,
   },
 };
