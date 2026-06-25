@@ -18,12 +18,12 @@ function makeScene(){
   return scene;
 }
 
-assert.equal(GAME_VERSION, '0.10.6');
+assert.equal(GAME_VERSION, '0.10.39');
 assert.equal(BALANCE.camera.playerScreenAnchorX, 0.15);
-assert.equal(BALANCE.stageWorldWidth, 50000);
+assert.equal(BALANCE.stageWorldWidth, 100000);
 assert.equal('entrySpeed' in BALANCE.enemies, false);
 assert.equal(BALANCE.enemyPopulation.waveClearDelayMs, 1500);
-assert.deepEqual(FLOW_GROUPS.map(g=>g.waves), [[3,3,3],[4,4,4],[5,5,5],[6,6,6],[7,7,7],[8,8,8],[9,9,9],[10,10,10],[11,12,12]]);
+assert.deepEqual(FLOW_GROUPS.map(g=>g.waves), [[3,3,3],[4,4,4],[5,5,5],[6,6,6],[7,7,7],[8,8,8],[9,9,9],[10,10,10],[11,12,12],[12,12,13],[13,13,14],[14,15,15],[15,15,16],[16,16,17],[17,18,18],[18,18,19],[19,20,20],[20,21,22]]);
 ['GROUP_COMBAT','SKILL_REWARD','SHOP','BOSS_RUSH','BOSS_FIGHT','ARTIFACT_REWARD','PROFESSION_REWARD','ADVANCED_PROFESSION_STATUE','CAMPFIRE','VICTORY'].forEach(k=>assert.equal(LevelFlowStates[k], k));
 
 Object.values(SKILLS).forEach(skill=>{ assert.equal(skill.maxLevel,9, `${skill.id} maxLevel`); assert.equal(skill.levels.length,9, `${skill.id} levels`); [3,6,9].forEach(lv=>{ assert(skill.levels[lv-1], `${skill.id} Lv${lv}`); assert.equal(skillMilestoneText(skill,lv), skill.milestones[lv]); }); });
@@ -68,14 +68,17 @@ let opts=scene.upgradeSystem.rollOptions(); assert.equal(new Set(opts.map(o=>o.s
 scene.playerData.skills=[{id:'fireball',level:9},{id:'lightning',level:1},{id:'spinning_blade',level:1},{id:'poison_cloud',level:1}]; opts=scene.upgradeSystem.rollOptions(); assert(!opts.some(o=>o.skillId==='fireball'&&o.type==='skillLevel'));
 
 const stageScene=makeScene(); const stage=new StageSystem(stageScene); stageScene.stageSystem=stage; stage.start(); stage.update(0); assert.equal(stage.waveQueue.length,3); assert.equal(stage.makeWaveIds(['grunt','bomber'],5,1).filter(x=>x.role==='back').length,1); assert.equal(stage.makeWaveIds(['grunt','charger'],5,0).filter(x=>x.role==='back').length,0); assert(stage.makeWaveIds(['grunt','bomber'],6,2).slice(0,4).every(x=>x.role==='front')); assert(stage.makeWaveIds(['grunt','bomber'],6,2).slice(4).every(x=>x.role==='back'));
-for(let i=0;i<3;i+=1){ stage.currentWave=i+1; stage.waveSpawnFinished=true; stage.waveQueue=[]; stageScene.enemies=[]; if(i<2){ stage.updateGroup(i*2000); assert.equal(stage.flowState,LevelFlowStates.GROUP_COMBAT); } }
 stage.finishGroup(); assert.equal(stage.flowState,LevelFlowStates.SKILL_REWARD); assert.equal(stageScene.skillRewards.length,1); stage.onSkillRewardClosed(); assert.equal(stage.groupIndex,1); stage.onSkillRewardClosed(); assert.equal(stage.groupIndex,1);
 stage.groupIndex=2; stage.currentWave=3; stage.finishGroup(); stage.onSkillRewardClosed(); assert.deepEqual(stageScene.shopRequests,['first']); stage.onShopClosed('first'); assert.equal(stage.flowState,LevelFlowStates.BOSS_RUSH); stage.onBossKilled('boss1'); stage.onBossKilled('boss1'); assert.deepEqual(stageScene.artifactRequests,['boss1']); stage.beginAfterBossReward('boss1'); assert.deepEqual(stageScene.campfires,['boss1']); stage.onCampfireClosed('boss1'); assert.equal(stage.groupIndex,3);
-stage.onBossKilled('boss2'); stage.onBossKilled('boss2'); assert.deepEqual(stageScene.artifactRequests,['boss1','boss2']); stage.beginAfterBossReward('boss2'); assert.equal(stageScene.professionChoices,1); stage.onProfessionChosen(); assert.deepEqual(stageScene.campfires,['boss1','boss2']);
-stage.enterAdvancedStatue(); assert.equal(stageScene.advancedChoices,1); stage.onAdvancedProfessionChosen(); assert.deepEqual(stageScene.campfires,['boss1','boss2','advanced']); stage.onCampfireClosed('advanced'); assert.equal(stage.flowState,LevelFlowStates.BOSS_RUSH); stage.onBossKilled('boss3'); stage.onBossKilled('boss3'); assert.equal(stageScene.victories,1);
+stage.activeRush='boss2'; stage.onBossKilled('boss2'); stage.onBossKilled('boss2'); assert.deepEqual(stageScene.artifactRequests,['boss1','boss2']); stage.beginAfterBossReward('boss2'); assert.equal(stageScene.professionChoices,1); stage.onProfessionChosen(); assert.deepEqual(stageScene.campfires,['boss1','boss2']);
+stage.enterAdvancedStatue(); assert.equal(stageScene.advancedChoices,1); stage.onAdvancedProfessionChosen(); assert.deepEqual(stageScene.campfires,['boss1','boss2','advanced']); stage.onCampfireClosed('advanced'); assert.equal(stage.flowState,LevelFlowStates.BOSS_RUSH);
+stage.activeRush='boss3'; stage.onBossKilled('boss3'); assert.equal(stageScene.victories,0); assert.deepEqual(stageScene.artifactRequests,['boss1','boss2','boss3']); stage.beginAfterBossReward('boss3'); stage.onCampfireClosed('boss3'); assert.equal(stage.groupIndex,9);
+stage.activeRush='boss4'; stage.onBossKilled('boss4'); stage.beginAfterBossReward('boss4'); stage.onCampfireClosed('boss4'); assert.equal(stage.groupIndex,12);
+stage.activeRush='boss5'; stage.onBossKilled('boss5'); stage.beginAfterBossReward('boss5'); stage.onCampfireClosed('boss5'); assert.equal(stage.groupIndex,15);
+stage.activeRush='boss6'; stage.onBossKilled('boss6'); assert.equal(stageScene.victories,1); assert.equal(stage.flowState,LevelFlowStates.VICTORY);
 
 const p=createPlayerRuntime(); p.hp=50; p.mana=20; p.stamina=30; assert(!('xp' in p)); assert(!('xpToNext' in p));
 assert.deepEqual(getAdvancedProfessionChoices('warrior').map(p=>p.id), ['berserker','guardian','swordmaster']);
 assert.deepEqual(getAdvancedProfessionChoices('mage').map(p=>p.id), ['elementalist','arcanist','blood_mage']);
 assert.deepEqual(getAdvancedProfessionChoices('ranger').map(p=>p.id), ['sharpshooter','beast_hunter','shadow_dancer']);
-console.log('[validate-010-gameplay-loop] PASS real SkillSystem, 9-level skills, runtime replacement cleanup, ranged ordering, StageSystem flow, boss reward uniqueness');
+console.log('[validate-010-gameplay-loop] PASS six-stage, six-boss flow with extended map and final victory only at boss6');
