@@ -72,8 +72,11 @@ export const PlagueMotherSkill={ bind(system){
 
   const offKill=s.eventBus.on(CombatEvents.ENEMY_KILLED,p=>{
     const data=system.getData(SKILL_ID), enemy=p?.enemy; if(!data||!enemy) return;
-    const chainRuntime=s.poisonSummonRuntime; const chainTargets=chainRuntime?.getRecentPoisonChainTargets?.()||[];
-    if(!chainTargets.includes(enemy)) return;
+    const chainRuntime=s.poisonSummonRuntime;
+    const chainMap=chainRuntime?.recentPoisonChainTargets;
+    if(!chainMap?.has(enemy)) return;
+    chainMap.delete(enemy);
+    const chainTargets=chainRuntime.getRecentPoisonChainTargets?.()||[];
     const replacement=validEnemies(s).filter(e=>e!==enemy&&!chainTargets.includes(e)).sort((a,b)=>s.statusEffects.getStackCount(a,StatusEffects.POISON)-s.statusEffects.getStackCount(b,StatusEffects.POISON)||Math.abs(a.x-s.player.x)-Math.abs(b.x-s.player.x))[0];
     if(replacement){ addBasePoison(s,data,replacement,1,'plague_chain_repair'); chainRuntime.recordPoisonChainTarget?.(replacement,s.getGameplayTime()); s.floatText?.(replacement.x,replacement.y-105,'毒链补位','#82ff8f'); }
   });
