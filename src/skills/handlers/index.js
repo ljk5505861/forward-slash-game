@@ -1,3 +1,4 @@
+import { SKILLS } from '../../config/skills.js';
 import { configureEntryArchetypeSkills, EntryFireballSkill, EntrySwordSkill, EntryPoisonNeedleSkill, EntryHeavyHitSkill, EntryIronWallSkill, EntryMovementSkill } from './EntryArchetypeSkills.js';
 import { configureFlameCoreSkills, FlameSpraySkill, BurnBurstSkill } from './FlameCoreSkills.js';
 import { configureFlameAdvancedSkills, WildfireSkill, MeteorSkill } from './FlameAdvancedSkills.js';
@@ -37,5 +38,8 @@ configureAfterimageUltimateSkills();
 configurePoisonSummonCoreSkills();
 configurePoisonSummonAdvancedSkills();
 configurePoisonSummonUltimateSkills();
+
+const poisonChainDamageRatios=[0.70,0.80,0.88,0.96,1.04,1.12,1.18,1.24,1.30];
+SKILLS.poison_chain?.levels?.forEach((level,index)=>{ level.damageRatio=poisonChainDamageRatios[index]; });
 
 export const SKILL_HANDLERS={entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_heavy_hit:EntryHeavyHitSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,flame_spray:FlameSpraySkill,burn_burst:BurnBurstSkill,wildfire:WildfireSkill,meteor:MeteorSkill,eternal_flame_heart:EternalFlameHeartSkill,split_sword:SplitSwordSkill,rotating_sword:RotatingSwordSkill,execution_sword:ExecutionSwordSkill,myriad_swords:MyriadSwordsSkill,heaven_splitting_sword:HeavenSplittingSwordSkill,giant_force:GiantForceSkill,bloodthirst:BloodthirstSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,armor_break_shockwave:ArmorBreakShockwaveSkill,immovable_mountain:ImmovableMountainSkill,black_tortoise_body:BlackTortoiseBodySkill,phantom_step:PhantomStepSkill,shadow_assault:ShadowAssaultSkill,swift_shadow:SwiftShadowSkill,instant_step:InstantStepSkill,myriad_afterimage:MyriadAfterimageSkill,parasitic_gu:ParasiticGuSkill,bone_eating_insect:BoneEatingInsectSkill,poison_chain:PoisonChainSkill,poison_king:PoisonKingSkill,plague_mother:PlagueMotherSkill,frenzy:FrenzySkill,blood_rage_burst:BloodRageBurstSkill,last_stand:LastStandSkill};
