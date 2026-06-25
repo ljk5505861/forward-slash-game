@@ -16,14 +16,15 @@ const CONFIGS={
 export function configurePoisonSummonCoreSkills(){ Object.entries(CONFIGS).forEach(([id,cfg])=>{ SKILLS[id]={...cfg}; }); }
 
 export const ParasiticGuSkill={ bind(system){
-  const s=system.scene; let host=null,growth=0,marker=null;
+  const s=system.scene; const runtime=poisonSummonBonusUtils.ensurePoisonRuntime?.(s); let host=null,growth=0,marker=null;
   const infected=()=>s.targeting.all().filter(e=>s.statusEffects.has(e,StatusEffects.POISON));
   const choose=()=>infected().sort((a,b)=>s.statusEffects.getStackCount(b,StatusEffects.POISON)-s.statusEffects.getStackCount(a,StatusEffects.POISON))[0]||null;
-  const attach=target=>{ host=target; marker?.destroy?.(); marker=target?s.add.circle(target.x,target.y-88,8,0x8ad66f,0.85).setStrokeStyle(2,0xe4ffd0,0.9).setDepth(152):null; if(target)s.floatText(target.x,target.y-105,'寄生','#9be67a'); };
-  const offTick=s.eventBus.on(CombatEvents.STATUS_TICK,p=>{ const data=system.getData('parasitic_gu'); if(!data||p.type!==StatusEffects.POISON||p.actualDamage<=0)return; if(!host||!s.targeting.valid(host)||!s.statusEffects.has(host,StatusEffects.POISON))attach(choose()||p.target); if(p.target!==host)return; poisonSummonBonusUtils.ensureRuntime(s.playerData); const absorbRatio=data.absorbRatio*(1+bonusSum(s.playerData.parasiticGuAbsorbBonuses)); const maxGrowth=data.maxGrowth*(1+bonusSum(s.playerData.parasiticGuGrowthCapBonuses)); const damagePerGrowth=data.damagePerGrowth*(1+bonusSum(s.playerData.parasiticGuDamageBonuses)); growth=Math.min(maxGrowth,growth+p.actualDamage*absorbRatio); const bonus=Math.floor(growth*damagePerGrowth); if(bonus>0&&s.targeting.valid(host))s.combatSystem.damageEnemy(host,bonus,{source:'skill',skillId:'parasitic_gu',tags:[TAGS.POISON,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON],allowLifeSteal:false,noKnockback:true}); });
+  const publish=()=>runtime?.setParasiticGuSnapshot?.({ host, growth, maxGrowth:(system.getData('parasitic_gu')?.maxGrowth)||0 });
+  const attach=target=>{ host=target; marker?.destroy?.(); marker=target?s.add.circle(target.x,target.y-88,8,0x8ad66f,0.85).setStrokeStyle(2,0xe4ffd0,0.9).setDepth(152):null; if(target)s.floatText(target.x,target.y-105,'寄生','#9be67a'); publish(); };
+  const offTick=s.eventBus.on(CombatEvents.STATUS_TICK,p=>{ const data=system.getData('parasitic_gu'); if(!data||p.type!==StatusEffects.POISON||p.actualDamage<=0)return; if(!host||!s.targeting.valid(host)||!s.statusEffects.has(host,StatusEffects.POISON))attach(choose()||p.target); if(p.target!==host)return; poisonSummonBonusUtils.ensureRuntime(s.playerData); const absorbRatio=data.absorbRatio*(1+bonusSum(s.playerData.parasiticGuAbsorbBonuses)); const maxGrowth=data.maxGrowth*(1+bonusSum(s.playerData.parasiticGuGrowthCapBonuses)); const damagePerGrowth=data.damagePerGrowth*(1+bonusSum(s.playerData.parasiticGuDamageBonuses)); growth=Math.min(maxGrowth,growth+p.actualDamage*absorbRatio); publish(); const bonus=Math.floor(growth*damagePerGrowth); if(bonus>0&&s.targeting.valid(host))s.combatSystem.damageEnemy(host,bonus,{source:'skill',skillId:'parasitic_gu',tags:[TAGS.POISON,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON],allowLifeSteal:false,noKnockback:true}); });
   const offKill=s.eventBus.on(CombatEvents.ENEMY_KILLED,p=>{ if(p.enemy===host)attach(choose()); });
-  const updater=()=>{ if(host&&!s.targeting.valid(host))attach(choose()); if(marker&&host){ marker.x=host.x; marker.y=host.y-88; } };
-  system.passiveUpdaters.push(updater); return ()=>{ offTick(); offKill(); removeUpdater(system,updater); marker?.destroy?.(); host=null; growth=0; };
+  const updater=()=>{ if(host&&!s.targeting.valid(host))attach(choose()); if(marker&&host){ marker.x=host.x; marker.y=host.y-88; } publish(); };
+  system.passiveUpdaters.push(updater); return ()=>{ offTick(); offKill(); removeUpdater(system,updater); marker?.destroy?.(); host=null; growth=0; runtime?.setParasiticGuSnapshot?.(null); };
 } };
 
 export const BoneEatingInsectSkill={ bind(system){
