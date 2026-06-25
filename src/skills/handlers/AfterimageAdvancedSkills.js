@@ -33,9 +33,9 @@ const AFTERIMAGE_ADVANCED_SKILLS={
     description:'成功闪避且冷却结束时瞬间虚化，并在原地留下强化残影攻击前方敌人。',
     levels:levels([
       [55,110,7000,150],[66,118,6700,160],[78,126,6400,170],[90,135,6100,180],[104,143,5800,190],[120,152,5500,200],[132,160,5200,215],[142,166,4900,230],[150,174,4500,250]
-    ],([damage,radius,cooldownMs,phaseDurationMs])=>({ damage,radius,cooldownMs,phaseDurationMs,dodgeEventWindowMs:16,desc:`闪避时瞬间虚化，在原地留下残影造成${damage}点物理伤害，冷却${(cooldownMs/1000).toFixed(1)}秒。` }),{
+    ],([damage,radius,cooldownMs,phaseDurationMs],level)=>({ damage,radius,cooldownMs,phaseDurationMs,dodgeEventWindowMs:16,activeCooldownReduceMs:level>=6?500:0,desc:`闪避时瞬间虚化，在原地留下残影造成${damage}点物理伤害，冷却${(cooldownMs/1000).toFixed(1)}秒${level>=6?'；残影造成实际伤害时使其他主动技能冷却减少0.5秒':''}。` }),{
       3:'残影伤害与攻击范围提高',
-      6:'残影伤害显著提高',
+      6:'残影造成实际伤害时，其他主动技能冷却减少0.5秒',
       9:'冷却缩短至4.5秒，范围扩大，虚化时间略微延长'
     })
   }
@@ -101,10 +101,17 @@ function attackAfterimage(s,x,y,data){
   const mult=1+sumBonuses(s.playerData.afterimageDamageBonuses);
   const amount=Math.max(1,Math.round(data.damage*mult));
   const targets=s.targeting.all().filter(e=>Math.abs(e.x-x)<=data.radius && e.x>=x-35).sort((a,b)=>Math.abs(a.x-x)-Math.abs(b.x-x));
+  let didDamage=false;
   targets.forEach(enemy=>{
-    s.combatSystem.damageEnemy(enemy,amount,{ source:'skill', damageKind:'afterimageAttack', skillId:SOURCE_STEP, tags:['shadow','physical',TAGS.BUILD_AFTERIMAGE], afterimage:true, allowLifeSteal:false, noKnockback:true, noInstantStep:true });
+    const damaged=s.combatSystem.damageEnemy(enemy,amount,{ source:'skill', damageKind:'afterimageAttack', skillId:SOURCE_STEP, tags:['shadow','physical',TAGS.BUILD_AFTERIMAGE], afterimage:true, allowLifeSteal:false, noKnockback:true, noInstantStep:true });
+    didDamage=didDamage||!!damaged;
   });
+  if(didDamage && data.activeCooldownReduceMs>0){
+    const count=s.skillSystem?.reduceActiveCooldowns?.(data.activeCooldownReduceMs,{ excludeSkillIds:[SOURCE_STEP], sourceSkillId:SOURCE_STEP })||0;
+    if(count>0) s.floatText?.(x,y-118,'冷却 -0.5秒','#b7f7ff');
+  }
 }
+
 
 export const InstantStepSkill={
   bind(system){
