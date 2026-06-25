@@ -18,9 +18,9 @@ const DEFENSE_CORE_SKILLS = {
     levels:levels([
       [0.9,4,420],[1.05,4,400],[1.2,6,380],[1.35,6,360],[1.5,8,340],[1.7,8,320],[1.9,10,300],[2.15,10,280],[2.45,12,250]
     ],([defenseScale,flatDamage,internalCooldownMs])=>({ defenseScale,flatDamage,internalCooldownMs,desc:`受击时造成防御值×${defenseScale.toFixed(2)}+${flatDamage}点反伤。` }),{
-      3:'反伤提高至防御值×1.20，并附加3点伤害',
-      6:'反伤提高至防御值×1.70，触发间隔缩短',
-      9:'反伤提高至防御值×2.45，触发间隔缩短至0.25秒'
+      3:'反伤提高至防御值×1.20，并附加6点伤害',
+      6:'反伤提高至防御值×1.70，并附加8点伤害，触发间隔缩短',
+      9:'反伤提高至防御值×2.45，并附加12点伤害，触发间隔缩短至0.25秒'
     })
   },
   guardian_shield: {
