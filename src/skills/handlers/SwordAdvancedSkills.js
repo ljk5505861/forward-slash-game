@@ -15,7 +15,7 @@ const SWORD_ADVANCED_SKILLS = {
     cooldownMs:999999, targetType:'passive', color:0xf7fbff, short:'斩',
     description:'飞剑命中低血敌人时追加斩命伤害，普通敌人极低血量会被直接处决。',
     levels:levels([
-      [0.10,22,90,700],[0.11,27,95,660],[0.12,32,100,620],[0.13,38,105,590],[0.14,44,110,560],[0.15,52,115,520],[0.16,60,120,490],[0.17,70,125,460],[0.18,82,130,420]
+      [0.10,44,180,700],[0.11,54,190,660],[0.12,64,200,620],[0.13,76,210,590],[0.14,88,220,560],[0.15,104,230,520],[0.16,120,240,490],[0.17,140,250,460],[0.18,164,260,420]
     ],([executeThreshold,bossDamage,executeFloor,cooldownMs])=>({ executeThreshold,bossDamage,executeFloor,cooldownMs,desc:`飞剑命中生命低于${Math.round(executeThreshold*100)}%的敌人时触发斩命，Boss受到${bossDamage}点追加伤害。` }),{
       3:'处决线提高至12%',
       6:'处决线提高至15%，内部冷却缩短',
@@ -28,7 +28,7 @@ const SWORD_ADVANCED_SKILLS = {
     cooldownMs:9200, targetType:'nearestAhead', color:0xdafcff, short:'万',
     description:'短时间召来临时飞剑爆发攻击，并与斩命剑、分剑术和旋转剑共用飞剑命中事件。',
     levels:levels([
-      [2,4_000,26,760,9200,1.00,false,false],[2,4_400,30,720,8900,1.05,false,false],[3,4_600,32,700,8600,1.08,false,false],[3,5_000,36,660,8300,1.12,false,false],[3,5_300,40,620,8000,1.16,false,false],[4,5_500,42,600,7700,1.20,true,false],[4,5_800,46,560,7400,1.28,true,false],[4,6_100,50,530,7100,1.34,true,false],[5,6_400,54,500,6800,1.45,true,true]
+      [2,4_000,52,760,9200,1.00,false,false],[2,4_400,60,720,8900,1.05,false,false],[3,4_600,64,700,8600,1.08,false,false],[3,5_000,72,660,8300,1.12,false,false],[3,5_300,80,620,8000,1.16,false,false],[4,5_500,84,600,7700,1.20,true,false],[4,5_800,92,560,7400,1.28,true,false],[4,6_100,100,530,7100,1.34,true,false],[5,6_400,108,500,6800,1.45,true,true]
     ],([temporarySwords,durationMs,damage,attackIntervalMs,cooldownMs,speedMultiplier,instantExisting,endVolley])=>({ temporarySwords,durationMs,damage,attackIntervalMs,cooldownMs,speedMultiplier,instantExisting,endVolley,desc:`召来${temporarySwords}把临时飞剑，持续${(durationMs/1000).toFixed(1)}秒，每剑造成${damage}点伤害。` }),{
       3:'临时飞剑增加至3把',
       6:'施放时现有飞剑立即追加一次攻击',

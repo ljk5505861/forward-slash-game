@@ -15,7 +15,7 @@ const FLAME_CORE_SKILLS = {
     targetType:'nearestAhead', color:0xff8a3d, short:'焰',
     description:'向前方持续喷射烈焰，快速为多个敌人补充燃烧层。',
     levels:levels([
-      [3,4,1,4200,330],[3,5,1,4000,350],[4,5,1,3850,370],[4,6,1,3700,390],[5,6,1,3550,410],[5,7,2,3400,430],[6,7,2,3250,450],[6,8,2,3100,470],[7,9,2,2900,500]
+      [3,8,1,4200,330],[3,10,1,4000,350],[4,10,1,3850,370],[4,12,1,3700,390],[5,12,1,3550,410],[5,14,2,3400,430],[6,14,2,3250,450],[6,16,2,3100,470],[7,18,2,2900,500]
     ],([ticks,burnDamage,burnStacks,cooldownMs,range])=>({ ticks,burnDamage,burnStacks,cooldownMs,range,intervalMs:180,burnMs:3600,burnIntervalMs:600,maxStacks:18,desc:`连续喷射${ticks}次，每次叠加${burnStacks}层燃烧。` }),{
       3:'喷射次数增加至4次',
       6:'每次喷射叠加2层燃烧',
@@ -29,7 +29,7 @@ const FLAME_CORE_SKILLS = {
     targetType:'nearestAhead', color:0xffc15a, short:'爆',
     description:'引爆燃烧层数最高的目标，按消耗层数造成范围伤害。',
     levels:levels([
-      [5,9,85,5200],[5,10,88,5000],[6,10,92,4800],[6,11,96,4600],[7,11,100,4400],[7,12,105,4200],[8,12,110,4000],[8,13,115,3800],[9,14,125,3500]
+      [5,18,85,5200],[5,20,88,5000],[6,20,92,4800],[6,22,96,4600],[7,22,100,4400],[7,24,105,4200],[8,24,110,4000],[8,26,115,3800],[9,28,125,3500]
     ],([consumeStacks,damagePerStack,radius,cooldownMs])=>({ consumeStacks,damagePerStack,radius,cooldownMs,desc:`最多消耗${consumeStacks}层燃烧，每层造成${damagePerStack}点范围伤害。` }),{
       3:'最多消耗6层燃烧，爆炸范围扩大',
       6:'最多消耗7层燃烧，爆炸范围扩大至105',

@@ -55,15 +55,15 @@ const CONFIGS={
     [1,0.35,140,700],[1,0.40,155,650],[2,0.44,165,620],[2,0.48,175,580],[2,0.52,185,540],[2,0.56,195,500],[3,0.59,205,470],[3,0.62,215,440],[3,0.65,220,400]
   ],([maxLinks,damageRatio,radius,internalCooldownMs])=>({maxLinks,damageRatio,radius,internalCooldownMs,desc:`毒伤跳动时，向${radius}范围内最多${maxLinks}名目标传导${Math.round(damageRatio*100)}%毒链伤害。`}),{3:'连接目标提高至2个',6:'传导比例和范围提高',9:'最多连接3个目标，冷却缩短'}) },
   poison_king:{ id:SOURCE_POISON_KING,name:'毒王',rarity:'EPIC',handler:SOURCE_POISON_KING,passive:false,maxLevel:9,requiredSkillId:SOURCE_POISON_CHAIN,targetType:'self',tags:[TAGS.POISON,TAGS.DOT,TAGS.SUMMON,TAGS.ACTIVE_SKILL,TAGS.BUILD_POISON_SUMMON],color:0x1f9d45,short:'王',description:'吞噬场上部分感染孵化毒王；感染规模越大，毒王形态和战斗能力越强。',levels:levels([
-    [19000,0.25,0.20,8500,140,18,1500,0.10,0.10,0.10,0.10,0.05,0,8,120,5,10,1],
-    [18600,0.27,0.22,8800,160,22,1450,0.12,0.12,0.12,0.12,0.06,0,8,130,6,10,1],
-    [18200,0.30,0.25,9200,185,27,1400,0.15,0.15,0.15,0.15,0.08,0,7,140,7,11,1],
-    [17800,0.32,0.27,9500,215,33,1350,0.18,0.18,0.18,0.18,0.10,0.03,7,150,8,11,1],
-    [17400,0.34,0.30,9800,250,40,1300,0.21,0.21,0.21,0.21,0.12,0.05,6,160,9,12,2],
-    [17000,0.37,0.33,10200,290,48,1240,0.25,0.25,0.25,0.25,0.15,0.07,6,170,10,12,2],
-    [16600,0.39,0.36,10600,335,58,1180,0.28,0.28,0.28,0.28,0.17,0.09,5,180,11,13,2],
-    [16200,0.42,0.40,11000,385,70,1120,0.32,0.32,0.32,0.32,0.19,0.11,5,185,12,14,2],
-    [15500,0.45,0.45,11600,450,85,1050,0.36,0.36,0.36,0.36,0.22,0.14,5,190,13,15,3]
+    [19000,0.25,0.20,8500,140,36,1500,0.10,0.10,0.10,0.10,0.05,0,8,120,10,10,1],
+    [18600,0.27,0.22,8800,160,44,1450,0.12,0.12,0.12,0.12,0.06,0,8,130,12,10,1],
+    [18200,0.30,0.25,9200,185,54,1400,0.15,0.15,0.15,0.15,0.08,0,7,140,14,11,1],
+    [17800,0.32,0.27,9500,215,66,1350,0.18,0.18,0.18,0.18,0.10,0.03,7,150,16,11,1],
+    [17400,0.34,0.30,9800,250,80,1300,0.21,0.21,0.21,0.21,0.12,0.05,6,160,18,12,2],
+    [17000,0.37,0.33,10200,290,96,1240,0.25,0.25,0.25,0.25,0.15,0.07,6,170,20,12,2],
+    [16600,0.39,0.36,10600,335,116,1180,0.28,0.28,0.28,0.28,0.17,0.09,5,180,22,13,2],
+    [16200,0.42,0.40,11000,385,140,1120,0.32,0.32,0.32,0.32,0.19,0.11,5,185,24,14,2],
+    [15500,0.45,0.45,11600,450,170,1050,0.36,0.36,0.36,0.36,0.22,0.14,5,190,26,15,3]
   ],([cooldownMs,consumeRatio,guGrowthContributionRatio,durationMs,hp,biteDamage,attackIntervalMs,absorbBonus,growthCapBonus,guDamageBonus,insectDamageBonus,insectAttackSpeedBonus,insectExtendBonus,burstStackThreshold,burstRadius,burstDamagePerStack,burstMaxStacks,burstPoisonStacks])=>({cooldownMs,consumeRatio,guGrowthContributionRatio,durationMs,hp,biteDamage,attackIntervalMs,absorbBonus,growthCapBonus,guDamageBonus,insectDamageBonus,insectAttackSpeedBonus,insectExtendBonus,burstStackThreshold,burstRadius,burstDamagePerStack,burstMaxStacks,burstPoisonStacks,desc:'吞噬感染孵化毒王，感染规模越大形态越强。'}),{3:'吞毒成长\n提高感染吞噬比例，毒王持续时间和基础战斗能力增强。',6:'万毒之躯\n毒王攻击附加中毒，移动留下毒雾，并成为毒链中心节点。',9:'毒王降世\n高感染时直接孵化完全体；毒王周期孵化毒虫，退场后重新播散毒性。'}) }
 };
 
