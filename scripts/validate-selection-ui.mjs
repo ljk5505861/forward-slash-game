@@ -4,7 +4,7 @@ import { formatSkillSelectionOption, formatArtifactSelectionOption, formatProfes
 import Hud from '../src/ui/Hud.js';
 import PlayerHealthBar from '../src/ui/PlayerHealthBar.js';
 const playerData={ skills:[{id:'fireball',level:1},{id:'lightning',level:3}] };
-assert.equal(formatSkillSelectionOption({type:'newSkill',skillId:'healing'},playerData).title,'铁壁');
+assert.equal(formatSkillSelectionOption({type:'newSkill',skillId:'healing'},playerData).title,'治愈术');
 assert.match(formatSkillSelectionOption({type:'skillLevel',skillId:'fireball'},playerData).levelText,/Lv\.1 → Lv\.2/);
 assert.doesNotThrow(()=>formatSkillSelectionOption({type:'skillLevel',skillId:'lightning'},playerData));
 assert.equal(formatSkillSelectionOption({type:'attr',id:'attack_15',title:'攻击强化\n攻击力 +15%'},playerData).kind,'attribute');
@@ -72,7 +72,7 @@ assert.match(gameSceneUiSource,/hideTitle:true/);
 assert.doesNotMatch(gameSceneUiSource,/setStatus\('选择开局技能'\)|upgradePanel\.show\('开局技能三选一'/);
 const playerHealthBarSource=readFileSync(new URL('../src/ui/PlayerHealthBar.js', import.meta.url),'utf8');
 assert.match(playerHealthBarSource,/class PlayerHealthBar/);
-assert.match(playerHealthBarSource,/player\?\.x/);
+assert.match(playerHealthBarSource,/player\.x/);
 assert.match(playerHealthBarSource,/p\.hp\/p\.maxHp/);
 assert.doesNotMatch(hudSource,/\bPhaser\b/);
 assert.doesNotMatch(playerHealthBarSource,/\bPhaser\b/);
