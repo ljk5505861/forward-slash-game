@@ -32,10 +32,10 @@ const AFTERIMAGE_ADVANCED_SKILLS={
     targetType:'passive', color:0xe8fbff, short:'瞬',
     description:'成功闪避且冷却结束时短距离瞬移，并在原地留下强化残影攻击。',
     levels:levels([
-      [90,55,110,7000,0],[98,66,118,6700,0],[108,78,126,6400,0],[116,90,135,6100,0],[124,104,143,5800,0],[132,120,152,5500,0.18],[138,132,160,5200,0.2],[144,142,166,4900,0.22],[150,150,174,4500,0.24]
-    ],([distance,damage,radius,cooldownMs,slow])=>({ distance,damage,radius,cooldownMs,slow,dodgeEventWindowMs:16,desc:`闪避后向前瞬移${distance}，残影造成${damage}物理伤害，冷却${(cooldownMs/1000).toFixed(1)}秒。` }),{
+      [90,55,110,7000],[98,66,118,6700],[108,78,126,6400],[116,90,135,6100],[124,104,143,5800],[132,120,152,5500],[138,132,160,5200],[144,142,166,4900],[150,150,174,4500]
+    ],([distance,damage,radius,cooldownMs])=>({ distance,damage,radius,cooldownMs,dodgeEventWindowMs:16,desc:`闪避后向前瞬移${distance}，残影造成${damage}物理伤害，冷却${(cooldownMs/1000).toFixed(1)}秒。` }),{
       3:'瞬移距离与攻击范围提高',
-      6:'残影伤害提高，并附带轻微减速',
+      6:'残影伤害提高',
       9:'冷却缩短至4.5秒，残影攻击范围扩大'
     })
   }
@@ -46,7 +46,7 @@ export function configureAfterimageAdvancedSkills(){ Object.entries(AFTERIMAGE_A
 function removeUpdater(system,updater){ const i=system.passiveUpdaters.indexOf(updater); if(i>=0) system.passiveUpdaters.splice(i,1); }
 function ensureBonusFields(p){ p.moveSpeedMultiplierBonuses??={}; p.attackSpeedMultiplierBonuses??={}; p.dodgeChanceBonuses??={}; p.afterimageDamageBonuses??={}; }
 function clearSwiftBonuses(p){ ['moveSpeedMultiplierBonuses','attackSpeedMultiplierBonuses','dodgeChanceBonuses','afterimageDamageBonuses'].forEach(f=>{ if(p?.[f]) delete p[f][SOURCE_SWIFT]; }); }
-function inCombat(s){ return !!s.targeting?.nearestAhead?.(s.balance?.player?.encounterDistance||520) || s.enemies?.some(e=>s.targeting?.valid?.(e)); }
+function inCombat(s){ return !!s.targeting?.nearestAhead?.(s.balance?.player?.encounterDistance||520); }
 function refreshSwiftVisual(s,state){
   if(state.stacks<=0){ state.aura?.destroy?.(); state.aura=null; return; }
   if(!state.aura) state.aura=s.add.rectangle(s.player.x,s.player.y-50,62,88,0xb7f7ff,0.08).setStrokeStyle(3,0xe8fbff,0.22).setDepth(93);
@@ -99,10 +99,23 @@ export const SwiftShadowSkill={
 
 function safeTeleportForward(s,distance){
   const player=s.player, body=player?.body; if(!player) return false;
-  const half=body?.width?body.width/2:(player.width||45)/2;
+  const playerHalf=body?.width?body.width/2:(player.width||45)/2;
+  const safety=10;
   const worldWidth=s.stageSystem?.stage?.worldWidth || s.balance?.stageWorldWidth || 50000;
-  const targetX=Math.max(half+8,Math.min(worldWidth-half-8,player.x+distance));
-  if(targetX===player.x) return false;
+  const minX=playerHalf+8;
+  const maxX=worldWidth-playerHalf-8;
+  const startX=Math.max(minX,Math.min(maxX,player.x));
+  const desiredX=Math.max(minX,Math.min(maxX,startX+distance));
+  const enemyHalf=enemy=>(enemy?.body?.width||enemy?.displayWidth||enemy?.width||0)/2;
+  const isSafe=x=>!(s.targeting?.all?.({ includeOffscreen:true, includeEntering:true })||[]).some(enemy=>Math.abs(enemy.x-x)<playerHalf+enemyHalf(enemy)+safety);
+  const candidates=[];
+  const push=x=>{ const clamped=Math.max(minX,Math.min(maxX,x)); if(!candidates.some(v=>Math.abs(v-clamped)<0.5)) candidates.push(clamped); };
+  push(desiredX);
+  for(let offset=8; offset<=Math.max(distance,160); offset+=8){ push(desiredX+offset); push(desiredX-offset); }
+  const forwardCandidates=candidates.filter(x=>x>startX+1).sort((a,b)=>Math.abs(a-desiredX)-Math.abs(b-desiredX));
+  const fallbackCandidates=candidates.filter(x=>x<=startX+1).sort((a,b)=>Math.abs(a-desiredX)-Math.abs(b-desiredX));
+  const targetX=[...forwardCandidates,...fallbackCandidates].find(isSafe);
+  if(targetX===undefined||Math.abs(targetX-startX)<1) return false;
   player.x=targetX; body?.reset?.(player.x,player.y); body?.setVelocityX?.(0); return true;
 }
 function flashAt(s,x,y,color=0xe8fbff){ const o=s.add.circle(x,y-52,34,color,0.24).setStrokeStyle(4,color,0.7).setDepth(150); s.tweens.add({targets:o,alpha:0,scale:1.5,duration:220,onComplete:()=>o.destroy()}); }
@@ -112,7 +125,6 @@ function attackAfterimage(s,x,y,data){
   const targets=s.targeting.all().filter(e=>Math.abs(e.x-x)<=data.radius && e.x>=x-35).sort((a,b)=>Math.abs(a.x-x)-Math.abs(b.x-x));
   targets.forEach(enemy=>{
     s.combatSystem.damageEnemy(enemy,amount,{ source:'skill', damageKind:'afterimageAttack', skillId:SOURCE_STEP, tags:['shadow','physical',TAGS.BUILD_AFTERIMAGE], afterimage:true, allowLifeSteal:false, noKnockback:true, noInstantStep:true });
-    if(data.slow&&enemy.body){ enemy.body.setVelocityX((enemy.body.velocity?.x||0)*(1-data.slow)); }
   });
 }
 export const InstantStepSkill={
@@ -122,10 +134,12 @@ export const InstantStepSkill={
       const data=system.getData('instant_step'), now=s.getGameplayTime();
       const frame=Math.floor(now/(data?.dodgeEventWindowMs||16));
       if(!data||triggering||payload?.noInstantStep||frame===lastFrame||now<readyAt) return;
-      lastFrame=frame; triggering=true; readyAt=now+data.cooldownMs;
+      lastFrame=frame; triggering=true;
       const ox=s.player.x, oy=s.player.y;
+      if(!safeTeleportForward(s,data.distance)){ triggering=false; return; }
+      readyAt=now+data.cooldownMs;
       const ghost=s.add.rectangle(ox,oy-52,34,76,0xe8fbff,0.26).setStrokeStyle(2,0xb7f7ff,0.45).setDepth(96);
-      safeTeleportForward(s,data.distance); flashAt(s,s.player.x,s.player.y); s.floatText?.(s.player.x,s.player.y-130,'瞬身','#e8fbff');
+      flashAt(s,s.player.x,s.player.y); s.floatText?.(s.player.x,s.player.y-130,'瞬身','#e8fbff');
       attackAfterimage(s,ox,oy,data);
       s.tweens.add({targets:ghost,alpha:0,x:ox-18,duration:260,onComplete:()=>ghost.destroy()});
       triggering=false;
