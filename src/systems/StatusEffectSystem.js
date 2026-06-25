@@ -78,7 +78,7 @@ export default class StatusEffectSystem {
           const source=e.type===StatusEffects.BURN?'burn':'poison';
           const amount=Math.round(e.value*(e.stacks||1)*(e.damageMultiplier||1));
           const hpBefore=e.target.hp;
-          this.scene.combatSystem.damageEnemy(e.target,amount,{ source, tags:[source,TAGS.DOT], canTriggerArtifacts:false, statusId:e.id, professionApplied:!!e.professionApplied, professionMultiplier:e.professionMultiplier||1, baseAmountBeforeProfession:Math.round(e.value*(e.stacks||1)*(e.baseDamageMultiplierWithoutProfession||e.damageMultiplier||1)), noDeathExplosion:!!e.noDeathExplosion, noPoisonSpread:!!e.noPoisonSpread, noHeavenSplit:!!e.noHeavenSplit, noSwordTrigger:!!e.noSwordTrigger });
+          this.scene.combatSystem.damageEnemy(e.target,amount,{ source, tags:[source,TAGS.DOT], canTriggerArtifacts:false, statusId:e.id, professionApplied:!!e.professionApplied, professionMultiplier:e.professionMultiplier||1, baseAmountBeforeProfession:Math.round(e.value*(e.stacks||1)*(e.baseDamageMultiplierWithoutProfession||e.damageMultiplier||1)), noDeathExplosion:!!e.noDeathExplosion, noPoisonSpread:!!e.noPoisonSpread, noHeavenSplit:!!e.noHeavenSplit, noSwordTrigger:!!e.noSwordTrigger, noPoisonKingBurst:!!e.noPoisonKingBurst, noPoisonKingRecursive:!!e.noPoisonKingRecursive, noPoisonChain:!!e.noPoisonChain });
           const actualDamage=Math.max(0,hpBefore-(e.target.hp||0));
           this.emit(CombatEvents.STATUS_TICK,{ effect:e, statusId:e.id, target:e.target, type:e.type, source, sourceId:e.sourceId, stacks:e.stacks||1, attemptedDamage:amount, actualDamage, killed:e.target.hp<=0 });
           e.nextTickAt+=e.intervalMs;
