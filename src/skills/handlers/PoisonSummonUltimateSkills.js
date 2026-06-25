@@ -62,8 +62,6 @@ export const PlagueMotherSkill={ bind(system){
 
   const offTick=s.eventBus.on(CombatEvents.STATUS_TICK,p=>{
     const data=system.getData(SKILL_ID), level=system.getLevel(SKILL_ID); if(!data||p.type!==StatusEffects.POISON||p.actualDamage<=0||!s.targeting.valid(p.target)) return;
-    const chainRuntime=s.poisonSummonRuntime;
-    if(system.getLevel('poison_chain')>0&&p.source==='poison'&&!p.noPoisonChain&&p.damageKind!=='poisonChain'&&p.effect?.sourceId!=='poison_chain') chainRuntime?.recordPoisonChainTarget?.(p.target,s.getGameplayTime());
     if(level<3||p.effect?.sourceId?.startsWith('plague_spread_')) return;
     const key=`${p.statusId||p.effect?.id}:${p.effect?.nextTickAt||s.getGameplayTime()}:${p.target.id||''}`; if(processedTicks.has(key)) return; processedTicks.add(key); if(processedTicks.size>400) processedTicks.clear();
     const chance=Math.min(0.35,data.spreadChance+(runtime.hasKing()?data.kingChanceBonus:0)); if(Math.random()>=chance) return;
