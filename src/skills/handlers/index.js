@@ -10,6 +10,7 @@ import { configureDefenseAdvancedSkills, ArmorBreakShockwaveSkill, ImmovableMoun
 import { configureAfterimageCoreSkills, PhantomStepSkill, ShadowAssaultSkill } from './AfterimageCoreSkills.js';
 import { configureAfterimageAdvancedSkills, SwiftShadowSkill, InstantStepSkill } from './AfterimageAdvancedSkills.js';
 import { configurePoisonSummonCoreSkills, ParasiticGuSkill, BoneEatingInsectSkill } from './PoisonSummonCoreSkills.js';
+import { configurePoisonSummonAdvancedSkills, PoisonChainSkill, PoisonKingSkill } from './PoisonSummonAdvancedSkills.js';
 
 configureEntryArchetypeSkills();
 configureFlameCoreSkills();
@@ -23,5 +24,6 @@ configureDefenseAdvancedSkills();
 configureAfterimageCoreSkills();
 configureAfterimageAdvancedSkills();
 configurePoisonSummonCoreSkills();
+configurePoisonSummonAdvancedSkills();
 
-export const SKILL_HANDLERS={entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_heavy_hit:EntryHeavyHitSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,flame_spray:FlameSpraySkill,burn_burst:BurnBurstSkill,wildfire:WildfireSkill,meteor:MeteorSkill,split_sword:SplitSwordSkill,rotating_sword:RotatingSwordSkill,execution_sword:ExecutionSwordSkill,myriad_swords:MyriadSwordsSkill,giant_force:GiantForceSkill,bloodthirst:BloodthirstSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,armor_break_shockwave:ArmorBreakShockwaveSkill,immovable_mountain:ImmovableMountainSkill,phantom_step:PhantomStepSkill,shadow_assault:ShadowAssaultSkill,swift_shadow:SwiftShadowSkill,instant_step:InstantStepSkill,parasitic_gu:ParasiticGuSkill,bone_eating_insect:BoneEatingInsectSkill,frenzy:FrenzySkill,blood_rage_burst:BloodRageBurstSkill};
+export const SKILL_HANDLERS={entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_heavy_hit:EntryHeavyHitSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,flame_spray:FlameSpraySkill,burn_burst:BurnBurstSkill,wildfire:WildfireSkill,meteor:MeteorSkill,split_sword:SplitSwordSkill,rotating_sword:RotatingSwordSkill,execution_sword:ExecutionSwordSkill,myriad_swords:MyriadSwordsSkill,giant_force:GiantForceSkill,bloodthirst:BloodthirstSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,armor_break_shockwave:ArmorBreakShockwaveSkill,immovable_mountain:ImmovableMountainSkill,phantom_step:PhantomStepSkill,shadow_assault:ShadowAssaultSkill,swift_shadow:SwiftShadowSkill,instant_step:InstantStepSkill,parasitic_gu:ParasiticGuSkill,bone_eating_insect:BoneEatingInsectSkill,poison_chain:PoisonChainSkill,poison_king:PoisonKingSkill,frenzy:FrenzySkill,blood_rage_burst:BloodRageBurstSkill};
