@@ -1,13 +1,16 @@
 import { CombatEvents } from '../core/CombatEvents.js';
 
-const DEFAULTS = Object.freeze({ orbitRadius:72, orbitSpeed:1.8, damageScale:1, temporary:false, inheritedTags:[] });
+const DEFAULTS = Object.freeze({ orbitRadius:72, orbitSpeed:1.8, damageScale:1, temporary:false, inheritedTags:[], affinities:[] });
+const STANDARD_AFFINITIES = Object.freeze(['fire','poison','blood','shield','afterimage']);
+const normalizeAffinity = (affinity) => (typeof affinity === 'string' && affinity.trim()) ? affinity.trim() : '';
+const normalizeAffinities = (affinities=[]) => [...new Set((Array.isArray(affinities)?affinities:[]).map(normalizeAffinity).filter(Boolean))];
 
 export default class FlyingSwordSystem {
   constructor(scene){ this.scene=scene; this.swords=[]; this.nextId=1; }
 
   createSword(options={}){
     const config={ ...DEFAULTS, ...options };
-    const sword={ id:this.nextId++, type:config.type||'base', ownerSkillId:config.ownerSkillId||'', temporary:!!config.temporary, damageScale:config.damageScale, state:'orbit', target:null, angle:config.angle??0, orbitRadius:config.orbitRadius, orbitSpeed:config.orbitSpeed, expiresAt:config.durationMs?this.scene.getGameplayTime()+config.durationMs:0, inheritedTags:[...(config.inheritedTags||[])], view:null };
+    const sword={ id:this.nextId++, type:config.type||'base', ownerSkillId:config.ownerSkillId||'', temporary:!!config.temporary, damageScale:config.damageScale, state:'orbit', target:null, angle:config.angle??0, orbitRadius:config.orbitRadius, orbitSpeed:config.orbitSpeed, expiresAt:config.durationMs?this.scene.getGameplayTime()+config.durationMs:0, inheritedTags:[...(config.inheritedTags||[])], affinities:normalizeAffinities(config.affinities), view:null };
     if(config.visible!==false){ sword.view=this.scene.add.rectangle(this.scene.player.x-58,this.scene.player.y-72,44,8,config.color??0xcff5ff,0.95).setStrokeStyle(2,0xffffff,0.8).setDepth(145); }
     this.swords.push(sword);
     this.scene.eventBus?.emit?.(CombatEvents.SWORD_CREATED,{ sword });
@@ -16,6 +19,44 @@ export default class FlyingSwordSystem {
 
   getAll(){ return [...this.swords]; }
   getById(id){ return this.swords.find(s=>s.id===id)||null; }
+
+  addAffinity(swordId, affinity){
+    const sword=this.getById(swordId);
+    const value=normalizeAffinity(affinity);
+    if(!sword||!value) return false;
+    sword.affinities=normalizeAffinities(sword.affinities);
+    if(sword.affinities.includes(value)) return true;
+    sword.affinities.push(value);
+    return true;
+  }
+
+  removeAffinity(swordId, affinity){
+    const sword=this.getById(swordId);
+    const value=normalizeAffinity(affinity);
+    if(!sword||!value) return false;
+    sword.affinities=normalizeAffinities(sword.affinities);
+    const before=sword.affinities.length;
+    sword.affinities=sword.affinities.filter(item=>item!==value);
+    return sword.affinities.length!==before;
+  }
+
+  hasAffinity(swordId, affinity){
+    const sword=this.getById(swordId);
+    const value=normalizeAffinity(affinity);
+    return !!sword&&!!value&&normalizeAffinities(sword.affinities).includes(value);
+  }
+
+  getAffinitySnapshot(swords=this.getAll()){
+    const affinityCounts=Object.fromEntries(STANDARD_AFFINITIES.map(key=>[key,0]));
+    const validSwords=(Array.isArray(swords)?swords:[]).filter(sword=>sword&&this.getById(sword.id));
+    let normalSwordCount=0;
+    validSwords.forEach(sword=>{
+      const affinities=normalizeAffinities(sword.affinities);
+      if(!affinities.length){ normalSwordCount+=1; return; }
+      affinities.forEach(affinity=>{ affinityCounts[affinity]=(affinityCounts[affinity]||0)+1; });
+    });
+    return { totalSwordCount:validSwords.length, normalSwordCount, affinityCounts:{ ...affinityCounts } };
+  }
 
   setState(id,state,target=null){ const sword=this.getById(id); if(!sword) return null; sword.state=state; sword.target=target; return sword; }
 
@@ -56,6 +97,7 @@ export default class FlyingSwordSystem {
     if(!player) return;
     this.swords.slice().forEach((sword,index)=>{
       if(sword.expiresAt&&time>=sword.expiresAt){ this.removeSword(sword.id,'expired'); return; }
+      if(sword.state==='gathered') return;
       if(!sword.view) return;
       if(sword.state==='orbit'){
         const slot=this.formationPosition(index,time);
