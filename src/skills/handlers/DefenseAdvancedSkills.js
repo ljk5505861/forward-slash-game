@@ -59,11 +59,28 @@ function applyArmorBreak(s, enemy, data){
   s.floatText(enemy.x,enemy.y-86,'碎甲','#d8d0b0');
 }
 
+const armorBreakDamagedTargets=new Map();
+
+export function triggerArmorBreakShockwave(system,{ sourceSkillId=SOURCE_ARMOR_BREAK, showText=true }={}){
+  const s=system.scene;
+  const data=system.getData(SOURCE_ARMOR_BREAK);
+  if(!data||s.isGameplayPaused?.()) return false;
+  const ring=s.add.circle(s.player.x,s.player.y-8,data.radius,0xd8d0b0,0.16).setStrokeStyle(5,0xf5f0d0,0.9).setDepth(138);
+  s.tweens.add({targets:ring,alpha:0,scale:1.18,duration:260,onComplete:()=>ring.destroy()});
+  const targets=s.targeting.aroundPlayer(data.radius);
+  targets.forEach(enemy=>{
+    s.combatSystem.damageEnemy(enemy,data.damage,{ source:SOURCE_ARMOR_BREAK, skillId:sourceSkillId, tags:['physical',TAGS.SHIELD,TAGS.BUILD_DEFENSE], allowLifeSteal:false, noKnockback:true });
+    applyArmorBreak(s,enemy,data);
+    armorBreakDamagedTargets.set(enemy,enemy._armorBreakShockwaveUntil);
+  });
+  if(showText&&targets.length) s.floatText(s.player.x,s.player.y-118,'碎甲震荡','#f5f0d0');
+  return targets.length>0;
+}
+
 export const ArmorBreakShockwaveSkill={
   bind(system){
     let readyAt=0;
     let active=true;
-    const damaged=new Map();
     const onShieldBroken=payload=>{
       if(!active) return;
       const s=system.scene;
@@ -72,24 +89,16 @@ export const ArmorBreakShockwaveSkill={
       if(!data||s.isGameplayPaused?.()||payload?.target!==s.playerData||now<readyAt) return;
       if((payload?.absorbedTotal||0)<=0) return;
       readyAt=now+data.internalCooldownMs;
-      const ring=s.add.circle(s.player.x,s.player.y-8,data.radius,0xd8d0b0,0.16).setStrokeStyle(5,0xf5f0d0,0.9).setDepth(138);
-      s.tweens.add({targets:ring,alpha:0,scale:1.18,duration:260,onComplete:()=>ring.destroy()});
-      const targets=s.targeting.aroundPlayer(data.radius);
-      targets.forEach(enemy=>{
-        s.combatSystem.damageEnemy(enemy,data.damage,{ source:SOURCE_ARMOR_BREAK, skillId:SOURCE_ARMOR_BREAK, tags:['physical',TAGS.SHIELD,TAGS.BUILD_DEFENSE], allowLifeSteal:false, noKnockback:true });
-        applyArmorBreak(s,enemy,data);
-        damaged.set(enemy,enemy._armorBreakShockwaveUntil);
-      });
-      if(targets.length) s.floatText(s.player.x,s.player.y-118,'碎甲震荡','#f5f0d0');
+      triggerArmorBreakShockwave(system,{ sourceSkillId:SOURCE_ARMOR_BREAK, showText:true });
     };
     const offBroken=system.scene.eventBus.on(CombatEvents.SHIELD_BROKEN,onShieldBroken);
     const updater=()=>{
       if(!active) return;
       const now=system.scene.getGameplayTime();
-      damaged.forEach((until,enemy)=>{ if(!system.scene.targeting.valid(enemy)||now>=until){ clearArmorBreak(enemy); damaged.delete(enemy); } });
+      armorBreakDamagedTargets.forEach((until,enemy)=>{ if(!system.scene.targeting.valid(enemy)||now>=until){ clearArmorBreak(enemy); armorBreakDamagedTargets.delete(enemy); } });
     };
     system.passiveUpdaters.push(updater);
-    return ()=>{ active=false; offBroken?.(); const index=system.passiveUpdaters.indexOf(updater); if(index>=0) system.passiveUpdaters.splice(index,1); damaged.forEach((_until,enemy)=>clearArmorBreak(enemy)); damaged.clear(); readyAt=0; };
+    return ()=>{ active=false; offBroken?.(); const index=system.passiveUpdaters.indexOf(updater); if(index>=0) system.passiveUpdaters.splice(index,1); armorBreakDamagedTargets.forEach((_until,enemy)=>clearArmorBreak(enemy)); armorBreakDamagedTargets.clear(); readyAt=0; };
   }
 };
 
