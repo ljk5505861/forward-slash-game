@@ -76,8 +76,8 @@ export const ArmorBreakShockwaveSkill={
       s.tweens.add({targets:ring,alpha:0,scale:1.18,duration:260,onComplete:()=>ring.destroy()});
       const targets=s.targeting.aroundPlayer(data.radius);
       targets.forEach(enemy=>{
-        applyArmorBreak(s,enemy,data);
         s.combatSystem.damageEnemy(enemy,data.damage,{ source:SOURCE_ARMOR_BREAK, skillId:SOURCE_ARMOR_BREAK, tags:['physical',TAGS.SHIELD,TAGS.BUILD_DEFENSE], allowLifeSteal:false, noKnockback:true });
+        applyArmorBreak(s,enemy,data);
         damaged.set(enemy,enemy._armorBreakShockwaveUntil);
       });
       if(targets.length) s.floatText(s.player.x,s.player.y-118,'碎甲震荡','#f5f0d0');
@@ -89,7 +89,7 @@ export const ArmorBreakShockwaveSkill={
       damaged.forEach((until,enemy)=>{ if(!system.scene.targeting.valid(enemy)||now>=until){ clearArmorBreak(enemy); damaged.delete(enemy); } });
     };
     system.passiveUpdaters.push(updater);
-    return ()=>{ active=false; offBroken?.(); damaged.forEach((_until,enemy)=>clearArmorBreak(enemy)); damaged.clear(); readyAt=0; };
+    return ()=>{ active=false; offBroken?.(); const index=system.passiveUpdaters.indexOf(updater); if(index>=0) system.passiveUpdaters.splice(index,1); damaged.forEach((_until,enemy)=>clearArmorBreak(enemy)); damaged.clear(); readyAt=0; };
   }
 };
 
@@ -136,6 +136,6 @@ export const ImmovableMountainSkill={
       setMountainBonuses(s,stacks,data);
     };
     system.passiveUpdaters.push(updater);
-    return ()=>{ active=false; clear(); };
+    return ()=>{ active=false; const index=system.passiveUpdaters.indexOf(updater); if(index>=0) system.passiveUpdaters.splice(index,1); clear(); };
   }
 };
