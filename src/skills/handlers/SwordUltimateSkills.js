@@ -30,7 +30,7 @@ const SWORD_ULTIMATE_SKILLS = {
     description:'万剑归一，短暂收拢当前飞剑后向前挥出贯穿战场的一剑，并留下继承飞剑属性的深渊裂隙。',
     levels:levels(HEAVEN_LEVELS,([waveDamage,abyssDamage,abyssDurationMs,abyssTickMs,maxTargets,chargeMs,cooldownMs,range,width,affinityCap,statusCap,shieldValue,afterimageScale],level)=>({
       waveDamage, abyssDamage, abyssDurationMs, abyssTickMs, maxTargets, chargeMs, cooldownMs, range, width, affinityCap, statusCap, shieldValue, afterimageScale,
-      bloodAffinityActive:true, closingDamage:level>=9?Math.round(waveDamage*0.42):0,
+      closingDamage:level>=9?Math.round(waveDamage*0.42):0,
       desc:`收拢飞剑蓄势${(chargeMs/1000).toFixed(2)}秒，斩出${waveDamage}点贯穿剑光，并留下${(abyssDurationMs/1000).toFixed(1)}秒深渊。`
     }),{
       3:'剑光和深渊宽度增加',
@@ -87,7 +87,7 @@ export const HeavenSplittingSwordSkill = {
     const active={
       skillId:cfg.id,cfg,data,level,ctx,nextAt:now+data.chargeMs,endAt:now+data.chargeMs+data.abyssDurationMs+450,data:{ intervalMs:50 },
       phase:'charging', startedAt:now, chargeAt:now+data.chargeMs, nextAbyssAt:0, abyssEndAt:0, ended:false,
-      gathered:saved, affinitySnapshot, visuals, abyss:null, closed:false, afterimageDone:false,
+      gathered:saved, affinitySnapshot, visuals, abyss:null, releasePath:null, closed:false, afterimageDone:false,
       tick(){
         const time=s.getGameplayTime();
         if(this.phase==='charging'){
@@ -95,6 +95,7 @@ export const HeavenSplittingSwordSkill = {
           this.phase='abyss';
           this.abyssEndAt=time+data.abyssDurationMs;
           this.nextAbyssAt=time;
+          this.releasePath={ startX:s.player.x+dir*72, startY:s.player.y-66, dir, range:data.range, width:data.width };
           this.releaseWave(false);
           this.createAbyss();
           this.restoreSwords();
@@ -115,13 +116,15 @@ export const HeavenSplittingSwordSkill = {
           }
         }
       },
-      path(){ return { startX:s.player.x+dir*72, startY:s.player.y-66, dir, range:data.range, width:data.width }; },
+      path(){ return this.releasePath; },
       targets(mult=1){
         const p=this.path();
+        if(!p) return [];
         return s.targeting.all().filter(e=>validEnemy(s,e)&&pointInSlash(e,p.startX,p.startY,p.dir,p.range,p.width*mult)).sort((a,b)=>(a.x-b.x)*p.dir).slice(0,data.maxTargets);
       },
       releaseWave(afterimage=false){
         const p=this.path();
+        if(!p) return;
         const color=afterimage?0xb9caff:cfg.color;
         const alpha=afterimage?0.25:0.48;
         const rect=s.add.rectangle(p.startX+p.dir*p.range*0.5,p.startY,p.range,p.width,color,alpha).setDepth(afterimage?143:148);
@@ -139,12 +142,14 @@ export const HeavenSplittingSwordSkill = {
       },
       createAbyss(){
         const p=this.path();
+        if(!p) return;
         const g=s.add.graphics().setDepth(126);
         const fire=affinityCount(this.affinitySnapshot,'fire',data.affinityCap)>0;
         const poison=affinityCount(this.affinitySnapshot,'poison',data.affinityCap)>0;
         const blood=affinityCount(this.affinitySnapshot,'blood',data.affinityCap)>0;
         const shield=affinityCount(this.affinitySnapshot,'shield',data.affinityCap)>0;
-        g.fillStyle(0x1b1026,0.44); g.fillRect(p.startX,p.startY-p.width*0.28,p.dir*p.range,p.width*0.56);
+        const left=p.dir>0?p.startX:p.startX-p.range;
+        g.fillStyle(0x1b1026,0.44); g.fillRect(left,p.startY-p.width*0.28,p.range,p.width*0.56);
         g.lineStyle(3,fire?0xff6a2a:poison?0x54e878:blood?0x8b1428:shield?0xaeefff:0xeafcff,0.82); g.lineBetween(p.startX,p.startY,p.startX+p.dir*p.range,p.startY);
         this.abyss=g; this.visuals.push(g);
         s.tweens.add({ targets:g, alpha:0.2, yoyo:true, repeat:Math.max(1,Math.floor(data.abyssDurationMs/260)), duration:130, onComplete:()=>g.destroy() });
@@ -154,7 +159,6 @@ export const HeavenSplittingSwordSkill = {
         this.targets(0.72).forEach(enemy=>{
           if(hit.has(enemy)) return;
           hit.add(enemy);
-          const before=enemy.hp||0;
           s.combatSystem.damageEnemy(enemy,system.damageValue(data.abyssDamage,ctx),{ source:'skill', skillId:cfg.id, damageKind:'heavenSplitAbyss', tags:mergeTags(cfg.tags), level, allowLifeSteal:false, noKnockback:true, noSwordTrigger:true, noHeavenSplit:true, noDeathExplosion:true, noPoisonSpread:true, professionApplied:true, professionMultiplier:ctx?.professionMultiplier||1, baseAmountBeforeProfession:system.baseDamageValue(data.abyssDamage,ctx) });
           const fire=affinityCount(this.affinitySnapshot,'fire',data.affinityCap);
           if(fire>0){
@@ -166,8 +170,6 @@ export const HeavenSplittingSwordSkill = {
           if(poison>0){
             s.statusEffects.add(StatusEffects.POISON,enemy,{ durationMs:2600+poison*300, intervalMs:700, value:2+poison, stacks:Math.min(data.statusCap,poison), maxStacks:12, sourceId:'heaven_split_poison_abyss', canSpread:false, damageMultiplier:ctx?.damageMultiplier||1, baseDamageMultiplierWithoutProfession:ctx?.baseDamageMultiplierWithoutProfession||1, professionMultiplier:ctx?.professionMultiplier||1, professionApplied:true, noDeathExplosion:true, noPoisonSpread:true, noHeavenSplit:true, noSwordTrigger:true });
           }
-          if(affinityCount(this.affinitySnapshot,'blood',data.affinityCap)>0) this.bloodAffinityActive=true;
-          this.actualDamage=(this.actualDamage||0)+Math.max(0,before-(enemy.hp||0));
         });
       },
       releaseClosing(){
@@ -200,7 +202,7 @@ export const HeavenSplittingSwordSkill = {
       onEnd(){
         this.restoreSwords();
         this.visuals?.forEach(o=>{ o?.destroy?.(); });
-        this.visuals=[]; this.abyss=null; this.affinitySnapshot=null; this.gathered=[]; this.ended=true;
+        this.visuals=[]; this.abyss=null; this.releasePath=null; this.affinitySnapshot=null; this.gathered=[]; this.ended=true;
       }
     };
     system.active.push(active);
