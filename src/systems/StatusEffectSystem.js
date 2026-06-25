@@ -168,7 +168,7 @@ export default class StatusEffectSystem {
       remaining-=used;
       if(used>0) this.emit(CombatEvents.SHIELD_DAMAGED,{ effect:e, target:p, absorbed:used, remainingValue:e.remainingValue, initialValue:e.initialValue||before, absorbedTotal:e.absorbedTotal, sourceId:e.sourceId, ...context });
       if(e.remainingValue<=0){
-        this.emit(CombatEvents.SHIELD_BROKEN,{ effect:e, target:p, initialValue:e.initialValue||before, absorbedTotal:e.absorbedTotal, sourceId:e.sourceId, ...context });
+        this.emit(CombatEvents.SHIELD_BROKEN,{ effect:e, target:p, absorbed:used, previousShield:before, remainingShield:e.remainingValue, incomingDamage:damage, remainingDamage:remaining, broken:true, initialValue:e.initialValue||before, absorbedTotal:e.absorbedTotal, sourceId:e.sourceId, ...context });
         this.removeEffect(e,'broken');
       }
     }
