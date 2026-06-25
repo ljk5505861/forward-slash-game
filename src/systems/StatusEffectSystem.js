@@ -34,7 +34,8 @@ export default class StatusEffectSystem {
       old.expiresAt=now+durationMs;
       old.stacks=Math.min(maxStacks,previousStacks+stacks);
       old.value=value||old.value;
-      Object.assign(old, options);
+      const { stacks:_ignoredStacks, ...restOptions }=options;
+      Object.assign(old, restOptions);
       if(old.stacks!==previousStacks){
         this.emit(CombatEvents.STATUS_STACK_CHANGED,{ effect:old, target, type, previousStacks, stacks:old.stacks, delta:old.stacks-previousStacks, sourceId:old.sourceId });
       }
