@@ -40,39 +40,57 @@ function makeVisuals(s){
 export const LastStandSkill={
   bind(system){
     const s=system.scene;
-    const state={ active:false, endsAt:0, cooldownUntil:0, resolvingDeath:false, visuals:null };
+    const state={ active:false, endsAt:0, cooldownUntil:0, resolvingDeath:false, visuals:null, cleaned:false };
+    const isSceneEnding=()=>['VICTORY','DEFEAT'].includes(s.runState)||!!s.resultPanel?.isOpen||s.playerData.hp<=0;
     const clearVisuals=()=>{ state.visuals?.clear?.(); state.visuals=null; };
-    const end=(survived=true)=>{
-      if(!state.active) return;
+    const cleanup=()=>{ if(state.cleaned) return; state.cleaned=true; removeUpdater(system,updater); clearVisuals(); delete system.passiveState.lastStand; };
+    const finishLastStand=({ forceDeath=false, startCooldown=true, reason='ended' }={})=>{
+      if(state.cleaned) return;
+      const wasActive=state.active;
       state.active=false;
       state.endsAt=0;
-      const data=system.getData(ID);
-      state.cooldownUntil=s.getGameplayTime()+(data?.cooldownMs||0);
+      if(startCooldown){
+        const data=system.getData(ID);
+        state.cooldownUntil=s.getGameplayTime()+(data?.cooldownMs||0);
+      }
       clearVisuals();
-      if(survived && s.playerData.hp>1){ s.floatText?.(s.player.x,s.player.y-126,'夺命而归','#ff9aa2'); return; }
-      state.resolvingDeath=true;
-      s.playerData.hp=0;
-      s.hud?.update();
-      s.playerHealthBar?.update();
-      s.finishRun?.(false);
+      if(forceDeath || s.playerData.hp<=1){
+        if(isSceneEnding()) { cleanup(); return; }
+        state.resolvingDeath=true;
+        s.playerData.hp=0;
+        s.hud?.update();
+        s.playerHealthBar?.update();
+        cleanup();
+        s.finishRun?.(false,{ noLastStand:true, reason });
+        return;
+      }
+      if(wasActive) s.floatText?.(s.player.x,s.player.y-126,'夺命而归','#ff9aa2');
     };
     const updater=()=>{
       const data=system.getData(ID), now=s.getGameplayTime();
-      if(!data){ clearVisuals(); state.active=false; return; }
+      if(!data){
+        if(state.active) finishLastStand({ forceDeath:true, startCooldown:false, reason:'lastStandRemoved' });
+        else cleanup();
+        return;
+      }
       if(state.active){
         s.playerData.hp=Math.max(1,s.playerData.hp||0);
         state.visuals?.aura?.setPosition(s.player.x,s.player.y-50);
         state.visuals?.aura?.setAlpha(0.07+0.04*Math.sin(now/120));
-        if(now>=state.endsAt) end(true);
+        if(now>=state.endsAt) finishLastStand({ reason:'durationEnded' });
       }
     };
     system.passiveUpdaters.push(updater);
     system.passiveState.lastStand=state;
-    return ()=>{ removeUpdater(system,updater); clearVisuals(); delete system.passiveState.lastStand; };
+    return ()=>{
+      removeUpdater(system,updater);
+      if(state.active && !isSceneEnding()) finishLastStand({ forceDeath:true, startCooldown:false, reason:'lastStandRemoved' });
+      else cleanup();
+    };
   },
   beforePlayerHpDamage(system,payload){
     const s=system.scene, state=system.passiveState.lastStand, data=system.getData(ID), now=s.getGameplayTime();
-    if(!state||!data||payload?.noLastStand||state.resolvingDeath||s.playerData.hp<=0) return null;
+    if(!state||state.cleaned||!data||payload?.noLastStand||state.resolvingDeath||s.playerData.hp<=0) return null;
     if(state.active) return payload.hpDamage>=s.playerData.hp ? { hpDamage:Math.max(0,s.playerData.hp-1), lastStandLocked:true } : null;
     if(now<state.cooldownUntil||payload.hpDamage<s.playerData.hp) return null;
     state.active=true; state.endsAt=now+data.durationMs; state.visuals=makeVisuals(s);
