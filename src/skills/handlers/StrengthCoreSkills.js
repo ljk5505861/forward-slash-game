@@ -1,5 +1,6 @@
 import { SKILLS } from '../../config/skills.js';
 import { TAGS } from '../../config/tags.js';
+import { getWeapon } from '../../config/weapons.js';
 
 const levels = (values, build, milestones={}) => values.map((value,index)=>({
   ...build(value,index+1),
@@ -45,19 +46,26 @@ export const GiantForceSkill={
   bind(system){
     let appliedAttack=0;
     let appliedKnockback=0;
+    const weapon=getWeapon(system.scene.playerData.weaponId);
     const updater=()=>{
       const p=system.scene.playerData;
       const data=system.getData('giant_force');
       p.attack=Math.max(1,(p.attack||1)-appliedAttack);
-      p.normalAttackKnockbackBonus=Math.max(0,(p.normalAttackKnockbackBonus||0)-appliedKnockback);
+      weapon.knockback=Math.max(0,(weapon.knockback||0)-appliedKnockback);
       appliedAttack=data?.attackBonus||0;
       appliedKnockback=data?.knockbackBonus||0;
       p.attack+=appliedAttack;
-      p.normalAttackKnockbackBonus+=appliedKnockback;
+      weapon.knockback+=appliedKnockback;
     };
     system.passiveUpdaters.push(updater);
     updater();
-    return ()=>{};
+    return ()=>{
+      const p=system.scene.playerData;
+      p.attack=Math.max(1,(p.attack||1)-appliedAttack);
+      weapon.knockback=Math.max(0,(weapon.knockback||0)-appliedKnockback);
+      appliedAttack=0;
+      appliedKnockback=0;
+    };
   }
 };
 
@@ -77,6 +85,12 @@ export const BloodthirstSkill={
     };
     system.passiveUpdaters.push(updater);
     updater();
-    return ()=>{};
+    return ()=>{
+      const p=system.scene.playerData;
+      p.lifeSteal=Math.max(0,(p.lifeSteal||0)-appliedLifeSteal);
+      p.heavyHitLifeSteal=Math.max(0,(p.heavyHitLifeSteal||0)-appliedHeavyLifeSteal);
+      appliedLifeSteal=0;
+      appliedHeavyLifeSteal=0;
+    };
   }
 };
