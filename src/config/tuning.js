@@ -1,6 +1,7 @@
 export const TUNING = {
   xp: { baseRequired: 50, growthPerLevel: 28, normalEnemy: 18, eliteEnemy: 45, bossEnemy: 100 },
   pacing: { targetFirstSkillSeconds: 20, targetFirstArtifactSeconds: 45, targetRunDurationSeconds: 90, warningNoUpgradeSeconds: 30 },
+  combat: { bossKnockbackDistance: 10 },
   difficulty: {
     normalHpMultiplier: 2,
     eliteHpMultiplier: 1.8,
