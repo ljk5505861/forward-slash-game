@@ -1,7 +1,3 @@
-import Phaser from 'phaser';
-
-globalThis.Phaser ??= Phaser;
-
 export const CombatEvents = Object.freeze({
   PLAYER_ATTACK: 'PLAYER_ATTACK',
   PLAYER_HIT: 'PLAYER_HIT',
@@ -11,6 +7,7 @@ export const CombatEvents = Object.freeze({
   PLAYER_DAMAGED: 'PLAYER_DAMAGED',
   PLAYER_LOW_HP: 'PLAYER_LOW_HP',
   SKILL_CAST: 'SKILL_CAST',
+  SKILL_CAST_COMPLETED: 'SKILL_CAST_COMPLETED',
   SKILL_HIT: 'SKILL_HIT',
   ARTIFACT_TRIGGERED: 'ARTIFACT_TRIGGERED',
   LEVEL_UP: 'LEVEL_UP',
