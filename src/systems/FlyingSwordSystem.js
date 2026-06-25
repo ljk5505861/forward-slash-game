@@ -7,8 +7,8 @@ export default class FlyingSwordSystem {
 
   createSword(options={}){
     const config={ ...DEFAULTS, ...options };
-    const sword={ id:this.nextId++, type:config.type||'base', ownerSkillId:config.ownerSkillId||'', temporary:!!config.temporary, damageScale:config.damageScale, state:'orbit', target:null, angle:config.angle??(this.swords.length*Math.PI*2/Math.max(1,this.swords.length+1)), orbitRadius:config.orbitRadius, orbitSpeed:config.orbitSpeed, expiresAt:config.durationMs?this.scene.getGameplayTime()+config.durationMs:0, inheritedTags:[...(config.inheritedTags||[])], view:null };
-    if(config.visible!==false){ sword.view=this.scene.add.rectangle(this.scene.player.x,this.scene.player.y-64,44,8,config.color??0xcff5ff,0.95).setStrokeStyle(2,0xffffff,0.8).setDepth(145); }
+    const sword={ id:this.nextId++, type:config.type||'base', ownerSkillId:config.ownerSkillId||'', temporary:!!config.temporary, damageScale:config.damageScale, state:'orbit', target:null, angle:config.angle??0, orbitRadius:config.orbitRadius, orbitSpeed:config.orbitSpeed, expiresAt:config.durationMs?this.scene.getGameplayTime()+config.durationMs:0, inheritedTags:[...(config.inheritedTags||[])], view:null };
+    if(config.visible!==false){ sword.view=this.scene.add.rectangle(this.scene.player.x-58,this.scene.player.y-72,44,8,config.color??0xcff5ff,0.95).setStrokeStyle(2,0xffffff,0.8).setDepth(145); }
     this.swords.push(sword);
     this.scene.eventBus?.emit?.(CombatEvents.SWORD_CREATED,{ sword });
     return sword;
@@ -39,6 +39,18 @@ export default class FlyingSwordSystem {
     return true;
   }
 
+  formationPosition(index,time){
+    const player=this.scene.player;
+    const facingLeft=!!player.flipX;
+    const behindDirection=facingLeft?1:-1;
+    const row=index%4;
+    const column=Math.floor(index/4);
+    const horizontal=58+row*24+column*18;
+    const vertical=-92+row*22-column*10;
+    const bob=Math.sin(time*0.004+index*0.85)*4;
+    return { x:player.x+behindDirection*horizontal, y:player.y+vertical+bob, rotation:facingLeft?Math.PI:0 };
+  }
+
   update(time){
     const player=this.scene.player;
     if(!player) return;
@@ -46,12 +58,10 @@ export default class FlyingSwordSystem {
       if(sword.expiresAt&&time>=sword.expiresAt){ this.removeSword(sword.id,'expired'); return; }
       if(!sword.view) return;
       if(sword.state==='orbit'){
-        sword.angle+=sword.orbitSpeed/60;
-        const spread=this.swords.length>1?(index/this.swords.length)*Math.PI*2:0;
-        const angle=sword.angle+spread;
-        sword.view.x=player.x+Math.cos(angle)*sword.orbitRadius;
-        sword.view.y=player.y-64+Math.sin(angle)*sword.orbitRadius*0.42;
-        sword.view.rotation=angle+Math.PI/2;
+        const slot=this.formationPosition(index,time);
+        sword.view.x+=(slot.x-sword.view.x)*0.24;
+        sword.view.y+=(slot.y-sword.view.y)*0.24;
+        sword.view.rotation+=(slot.rotation-sword.view.rotation)*0.28;
       } else if(sword.state==='attack'&&this.scene.targeting?.valid?.(sword.target)){
         sword.view.x+=(sword.target.x-sword.view.x)*0.28;
         sword.view.y+=((sword.target.y-48)-sword.view.y)*0.28;
