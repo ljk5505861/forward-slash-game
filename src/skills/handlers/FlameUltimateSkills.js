@@ -34,8 +34,6 @@ export function configureFlameUltimateSkills(){ SKILLS[SKILL_ID]={...CONFIG}; }
 function isValidEnemy(scene,enemy){ return !!enemy&&!enemy.isDefeated&&scene.targeting?.valid?.(enemy); }
 function burnStacks(scene,enemy){ return scene.statusEffects?.getStackCount?.(enemy,StatusEffects.BURN)||0; }
 function burnEffects(scene,enemy){ return scene.statusEffects?.getEffects?.(enemy,StatusEffects.BURN)||[]; }
-function minSpreadDepth(scene,enemy){ const depths=burnEffects(scene,enemy).map(e=>Number.isFinite(e.eternalSpreadDepth)?e.eternalSpreadDepth:0); return depths.length?Math.min(...depths):0; }
-function primaryBurnEffect(scene,enemy){ return burnEffects(scene,enemy).sort((a,b)=>(b.stacks||1)-(a.stacks||1)||b.expiresAt-a.expiresAt)[0]||null; }
 
 export const EternalFlameHeartSkill={ bind(system){
   const s=system.scene;
@@ -44,7 +42,6 @@ export const EternalFlameHeartSkill={ bind(system){
   const markers=new Map();
   const visuals=new Set();
   const processedTicks=new Set();
-  let active=true;
 
   const destroyVisual=obj=>{ obj?.destroy?.(); visuals.delete(obj); };
   const addVisual=obj=>{ if(obj) visuals.add(obj); return obj; };
@@ -78,11 +75,12 @@ export const EternalFlameHeartSkill={ bind(system){
   });
 
   const spreadFromDeath=(payload)=>{
-    const data=system.getData(SKILL_ID), enemy=payload?.enemy; if(!data||!enemy||!eternal.has(enemy)||spreadDeaths.has(enemy)||payload.noEternalSpread) return;
+    const data=system.getData(SKILL_ID), enemy=payload?.enemy, snapshot=payload?.burnSnapshotBeforeDeath;
+    if(!data||!enemy||!eternal.has(enemy)||spreadDeaths.has(enemy)||payload.noEternalSpread||!snapshot) return;
     if((payload.burnStacksBeforeDeath||0)<data.burnStackThreshold) return;
-    const depth=minSpreadDepth(s,enemy); if(depth>=data.maxSpreadDepth) return;
+    const depth=Number.isFinite(snapshot.eternalSpreadDepth)?snapshot.eternalSpreadDepth:0;
+    if(depth>=data.maxSpreadDepth) return;
     spreadDeaths.add(enemy);
-    const sourceEffect=primaryBurnEffect(s,enemy); if(!sourceEffect) return;
     const nextDepth=depth+1;
     const targets=s.targeting.all().filter(t=>t!==enemy&&isValidEnemy(s,t)&&Math.hypot(t.x-enemy.x,t.y-enemy.y)<=data.spreadRadius)
       .sort((a,b)=>{ const ab=burnStacks(s,a)>0?1:0, bb=burnStacks(s,b)>0?1:0; if(ab!==bb) return ab-bb; return Math.hypot(a.x-enemy.x,a.y-enemy.y)-Math.hypot(b.x-enemy.x,b.y-enemy.y); })
@@ -91,7 +89,7 @@ export const EternalFlameHeartSkill={ bind(system){
     const ring=addVisual(s.add.circle(enemy.x,enemy.y-44,data.spreadRadius,0xff7b2f,0.10).setStrokeStyle(4,0xfff0b0,0.65).setDepth(150));
     s.tweens.add({targets:ring,alpha:0,scale:1.08,duration:280,onComplete:()=>destroyVisual(ring)});
     targets.forEach(target=>{
-      s.statusEffects.add(StatusEffects.BURN,target,{ durationMs:data.spreadBurnMs,intervalMs:sourceEffect.intervalMs||data.spreadIntervalMs,value:sourceEffect.value||4,stacks:data.spreadBurnStacks,maxStacks:data.maxStacks,sourceId:SPREAD_SOURCE_ID,damageMultiplier:sourceEffect.damageMultiplier||1,baseDamageMultiplierWithoutProfession:sourceEffect.baseDamageMultiplierWithoutProfession||sourceEffect.damageMultiplier||1,professionMultiplier:sourceEffect.professionMultiplier||1,professionApplied:!!sourceEffect.professionApplied,eternalSpreadDepth:nextDepth });
+      s.statusEffects.add(StatusEffects.BURN,target,{ durationMs:data.spreadBurnMs,intervalMs:snapshot.intervalMs||data.spreadIntervalMs,value:snapshot.value||4,stacks:data.spreadBurnStacks,maxStacks:data.maxStacks,sourceId:SPREAD_SOURCE_ID,damageMultiplier:snapshot.damageMultiplier||1,baseDamageMultiplierWithoutProfession:snapshot.baseDamageMultiplierWithoutProfession||snapshot.damageMultiplier||1,professionMultiplier:snapshot.professionMultiplier||1,professionApplied:!!snapshot.professionApplied,eternalSpreadDepth:nextDepth });
       const line=addVisual(s.add.line(0,0,enemy.x,enemy.y-50,target.x,target.y-50,0xfff0b0,0.9).setOrigin(0,0).setLineWidth(4).setDepth(151));
       s.tweens.add({targets:line,alpha:0,duration:240,onComplete:()=>destroyVisual(line)});
       markEternal(target);
@@ -105,5 +103,5 @@ export const EternalFlameHeartSkill={ bind(system){
   };
   system.passiveUpdaters.push(updater);
 
-  return ()=>{ active=false; offApplied?.(); offChanged?.(); offTick?.(); offKilled?.(); removeUpdater(system,updater); markers.forEach(m=>m.destroy?.()); markers.clear(); visuals.forEach(v=>v.destroy?.()); visuals.clear(); processedTicks.clear(); };
+  return ()=>{ offApplied?.(); offChanged?.(); offTick?.(); offKilled?.(); removeUpdater(system,updater); markers.forEach(m=>m.destroy?.()); markers.clear(); visuals.forEach(v=>v.destroy?.()); visuals.clear(); processedTicks.clear(); };
 } };
