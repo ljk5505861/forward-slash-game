@@ -42,8 +42,9 @@ function copyFireball(system,state,event,data){
     pulse(s,afterimage,0xff8a55);
     const obj=s.add.circle(x,y,7,0xff6b38,0.55).setStrokeStyle(2,0xffc7aa,0.45).setDepth(145);
     s.tweens.add({ targets:obj, x:target.x, y:target.y-45, duration:180, onComplete:()=>obj.destroy() });
-    const dmg=Math.max(1,Math.round((event.data.damage||0)*data.copyDamageRatio));
-    s.combatSystem.damageEnemy(target,dmg,{ source:'skill', skillId:SOURCE, damageKind:'myriadFireball', tags:[TAGS.FIRE,TAGS.PROJECTILE,TAGS.BUILD_AFTERIMAGE], allowLifeSteal:false, noKnockback:true, ...m });
+    const baseDamage=(event.data.damage||0)*data.copyDamageRatio;
+    const dmg=system.damageValue(baseDamage,event.ctx);
+    s.combatSystem.damageEnemy(target,dmg,{ source:'skill', skillId:SOURCE, damageKind:'myriadFireball', tags:[TAGS.FIRE,TAGS.PROJECTILE,TAGS.BUILD_AFTERIMAGE], allowLifeSteal:false, noKnockback:true, professionApplied:true, professionMultiplier:event.ctx?.professionMultiplier||1, baseAmountBeforeProfession:system.baseDamageValue(baseDamage,event.ctx), ...m });
     s.statusEffects.add(StatusEffects.BURN,target,{ durationMs:event.data.burnMs, intervalMs:event.data.burnIntervalMs, value:Math.max(1,Math.round((event.data.burnDamage||0)*data.copyDamageRatio)), stacks:stacks(data,event.data.burnStacks), maxStacks:event.data.maxStacks, sourceId:`myriad_afterimage_fireball_${afterimage.id}_${event.ctx?.castId}`, damageMultiplier:event.ctx?.damageMultiplier||1, baseDamageMultiplierWithoutProfession:event.ctx?.baseDamageMultiplierWithoutProfession||1, professionMultiplier:event.ctx?.professionMultiplier||1, professionApplied:true, ...m });
   }));
 }
@@ -61,7 +62,8 @@ function copyPoison(system,state,event,data){
       const obj=s.add.rectangle(x,y-i*5,34,5,0x60e878,0.55).setDepth(145);
       obj.rotation=Math.atan2(target.y-45-y,target.x-x);
       s.tweens.add({ targets:obj, x:target.x, y:target.y-45, duration:160, onComplete:()=>obj.destroy() });
-      s.combatSystem.damageEnemy(target,Math.max(1,Math.round((event.data.damage||0)*data.copyDamageRatio)),{ source:'skill', skillId:SOURCE, damageKind:'myriadPoisonNeedle', tags:[TAGS.POISON,TAGS.DOT,TAGS.PROJECTILE,TAGS.BUILD_AFTERIMAGE], allowLifeSteal:false, noKnockback:true, ...m });
+      const baseDamage=(event.data.damage||0)*data.copyDamageRatio;
+      s.combatSystem.damageEnemy(target,system.damageValue(baseDamage,event.ctx),{ source:'skill', skillId:SOURCE, damageKind:'myriadPoisonNeedle', tags:[TAGS.POISON,TAGS.DOT,TAGS.PROJECTILE,TAGS.BUILD_AFTERIMAGE], allowLifeSteal:false, noKnockback:true, professionApplied:true, professionMultiplier:event.ctx?.professionMultiplier||1, baseAmountBeforeProfession:system.baseDamageValue(baseDamage,event.ctx), ...m });
       s.statusEffects.add(StatusEffects.POISON,target,{ durationMs:event.data.poisonMs, intervalMs:event.data.poisonIntervalMs, value:Math.max(1,Math.round((event.data.poisonDamage||0)*data.copyDamageRatio)), stacks:stacks(data,event.data.poisonStacks), maxStacks:event.data.maxStacks, sourceId:`myriad_afterimage_poison_${afterimage.id}_${event.ctx?.castId}`, damageMultiplier:event.ctx?.damageMultiplier||1, baseDamageMultiplierWithoutProfession:event.ctx?.baseDamageMultiplierWithoutProfession||1, professionMultiplier:event.ctx?.professionMultiplier||1, professionApplied:true, ...m });
     });
   }));

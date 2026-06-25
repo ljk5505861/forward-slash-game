@@ -61,7 +61,7 @@ export const HeavenSplittingSwordSkill = {
 
     const now=s.getGameplayTime();
     const dir=s.player?.flipX?-1:1;
-    const gathered=s.flyingSwords?.getAll?.()||[];
+    const gathered=(s.flyingSwords?.getAll?.()||[]).filter(sword=>!sword.shadowSword);
     const affinitySnapshot=s.flyingSwords?.getAffinitySnapshot?.(gathered)||{ totalSwordCount:gathered.length, normalSwordCount:gathered.length, affinityCounts:{ fire:0, poison:0, blood:0, shield:0, afterimage:0 } };
     const saved=gathered.map((sword,index)=>({
       id:sword.id, state:sword.state, target:sword.target, attackEndsAt:sword.attackEndsAt, nextMyriadAttackAt:sword.nextMyriadAttackAt,

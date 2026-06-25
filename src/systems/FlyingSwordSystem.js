@@ -48,7 +48,7 @@ export default class FlyingSwordSystem {
 
   getAffinitySnapshot(swords=this.getAll()){
     const affinityCounts=Object.fromEntries(STANDARD_AFFINITIES.map(key=>[key,0]));
-    const validSwords=(Array.isArray(swords)?swords:[]).filter(sword=>sword&&this.getById(sword.id));
+    const validSwords=(Array.isArray(swords)?swords:[]).filter(sword=>sword&&!sword.shadowSword&&this.getById(sword.id));
     let normalSwordCount=0;
     validSwords.forEach(sword=>{
       const affinities=normalizeAffinities(sword.affinities);
