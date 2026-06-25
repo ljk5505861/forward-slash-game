@@ -92,6 +92,7 @@ export const PoisonChainSkill={ bind(system){
     const infected=all.filter(e=>s.statusEffects.has(e,StatusEffects.POISON));
     let pool=(infected.length?infected:all).sort((a,b)=>dist(a,source)-dist(b,source)||s.statusEffects.getStackCount(b,StatusEffects.POISON)-s.statusEffects.getStackCount(a,StatusEffects.POISON)).slice(0,data.maxLinks);
     if(!pool.length) return; sourceReady.set(source,now+data.internalCooldownMs);
+    runtime.recordPoisonChainTarget(source,now);
     const damage=Math.max(1,Math.round(p.actualDamage*data.damageRatio));
     pool.forEach(target=>{ runtime.recordPoisonChainTarget(target,now); showLine(source,target); s.combatSystem.damageEnemy(target,damage,{ source:'skill', skillId:SOURCE_POISON_CHAIN, damageKind:'poisonChain', tags:[TAGS.POISON,TAGS.DOT,TAGS.BUILD_POISON_SUMMON], allowLifeSteal:false, noKnockback:true, noPoisonChain:true, noPoisonKingBurst:true }); });
   });
