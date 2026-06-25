@@ -15,7 +15,8 @@
     "validate:final-shop-flow": "node scripts/validate-final-shop-flow.mjs",
     "validate:life-steal": "node scripts/validate-life-steal.mjs",
     "validate:010-gameplay-loop": "node scripts/validate-010-gameplay-loop.mjs",
-    "validate:0104-balance-knockback": "node scripts/validate-0104-balance-knockback.mjs"
+    "validate:0104-balance-knockback": "node scripts/validate-0104-balance-knockback.mjs",
+    "validate:01040-skill-damage": "node scripts/validate-01040-skill-damage.mjs"
   },
   "dependencies": {
     "phaser": "latest",

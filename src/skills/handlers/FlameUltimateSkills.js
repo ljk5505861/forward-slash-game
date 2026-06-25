@@ -13,15 +13,15 @@ const CONFIG={
   tags:[TAGS.FIRE,TAGS.DOT,TAGS.BUILD_FIRE],cooldownMs:999999,targetType:'passive',color:0xfff0b0,short:'永',
   description:'高层燃烧化为永燃之火，持续维持火势；永燃目标死亡时将火焰传向周围敌人，陨石更容易直接点燃永燃之火。',
   levels:levels([
-    [10,300,8000,0.15,80,150,2,2,2],
-    [10,350,8500,0.18,88,160,2,2,2],
-    [9,400,9000,0.21,96,170,2,2,2],
-    [9,450,9500,0.24,105,180,3,3,2],
-    [8,500,10000,0.27,115,190,3,3,2],
-    [7,550,10500,0.31,125,205,3,3,3],
-    [7,600,11000,0.34,135,215,4,3,3],
-    [6,650,11500,0.37,142,225,4,4,3],
-    [6,700,12000,0.40,150,230,4,4,3]
+    [10,300,8000,0.15,160,150,2,2,2],
+    [10,350,8500,0.18,176,160,2,2,2],
+    [9,400,9000,0.21,192,170,2,2,2],
+    [9,450,9500,0.24,210,180,3,3,2],
+    [8,500,10000,0.27,230,190,3,3,2],
+    [7,550,10500,0.31,250,205,3,3,3],
+    [7,600,11000,0.34,270,215,4,3,3],
+    [6,650,11500,0.37,284,225,4,4,3],
+    [6,700,12000,0.40,300,230,4,4,3]
   ],([burnStackThreshold,extendPerTickMs,maxRemainingMs,pulseRatio,pulseDamageCap,spreadRadius,spreadTargetCount,spreadBurnStacks,maxSpreadDepth])=>({
     burnStackThreshold,extendPerTickMs,maxRemainingMs,pulseRatio,pulseDamageCap,spreadRadius,spreadTargetCount,spreadBurnStacks,maxSpreadDepth,
     spreadBurnMs:4200,spreadIntervalMs:600,maxStacks:18,

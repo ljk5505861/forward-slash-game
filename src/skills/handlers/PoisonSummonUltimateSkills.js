@@ -18,7 +18,7 @@ const CONFIG={
     [0.08,170,2,350,1,4000],[0.09,180,2,365,1,3800],[0.10,195,2,380,2,3400]
   ],([spreadChance,spreadRadius,spreadTargets,parasiteBurstRadius,insectPoisonStacks,reviveIntervalMs])=>({
     spreadChance,spreadRadius,spreadTargets,parasiteBurstRadius,insectPoisonStacks,reviveIntervalMs,
-    kingChanceBonus:0.05,kingRadiusBonus:70,basePoisonMs:3200,basePoisonDamage:3,basePoisonIntervalMs:700,
+    kingChanceBonus:0.05,kingRadiusBonus:70,basePoisonMs:3200,basePoisonDamage:6,basePoisonIntervalMs:700,
     desc:`感染网络自动繁殖；毒伤传播概率${Math.round(spreadChance*100)}%，寄生宿主死亡感染${parasiteBurstRadius}范围。`
   }),{3:'感染扩散\n持续毒伤有概率传播基础中毒。',6:'寄生繁殖\n寄生宿主死亡后留下临时感染源，并强化大范围感染。',9:'瘟疫不灭\n感染体系仍有任意源头时，周期性寻找新宿主重新播种。'})
 };

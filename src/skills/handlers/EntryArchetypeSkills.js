@@ -14,7 +14,7 @@ const configs = {
     targetType:'nearestAhead', color:0xff6533, short:'火',
     description:'向前方敌人发射火球，命中后点燃目标并叠加燃烧。',
     levels:nineLevels([
-      [25,3,1,1900],[29,3,1,1800],[34,4,2,1750],[39,4,2,1680],[45,5,2,1620],[52,5,3,1560],[60,6,3,1500],[69,6,3,1440],[80,7,4,1360]
+      [50,6,1,1900],[58,6,1,1800],[68,8,2,1750],[78,8,2,1680],[90,10,2,1620],[104,10,3,1560],[120,12,3,1500],[138,12,3,1440],[160,14,4,1360]
     ],([damage,burnDamage,burnStacks,cooldownMs],level)=>({ damage,burnDamage,burnStacks,cooldownMs,burnMs:3600,burnIntervalMs:600,maxStacks:12,desc:level===1?'发射火球并施加燃烧。':`火球伤害提高，命中叠加${burnStacks}层燃烧。` }),{
       3:'命中时叠加2层燃烧',
       6:'命中时叠加3层燃烧',
@@ -27,7 +27,7 @@ const configs = {
     targetType:'passive', color:0xb8f7ff, short:'剑',
     description:'召出常驻飞剑悬浮身后，自动出击斩杀敌人。',
     levels:nineLevels([
-      [1,17,1300],[1,21,1220],[2,22,1180],[2,27,1100],[2,32,1030],[3,34,980],[3,41,920],[3,48,860],[4,52,780]
+      [1,34,1300],[1,42,1220],[2,44,1180],[2,54,1100],[2,64,1030],[3,68,980],[3,82,920],[3,96,860],[4,104,780]
     ],([swords,damage,attackIntervalMs],level)=>({ swords,damage,attackIntervalMs,desc:level===1?'召出1把常驻飞剑自动攻击。':`维持${swords}把飞剑，缩短出击间隔并提高伤害。` }),{
       3:'飞剑数量增加至2把',
       6:'飞剑数量增加至3把',
@@ -40,7 +40,7 @@ const configs = {
     targetType:'nearestAhead', color:0x40d060, short:'毒',
     description:'发射毒针造成伤害，并为目标叠加持续中毒。',
     levels:nineLevels([
-      [13,3,1,1700,1],[16,3,1,1620,1],[20,4,2,1550,1],[24,4,2,1480,1],[29,5,2,1420,1],[35,5,3,1360,2],[42,6,3,1300,2],[50,7,3,1240,2],[60,8,4,1160,3]
+      [26,6,1,1700,1],[32,6,1,1620,1],[40,8,2,1550,1],[48,8,2,1480,1],[58,10,2,1420,1],[70,10,3,1360,2],[84,12,3,1300,2],[100,14,3,1240,2],[120,16,4,1160,3]
     ],([damage,poisonDamage,poisonStacks,cooldownMs,pierce],level)=>({ damage,poisonDamage,poisonStacks,cooldownMs,pierce,poisonMs:4200,poisonIntervalMs:700,maxStacks:15,desc:level===1?'发射毒针并施加中毒。':`毒针可命中${pierce}个目标，并叠加${poisonStacks}层中毒。` }),{
       3:'每次命中叠加2层中毒',
       6:'毒针可穿透2个目标，并叠加3层中毒',

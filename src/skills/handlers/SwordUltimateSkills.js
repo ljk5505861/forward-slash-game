@@ -10,15 +10,15 @@ const levels = (values, build, milestones={}) => values.map((value,index)=>({
 }));
 
 const HEAVEN_LEVELS = [
-  [160,32,1800,450,8,700,16000,760,132,3,2,16,0.34],
-  [180,38,1900,440,9,675,15300,790,136,3,2,18,0.36],
-  [205,45,2000,430,10,650,14600,830,150,3,2,20,0.38],
-  [235,54,2150,420,11,625,13900,860,156,3,2,22,0.40],
-  [270,64,2300,410,12,600,13200,900,162,3,2,24,0.42],
-  [310,76,2450,400,13,575,12500,940,176,4,3,27,0.44],
-  [355,90,2600,390,14,550,12000,980,184,4,3,30,0.46],
-  [405,106,2800,375,15,525,11500,1020,192,4,3,34,0.48],
-  [470,122,3000,360,16,500,11000,1080,208,5,4,38,0.50],
+  [320,64,1800,450,8,700,16000,760,132,3,2,16,0.34],
+  [360,76,1900,440,9,675,15300,790,136,3,2,18,0.36],
+  [410,90,2000,430,10,650,14600,830,150,3,2,20,0.38],
+  [470,108,2150,420,11,625,13900,860,156,3,2,22,0.40],
+  [540,128,2300,410,12,600,13200,900,162,3,2,24,0.42],
+  [620,152,2450,400,13,575,12500,940,176,4,3,27,0.44],
+  [710,180,2600,390,14,550,12000,980,184,4,3,30,0.46],
+  [810,212,2800,375,15,525,11500,1020,192,4,3,34,0.48],
+  [940,244,3000,360,16,500,11000,1080,208,5,4,38,0.50],
 ];
 
 const SWORD_ULTIMATE_SKILLS = {
@@ -162,13 +162,13 @@ export const HeavenSplittingSwordSkill = {
           s.combatSystem.damageEnemy(enemy,system.damageValue(data.abyssDamage,ctx),{ source:'skill', skillId:cfg.id, damageKind:'heavenSplitAbyss', tags:mergeTags(cfg.tags), level, allowLifeSteal:false, noKnockback:true, noSwordTrigger:true, noHeavenSplit:true, noDeathExplosion:true, noPoisonSpread:true, professionApplied:true, professionMultiplier:ctx?.professionMultiplier||1, baseAmountBeforeProfession:system.baseDamageValue(data.abyssDamage,ctx) });
           const fire=affinityCount(this.affinitySnapshot,'fire',data.affinityCap);
           if(fire>0){
-            const fireDamage=system.damageValue(5+fire*3,ctx);
-            s.combatSystem.damageEnemy(enemy,fireDamage,{ source:'skill', skillId:cfg.id, damageKind:'heavenSplitFireAbyss', tags:[TAGS.FIRE,TAGS.DOT], allowLifeSteal:false, noKnockback:true, noSwordTrigger:true, noHeavenSplit:true, noDeathExplosion:true, noPoisonSpread:true, professionApplied:true, professionMultiplier:ctx?.professionMultiplier||1, baseAmountBeforeProfession:system.baseDamageValue(5+fire*3,ctx) });
-            s.statusEffects.add(StatusEffects.BURN,enemy,{ durationMs:2200, intervalMs:700, value:2+fire, stacks:Math.min(data.statusCap,fire), maxStacks:10, sourceId:'heaven_split_fire_abyss', damageMultiplier:ctx?.damageMultiplier||1, baseDamageMultiplierWithoutProfession:ctx?.baseDamageMultiplierWithoutProfession||1, professionMultiplier:ctx?.professionMultiplier||1, professionApplied:true, noDeathExplosion:true, noPoisonSpread:true, noHeavenSplit:true, noSwordTrigger:true });
+            const fireDamage=system.damageValue(10+fire*6,ctx);
+            s.combatSystem.damageEnemy(enemy,fireDamage,{ source:'skill', skillId:cfg.id, damageKind:'heavenSplitFireAbyss', tags:[TAGS.FIRE,TAGS.DOT], allowLifeSteal:false, noKnockback:true, noSwordTrigger:true, noHeavenSplit:true, noDeathExplosion:true, noPoisonSpread:true, professionApplied:true, professionMultiplier:ctx?.professionMultiplier||1, baseAmountBeforeProfession:system.baseDamageValue(10+fire*6,ctx) });
+            s.statusEffects.add(StatusEffects.BURN,enemy,{ durationMs:2200, intervalMs:700, value:4+fire*2, stacks:Math.min(data.statusCap,fire), maxStacks:10, sourceId:'heaven_split_fire_abyss', damageMultiplier:ctx?.damageMultiplier||1, baseDamageMultiplierWithoutProfession:ctx?.baseDamageMultiplierWithoutProfession||1, professionMultiplier:ctx?.professionMultiplier||1, professionApplied:true, noDeathExplosion:true, noPoisonSpread:true, noHeavenSplit:true, noSwordTrigger:true });
           }
           const poison=affinityCount(this.affinitySnapshot,'poison',data.affinityCap);
           if(poison>0){
-            s.statusEffects.add(StatusEffects.POISON,enemy,{ durationMs:2600+poison*300, intervalMs:700, value:2+poison, stacks:Math.min(data.statusCap,poison), maxStacks:12, sourceId:'heaven_split_poison_abyss', canSpread:false, damageMultiplier:ctx?.damageMultiplier||1, baseDamageMultiplierWithoutProfession:ctx?.baseDamageMultiplierWithoutProfession||1, professionMultiplier:ctx?.professionMultiplier||1, professionApplied:true, noDeathExplosion:true, noPoisonSpread:true, noHeavenSplit:true, noSwordTrigger:true });
+            s.statusEffects.add(StatusEffects.POISON,enemy,{ durationMs:2600+poison*300, intervalMs:700, value:4+poison*2, stacks:Math.min(data.statusCap,poison), maxStacks:12, sourceId:'heaven_split_poison_abyss', canSpread:false, damageMultiplier:ctx?.damageMultiplier||1, baseDamageMultiplierWithoutProfession:ctx?.baseDamageMultiplierWithoutProfession||1, professionMultiplier:ctx?.professionMultiplier||1, professionApplied:true, noDeathExplosion:true, noPoisonSpread:true, noHeavenSplit:true, noSwordTrigger:true });
           }
         });
       },
