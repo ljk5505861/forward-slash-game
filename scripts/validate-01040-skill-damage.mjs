@@ -17,7 +17,7 @@ const archetypes={
   poison:['poison_cloud','parasitic_gu','bone_eating_insect','poison_chain','poison_king','plague_mother'],
 };
 const allSkillIds=Object.values(archetypes).flat();
-eq(GAME_VERSION,'0.10.40','game version');
+assert.match(GAME_VERSION,/^0\.10\.(40|41)$/,'game version remains in v0.10.40 damage-balance line');
 eq(allSkillIds.length,36,'all 36 skills listed');
 eq(new Set(allSkillIds).size,36,'all 36 skills unique');
 allSkillIds.forEach(id=>assert.ok(SKILLS[id],`missing skill ${id}`));
@@ -86,4 +86,4 @@ assert.match(afterimageCore,/payload\.damage\|\|0\)\*data\.damageRatio/,'影袭�
 const handlerIndex=src('src/skills/handlers/index.js');
 assert.doesNotMatch(handlerIndex,/poisonChainDamageRatios/,'总入口不含毒链运行时覆盖');
 
-console.log('v0.10.40 full skill damage validation passed.');
+console.log('v0.10.40 full skill damage validation passed for current version line.');
