@@ -75,7 +75,8 @@ export const ShadowAssaultSkill={
       afterimages.forEach((afterimage,index)=>{
         s.time.delayedCall(index*data.echoDelayMs,()=>{
           if(!s.targeting.valid(payload.enemy)||!s.afterimages?.getById(afterimage.id)) return;
-          const amount=Math.max(1,Math.round((payload.damage||0)*data.damageRatio));
+          const afterimageDamageBonus=Object.values(s.playerData.afterimageDamageBonuses||{}).reduce((sum,value)=>sum+(Number(value)||0),0);
+          const amount=Math.max(1,Math.round((payload.damage||0)*data.damageRatio*(1+afterimageDamageBonus)));
           s.combatSystem.damageEnemy(payload.enemy,amount,{ source:'skill', damageKind:'afterimageAttack', skillId:'shadow_assault', tags:[...(payload.tags||[]),'shadow',TAGS.BUILD_AFTERIMAGE], afterimage:true, heavyHit:!!payload.heavyHit, allowLifeSteal:true, lifeStealScale:data.lifeStealScale, noKnockback:true });
           const slash=s.add.rectangle(payload.enemy.x-12-index*5,payload.enemy.y-52,54,7,0xa9a3ff,0.65).setDepth(148);
           slash.rotation=-0.45;
