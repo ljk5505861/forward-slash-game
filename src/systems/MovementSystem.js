@@ -1,5 +1,7 @@
 import { getWeapon } from '../config/weapons.js';
 
+const sumBonuses = bonuses => Object.values(bonuses||{}).reduce((sum,value)=>sum+(Number(value)||0),0);
+
 const getStopDistance = (_scene, _target, weapon) => {
   return weapon.attackRange;
 };
@@ -32,9 +34,10 @@ export default class MovementSystem {
       if(d<=stopDistance){
         s.player.body.setVelocityX(0);
       } else {
-        s.player.body.setVelocityX(d>weapon.attackRange ? s.balance.player.speedX : s.balance.player.pressSpeedX);
+        const multiplier=Math.max(0.4,1+sumBonuses(s.playerData.moveSpeedMultiplierBonuses));
+        s.player.body.setVelocityX((d>weapon.attackRange ? s.balance.player.speedX : s.balance.player.pressSpeedX)*multiplier);
       }
-    } else s.player.body.setVelocityX(s.balance.player.speedX);
+    } else { const multiplier=Math.max(0.4,1+sumBonuses(s.playerData.moveSpeedMultiplierBonuses)); s.player.body.setVelocityX(s.balance.player.speedX*multiplier); }
     this.clampPlayerToCameraRight();
   }
 }
