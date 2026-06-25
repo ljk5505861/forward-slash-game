@@ -2,11 +2,9 @@ import { SKILLS } from '../../config/skills.js';
 import { TAGS } from '../../config/tags.js';
 import { StatusEffects } from '../../systems/StatusEffectSystem.js';
 
-const nineLevels = (values, build) => values.map((value, index) => ({
+const nineLevels = (values, build, milestones={}) => values.map((value, index) => ({
   ...build(value, index + 1),
-  ...(index === 2 ? { milestoneText:'机制强化 I' } : {}),
-  ...(index === 5 ? { milestoneText:'机制强化 II' } : {}),
-  ...(index === 8 ? { milestoneText:'机制质变' } : {}),
+  ...(milestones[index + 1] ? { milestoneText:milestones[index + 1] } : {}),
 }));
 
 const configs = {
@@ -17,16 +15,24 @@ const configs = {
     description:'向前方敌人发射火球，命中后点燃目标并叠加燃烧。',
     levels:nineLevels([
       [25,3,1,1900],[29,3,1,1800],[34,4,2,1750],[39,4,2,1680],[45,5,2,1620],[52,5,3,1560],[60,6,3,1500],[69,6,3,1440],[80,7,4,1360]
-    ],([damage,burnDamage,burnStacks,cooldownMs],level)=>({ damage,burnDamage,burnStacks,cooldownMs,burnMs:3600,burnIntervalMs:600,maxStacks:12,desc:level===1?'发射火球并施加燃烧。':`火球伤害提高，命中叠加${burnStacks}层燃烧。` }))
+    ],([damage,burnDamage,burnStacks,cooldownMs],level)=>({ damage,burnDamage,burnStacks,cooldownMs,burnMs:3600,burnIntervalMs:600,maxStacks:12,desc:level===1?'发射火球并施加燃烧。':`火球伤害提高，命中叠加${burnStacks}层燃烧。` }),{
+      3:'命中时叠加2层燃烧',
+      6:'命中时叠加3层燃烧',
+      9:'命中时叠加4层燃烧'
+    })
   },
   sword_wave: {
     id:'sword_wave', name:'御剑术', rarity:'COMMON', handler:'entry_sword', passive:true, maxLevel:9,
     tags:['physical',TAGS.SUMMON,TAGS.PROJECTILE,TAGS.BUILD_SWORD], cooldownMs:999999,
     targetType:'passive', color:0xb8f7ff, short:'剑',
-    description:'召出常驻飞剑环绕自身，自动出击斩杀敌人。',
+    description:'召出常驻飞剑悬浮身后，自动出击斩杀敌人。',
     levels:nineLevels([
       [1,17,1300],[1,21,1220],[2,22,1180],[2,27,1100],[2,32,1030],[3,34,980],[3,41,920],[3,48,860],[4,52,780]
-    ],([swords,damage,attackIntervalMs],level)=>({ swords,damage,attackIntervalMs,desc:level===1?'召出1把常驻飞剑自动攻击。':`维持${swords}把飞剑，缩短出击间隔并提高伤害。` }))
+    ],([swords,damage,attackIntervalMs],level)=>({ swords,damage,attackIntervalMs,desc:level===1?'召出1把常驻飞剑自动攻击。':`维持${swords}把飞剑，缩短出击间隔并提高伤害。` }),{
+      3:'飞剑数量增加至2把',
+      6:'飞剑数量增加至3把',
+      9:'飞剑数量增加至4把'
+    })
   },
   poison_cloud: {
     id:'poison_cloud', name:'毒针', rarity:'COMMON', handler:'entry_poison_needle', maxLevel:9,
@@ -35,7 +41,11 @@ const configs = {
     description:'发射毒针造成伤害，并为目标叠加持续中毒。',
     levels:nineLevels([
       [13,3,1,1700,1],[16,3,1,1620,1],[20,4,2,1550,1],[24,4,2,1480,1],[29,5,2,1420,1],[35,5,3,1360,2],[42,6,3,1300,2],[50,7,3,1240,2],[60,8,4,1160,3]
-    ],([damage,poisonDamage,poisonStacks,cooldownMs,pierce],level)=>({ damage,poisonDamage,poisonStacks,cooldownMs,pierce,poisonMs:4200,poisonIntervalMs:700,maxStacks:15,desc:level===1?'发射毒针并施加中毒。':`毒针可命中${pierce}个目标，并叠加${poisonStacks}层中毒。` }))
+    ],([damage,poisonDamage,poisonStacks,cooldownMs,pierce],level)=>({ damage,poisonDamage,poisonStacks,cooldownMs,pierce,poisonMs:4200,poisonIntervalMs:700,maxStacks:15,desc:level===1?'发射毒针并施加中毒。':`毒针可命中${pierce}个目标，并叠加${poisonStacks}层中毒。` }),{
+      3:'每次命中叠加2层中毒',
+      6:'毒针可穿透2个目标，并叠加3层中毒',
+      9:'毒针可穿透3个目标，并叠加4层中毒'
+    })
   },
   spinning_blade: {
     id:'spinning_blade', name:'重击', rarity:'COMMON', handler:'entry_heavy_hit', passive:true, maxLevel:9,
@@ -44,7 +54,11 @@ const configs = {
     description:'每数次普通攻击触发一次重击，造成更高伤害和击退。',
     levels:nineLevels([
       [5,1.55,0],[5,1.7,0],[4,1.8,0.01],[4,1.95,0.01],[4,2.1,0.02],[3,2.2,0.03],[3,2.35,0.04],[3,2.5,0.05],[2,2.65,0.07]
-    ],([heavyHitEvery,heavyHitMultiplier,heavyHitLifeSteal],level)=>({ heavyHitEvery,heavyHitMultiplier,heavyHitLifeSteal,desc:level===1?'每5次普通攻击触发一次重击。':`每${heavyHitEvery}次攻击触发${Math.round(heavyHitMultiplier*100)}%伤害重击。` }))
+    ],([heavyHitEvery,heavyHitMultiplier,heavyHitLifeSteal],level)=>({ heavyHitEvery,heavyHitMultiplier,heavyHitLifeSteal,desc:level===1?'每5次普通攻击触发一次重击。':`每${heavyHitEvery}次攻击触发${Math.round(heavyHitMultiplier*100)}%伤害重击。` }),{
+      3:'每4次攻击触发重击，并获得1%重击吸血',
+      6:'每3次攻击触发重击，并获得3%重击吸血',
+      9:'每2次攻击触发重击，并获得7%重击吸血'
+    })
   },
   healing: {
     id:'healing', name:'铁壁', rarity:'COMMON', handler:'entry_iron_wall', passive:true, maxLevel:9,
@@ -53,7 +67,11 @@ const configs = {
     description:'永久提高防御，并在高等级获得少量伤害减免。',
     levels:nineLevels([
       [2,0],[3,0],[5,0],[7,0.02],[9,0.03],[12,0.04],[15,0.05],[18,0.06],[22,0.08]
-    ],([defense,damageReduction],level)=>({ defense,damageReduction,desc:level===1?'永久获得2点防御。':`获得${defense}点防御${damageReduction?`和${Math.round(damageReduction*100)}%减伤`:''}。` }))
+    ],([defense,damageReduction],level)=>({ defense,damageReduction,desc:level===1?'永久获得2点防御。':`获得${defense}点防御${damageReduction?`和${Math.round(damageReduction*100)}%减伤`:''}。` }),{
+      3:'防御提高至5点',
+      6:'防御提高至12点，并获得4%伤害减免',
+      9:'防御提高至22点，并获得8%伤害减免'
+    })
   },
   shadow_fist: {
     id:'shadow_fist', name:'身法', rarity:'COMMON', handler:'entry_movement', passive:true, maxLevel:9,
@@ -62,7 +80,11 @@ const configs = {
     description:'提高闪避率；成功闪避是后续残影技能的核心入口。',
     levels:nineLevels([
       0.05,0.07,0.10,0.12,0.14,0.17,0.19,0.22,0.25
-    ],(dodgeChance,level)=>({ dodgeChance,desc:`获得${Math.round(dodgeChance*100)}%闪避率。` }))
+    ],(dodgeChance,level)=>({ dodgeChance,desc:`获得${Math.round(dodgeChance*100)}%闪避率。` }),{
+      3:'闪避率提高至10%',
+      6:'闪避率提高至17%',
+      9:'闪避率提高至25%'
+    })
   }
 };
 

@@ -66,7 +66,7 @@ export default class SkillBar {
     const skills = this.scene.playerData.skills;
     const pages = this.getPageCount();
     this.page = Phaser.Math.Clamp(this.page, 0, pages - 1);
-    this.pageText.setText('技能槽 4/4');
+    this.pageText.setText(`技能槽 ${Math.min(skills.length, SLOTS_PER_PAGE)}/${SLOTS_PER_PAGE}`);
     this.prevButton.setAlpha(0.15);
     this.nextButton.setAlpha(0.15);
 
