@@ -20,7 +20,8 @@
     "validate:01043-boss-knockback": "node scripts/validate-01043-boss-knockback.mjs",
     "validate:01044-flame-rework": "node scripts/validate-01044-flame-rework.mjs",
     "validate:01045-sword-rework": "node scripts/validate-01045-sword-rework.mjs",
-    "validate:01040-skill-damage": "node scripts/validate-01040-skill-damage.mjs"
+    "validate:01040-skill-damage": "node scripts/validate-01040-skill-damage.mjs",
+    "validate:01046-skill-detail-ui": "node scripts/validate-01046-skill-detail-ui.mjs"
   },
   "dependencies": {
     "phaser": "latest",

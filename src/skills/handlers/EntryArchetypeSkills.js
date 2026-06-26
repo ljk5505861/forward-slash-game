@@ -39,7 +39,7 @@ const configs = {
     id:'poison_cloud', name:'毒针', rarity:'COMMON', handler:'entry_poison_needle', maxLevel:9,
     tags:[TAGS.POISON,TAGS.DOT,TAGS.ACTIVE_SKILL,TAGS.PROJECTILE,TAGS.BUILD_POISON_SUMMON], cooldownMs:1700,
     targetType:'nearestAhead', color:0x40d060, short:'毒',
-    description:'发射毒针造成伤害，并为目标叠加持续中毒。',
+    description:'发射毒针命中最近敌人，为目标叠加持续中毒并可随等级穿透更多目标。',
     levels:nineLevels([
       [26,6,1,1700,1],[32,6,1,1620,1],[40,8,2,1550,1],[48,8,2,1480,1],[58,10,2,1420,1],[70,10,3,1360,2],[84,12,3,1300,2],[100,14,3,1240,2],[120,16,4,1160,3]
     ],([damage,poisonDamage,poisonStacks,cooldownMs,pierce],level)=>({ damage,poisonDamage,poisonStacks,cooldownMs,pierce,poisonMs:4200,poisonIntervalMs:700,maxStacks:15,desc:level===1?'发射毒针并施加中毒。':`毒针可命中${pierce}个目标，并叠加${poisonStacks}层中毒。` }),{
