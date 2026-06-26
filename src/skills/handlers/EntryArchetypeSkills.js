@@ -1,6 +1,7 @@
 import { SKILLS } from '../../config/skills.js';
 import { TAGS } from '../../config/tags.js';
 import { StatusEffects } from '../../systems/StatusEffectSystem.js';
+import { applyElementalSouls, mainSwordStats, rollSwordCrit } from './SwordFlowState.js';
 
 const nineLevels = (values, build, milestones={}) => values.map((value, index) => ({
   ...build(value, index + 1),
@@ -29,9 +30,9 @@ const configs = {
     levels:nineLevels([
       [1,34,1300],[1,42,1220],[1,50,1180],[1,58,1100],[1,68,1030],[1,78,980],[1,90,920],[1,102,860],[1,116,780]
     ],([swords,damage,attackIntervalMs],level)=>({ swords,damage,attackIntervalMs,desc:level===1?'召出1把常驻主剑自动攻击。':'主剑更快、更大、更强，但始终只有一把。' }),{
-      3:'主剑强化为稀有品质',
-      6:'主剑强化为史诗品质',
-      9:'主剑基础威力大幅提升'
+      3:'御剑迅捷：主剑飞行速度提高25%，攻击间隔缩短15%',
+      6:'剑意锋芒：主剑暴击率+15%，暴击伤害+50%',
+      9:'剑威大成：主剑最终伤害+50%，剑体与剑光尺寸+30%'
     })
   },
   poison_cloud: {
@@ -122,32 +123,52 @@ export const EntryPoisonNeedleSkill={
 export const EntrySwordSkill={
   bind(system){
     const state={ readyAt:0, chain:null };
-    const getFlow=()=>system.passiveState.swordFlow ||= { souls:0, affinities:{fire:0,poison:0}, mainQuality:'COMMON', mythicOwner:'none' };
-    const thresholds=[0,12,36,80], rarities=['COMMON','RARE','EPIC','MYTHIC'];
-    const updateQuality=()=>{ const st=getFlow(); let idx=0; while(idx<thresholds.length-1&&st.souls>=thresholds[idx+1]) idx+=1; if(idx>=3){ if(st.mythicOwner==='sword_tomb') idx=2; else st.mythicOwner='main_sword'; } st.mainQuality=rarities[idx]; return st; };
-    const mods=(data)=>{ const st=updateQuality(), idx=Math.max(0,rarities.indexOf(st.mainQuality)); const elemental=(st.affinities.fire||0)*6+(st.affinities.poison||0)*5; return { st, damage:Math.round(data.damage*(1+idx*0.28)+Math.min(80,st.souls*0.45)+elemental), intervalMs:Math.max(360,Math.round(data.attackIntervalMs*(1-idx*0.12))), size:1+idx*0.18, mythic:st.mythicOwner==='main_sword' }; };
+    const hitTarget=(target,stats)=>{
+      const s=system.scene;
+      if(!target||!s.targeting.valid(target)) return false;
+      const result=rollSwordCrit(s,stats.damage,stats);
+      const damaged=s.combatSystem.damageEnemy(target,result.damage,{source:'skill',skillId:'sword_wave',tags:SKILLS.sword_wave.tags,allowLifeSteal:false,noKnockback:true,crit:result.crit});
+      if(damaged){
+        applyElementalSouls(system,target,stats,'sword_wave',false);
+        if(result.crit) s.eventBus.emit('PLAYER_CRIT',{ enemy:target, damage:result.damage, forcedCrit:false, source:'skill', skillId:'sword_wave' });
+      }
+      return damaged;
+    };
     return passiveUpdater(system,'sword_wave',(data,level)=>{
       const s=system.scene;
-      if(!data||level<=0){ s.flyingSwords?.getAll().filter(x=>x.ownerSkillId==='sword_wave').forEach(x=>s.flyingSwords.removeSword(x.id,'skillRemoved')); return; }
+      if(!data||level<=0){ s.flyingSwords?.getAll().filter(x=>x.ownerSkillId==='sword_wave').forEach(x=>s.flyingSwords.removeSword(x.id,'skillRemoved')); state.chain=null; return; }
       const owned=s.flyingSwords?.getAll().filter(x=>x.ownerSkillId==='sword_wave')||[];
       while(owned.length<1) owned.push(s.flyingSwords.createSword({ownerSkillId:'sword_wave',type:'imperial',damageScale:1,color:0xb8f7ff}));
-      while(owned.length>1){ const sword=owned.pop(); s.flyingSwords.removeSword(sword.id,'singleMainSword'); }
-      const sword=owned[0], now=s.getGameplayTime(), m=mods(data);
-      if(sword?.view) sword.view.setScale(m.size, m.size);
+      while(owned.length>1){ const removed=owned.pop(); s.flyingSwords.removeSword(removed.id,'singleMainSword'); }
+      const sword=owned[0], now=s.getGameplayTime(), stats=mainSwordStats(system,data);
+      if(sword){ sword.flightSpeed=stats.speed; sword.bodyScale=stats.bodySize; sword.glowScale=stats.glowSize; sword.view?.setScale?.(stats.bodySize,stats.glowSize); }
       if(state.chain){
-        if(now<state.chain.nextAt) return;
-        const target=state.chain.targets[state.chain.index++];
-        if(target&&s.targeting.valid(target)) s.combatSystem.damageEnemy(target,m.damage,{source:'skill',skillId:'sword_wave',tags:SKILLS.sword_wave.tags,allowLifeSteal:false,noKnockback:true});
-        if(state.chain.index>=state.chain.targets.length){ state.chain=null; sword.attackEndsAt=0; s.flyingSwords.returnToOrbit(sword.id); state.readyAt=now+m.intervalMs; }
-        else state.chain.nextAt=now+85;
+        const chain=state.chain;
+        if(chain.returning){
+          if(sword.state!=='orbit') s.flyingSwords.returnToOrbit(sword.id);
+          if(now>=chain.returnDoneAt){ state.chain=null; state.readyAt=now+stats.intervalMs; }
+          return;
+        }
+        let target=chain.targets[chain.index];
+        while(target&&!s.targeting.valid(target)){ chain.index+=1; target=chain.targets[chain.index]; }
+        if(!target){ chain.returning=true; chain.returnDoneAt=now+260; s.flyingSwords.returnToOrbit(sword.id); return; }
+        if(sword.target!==target) s.flyingSwords.markAttack(sword.id,target,{skillId:'sword_wave',mythic:true});
+        const arrived=sword.view?Math.hypot(sword.view.x-target.x,sword.view.y-(target.y-48))<=42*stats.glowSize:true;
+        if(arrived){ if(!chain.hit.has(target)){ hitTarget(target,stats); chain.hit.add(target); } chain.index+=1; }
         return;
       }
-      if(sword.attackEndsAt&&now>=sword.attackEndsAt){ const target=sword.target; if(s.targeting.valid(target)) s.combatSystem.damageEnemy(target,m.damage,{source:'skill',skillId:'sword_wave',tags:SKILLS.sword_wave.tags,allowLifeSteal:false,noKnockback:true}); sword.attackEndsAt=0; s.flyingSwords.returnToOrbit(sword.id); }
+      if(sword.attackEndsAt&&now>=sword.attackEndsAt){ hitTarget(sword.target,stats); sword.attackEndsAt=0; s.flyingSwords.returnToOrbit(sword.id); }
       if(now<state.readyAt||sword.state==='attack') return;
-      if(m.mythic){ const targets=s.targeting.all().filter(e=>e.active&&!e.isDefeated); if(!targets.length) return; s.flyingSwords.markAttack(sword.id,targets[0],{skillId:'sword_wave'}); state.chain={ targets:[...targets], index:0, nextAt:now+65 }; return; }
+      if(stats.mythic){
+        const targets=s.targeting.all().filter(e=>e.active&&!e.isDefeated);
+        if(!targets.length) return;
+        state.chain={ targets:[...targets], index:0, hit:new Set(), returning:false, returnDoneAt:0 };
+        s.flyingSwords.markAttack(sword.id,targets[0],{skillId:'sword_wave',mythic:true});
+        return;
+      }
       const target=s.targeting.nearestAhead(760); if(!target) return;
       s.flyingSwords.markAttack(sword.id,target,{skillId:'sword_wave'});
-      sword.attackEndsAt=now+150; state.readyAt=now+m.intervalMs;
+      sword.attackEndsAt=now+Math.max(90,Math.round(170/stats.speed)); state.readyAt=now+stats.intervalMs;
     });
   }
 };

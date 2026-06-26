@@ -1,0 +1,76 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { SKILLS } from '../src/config/skills.js';
+import '../src/skills/handlers/index.js';
+import { QUALITY_MULTIPLIERS, SOUL_THRESHOLDS, SWORD_MYTHIC, getSwordQualityBySouls, mainSwordStats, sheathInheritedStats, tryPromoteSwordTomb, refreshSwordQuality } from '../src/skills/handlers/SwordFlowState.js';
+
+const src = (p) => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
+const entry = src('src/skills/handlers/EntryArchetypeSkills.js');
+const sword = src('src/skills/handlers/SwordReworkSkills.js');
+const index = src('src/skills/handlers/index.js');
+const flow = src('src/skills/handlers/SwordFlowState.js');
+const pkg = JSON.parse(src('package.json'));
+
+assert.equal(SKILLS.sword_wave.levels[2].milestoneText.includes('御剑迅捷'), true, '御剑术3级是御剑迅捷');
+assert.equal(SKILLS.sword_wave.levels[5].milestoneText.includes('剑意锋芒'), true, '御剑术6级是剑意锋芒');
+assert.equal(SKILLS.sword_wave.levels[8].milestoneText.includes('剑威大成'), true, '御剑术9级是剑威大成');
+assert.doesNotMatch(SKILLS.sword_wave.levels[2].milestoneText, /稀有品质/);
+assert.doesNotMatch(SKILLS.sword_wave.levels[5].milestoneText, /史诗品质/);
+assert.deepEqual(SOUL_THRESHOLDS, [0,12,36,80]);
+assert.equal(getSwordQualityBySouls(0), 'COMMON');
+assert.equal(getSwordQualityBySouls(12), 'RARE');
+assert.equal(getSwordQualityBySouls(36), 'EPIC');
+assert.equal(getSwordQualityBySouls(80), 'MYTHIC');
+assert.deepEqual(QUALITY_MULTIPLIERS.RARE, { damage:1.30, speed:1.15, interval:0.88, bodySize:1.15, glowSize:1.20 });
+assert.deepEqual(QUALITY_MULTIPLIERS.MYTHIC, { damage:2.50, speed:1.70, interval:0.55, bodySize:1.80, glowSize:2.00 });
+
+const scene = { playerData:{ skills:[{id:'sword_wave',level:1},{id:'sword_tomb',level:9}], critChance:0.05, critMultiplier:1.5 }, getGameplayTime(){ return 0; } };
+const system = { scene, passiveState:{}, getLevel(id){ return scene.playerData.skills.find(s=>s.id===id)?.level||0; }, getData(id){ return SKILLS[id]?.levels[(this.getLevel(id)||1)-1]; } };
+let stats = mainSwordStats(system, SKILLS.sword_wave.levels[0]);
+assert.equal(stats.quality, 'COMMON');
+assert.equal(stats.mythic, false);
+scene.playerData.skills[0].level=3; stats = mainSwordStats(system, SKILLS.sword_wave.levels[2]);
+assert(stats.speed > QUALITY_MULTIPLIERS.COMMON.speed, '3级提供速度加成');
+assert(stats.intervalMs < SKILLS.sword_wave.levels[2].attackIntervalMs, '3级提供攻击间隔加成');
+assert.equal(stats.quality, 'COMMON', '御剑术3级不直接升稀有');
+scene.playerData.skills[0].level=6; stats = mainSwordStats(system, SKILLS.sword_wave.levels[5]);
+assert.equal(stats.critChance, 0.15, '6级提供暴击率');
+assert.equal(stats.critMultiplierBonus, 0.5, '6级提供暴击伤害');
+assert.equal(stats.quality, 'COMMON', '御剑术6级不直接升史诗');
+scene.playerData.skills[0].level=9; stats = mainSwordStats(system, SKILLS.sword_wave.levels[8]);
+assert.equal(stats.bodySize, 1.3, '9级提高剑体尺寸');
+assert.equal(stats.glowSize, 1.3, '9级提高剑光尺寸');
+assert(stats.damage > SKILLS.sword_wave.levels[8].damage, '9级提供最终伤害');
+
+system.passiveState.swordFlow.effectiveSouls=36; refreshSwordQuality(system); stats=mainSwordStats(system, SKILLS.sword_wave.levels[8]);
+assert.equal(stats.quality, 'EPIC', '主剑品质由魂量决定');
+assert.equal(stats.mythic, false, '史诗主剑不是全场');
+system.passiveState.swordFlow.effectiveSouls=80; refreshSwordQuality(system); stats=mainSwordStats(system, SKILLS.sword_wave.levels[8]);
+assert.equal(stats.quality, 'MYTHIC');
+assert.equal(stats.mythic, true, '神话主剑攻击全场');
+system.passiveState.swordFlow.mythicOwner=SWORD_MYTHIC.NONE; system.passiveState.swordFlow.effectiveSouls=80; scene.playerData.skills[1].level=8;
+assert.equal(tryPromoteSwordTomb(system), false, '剑冢9级才可自身封神');
+scene.playerData.skills[1].level=9; system.passiveState.swordFlow.mythicOwner=SWORD_MYTHIC.MAIN;
+assert.equal(tryPromoteSwordTomb(system), false, '主剑神话时剑冢不能封神');
+system.passiveState.swordFlow.mythicOwner=SWORD_MYTHIC.TOMB; refreshSwordQuality(system);
+assert.equal(system.passiveState.swordFlow.mainQuality, 'EPIC', '剑冢神话时主剑最高史诗');
+
+scene.playerData.skills=[{id:'sword_sheath',level:1}]; system.passiveState={}; const sheath=sheathInheritedStats(system);
+assert.equal(sheath.hasMain, false, '剑匣没有御剑术也能运行');
+assert.match(sword, /endAt:s\.getGameplayTime\(\)\+900[\s\S]*t>=1[\s\S]*sword\.destroy\(\)/, '剑匣虚幻剑到终点消散不返回');
+assert.equal(SKILLS.sword_sheath.levels[8].secondDelayMs, 200, '剑匣9级第二把剑存在延迟');
+assert.equal(SKILLS.sword_sheath.levels[0].warmupMs >= 5000, true, '剑匣1级温养不低于5秒');
+assert.equal(SKILLS.sword_sheath.levels[8].warmupMs >= 3500, true, '剑匣9级温养不低于3.5秒');
+assert.equal(SKILLS.sword_tomb.levels[8].executeRatio, 0.18, '剑冢斩杀线最高18%');
+assert.match(flow, /StatusEffects\.BURN/);
+assert.match(flow, /StatusEffects\.POISON/);
+assert.match(entry, /state\.chain=\{ targets:\[\.\.\.targets\]/, '神话主剑快照当前目标');
+assert.match(entry, /sword\.target!==target[\s\S]*markAttack/, '神话主剑真实切换目标移动');
+const entrySwordBlock = entry.slice(entry.indexOf('export const EntrySwordSkill='), entry.indexOf('export const EntryHeavyHitSkill='));
+assert.doesNotMatch(entrySwordBlock, /lineHitTargets|pierce|贯穿|弹射|范围伤害/, '御剑术普通至史诗没有路径/范围/弹射伤害');
+['split_sword','rotating_sword','execution_sword','myriad_swords','heaven_splitting_sword'].forEach(id=>{
+  assert.equal(SKILLS[id], undefined, `${id} 不在技能池中`);
+  assert.doesNotMatch(index, new RegExp(`${id}:`), `${id} 不在处理器注册中`);
+});
+assert.equal(pkg.scripts['validate:01045-sword-rework'], 'node scripts/validate-01045-sword-rework.mjs');
+console.log('v0.10.45 sword rework validation passed.');

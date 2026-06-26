@@ -18,7 +18,8 @@
     "validate:0104-balance-knockback": "node scripts/validate-0104-balance-knockback.mjs",
     "validate:01042-level-system": "node scripts/validate-01042-level-system.mjs",
     "validate:01043-boss-knockback": "node scripts/validate-01043-boss-knockback.mjs",
-    "validate:01044-flame-rework": "node scripts/validate-01044-flame-rework.mjs"
+    "validate:01044-flame-rework": "node scripts/validate-01044-flame-rework.mjs",
+    "validate:01045-sword-rework": "node scripts/validate-01045-sword-rework.mjs"
   },
   "dependencies": {
     "phaser": "latest",
