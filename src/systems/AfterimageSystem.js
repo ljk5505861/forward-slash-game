@@ -48,19 +48,32 @@ export default class AfterimageSystem {
     playerData.attackSpeedMultiplier=Math.max(0.2,base+this.appliedAttackSpeedBonus);
   }
 
+  formationPosition(index){
+    const player=this.scene.player;
+    const row=index%3;
+    const column=Math.floor(index/3);
+    return { x:player.x-42-(row*38)-(column*14), y:player.y-52+(row-1)*18, flipX:player.flipX };
+  }
+
+  syncAttachedVisuals(){
+    if(!this.scene.player) return;
+    this.afterimages.forEach((afterimage,index)=>{
+      if(!afterimage.view) return;
+      const target=this.formationPosition(index);
+      afterimage.view.setPosition?.(target.x,target.y);
+      afterimage.view.flipX=target.flipX;
+    });
+  }
+
   update(time){
     const player=this.scene.player;
     if(!player) return;
     this.afterimages.slice().forEach((afterimage,index)=>{
       if(afterimage.expiresAt&&time>=afterimage.expiresAt){ this.removeAfterimage(afterimage.id,'expired'); return; }
       if(!afterimage.view) return;
-      const row=index%3;
-      const column=Math.floor(index/3);
-      const targetX=player.x-42-(row*38)-(column*14);
-      const targetY=player.y-52+(row-1)*18;
-      afterimage.view.x+=(targetX-afterimage.view.x)*0.22;
-      afterimage.view.y+=(targetY-afterimage.view.y)*0.22;
-      afterimage.view.flipX=player.flipX;
+      const target=this.formationPosition(index);
+      afterimage.view.setPosition?.(target.x,target.y);
+      afterimage.view.flipX=target.flipX;
     });
   }
 

@@ -9,7 +9,7 @@ import SkillSystem from '../src/systems/SkillSystem.js';
 import StatusEffectSystem, { StatusEffects } from '../src/systems/StatusEffectSystem.js';
 import { TAGS } from '../src/config/tags.js';
 
-assert.equal(GAME_VERSION,'0.10.48');
+assert.equal(GAME_VERSION,'0.10.49');
 const flameIds=Object.values(SKILLS).filter(s=>s.tags?.includes(TAGS.BUILD_FIRE)).map(s=>s.id).sort();
 assert.deepEqual(flameIds,['burn_burst','fire_seed','fireball','solar_flame'].sort(),'fire build exposes exactly four formal skills');
 for (const removed of ['flame_spray','wildfire','meteor','eternal_flame_heart']) assert.equal(SKILLS[removed],undefined,`${removed} removed from skill pool`);
@@ -44,4 +44,4 @@ const sys=new SkillSystem(castScene); sys.castFireball(fb,fb.levels[8],9,{damage
 assert.equal(sys.canSpendMana(101),false); assert.equal(sys.spendMana(3),true); assert.equal(castScene.playerData.mana,97); sys.recoverMana(2); assert.equal(castScene.playerData.mana,99);
 
 const core=fs.readFileSync('src/skills/handlers/FlameCoreSkills.js','utf8'); assert.match(core,/igniteBurstEnabled:true/); assert.doesNotMatch(core,/maxStacks:18/);
-console.log('v0.10.48 flame rework validation passed.');
+console.log('v0.10.49 flame rework validation passed.');

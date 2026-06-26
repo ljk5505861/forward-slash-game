@@ -117,6 +117,15 @@ export default class FlyingSwordSystem {
     return { x:player.x+behindDirection*horizontal, y:player.y+vertical, rotation:facingLeft?Math.PI:0 };
   }
 
+  syncAttachedVisuals(){
+    this.swords.forEach((sword,index)=>{
+      if(sword.state!=='orbit'||!sword.view) return;
+      const slot=this.formationPosition(index,this.scene.getGameplayTime?.()||0,sword);
+      sword.view.setPosition?.(slot.x,slot.y);
+      sword.view.setRotation?.(slot.rotation);
+    });
+  }
+
   update(time){
     const player=this.scene.player;
     if(!player) return;
