@@ -18,7 +18,7 @@ const archetypes={
   poison:['poison_cloud','parasitic_gu','bone_eating_insect','poison_chain','poison_king','plague_mother'],
 };
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.10.50','game version for v0.10.50 skill regression');
+assert.equal(GAME_VERSION,'0.10.51','game version for v0.10.51 skill regression');
 eq(allSkillIds.length,31,'all current 31 skills listed');
 eq(new Set(allSkillIds).size,31,'all current 31 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
@@ -94,4 +94,4 @@ assert.match(src('src/skills/handlers/PoisonSummonCoreSkills.js'),/growth\*damag
 assert.ok(['sword_sheath','sword_tomb','fire_seed','burn_burst','solar_flame','poison_chain','poison_king','plague_mother'].every(hasHandler),'current handlers registered');
 ['split_sword','rotating_sword','execution_sword','myriad_swords','heaven_splitting_sword'].forEach(id=>assert.equal(hasHandler(id),false,`${id} old handler not registered`));
 
-console.log('v0.10.50 skill damage regression validation passed.');
+console.log('v0.10.51 skill damage regression validation passed.');

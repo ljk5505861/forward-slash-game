@@ -10,7 +10,7 @@ const combat=read('src/systems/CombatSystem.js');
 const scene=read('src/scenes/GameScene.js');
 const indicators=read('src/ui/EnemyStatusIndicators.js');
 
-assert.equal(GAME_VERSION,'0.10.50','game version is 0.10.50');
+assert.equal(GAME_VERSION,'0.10.51','game version is 0.10.51');
 assert.match(sword,/rotation:0/,'sword sheath anchor rotation is 0');
 assert.doesNotMatch(sword,/-0\.45\s*\*\s*dir/,'sheath no longer tilts by direction');
 const sheathBlock=sword.slice(sword.indexOf('export const SwordSheathSkill'),sword.indexOf('export const SwordTombSkill'));
@@ -37,10 +37,10 @@ assert.match(scene,/floatText\(x,y,text,color\)\{ const t=this\.add\.text\(x,y,t
 assert.match(indicators,/setText\(stacks>0\?`灼\$\{stacks\}`:''\)/,'burn text has compact 灼${stacks} format');
 assert.doesNotMatch(indicators,/灼 \$\{stacks\}/,'burn text has no middle space');
 assert.match(indicators,/fontSize:'12px'/,'burn status font size is 12px');
-assert.match(indicators,/fontStyle:'bold'/,'burn status is bold');
-assert.match(indicators,/color:'#fff27a'/,'burn status color is high contrast golden yellow');
-assert.match(indicators,/stroke:'#ffffff'/,'burn status has dark stroke');
-assert.match(indicators,/strokeThickness:2/,'burn status stroke thickness is 2');
+assert.match(indicators,/fontStyle:'normal'/,'burn status uses normal font weight');
+assert.match(indicators,/color:'#ffb36b'/,'burn status color is pale orange');
+assert.doesNotMatch(indicators,/stroke:/,'burn status has no text stroke');
+assert.doesNotMatch(indicators,/strokeThickness:/,'burn status has no stroke thickness');
 assert.match(indicators,/setText\(stacks>0\?`灼\$\{stacks\}`:''\)/,'zero stacks still clear text');
 assert.match(indicators,/setVisible\(stacks>0\)/,'zero stacks still hide status row');
 assert.match(indicators,/STATUS_ITEM_WIDTH=18/,'status row reserves compact 18px status slots');

@@ -10,7 +10,7 @@ const combat=read('src/systems/CombatSystem.js');
 const scene=read('src/scenes/GameScene.js');
 const indicators=read('src/ui/EnemyStatusIndicators.js');
 
-assert.equal(GAME_VERSION,'0.10.50','game version is 0.10.50');
+assert.equal(GAME_VERSION,'0.10.51','game version is 0.10.51');
 assert.match(sword,/rotation:0/,'sword sheath anchor rotation is 0');
 assert.doesNotMatch(sword,/-0\.45\s*\*\s*dir/,'sheath no longer tilts by direction');
 const sheathBlock=sword.slice(sword.indexOf('export const SwordSheathSkill'),sword.indexOf('export const SwordTombSkill'));
@@ -37,20 +37,19 @@ assert.match(scene,/floatText\(x,y,text,color\)\{ const t=this\.add\.text\(x,y,t
 assert.match(indicators,/setText\(stacks>0\?`灼\$\{stacks\}`:''\)/,'burn text has compact 灼${stacks} format');
 assert.doesNotMatch(indicators,/灼 \$\{stacks\}/,'burn text has no middle space');
 assert.match(indicators,/fontSize:'12px'/,'burn status font size is 12px');
-assert.match(indicators,/fontStyle:'bold'/,'burn status is bold');
-assert.match(indicators,/color:'#fff27a'/,'burn status color is high contrast golden yellow');
-assert.match(indicators,/stroke:'#ffffff'/,'burn status has dark stroke');
-assert.match(indicators,/strokeThickness:2/,'burn status stroke thickness is 2');
+assert.match(indicators,/fontStyle:'normal'/,'burn status uses normal font weight');
+assert.match(indicators,/color:'#ffb36b'/,'burn status color is pale orange');
+assert.doesNotMatch(indicators,/stroke:/,'burn status has no text stroke');
+assert.doesNotMatch(indicators,/strokeThickness:/,'burn status has no stroke thickness');
 assert.match(indicators,/setText\(stacks>0\?`灼\$\{stacks\}`:''\)/,'zero stacks still clear text');
 assert.match(indicators,/setVisible\(stacks>0\)/,'zero stacks still hide status row');
 assert.match(indicators,/STATUS_ITEM_WIDTH=18/,'status row reserves compact 18px status slots');
 assert.deepEqual(SKILLS.sword_tomb.levels.map(l=>l.executeRatio),[0.10,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.18],'sword_tomb execute ratios unchanged');
 assert.deepEqual(SKILLS.sword_wave.levels.map(l=>l.damage),[34,42,50,58,68,78,90,102,116],'sword_wave damage unchanged');
 
-assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_X=28/,'sheath x offset is closer to the player than v0.10.48');
-assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_Y=26/,'sheath y offset is lower than v0.10.49');
-assert.doesNotMatch(sword,/SWORD_SHEATH_BACK_OFFSET_X=34/,'sheath x offset is not the v0.10.48 value');
-assert.doesNotMatch(sword,/SWORD_SHEATH_BACK_OFFSET_Y=48/,'sheath y offset is not the v0.10.48 value');
+assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_X=36/,'sheath x offset moves farther behind the player');
+assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_Y=26/,'sheath y offset remains unchanged from v0.10.50');
+assert.doesNotMatch(sword,/SWORD_SHEATH_BACK_OFFSET_X=28/,'sheath x offset no longer overlaps the player as much');
 assert.match(sword,/export function syncSwordAttachedVisuals\(system\)/,'sword attached visuals expose unified sync');
 assert.match(sword,/syncAttachedVisuals:syncSwordAttachedVisuals/,'sword sheath and tomb handlers register attached visual sync');
 assert.match(sword,/st\.sheath\.container\.setPosition\(anchor\.x,anchor\.y\)\.setRotation\(0\)/,'sheath sync reads current player anchor and fixes rotation');
