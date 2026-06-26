@@ -47,6 +47,26 @@ export default function createEnemy(scene, config, x, groundTopY) {
   enemy.hpBar = scene.add.rectangle(x - config.width / 2, enemy.y - config.height / 2 - 18, config.width, 8, 0xff4444).setOrigin(0, 0.5).setDepth(22);
   enemy.nameText = scene.add.text(x, enemy.y - config.height / 2 - 42, config.name, { fontFamily:'Arial', fontSize:'18px', color:'#fff', stroke:'#000', strokeThickness:3 }).setOrigin(0.5).setDepth(22);
   enemy.levelText = scene.add.text(x, enemy.y - config.height / 2 - 62, `Lv.${enemy.level}`, { fontFamily:'Arial', fontSize:'15px', color:'#dbeafe', stroke:'#000', strokeThickness:3 }).setOrigin(0.5).setDepth(22);
+  enemy.statusIndicatorContainer = scene.add.container(x, enemy.y - config.height / 2 - 84).setDepth(23);
+  enemy.burnIndicator = scene.add.container(0, 0);
+  enemy.burnIconPlaceholder = scene.add.rectangle(-7, 0, 0, 0, 0xff8a33, 0).setVisible(false).setAlpha(0);
+  enemy.burnStackText = scene.add.text(0, 0, '', { fontFamily:'Arial', fontSize:'18px', color:'#ffb05a', stroke:'#000', strokeThickness:4 }).setOrigin(0.5).setVisible(false);
+  enemy.burnIndicator.add([enemy.burnIconPlaceholder, enemy.burnStackText]);
+  enemy.statusIndicatorContainer.add(enemy.burnIndicator);
+  enemy.statusIndicators = { StatusIndicatorContainer:enemy.statusIndicatorContainer, BurnIndicator:enemy.burnIndicator, IconPlaceholder:enemy.burnIconPlaceholder, StackText:enemy.burnStackText };
   return enemy;
 }
-export function syncEnemyUi(enemy) { if (!enemy?.active) return; const w = enemy.width; enemy.hpBarBg?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 18); enemy.hpBar?.setPosition(enemy.x - w / 2, enemy.y - enemy.height / 2 - 18).setDisplaySize(w * Math.max(0, enemy.hp / enemy.maxHp), 8); enemy.nameText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 42); enemy.levelText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 62); }
+export function syncEnemyUi(enemy) {
+  if (!enemy?.active) return;
+  const w = enemy.width;
+  enemy.hpBarBg?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 18);
+  enemy.hpBar?.setPosition(enemy.x - w / 2, enemy.y - enemy.height / 2 - 18).setDisplaySize(w * Math.max(0, enemy.hp / enemy.maxHp), 8);
+  enemy.nameText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 42);
+  enemy.levelText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 62);
+  enemy.statusIndicatorContainer?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 84);
+  const stacks = enemy.scene?.statusEffects?.getStackCount?.(enemy, 'BURN') || 0;
+  enemy.burnIconPlaceholder?.setVisible(false)?.setAlpha?.(0);
+  enemy.burnIconPlaceholder?.setStrokeStyle?.(0, 0xff8a33, 0);
+  enemy.burnStackText?.setText(stacks > 0 ? String(stacks) : '')?.setVisible?.(stacks > 0);
+  enemy.burnStackText?.setPosition?.(0, 0);
+}

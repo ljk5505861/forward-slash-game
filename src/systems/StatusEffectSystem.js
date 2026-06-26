@@ -1,5 +1,6 @@
 import { TAGS } from '../config/tags.js';
 import { CombatEvents } from '../core/CombatEvents.js';
+import { syncEnemyUi } from '../entities/createEnemy.js';
 
 export const StatusEffects = Object.freeze({ BURN:'BURN', POISON:'POISON', DAMAGE_REDUCTION:'DAMAGE_REDUCTION', SHIELD:'SHIELD' });
 
@@ -22,7 +23,10 @@ export default class StatusEffectSystem {
     });
   }
 
-  emit(event, payload){ this.scene.eventBus?.emit?.(event,payload); }
+  emit(event, payload){
+    this.scene.eventBus?.emit?.(event,payload);
+    if (payload?.target && payload.target !== this.scene.playerData) syncEnemyUi(payload.target);
+  }
 
   add(type,target,options={}){
     const { sourceId='', durationMs=1000, intervalMs=0, stacks=1, value=0, maxStacks=5 }=options;
