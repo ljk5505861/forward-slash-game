@@ -51,4 +51,4 @@ export default function createEnemy(scene, config, x, groundTopY) {
   createEnemyStatusIndicators(scene, enemy);
   return enemy;
 }
-export function syncEnemyUi(enemy) { if (!enemy?.active) return; const w = enemy.width; enemy.hpBarBg?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 18); enemy.hpBar?.setPosition(enemy.x - w / 2, enemy.y - enemy.height / 2 - 18).setDisplaySize(w * Math.max(0, enemy.hp / enemy.maxHp), 8); enemy.nameText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 42); enemy.levelText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 62); updateEnemyStatusIndicators(enemy.scene, enemy); }
+export function syncEnemyUi(enemy) { if (!enemy?.active) return; const w = enemy.width; enemy.hpBarBg?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 18); enemy.hpBar?.setPosition(enemy.x - w / 2, enemy.y - enemy.height / 2 - 18).setDisplaySize(w * Math.max(0, enemy.hp / enemy.maxHp), 8); enemy.nameText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 42); enemy.levelText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 62); updateEnemyStatusIndicators(enemy, enemy.scene?.statusEffects?.getStackCount?.(enemy,'BURN')||0); }

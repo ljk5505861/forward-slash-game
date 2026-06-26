@@ -1,5 +1,3 @@
-import { StatusEffects } from '../systems/StatusEffectSystem.js';
-
 export function createEnemyStatusIndicators(scene, enemy){
   const container=scene.add.container(enemy.x-enemy.width/2-8, enemy.y-enemy.height/2-80).setDepth(23);
   const icon=scene.add.rectangle(0,0,0,0,0x000000,0).setVisible(false).setAlpha(0).setStrokeStyle(0,0x000000,0);
@@ -7,11 +5,11 @@ export function createEnemyStatusIndicators(scene, enemy){
   container.add([icon,text]); container.setVisible(false);
   enemy.statusIndicatorContainer=container;
   enemy.burnIndicator={ IconPlaceholder:icon, StackText:text };
-  updateEnemyStatusIndicators(scene, enemy);
+  updateEnemyStatusIndicators(enemy, 0);
 }
-export function updateEnemyStatusIndicators(scene, enemy){
+export function updateEnemyStatusIndicators(enemy, burnStacks=0){
   if(!enemy?.active||!enemy.statusIndicatorContainer) return;
-  const stacks=scene.statusEffects?.getStackCount?.(enemy,StatusEffects.BURN)||0;
+  const stacks=Math.max(0, Math.floor(Number(burnStacks)||0));
   enemy.statusIndicatorContainer.setPosition(enemy.x-enemy.width/2-8, enemy.y-enemy.height/2-80);
   enemy.burnIndicator.IconPlaceholder.setVisible(false).setAlpha(0).setStrokeStyle(0,0x000000,0);
   enemy.burnIndicator.StackText.setText(stacks>0?String(stacks):'');

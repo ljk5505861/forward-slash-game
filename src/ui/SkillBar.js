@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from '../config/gameConfig.js';
 import { SKILLS } from '../config/skills.js';
 import { getRarity } from '../config/rarities.js';
@@ -14,7 +15,7 @@ const SLOT_GAP_X = 224;
 const SLOT_GAP_Y = 94;
 
 export default class SkillBar {
-  constructor(scene) { this.scene = scene; this.nodes = []; this.slotNodes = []; this.longPress = null; this.detail = null; this.create(); }
+  constructor(scene) { this.scene = scene; this.nodes = []; this.slotNodes = []; this.longPress = null; this.detail = null; this.destroyed = false; this.create(); }
 
   create() {
     const centerY = DESIGN_HEIGHT - 118;
@@ -32,6 +33,7 @@ export default class SkillBar {
         .on('pointermove', (pointer) => this.onSlotPointerMove(slotIndex, pointer, box))
         .on('pointerup', (pointer) => this.onSlotPointerUp(slotIndex, pointer))
         .on('pointerupoutside', (pointer) => this.cancelLongPress(pointer))
+        .on('pointercancel', (pointer) => this.cancelLongPress(pointer))
         .on('pointerout', (pointer) => this.cancelLongPress(pointer));
       this.slotNodes.push({ box, text }); this.nodes.push(box, text);
     }
@@ -41,9 +43,12 @@ export default class SkillBar {
   onSlotPointerDown(slotIndex, pointer, box) {
     if (this.scene.upgradeSystem?.pendingReplacement) return;
     const skillData = this.scene.playerData.skills[slotIndex]; if (!skillData) return;
+    const startingSkillId = skillData.id;
     this.cancelLongPress();
     const timer = this.scene.time.delayedCall(SKILL_DETAIL_LONG_PRESS_MS, () => {
-      if (!this.longPress || this.longPress.pointerId !== pointer.id || this.longPress.slotIndex !== slotIndex) return;
+      const currentSkill = this.scene.playerData.skills[slotIndex];
+      if (this.destroyed || !this.longPress || this.longPress.pointerId !== pointer.id || this.longPress.slotIndex !== slotIndex) return;
+      if (!currentSkill || currentSkill.id !== startingSkillId || this.scene.upgradeSystem?.pendingReplacement) { this.cancelLongPress(pointer); return; }
       this.longPress.triggered = true; this.showDetail(slotIndex);
     });
     this.longPress = { slotIndex, pointerId:pointer.id, startX:pointer.x, startY:pointer.y, triggered:false, timer, box };
@@ -56,7 +61,7 @@ export default class SkillBar {
   }
   onSlotPointerUp(slotIndex, pointer) {
     const lp=this.longPress;
-    if (this.scene.upgradeSystem?.pendingReplacement) { this.scene.upgradeSystem.confirmReplacement(slotIndex); return; }
+    if (this.scene.upgradeSystem?.pendingReplacement) { this.cancelLongPress(pointer); this.scene.upgradeSystem.confirmReplacement(slotIndex); return; }
     if(!lp || lp.pointerId!==pointer.id) return;
     const triggered=lp.triggered; this.cancelLongPress(pointer); if(triggered) return;
   }
@@ -72,7 +77,7 @@ export default class SkillBar {
     const body=this.scene.add.container(DESIGN_WIDTH/2-340,DESIGN_HEIGHT/2-165).setScrollFactor(0).setDepth(depth+2).setMask(mask);
     const bodyText=this.scene.add.text(0,0,this.formatDetail(data),{fontFamily:'Arial',fontSize:'20px',color:'#eaf2ff',stroke:'#000',strokeThickness:3,lineSpacing:8,wordWrap:{width:680}}).setOrigin(0,0);
     body.add(bodyText);
-    this.detail={overlay,panel,title,close,maskShape,mask,body,bodyText,scrollY:0,maxScroll:Math.max(0,bodyText.height-420),isDragging:false,dragPointerId:null,dragStartY:0,dragStartScrollY:0,hasDragged:false,nodes:[overlay,panel,title,close,maskShape,body,bodyText]};
+    this.detail={overlay,panel,title,close,maskShape,mask,body,bodyText,scrollY:0,maxScroll:Math.max(0,bodyText.height-420),isDragging:false,dragPointerId:null,dragStartY:0,dragStartScrollY:0,hasDragged:false,nodes:[overlay,panel,title,close,maskShape,body]};
     overlay.on('pointerdown',()=>this.hideDetail()); close.on('pointerdown',()=>this.hideDetail());
     panel.on('pointerdown',(p)=>this.startScroll(p)); panel.on('pointermove',(p)=>this.dragScroll(p)); panel.on('pointerup',(p)=>this.endScroll(p)); panel.on('pointerupoutside',(p)=>this.endScroll(p)); panel.on('pointercancel',(p)=>this.endScroll(p)); panel.on('wheel',(_p,_dx,dy)=>this.wheelScroll(dy));
     bodyText.setInteractive(new Phaser.Geom.Rectangle(0,0,700,Math.max(430,bodyText.height)), Phaser.Geom.Rectangle.Contains).on('pointerdown',(p)=>this.startScroll(p)).on('pointermove',(p)=>this.dragScroll(p)).on('pointerup',(p)=>this.endScroll(p)).on('pointerupoutside',(p)=>this.endScroll(p)).on('pointercancel',(p)=>this.endScroll(p)).on('wheel',(_p,_dx,dy)=>this.wheelScroll(dy));
@@ -83,9 +88,9 @@ export default class SkillBar {
   endScroll(pointer){ const d=this.detail; if(!d||d.dragPointerId!==pointer.id) return; d.isDragging=false; d.dragPointerId=null; }
   wheelScroll(deltaY){ if(!this.detail) return; this.detail.scrollY=Phaser.Math.Clamp(this.detail.scrollY+deltaY,0,this.detail.maxScroll); this.applyScroll(); }
   applyScroll(){ if(this.detail) this.detail.body.y=DESIGN_HEIGHT/2-165-this.detail.scrollY; }
-  hideDetail(){ if(!this.detail) return; this.detail.nodes.forEach(n=>n?.destroy?.()); this.detail=null; }
+  hideDetail(){ if(!this.detail) return; const detail=this.detail; this.detail=null; [detail.overlay,detail.panel,detail.close,detail.bodyText].forEach(n=>n?.removeAllListeners?.()); detail.mask?.destroy?.(); detail.nodes.forEach(n=>n?.destroy?.()); }
 
   update() { const skills = this.scene.playerData.skills; const replacing = !!this.scene.upgradeSystem?.pendingReplacement; this.title.setText(replacing ? '请选择要替换的技能' : `技能槽 ${Math.min(skills.length, SKILL_SLOT_COUNT)}/${SKILL_SLOT_COUNT}`);
     this.slotNodes.forEach(({ box, text }, index) => { const skillData = skills[index]; if (!skillData) { text.setText('空技能槽'); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 3, replacing ? 0xffd166 : 0x89a8e8, 1); return; } const cfg = SKILLS[skillData.id]; const rarity = getRarity(cfg?.rarity); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 4, replacing ? 0xffd166 : rarity.color, 1); const readyAt = this.scene.skillSystem?.cooldowns.get(skillData.id) || 0; const remaining = Math.max(0, Math.ceil((readyAt - this.scene.getGameplayTime()) / 1000)); const state = skillData.level >= (cfg?.maxLevel || 1) ? '已满级' : (remaining > 0 ? `冷却 ${remaining}s` : '就绪'); text.setText(`${rarity.name} ${cfg?.name || skillData.id}\nLv.${skillData.level}　${state}`); }); }
-  destroy() { this.cancelLongPress(); this.hideDetail(); this.nodes.forEach((node) => { node.removeAllListeners?.(); node.destroy?.(); }); this.nodes = []; this.slotNodes = []; }
+  destroy() { this.destroyed = true; this.cancelLongPress(); this.hideDetail(); this.nodes.forEach((node) => { node.removeAllListeners?.(); node.destroy?.(); }); this.nodes = []; this.slotNodes = []; }
 }

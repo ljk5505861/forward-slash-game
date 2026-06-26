@@ -49,7 +49,7 @@ export default class StatusEffectSystem {
       }
       const totalStacks=type===StatusEffects.BURN ? this.normalizeBurnStacks(target, old) : 0;
       if(type===StatusEffects.BURN && old.igniteBurstEnabled && totalStacks>=5) this.triggerIgniteBurst(target,{ effect:old });
-      if(type===StatusEffects.BURN) updateEnemyStatusIndicators(this.scene,target);
+      if(type===StatusEffects.BURN) this.syncBurnIndicator(target);
       this.syncPlayerDerived();
       return old;
     }
@@ -67,7 +67,7 @@ export default class StatusEffectSystem {
     this.emit(CombatEvents.STATUS_APPLIED,{ effect:e, target, type, stacks:e.stacks||1, sourceId:e.sourceId });
     const totalStacks=type===StatusEffects.BURN ? this.normalizeBurnStacks(target, e) : 0;
     if(type===StatusEffects.BURN && e.igniteBurstEnabled && totalStacks>=5) this.triggerIgniteBurst(target,{ effect:e });
-    if(type===StatusEffects.BURN) updateEnemyStatusIndicators(this.scene,target);
+    if(type===StatusEffects.BURN) this.syncBurnIndicator(target);
     if(type===StatusEffects.SHIELD){
       this.emit(CombatEvents.SHIELD_GAINED,{ effect:e, target, amount:e.remainingValue, initialValue:e.initialValue, sourceId:e.sourceId });
     }
@@ -167,11 +167,15 @@ export default class StatusEffectSystem {
     this.scene.targeting?.all?.().filter(x=>x!==target&&Math.hypot(x.x-target.x,x.y-target.y)<=radius).forEach(x=>this.scene.combatSystem.damageEnemy(x,damage,{source:'burn_burst',tags:[TAGS.FIRE,TAGS.DOT],noDeathExplosion:true,professionApplied:!!e.professionApplied,professionMultiplier:e.professionMultiplier||1,baseAmountBeforeProfession:damage}));
   }
 
+  syncBurnIndicator(target){
+    updateEnemyStatusIndicators(target, this.getStackCount(target,StatusEffects.BURN));
+  }
+
   removeEffect(effect,reason='removed'){
     if(!effect||!this.effects.has(effect.id)) return false;
     this.effects.delete(effect.id);
     this.emit(CombatEvents.STATUS_REMOVED,{ effect, target:effect.target, type:effect.type, sourceId:effect.sourceId, reason });
-    if(effect.type===StatusEffects.BURN) updateEnemyStatusIndicators(this.scene,effect.target);
+    if(effect.type===StatusEffects.BURN) this.syncBurnIndicator(effect.target);
     return true;
   }
 
@@ -197,13 +201,14 @@ export default class StatusEffectSystem {
 
   setStacks(target,type,count){
     const effects=this.getEffects(target,type);
-    if(!effects.length) return 0;
+    if(!effects.length){ if(type===StatusEffects.BURN) this.syncBurnIndicator(target); return 0; }
     const primary=effects[0];
     const previousStacks=primary.stacks||1;
     primary.stacks=Math.max(0,Math.min(primary.maxStacks||Number.MAX_SAFE_INTEGER,Math.round(count)));
     effects.slice(1).forEach(e=>this.removeEffect(e,'mergedStacks'));
     if(primary.stacks<=0) this.removeEffect(primary,'stacksConsumed');
     else if(primary.stacks!==previousStacks) this.emit(CombatEvents.STATUS_STACK_CHANGED,{ effect:primary, target, type, previousStacks, stacks:primary.stacks, delta:primary.stacks-previousStacks, sourceId:primary.sourceId });
+    if(type===StatusEffects.BURN) this.syncBurnIndicator(target);
     return Math.max(0,primary.stacks||0);
   }
 
