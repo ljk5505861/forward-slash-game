@@ -10,7 +10,7 @@ const combat=read('src/systems/CombatSystem.js');
 const scene=read('src/scenes/GameScene.js');
 const indicators=read('src/ui/EnemyStatusIndicators.js');
 
-assert.equal(GAME_VERSION,'0.10.49','game version is 0.10.49');
+assert.equal(GAME_VERSION,'0.10.50','game version is 0.10.50');
 assert.match(sword,/rotation:0/,'sword sheath anchor rotation is 0');
 assert.doesNotMatch(sword,/-0\.45\s*\*\s*dir/,'sheath no longer tilts by direction');
 const sheathBlock=sword.slice(sword.indexOf('export const SwordSheathSkill'),sword.indexOf('export const SwordTombSkill'));
@@ -38,8 +38,8 @@ assert.match(indicators,/setText\(stacks>0\?`灼\$\{stacks\}`:''\)/,'burn text h
 assert.doesNotMatch(indicators,/灼 \$\{stacks\}/,'burn text has no middle space');
 assert.match(indicators,/fontSize:'12px'/,'burn status font size is 12px');
 assert.match(indicators,/fontStyle:'bold'/,'burn status is bold');
-assert.match(indicators,/color:'#ffd54a'/,'burn status color is high contrast golden yellow');
-assert.match(indicators,/stroke:'#241400'/,'burn status has dark stroke');
+assert.match(indicators,/color:'#fff27a'/,'burn status color is high contrast golden yellow');
+assert.match(indicators,/stroke:'#ffffff'/,'burn status has dark stroke');
 assert.match(indicators,/strokeThickness:2/,'burn status stroke thickness is 2');
 assert.match(indicators,/setText\(stacks>0\?`灼\$\{stacks\}`:''\)/,'zero stacks still clear text');
 assert.match(indicators,/setVisible\(stacks>0\)/,'zero stacks still hide status row');
@@ -48,7 +48,7 @@ assert.deepEqual(SKILLS.sword_tomb.levels.map(l=>l.executeRatio),[0.10,0.11,0.12
 assert.deepEqual(SKILLS.sword_wave.levels.map(l=>l.damage),[34,42,50,58,68,78,90,102,116],'sword_wave damage unchanged');
 
 assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_X=28/,'sheath x offset is closer to the player than v0.10.48');
-assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_Y=34/,'sheath y offset is lower than v0.10.48');
+assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_Y=26/,'sheath y offset is lower than v0.10.49');
 assert.doesNotMatch(sword,/SWORD_SHEATH_BACK_OFFSET_X=34/,'sheath x offset is not the v0.10.48 value');
 assert.doesNotMatch(sword,/SWORD_SHEATH_BACK_OFFSET_Y=48/,'sheath y offset is not the v0.10.48 value');
 assert.match(sword,/export function syncSwordAttachedVisuals\(system\)/,'sword attached visuals expose unified sync');
