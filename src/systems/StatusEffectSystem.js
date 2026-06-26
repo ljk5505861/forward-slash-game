@@ -8,6 +8,8 @@ export default class StatusEffectSystem {
 
   reset(){
     this.effects.clear();
+    this.igniteBurstVisuals?.forEach(v=>v.destroy?.());
+    this.igniteBurstVisuals?.clear?.();
     this.nextId=1;
     const p=this.scene.playerData;
     if(p){ p.temporaryDamageReduction=0; p.shield=0; p.permanentShield=0; }
@@ -44,7 +46,7 @@ export default class StatusEffectSystem {
       if(old.stacks!==previousStacks){
         this.emit(CombatEvents.STATUS_STACK_CHANGED,{ effect:old, target, type, previousStacks, stacks:old.stacks, delta:old.stacks-previousStacks, sourceId:old.sourceId });
       }
-      if(type===StatusEffects.BURN && old.stacks>=5) this.triggerIgniteBurst(target,{ effect:old });
+      if(type===StatusEffects.BURN && old.stacks>=5 && old.igniteBurstEnabled) this.triggerIgniteBurst(target,{ effect:old });
       this.syncPlayerDerived();
       return old;
     }
@@ -60,7 +62,7 @@ export default class StatusEffectSystem {
     }
     this.effects.set(e.id,e);
     this.emit(CombatEvents.STATUS_APPLIED,{ effect:e, target, type, stacks:e.stacks||1, sourceId:e.sourceId });
-    if(type===StatusEffects.BURN && (e.stacks||1)>=5) this.triggerIgniteBurst(target,{ effect:e });
+    if(type===StatusEffects.BURN && (e.stacks||1)>=5 && e.igniteBurstEnabled) this.triggerIgniteBurst(target,{ effect:e });
     if(type===StatusEffects.SHIELD){
       this.emit(CombatEvents.SHIELD_GAINED,{ effect:e, target, amount:e.remainingValue, initialValue:e.initialValue, sourceId:e.sourceId });
     }
@@ -103,17 +105,22 @@ export default class StatusEffectSystem {
     if(stacks<5) return false;
     const now=this.scene.getGameplayTime();
     const cooldownMs=options.cooldownMs ?? options.effect?.burnBurstCooldownMs ?? 450;
-    target.__lastIgniteBurstAt ??= 0;
+    target.__lastIgniteBurstAt ??= -Infinity;
     if(now-target.__lastIgniteBurstAt < cooldownMs) return false;
     target.__lastIgniteBurstAt=now;
     const radius=options.radius ?? options.effect?.burnBurstRadius ?? 96;
     const damage=Math.max(0,Math.round(options.damage ?? options.effect?.burnBurstDamage ?? 0));
-    const baseDamage=Math.max(0,Math.round(options.baseDamage ?? damage));
+    if(damage<=0) return false;
+    const baseDamage=Math.max(0,Math.round(options.baseDamage ?? options.effect?.burnBurstBaseDamage ?? damage));
     const retainStacks=Math.max(0,Math.min(5,Math.round(options.retainStacks ?? options.effect?.retainBurnStacksAfterBurst ?? 0)));
-    if(damage>0){
-      this.scene.add?.circle?.(target.x,target.y,radius,0xff8a33,0.14)?.setStrokeStyle?.(5,0xffe08a,0.9)?.setDepth?.(142);
-      this.scene.targeting.all().filter(e=>Math.hypot(e.x-target.x,e.y-target.y)<=radius).forEach(e=>this.scene.combatSystem.damageEnemy(e,damage,{source:'burn_burst',skillId:options.skillId,tags:[TAGS.MAGIC,TAGS.SPELL,TAGS.FIRE,'area'],level:options.level,noDeathExplosion:true,professionApplied:true,professionMultiplier:1,baseAmountBeforeProfession:baseDamage,noKnockback:true}));
+    const ring=this.scene.add?.circle?.(target.x,target.y,radius,0xff8a33,0.14)?.setStrokeStyle?.(5,0xffe08a,0.9)?.setDepth?.(142);
+    if(ring){
+      if(!this.igniteBurstVisuals) this.igniteBurstVisuals=new Set();
+      this.igniteBurstVisuals.add(ring);
+      const cleanup=()=>{ this.igniteBurstVisuals?.delete(ring); ring.destroy?.(); };
+      this.scene.tweens?.add?.({targets:ring,alpha:0,scale:1.2,duration:280,onComplete:cleanup});
     }
+    this.scene.targeting.all().filter(e=>Math.hypot(e.x-target.x,e.y-target.y)<=radius).forEach(e=>this.scene.combatSystem.damageEnemy(e,damage,{source:'burn_burst',skillId:options.skillId||options.effect?.skillId,tags:[TAGS.MAGIC,TAGS.SPELL,TAGS.FIRE,'area'],level:options.level||options.effect?.level,noDeathExplosion:true,professionApplied:true,professionMultiplier:1,baseAmountBeforeProfession:baseDamage,noKnockback:true}));
     this.setStacks(target,StatusEffects.BURN,retainStacks);
     this.scene.floatText?.(target.x,target.y-108,'5层燃爆','#ffb05a');
     return true;

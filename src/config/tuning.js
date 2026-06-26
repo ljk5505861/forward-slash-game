@@ -13,7 +13,7 @@ export const TUNING = {
   leveling: {
     wavesPerLevel: 3,
     playerHpPerLevel: 8,
-    playerManaPerLevel: 0,
+    playerManaPerLevel: 5,
     initialPlayerMana: 100,
     playerManaRegenPerSecond: 2,
     enemyHpGrowthPerLevel: 0.12,
