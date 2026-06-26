@@ -13,6 +13,7 @@ const SLOT_W = 196;
 const SLOT_H = 88;
 const SLOT_GAP_X = 224;
 const SLOT_GAP_Y = 94;
+const SOUL_BADGE_SKILLS = new Set(['sword_wave','sword_tomb']);
 
 export default class SkillBar {
   constructor(scene) { this.scene = scene; this.nodes = []; this.slotNodes = []; this.longPress = null; this.detail = null; this.destroyed = false; this.create(); }
@@ -27,6 +28,7 @@ export default class SkillBar {
       const x = DESIGN_WIDTH / 2 + (column - 1) * SLOT_GAP_X, y = centerY - 42 + row * SLOT_GAP_Y;
       const box = this.scene.add.rectangle(x, y, SLOT_W, SLOT_H, 0x1f3158, 0.96).setStrokeStyle(3, 0x89a8e8, 1).setScrollFactor(0).setDepth(2101);
       const text = this.scene.add.text(x, y, '', { fontFamily: 'Arial', fontSize: '17px', color: '#ffffff', align: 'center', stroke: '#000', strokeThickness: 3, wordWrap: { width: SLOT_W - 14 } }).setOrigin(0.5).setScrollFactor(0).setDepth(2102);
+      const soulBadge = this.scene.add.text(x + SLOT_W / 2 - 8, y - SLOT_H / 2 + 6, '', { fontFamily:'Arial', fontSize:'15px', color:'#ffd166', stroke:'#000', strokeThickness:4 }).setOrigin(1,0).setScrollFactor(0).setDepth(2103).setVisible(false);
       const slotIndex = i;
       box.setInteractive({ useHandCursor:true })
         .on('pointerdown', (pointer) => this.onSlotPointerDown(slotIndex, pointer, box))
@@ -35,7 +37,7 @@ export default class SkillBar {
         .on('pointerupoutside', (pointer) => this.cancelLongPress(pointer))
         .on('pointercancel', (pointer) => this.cancelLongPress(pointer))
         .on('pointerout', (pointer) => this.cancelLongPress(pointer));
-      this.slotNodes.push({ box, text }); this.nodes.push(box, text);
+      this.slotNodes.push({ box, text, soulBadge }); this.nodes.push(box, text, soulBadge);
     }
     this.update();
   }
@@ -90,7 +92,7 @@ export default class SkillBar {
   applyScroll(){ if(this.detail) this.detail.body.y=DESIGN_HEIGHT/2-165-this.detail.scrollY; }
   hideDetail(){ if(!this.detail) return; const detail=this.detail; this.detail=null; [detail.overlay,detail.panel,detail.close,detail.bodyText].forEach(n=>n?.removeAllListeners?.()); detail.mask?.destroy?.(); detail.nodes.forEach(n=>n?.destroy?.()); }
 
-  update() { const skills = this.scene.playerData.skills; const replacing = !!this.scene.upgradeSystem?.pendingReplacement; this.title.setText(replacing ? '请选择要替换的技能' : `技能槽 ${Math.min(skills.length, SKILL_SLOT_COUNT)}/${SKILL_SLOT_COUNT}`);
-    this.slotNodes.forEach(({ box, text }, index) => { const skillData = skills[index]; if (!skillData) { text.setText('空技能槽'); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 3, replacing ? 0xffd166 : 0x89a8e8, 1); return; } const cfg = SKILLS[skillData.id]; const rarity = getRarity(cfg?.rarity); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 4, replacing ? 0xffd166 : rarity.color, 1); const readyAt = this.scene.skillSystem?.cooldowns.get(skillData.id) || 0; const remaining = Math.max(0, Math.ceil((readyAt - this.scene.getGameplayTime()) / 1000)); const state = skillData.level >= (cfg?.maxLevel || 1) ? '已满级' : (remaining > 0 ? `冷却 ${remaining}s` : '就绪'); text.setText(`${rarity.name} ${cfg?.name || skillData.id}\nLv.${skillData.level}　${state}`); }); }
+  update() { const skills = this.scene.playerData.skills; const replacing = !!this.scene.upgradeSystem?.pendingReplacement; const soulCount=Math.floor(Number(this.scene.skillSystem?.passiveState?.swordFlow?.effectiveSouls)||0); this.title.setText(replacing ? '请选择要替换的技能' : `技能槽 ${Math.min(skills.length, SKILL_SLOT_COUNT)}/${SKILL_SLOT_COUNT}`);
+    this.slotNodes.forEach(({ box, text, soulBadge }, index) => { const skillData = skills[index]; if (!skillData) { text.setText('空技能槽'); soulBadge.setText('').setVisible(false); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 3, replacing ? 0xffd166 : 0x89a8e8, 1); return; } const cfg = SKILLS[skillData.id]; const rarity = getRarity(cfg?.rarity); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 4, replacing ? 0xffd166 : rarity.color, 1); const readyAt = this.scene.skillSystem?.cooldowns.get(skillData.id) || 0; const remaining = Math.max(0, Math.ceil((readyAt - this.scene.getGameplayTime()) / 1000)); const state = skillData.level >= (cfg?.maxLevel || 1) ? '已满级' : (remaining > 0 ? `冷却 ${remaining}s` : '就绪'); text.setText(`${rarity.name} ${cfg?.name || skillData.id}\nLv.${skillData.level}　${state}`); const showSouls=SOUL_BADGE_SKILLS.has(skillData.id); soulBadge.setText(showSouls?`魂 ${soulCount}`:'').setVisible(showSouls); }); }
   destroy() { this.destroyed = true; this.cancelLongPress(); this.hideDetail(); this.nodes.forEach((node) => { node.removeAllListeners?.(); node.destroy?.(); }); this.nodes = []; this.slotNodes = []; }
 }
