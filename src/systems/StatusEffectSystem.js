@@ -46,7 +46,8 @@ export default class StatusEffectSystem {
       if(old.stacks!==previousStacks){
         this.emit(CombatEvents.STATUS_STACK_CHANGED,{ effect:old, target, type, previousStacks, stacks:old.stacks, delta:old.stacks-previousStacks, sourceId:old.sourceId });
       }
-      if(type===StatusEffects.BURN && old.stacks>=5 && old.igniteBurstEnabled) this.triggerIgniteBurst(target,{ effect:old });
+      const totalStacks=type===StatusEffects.BURN ? this.normalizeBurnStacks(target, old) : 0;
+      if(type===StatusEffects.BURN && old.igniteBurstEnabled && totalStacks>=5) this.triggerIgniteBurst(target,{ effect:old });
       this.syncPlayerDerived();
       return old;
     }
@@ -62,7 +63,8 @@ export default class StatusEffectSystem {
     }
     this.effects.set(e.id,e);
     this.emit(CombatEvents.STATUS_APPLIED,{ effect:e, target, type, stacks:e.stacks||1, sourceId:e.sourceId });
-    if(type===StatusEffects.BURN && (e.stacks||1)>=5 && e.igniteBurstEnabled) this.triggerIgniteBurst(target,{ effect:e });
+    const totalStacks=type===StatusEffects.BURN ? this.normalizeBurnStacks(target, e) : 0;
+    if(type===StatusEffects.BURN && e.igniteBurstEnabled && totalStacks>=5) this.triggerIgniteBurst(target,{ effect:e });
     if(type===StatusEffects.SHIELD){
       this.emit(CombatEvents.SHIELD_GAINED,{ effect:e, target, amount:e.remainingValue, initialValue:e.initialValue, sourceId:e.sourceId });
     }
@@ -96,6 +98,34 @@ export default class StatusEffectSystem {
     this.syncPlayerDerived();
   }
 
+
+  normalizeBurnStacks(target, preferredEffect=null){
+    const effects=this.getEffects(target,StatusEffects.BURN).sort((a,b)=>a.id-b.id);
+    let total=effects.reduce((sum,e)=>sum+(e.stacks||1),0);
+    if(total<=5) return total;
+    let excess=total-5;
+    const reduce=(effect)=>{
+      if(!effect||excess<=0) return;
+      const stacks=effect.stacks||1;
+      const take=Math.min(stacks,excess);
+      const next=stacks-take;
+      excess-=take;
+      if(next<=0) this.removeEffect(effect,'burnStackCap');
+      else effect.stacks=next;
+    };
+    effects.filter(e=>e!==preferredEffect).forEach(reduce);
+    reduce(preferredEffect);
+    return this.getStackCount(target,StatusEffects.BURN);
+  }
+
+  replaceBurnStacksFromEffect(target,count,sourceEffect=null){
+    const retain=Math.max(0,Math.min(5,Math.round(count)||0));
+    this.getEffects(target,StatusEffects.BURN).forEach(e=>this.removeEffect(e,'igniteBurstConsumed'));
+    if(retain<=0||!sourceEffect) return 0;
+    this.add(StatusEffects.BURN,target,{ durationMs:sourceEffect.durationMs||1000, intervalMs:sourceEffect.intervalMs||0, value:sourceEffect.value||0, stacks:retain, maxStacks:5, sourceId:sourceEffect.sourceId||'ignite_burst_retained', damageMultiplier:sourceEffect.damageMultiplier, baseDamageMultiplierWithoutProfession:sourceEffect.baseDamageMultiplierWithoutProfession, professionMultiplier:sourceEffect.professionMultiplier, professionApplied:sourceEffect.professionApplied, tags:sourceEffect.tags, igniteBurstEnabled:false });
+    return this.getStackCount(target,StatusEffects.BURN);
+  }
+
   validTarget(t){ return t===this.scene.playerData || this.scene.targeting?.valid(t); }
 
 
@@ -121,7 +151,7 @@ export default class StatusEffectSystem {
       this.scene.tweens?.add?.({targets:ring,alpha:0,scale:1.2,duration:280,onComplete:cleanup});
     }
     this.scene.targeting.all().filter(e=>Math.hypot(e.x-target.x,e.y-target.y)<=radius).forEach(e=>this.scene.combatSystem.damageEnemy(e,damage,{source:'burn_burst',skillId:options.skillId||options.effect?.skillId,tags:[TAGS.MAGIC,TAGS.SPELL,TAGS.FIRE,'area'],level:options.level||options.effect?.level,noDeathExplosion:true,professionApplied:true,professionMultiplier:1,baseAmountBeforeProfession:baseDamage,noKnockback:true}));
-    this.setStacks(target,StatusEffects.BURN,retainStacks);
+    this.replaceBurnStacksFromEffect(target,retainStacks,options.effect||null);
     this.scene.floatText?.(target.x,target.y-108,'5层燃爆','#ffb05a');
     return true;
   }
@@ -159,7 +189,7 @@ export default class StatusEffectSystem {
 
   has(target,type){ return this.getEffects(target,type).length>0; }
   getEffects(target,type){ return [...this.effects.values()].filter(e=>e.target===target&&e.type===type); }
-  getStackCount(target,type){ return this.getEffects(target,type).reduce((sum,e)=>sum+(e.stacks||1),0); }
+  getStackCount(target,type){ const total=this.getEffects(target,type).reduce((sum,e)=>sum+(e.stacks||1),0); return type===StatusEffects.BURN?Math.min(5,total):total; }
 
   setStacks(target,type,count){
     const effects=this.getEffects(target,type);
