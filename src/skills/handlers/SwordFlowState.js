@@ -62,6 +62,11 @@ export function mainSwordStats(system, data=system.getData('sword_wave')){
   const poisonFlat=(st.affinities.poison||0)*(swordTombLevel(system)>=6?2:5);
   return { state:st, quality:st.mainQuality, mythic:st.mythicOwner===SWORD_MYTHIC.MAIN, damage:Math.max(1,Math.round((data?.damage||1)*q.damage*lv.finalDamage+fireFlat+poisonFlat)), speed:q.speed*lv.speed, intervalMs:Math.max(320,Math.round((data?.attackIntervalMs||1200)*q.interval*lv.interval)), bodySize:q.bodySize*lv.bodySize, glowSize:q.glowSize*lv.glowSize, critChance:lv.critChance, critMultiplierBonus:lv.critMultiplierBonus, fireSoul:st.affinities.fire||0, poisonSoul:st.affinities.poison||0 };
 }
+export function tombStats(system, data=system.getData('sword_tomb')){
+  const st=getSwordFlowState(system);
+  if(hasMainSword(system)) return { state:st, damage:data?.damage||0, intervalMs:data?.intervalMs||0 };
+  return { state:st, damage:Math.round((data?.damage||0)+st.effectiveSouls*1.5+(st.affinities.fire||0)*5+(st.affinities.poison||0)*4), intervalMs:Math.max(620,(data?.intervalMs||0)-st.effectiveSouls*8) };
+}
 export function sheathInheritedStats(system){
   const st=refreshSwordQuality(system), main=mainSwordStats(system), q=QUALITY_MULTIPLIERS[st.mainQuality]||QUALITY_MULTIPLIERS.COMMON, lv=swordLevelBonuses(system.getLevel('sword_wave'));
   return { damageMultiplier:1+(q.damage-1)*0.6+(lv.finalDamage-1)*0.5, sizeMultiplier:1+(main.bodySize-1)*0.7, glowMultiplier:1+(main.glowSize-1)*0.7, fireSoul:st.affinities.fire||0, poisonSoul:st.affinities.poison||0, hasMain:hasMainSword(system) };

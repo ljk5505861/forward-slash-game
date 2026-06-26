@@ -18,7 +18,7 @@ const archetypes={
   poison:['poison_cloud','parasitic_gu','bone_eating_insect','poison_chain','poison_king','plague_mother'],
 };
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.10.45','game version for v0.10.45 skill regression');
+assert.equal(GAME_VERSION,'0.10.46','game version for v0.10.46 skill regression');
 eq(allSkillIds.length,31,'all current 31 skills listed');
 eq(new Set(allSkillIds).size,31,'all current 31 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');

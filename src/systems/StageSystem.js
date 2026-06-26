@@ -2,6 +2,7 @@ import { ENEMIES } from '../config/enemies.js';
 import { TUNING } from '../config/tuning.js';
 import { CombatEvents, RunStates } from '../core/CombatEvents.js';
 import createEnemy, { syncEnemyUi } from '../entities/createEnemy.js';
+import { destroyEnemyStatusIndicators } from '../ui/EnemyStatusIndicators.js';
 
 export const LevelFlowStates = Object.freeze({ GROUP_COMBAT:'GROUP_COMBAT', SKILL_REWARD:'SKILL_REWARD', SHOP:'SHOP', BOSS_RUSH:'BOSS_RUSH', BOSS_INTRO:'BOSS_INTRO', BOSS_FIGHT:'BOSS_FIGHT', ARTIFACT_REWARD:'ARTIFACT_REWARD', PROFESSION_REWARD:'PROFESSION_REWARD', ADVANCED_PROFESSION_STATUE:'ADVANCED_PROFESSION_STATUE', CAMPFIRE:'CAMPFIRE', VICTORY:'VICTORY' });
 export const FLOW_GROUPS = [
@@ -65,6 +66,6 @@ export default class StageSystem{
   shiftTimers(delta,after){ if(this.nextWaveAt>after) this.nextWaveAt+=delta; this.waveQueue.forEach(item=>{ if(item.at>after) item.at+=delta; }); }
   updateHud(){ this.scene.hud?.setStage(`阶段${this.currentStage} 第${this.currentGroup}组 第${this.currentWave||1}/3波`); this.scene.hud?.update(); }
   shouldHoldPlayerForBossIntro(){ return false; }
-  clearBossMinions(){ this.scene.enemies.filter(e=>!e.isBoss&&!e.isDefeated).forEach(e=>{ e.isDefeated=true; this.scene.combatSystem?.clearKnockback?.(e); this.scene.enemyBehaviors?.destroyEnemy(e); this.scene.statusEffects?.clearTarget(e); [e.hpBarBg,e.hpBar,e.nameText,e.levelText,e].forEach(o=>o?.destroy()); e.destroy(); }); this.scene.enemies=this.scene.enemies.filter(e=>e.isBoss&&!e.isDefeated); }
-  clearEnemies(){ this.waveQueue=[]; this.scene.enemies.forEach(e=>{ this.scene.combatSystem?.clearKnockback?.(e); this.scene.enemyBehaviors?.destroyEnemy(e); [e.hpBarBg,e.hpBar,e.nameText,e.levelText,e].forEach(o=>o?.destroy()); e.destroy(); }); this.scene.enemies=[]; }
+  clearBossMinions(){ this.scene.enemies.filter(e=>!e.isBoss&&!e.isDefeated).forEach(e=>{ e.isDefeated=true; this.scene.combatSystem?.clearKnockback?.(e); this.scene.enemyBehaviors?.destroyEnemy(e); this.scene.statusEffects?.clearTarget(e); destroyEnemyStatusIndicators(e); [e.hpBarBg,e.hpBar,e.nameText,e.levelText,e].forEach(o=>o?.destroy()); e.destroy(); }); this.scene.enemies=this.scene.enemies.filter(e=>e.isBoss&&!e.isDefeated); }
+  clearEnemies(){ this.waveQueue=[]; this.scene.enemies.forEach(e=>{ this.scene.combatSystem?.clearKnockback?.(e); this.scene.enemyBehaviors?.destroyEnemy(e); destroyEnemyStatusIndicators(e); [e.hpBarBg,e.hpBar,e.nameText,e.levelText,e].forEach(o=>o?.destroy()); e.destroy(); }); this.scene.enemies=[]; }
 }

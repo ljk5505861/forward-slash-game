@@ -1,5 +1,6 @@
 import { TAGS } from '../config/tags.js';
 import { CombatEvents } from '../core/CombatEvents.js';
+import { updateEnemyStatusIndicators } from '../ui/EnemyStatusIndicators.js';
 
 export const StatusEffects = Object.freeze({ BURN:'BURN', POISON:'POISON', DAMAGE_REDUCTION:'DAMAGE_REDUCTION', SHIELD:'SHIELD' });
 
@@ -48,6 +49,7 @@ export default class StatusEffectSystem {
       }
       const totalStacks=type===StatusEffects.BURN ? this.normalizeBurnStacks(target, old) : 0;
       if(type===StatusEffects.BURN && old.igniteBurstEnabled && totalStacks>=5) this.triggerIgniteBurst(target,{ effect:old });
+      if(type===StatusEffects.BURN) updateEnemyStatusIndicators(this.scene,target);
       this.syncPlayerDerived();
       return old;
     }
@@ -65,6 +67,7 @@ export default class StatusEffectSystem {
     this.emit(CombatEvents.STATUS_APPLIED,{ effect:e, target, type, stacks:e.stacks||1, sourceId:e.sourceId });
     const totalStacks=type===StatusEffects.BURN ? this.normalizeBurnStacks(target, e) : 0;
     if(type===StatusEffects.BURN && e.igniteBurstEnabled && totalStacks>=5) this.triggerIgniteBurst(target,{ effect:e });
+    if(type===StatusEffects.BURN) updateEnemyStatusIndicators(this.scene,target);
     if(type===StatusEffects.SHIELD){
       this.emit(CombatEvents.SHIELD_GAINED,{ effect:e, target, amount:e.remainingValue, initialValue:e.initialValue, sourceId:e.sourceId });
     }
@@ -168,6 +171,7 @@ export default class StatusEffectSystem {
     if(!effect||!this.effects.has(effect.id)) return false;
     this.effects.delete(effect.id);
     this.emit(CombatEvents.STATUS_REMOVED,{ effect, target:effect.target, type:effect.type, sourceId:effect.sourceId, reason });
+    if(effect.type===StatusEffects.BURN) updateEnemyStatusIndicators(this.scene,effect.target);
     return true;
   }
 
