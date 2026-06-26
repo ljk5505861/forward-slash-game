@@ -44,6 +44,7 @@ export default class StatusEffectSystem {
       if(old.stacks!==previousStacks){
         this.emit(CombatEvents.STATUS_STACK_CHANGED,{ effect:old, target, type, previousStacks, stacks:old.stacks, delta:old.stacks-previousStacks, sourceId:old.sourceId });
       }
+      if(type===StatusEffects.BURN && old.stacks>=5) this.triggerIgniteBurst(target,{ effect:old });
       this.syncPlayerDerived();
       return old;
     }
@@ -59,6 +60,7 @@ export default class StatusEffectSystem {
     }
     this.effects.set(e.id,e);
     this.emit(CombatEvents.STATUS_APPLIED,{ effect:e, target, type, stacks:e.stacks||1, sourceId:e.sourceId });
+    if(type===StatusEffects.BURN && (e.stacks||1)>=5) this.triggerIgniteBurst(target,{ effect:e });
     if(type===StatusEffects.SHIELD){
       this.emit(CombatEvents.SHIELD_GAINED,{ effect:e, target, amount:e.remainingValue, initialValue:e.initialValue, sourceId:e.sourceId });
     }
@@ -78,7 +80,7 @@ export default class StatusEffectSystem {
           const source=e.type===StatusEffects.BURN?'burn':'poison';
           const amount=Math.round(e.value*(e.stacks||1)*(e.damageMultiplier||1));
           const hpBefore=e.target.hp;
-          this.scene.combatSystem.damageEnemy(e.target,amount,{ source, tags:[source,TAGS.DOT], canTriggerArtifacts:false, statusId:e.id, professionApplied:!!e.professionApplied, professionMultiplier:e.professionMultiplier||1, baseAmountBeforeProfession:Math.round(e.value*(e.stacks||1)*(e.baseDamageMultiplierWithoutProfession||e.damageMultiplier||1)), noDeathExplosion:!!e.noDeathExplosion, noPoisonSpread:!!e.noPoisonSpread, noHeavenSplit:!!e.noHeavenSplit, noSwordTrigger:!!e.noSwordTrigger, noPoisonKingBurst:!!e.noPoisonKingBurst, noPoisonKingRecursive:!!e.noPoisonKingRecursive, noPoisonChain:!!e.noPoisonChain });
+          this.scene.combatSystem.damageEnemy(e.target,amount,{ source, tags:e.tags||[source,TAGS.DOT], canTriggerArtifacts:false, statusId:e.id, professionApplied:!!e.professionApplied, professionMultiplier:e.professionMultiplier||1, baseAmountBeforeProfession:Math.round(e.value*(e.stacks||1)*(e.baseDamageMultiplierWithoutProfession||e.damageMultiplier||1)), noDeathExplosion:!!e.noDeathExplosion, noPoisonSpread:!!e.noPoisonSpread, noHeavenSplit:!!e.noHeavenSplit, noSwordTrigger:!!e.noSwordTrigger, noPoisonKingBurst:!!e.noPoisonKingBurst, noPoisonKingRecursive:!!e.noPoisonKingRecursive, noPoisonChain:!!e.noPoisonChain });
           const actualDamage=Math.max(0,hpBefore-(e.target.hp||0));
           this.emit(CombatEvents.STATUS_TICK,{ effect:e, statusId:e.id, target:e.target, type:e.type, source, sourceId:e.sourceId, stacks:e.stacks||1, attemptedDamage:amount, actualDamage, killed:e.target.hp<=0 });
           e.nextTickAt+=e.intervalMs;
@@ -93,6 +95,29 @@ export default class StatusEffectSystem {
   }
 
   validTarget(t){ return t===this.scene.playerData || this.scene.targeting?.valid(t); }
+
+
+  triggerIgniteBurst(target, options={}){
+    if(!target||!this.scene.targeting?.valid?.(target)) return false;
+    const stacks=this.getStackCount(target,StatusEffects.BURN);
+    if(stacks<5) return false;
+    const now=this.scene.getGameplayTime();
+    const cooldownMs=options.cooldownMs ?? options.effect?.burnBurstCooldownMs ?? 450;
+    target.__lastIgniteBurstAt ??= 0;
+    if(now-target.__lastIgniteBurstAt < cooldownMs) return false;
+    target.__lastIgniteBurstAt=now;
+    const radius=options.radius ?? options.effect?.burnBurstRadius ?? 96;
+    const damage=Math.max(0,Math.round(options.damage ?? options.effect?.burnBurstDamage ?? 0));
+    const baseDamage=Math.max(0,Math.round(options.baseDamage ?? damage));
+    const retainStacks=Math.max(0,Math.min(5,Math.round(options.retainStacks ?? options.effect?.retainBurnStacksAfterBurst ?? 0)));
+    if(damage>0){
+      this.scene.add?.circle?.(target.x,target.y,radius,0xff8a33,0.14)?.setStrokeStyle?.(5,0xffe08a,0.9)?.setDepth?.(142);
+      this.scene.targeting.all().filter(e=>Math.hypot(e.x-target.x,e.y-target.y)<=radius).forEach(e=>this.scene.combatSystem.damageEnemy(e,damage,{source:'burn_burst',skillId:options.skillId,tags:[TAGS.MAGIC,TAGS.SPELL,TAGS.FIRE,'area'],level:options.level,noDeathExplosion:true,professionApplied:true,professionMultiplier:1,baseAmountBeforeProfession:baseDamage,noKnockback:true}));
+    }
+    this.setStacks(target,StatusEffects.BURN,retainStacks);
+    this.scene.floatText?.(target.x,target.y-108,'5层燃爆','#ffb05a');
+    return true;
+  }
 
   triggerBurnBurst(e){
     const target=e.target;

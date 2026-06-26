@@ -2,81 +2,27 @@ import { SKILLS } from '../../config/skills.js';
 import { TAGS } from '../../config/tags.js';
 import { StatusEffects } from '../../systems/StatusEffectSystem.js';
 
-const levels = (values, build, milestones={}) => values.map((value,index)=>({
-  ...build(value,index+1),
-  ...(milestones[index+1]?{milestoneText:milestones[index+1]}:{}),
-}));
+const MAGIC_TAGS=[TAGS.MAGIC,TAGS.SPELL,TAGS.FIRE,TAGS.BUILD_FIRE];
+const levels=(values,build,milestones={})=>values.map((value,index)=>({ ...build(value,index+1), ...(milestones[index+1]?{milestoneText:milestones[index+1]}:{}) }));
+const burnOptions=(data,ctx,sourceId,stacks=1)=>({durationMs:data.burnMs,intervalMs:data.burnIntervalMs,value:data.burnDamage,stacks,maxStacks:5,sourceId,damageMultiplier:ctx.damageMultiplier,baseDamageMultiplierWithoutProfession:ctx.baseDamageMultiplierWithoutProfession,professionMultiplier:ctx.professionMultiplier,professionApplied:true,tags:[TAGS.MAGIC,TAGS.SPELL,TAGS.FIRE,TAGS.DOT]});
 
-const FLAME_CORE_SKILLS = {
-  flame_spray: {
-    id:'flame_spray', name:'烈焰喷射', rarity:'RARE', handler:'flame_spray', maxLevel:9,
-    coreSkill:true, requiredSkillId:'fireball',
-    tags:[TAGS.FIRE,TAGS.DOT,TAGS.ACTIVE_SKILL,TAGS.BUILD_FIRE], cooldownMs:4200,
-    targetType:'nearestAhead', color:0xff8a3d, short:'焰',
-    description:'向前方持续喷射烈焰，快速为多个敌人补充燃烧层。',
-    levels:levels([
-      [3,8,1,4200,330],[3,10,1,4000,350],[4,10,1,3850,370],[4,12,1,3700,390],[5,12,1,3550,410],[5,14,2,3400,430],[6,14,2,3250,450],[6,16,2,3100,470],[7,18,2,2900,500]
-    ],([ticks,burnDamage,burnStacks,cooldownMs,range])=>({ ticks,burnDamage,burnStacks,cooldownMs,range,intervalMs:180,burnMs:3600,burnIntervalMs:600,maxStacks:18,desc:`连续喷射${ticks}次，每次叠加${burnStacks}层燃烧。` }),{
-      3:'喷射次数增加至4次',
-      6:'每次喷射叠加2层燃烧',
-      9:'喷射次数增加至7次，射程提高至500'
-    })
+const FLAME_CORE_SKILLS={
+  fire_seed:{ id:'fire_seed',name:'火种',rarity:'RARE',handler:'fire_seed',maxLevel:9,coreSkill:true,tags:[...MAGIC_TAGS,TAGS.PROJECTILE,TAGS.ACTIVE_SKILL,'split'],cooldownMs:3600,targetType:'nearestAhead',color:0xff9a3d,short:'种',manaCost:5,description:'投出会分裂的小火种，优先寻找未命中过的敌人并叠加灼烧。',levels:levels([
+    [28,14,2,1,9,3600,360],[31,15,2,1,9,3500,370],[34,16,3,1,10,3400,380],[38,17,3,1,10,3300,390],[42,18,3,1,11,3200,400],[46,18,3,2,13,3100,410],[50,19,3,2,14,3000,420],[55,20,3,2,15,2900,430],[60,21,3,2,16,2800,440]
+  ],([damage,splitDamage,splitCount,maxSplitGeneration,maxSeedsPerCast,cooldownMs,projectileSpeed])=>({damage,splitDamage,secondGenerationScale:0.65,splitCount,maxSplitGeneration,maxSeedsPerCast,cooldownMs,projectileSpeed,burnDamage:5,burnMs:3200,burnIntervalMs:600,extraSeedOnBurning:false,desc:`投出火种，命中后分裂为${splitCount}颗小火种。`}),{3:'初次分裂数量提高至3颗',6:'小火种可再分裂1代',9:'命中灼烧目标时额外生成1颗小火种'}).map((l,i)=>i===8?{...l,extraSeedOnBurning:true}:l),
   },
-  burn_burst: {
-    id:'burn_burst', name:'燃爆', rarity:'RARE', handler:'burn_burst', maxLevel:9,
-    coreSkill:true, requiredSkillId:'fireball',
-    tags:[TAGS.FIRE,TAGS.DOT,TAGS.ACTIVE_SKILL,TAGS.BUILD_FIRE], cooldownMs:5200,
-    targetType:'nearestAhead', color:0xffc15a, short:'爆',
-    description:'引爆燃烧层数最高的目标，按消耗层数造成范围伤害。',
-    levels:levels([
-      [5,18,85,5200],[5,20,88,5000],[6,20,92,4800],[6,22,96,4600],[7,22,100,4400],[7,24,105,4200],[8,24,110,4000],[8,26,115,3800],[9,28,125,3500]
-    ],([consumeStacks,damagePerStack,radius,cooldownMs])=>({ consumeStacks,damagePerStack,radius,cooldownMs,desc:`最多消耗${consumeStacks}层燃烧，每层造成${damagePerStack}点范围伤害。` }),{
-      3:'最多消耗6层燃烧，爆炸范围扩大',
-      6:'最多消耗7层燃烧，爆炸范围扩大至105',
-      9:'最多消耗9层燃烧，爆炸范围扩大至125'
-    })
+  burn_burst:{ id:'burn_burst',name:'燃爆',rarity:'EPIC',handler:'burn_burst',maxLevel:9,coreSkill:true,tags:[...MAGIC_TAGS,TAGS.DOT,TAGS.ACTIVE_SKILL,'area'],cooldownMs:6200,targetType:'nearestAhead',color:0xffc15a,short:'爆',manaCost:8,description:'投掷燃烧弹形成持续燃烧区域；敌人灼烧满5层后触发统一燃爆。',levels:levels([
+    [7,105,3600,650,44,6200],[8,112,3900,650,48,6000],[8,150,4200,620,52,5800],[9,156,4500,620,56,5600],[10,162,4800,600,60,5400],[10,168,6500,600,64,5200],[11,174,6800,580,68,5000],[12,180,7100,560,72,4800],[13,188,7400,540,78,4600]
+  ],([zoneDamage,radius,durationMs,intervalMs,burstDamage,cooldownMs])=>({zoneDamage,radius,durationMs,intervalMs,burstDamage,burstRadius:96,burnDamage:5,burnMs:3400,burnIntervalMs:600,burnStacks:1,burnBurstCooldownMs:450,cooldownMs,retainBurnStacksAfterBurst:0,desc:`投掷燃烧弹，形成持续${(durationMs/1000).toFixed(1)}秒的燃烧区域。`}),{3:'燃烧区域范围大幅扩大',6:'燃烧区域持续时间大幅延长',9:'余烬不灭：燃爆后保留1层灼烧'}).map((l,i)=>i===8?{...l,retainBurnStacksAfterBurst:1}:l),
+  },
+  solar_flame:{ id:'solar_flame',name:'太阳',rarity:'MYTHIC',handler:'solar_flame',passive:true,ultimateSkill:true,maxLevel:9,coreSkill:true,tags:[...MAGIC_TAGS,TAGS.DOT,'domain','mythicSkill'],cooldownMs:999999,targetType:'passive',color:0xfff08a,short:'日',manaCost:0,description:'获得后永久存在的太阳领域，照射敌人、叠加灼烧并强化火种。',levels:levels([
+    [8,0.0,1,900,0,0],[9,0.0,1,880,0,0],[10,0.3,1,860,0,0],[11,0.3,1,840,0,0],[12,0.3,1,820,0,0],[13,0.3,1,800,0.01,18],[14,0.3,1,780,0.01,18],[15,0.3,1,760,0.01,18],[16,0.3,2,740,0.01,18]
+  ],([damage,damageBonus,suns,intervalMs,healRatio,healPerSecondCap])=>({damage,damageBonus,suns,secondarySunDamageMultiplier:0.6,intervalMs,healRatio,healPerSecondCap,burnDamage:5,burnMs:3400,burnIntervalMs:600,burnBurstDamage:78,burnBurstRadius:100,burnBurstCooldownMs:450,fireSeedBonus:{splitCountBonus:1,maxGenerationBonus:1,speedMultiplier:1.25},desc:`太阳永久照射敌人，每${intervalMs/1000}秒造成法系持续伤害。`}),{3:'太阳伤害提高30%',6:'太阳伤害的1%转化为治疗（有每秒上限）',9:'双日凌空，第二太阳造成60%伤害'}),
   }
 };
-
-export function configureFlameCoreSkills(){
-  Object.entries(FLAME_CORE_SKILLS).forEach(([id,config])=>{ SKILLS[id]={...config}; });
-}
-
-export const FlameSpraySkill={
-  cast(system,cfg,data,level,ctx){
-    const s=system.scene;
-    let count=0;
-    const active={
-      skillId:cfg.id,cfg,data,level,ctx,
-      nextAt:s.getGameplayTime(),
-      endAt:s.getGameplayTime()+data.ticks*data.intervalMs+50,
-      tick:()=>{
-        const targets=s.targeting.all().filter(e=>e.x>=s.player.x-20&&e.x-s.player.x<=data.range).sort((a,b)=>a.x-b.x).slice(0,3);
-        if(!targets.length){ active.ended=true; return; }
-        targets.forEach((target,index)=>{
-          system.line(s.player.x+20,s.player.y-55-index*5,target.x,target.y-40,cfg.color);
-          s.statusEffects.add(StatusEffects.BURN,target,{ durationMs:data.burnMs,intervalMs:data.burnIntervalMs,value:data.burnDamage,stacks:data.burnStacks,maxStacks:data.maxStacks,sourceId:'flame_spray',damageMultiplier:ctx.damageMultiplier,baseDamageMultiplierWithoutProfession:ctx.baseDamageMultiplierWithoutProfession,professionMultiplier:ctx.professionMultiplier,professionApplied:true });
-        });
-        count+=1;
-        if(count>=data.ticks) active.ended=true;
-      }
-    };
-    system.active.push(active);
-  }
-};
-
-export const BurnBurstSkill={
-  cast(system,cfg,data,level,ctx){
-    const s=system.scene;
-    const target=s.targeting.all().filter(e=>s.statusEffects.getStackCount(e,StatusEffects.BURN)>0).sort((a,b)=>s.statusEffects.getStackCount(b,StatusEffects.BURN)-s.statusEffects.getStackCount(a,StatusEffects.BURN))[0];
-    if(!target) return;
-    const available=s.statusEffects.getStackCount(target,StatusEffects.BURN);
-    const consumed=s.statusEffects.consumeStacks(target,StatusEffects.BURN,Math.min(data.consumeStacks,available));
-    if(consumed<=0) return;
-    const rawDamage=consumed*data.damagePerStack;
-    const damage=system.damageValue(rawDamage,ctx);
-    system.ring(target.x,target.y,data.radius,cfg.color);
-    s.targeting.all().filter(e=>Math.hypot(e.x-target.x,e.y-target.y)<=data.radius).forEach(e=>system.hit(e,damage,cfg,level,ctx,system.baseDamageValue(rawDamage,ctx)));
-    s.floatText(target.x,target.y-105,`燃爆 ${consumed}层`,'#ffb05a');
-  }
-};
+export function configureFlameCoreSkills(){ Object.entries(FLAME_CORE_SKILLS).forEach(([id,config])=>{ SKILLS[id]={...config}; }); }
+function nearest(s,from,exclude=new Set()){ const all=s.targeting.all().filter(e=>!exclude.has(e)); return (all[0]?all:s.targeting.all()).sort((a,b)=>Math.hypot(a.x-from.x,a.y-from.y)-Math.hypot(b.x-from.x,b.y-from.y))[0]; }
+export const FireSeedSkill={ cast(system,cfg,data,level,ctx){ const s=system.scene; const state={created:0,hit:new Set()}; const boost=system.getFireSeedBoost?.()||{splitCountBonus:0,maxGenerationBonus:0,speedMultiplier:1}; const maxGen=data.maxSplitGeneration+boost.maxGenerationBonus; const launch=(target,gen,from)=>{ if(!target||state.created>=data.maxSeedsPerCast)return; state.created++; const speed=data.projectileSpeed*(boost.speedMultiplier||1); system.projectile(from.x,from.y,target.x,target.y-45,cfg.color,Math.max(90,Math.round(100000/speed))); system.scene.time.delayedCall(120,()=>{ if(!s.targeting.valid(target))return; const raw=gen===0?data.damage:Math.round(data.splitDamage*Math.pow(data.secondGenerationScale||0.65,Math.max(0,gen-1))); system.hit(target,system.damageValue(raw,ctx),cfg,level,ctx,system.baseDamageValue(raw,ctx),[TAGS.MAGIC,TAGS.SPELL,TAGS.FIRE,TAGS.PROJECTILE]); const wasBurning=s.statusEffects.getStackCount(target,StatusEffects.BURN)>0; s.statusEffects.add(StatusEffects.BURN,target,burnOptions(data,ctx,`fire_seed_${ctx.castId}`)); state.hit.add(target); if(gen>=maxGen)return; let count=data.splitCount+(boost.splitCountBonus||0)+(data.extraSeedOnBurning&&wasBurning?1:0); while(count-- >0 && state.created<data.maxSeedsPerCast){ const next=nearest(s,target,state.hit)||target; launch(next,gen+1,{x:target.x,y:target.y-45}); } }); };
+    launch(s.targeting.nearestAhead(760),0,{x:s.player.x,y:s.player.y-60}); } };
+export const BurnBurstSkill={ cast(system,cfg,data,level,ctx){ const s=system.scene; const target=s.targeting.nearestAhead(760); if(!target)return; const bomb=s.add.circle(s.player.x,s.player.y-80,13,cfg.color,1).setDepth(145); s.tweens.add({targets:bomb,x:target.x,y:target.y-12,duration:360,ease:'Quad.Out',onComplete:()=>bomb.destroy()}); const zone=s.add.circle(target.x,target.y,data.radius,0xff5a24,0.16).setStrokeStyle(4,0xffb15a,0.75).setDepth(120); s.tweens.add({targets:zone,alpha:0.05,duration:data.durationMs,onComplete:()=>zone.destroy()}); let ticks=0; const active={skillId:cfg.id,cfg,data,level,ctx,nextAt:s.getGameplayTime()+360,endAt:s.getGameplayTime()+data.durationMs+360,tick:()=>{ ticks++; s.targeting.all().filter(e=>Math.hypot(e.x-target.x,e.y-target.y)<=data.radius).forEach(e=>{ s.combatSystem.damageEnemy(e,system.damageValue(data.zoneDamage,ctx),{source:'skill',skillId:cfg.id,tags:[TAGS.MAGIC,TAGS.SPELL,TAGS.FIRE,TAGS.DOT],level,professionApplied:true,professionMultiplier:ctx.professionMultiplier,baseAmountBeforeProfession:system.baseDamageValue(data.zoneDamage,ctx),noKnockback:true}); s.statusEffects.add(StatusEffects.BURN,e,burnOptions(data,ctx,`burn_burst_zone_${ctx.castId}`)); s.statusEffects.triggerIgniteBurst(e,{damage:system.damageValue(data.burstDamage,ctx),baseDamage:system.baseDamageValue(data.burstDamage,ctx),radius:data.burstRadius,cooldownMs:data.burnBurstCooldownMs,retainStacks:data.retainBurnStacksAfterBurst,skillId:cfg.id,level}); }); if(s.getGameplayTime()+data.intervalMs>active.endAt) active.ended=true; }}; system.active.push(active); } };
+export const SolarFlameSkill={ bind(system){ const s=system.scene; const updater=()=>{ const lvl=system.getLevel('solar_flame'), data=system.getData('solar_flame',lvl); if(!data)return; const now=s.getGameplayTime(); const st=system.passiveState.solarFlame??={nextAt:0,visuals:[],healWindowStart:now,healedThisWindow:0}; if(!st.visuals.length&&s.add){ st.visuals=[s.add.circle(260,150,34,0xffdf6b,0.9).setScrollFactor(0).setDepth(900),s.add.circle(340,170,26,0xffb84a,0.55).setScrollFactor(0).setDepth(899)]; } st.visuals[1]?.setVisible?.((data.suns||1)>1); if(now<st.nextAt)return; st.nextAt=now+data.intervalMs; if(now-st.healWindowStart>=1000){ st.healWindowStart=now; st.healedThisWindow=0; } const targets=s.targeting.all().slice(0,8); for(let sun=0;sun<(data.suns||1);sun++){ const mult=sun===0?1:data.secondarySunDamageMultiplier; targets.forEach(e=>{ const raw=data.damage*(1+(data.damageBonus||0))*mult; const before=e.hp; s.combatSystem.damageEnemy(e,system.damageValue(raw,{damageMultiplier:1}),{source:'skill',skillId:'solar_flame',tags:[TAGS.MAGIC,TAGS.SPELL,TAGS.FIRE,TAGS.DOT],level:lvl,professionApplied:true,professionMultiplier:1,baseAmountBeforeProfession:Math.round(raw),noKnockback:true}); const actual=Math.max(0,before-(e.hp||0)); s.statusEffects.add(StatusEffects.BURN,e,{durationMs:data.burnMs,intervalMs:data.burnIntervalMs,value:data.burnDamage,stacks:1,maxStacks:5,sourceId:'solar_flame',tags:[TAGS.MAGIC,TAGS.SPELL,TAGS.FIRE,TAGS.DOT]}); s.statusEffects.triggerIgniteBurst(e,{damage:data.burnBurstDamage,baseDamage:data.burnBurstDamage,radius:data.burnBurstRadius,cooldownMs:data.burnBurstCooldownMs,retainStacks:0,skillId:'solar_flame',level:lvl}); if(data.healRatio&&actual>0){ const cap=Math.max(0,data.healPerSecondCap-(st.healedThisWindow||0)); const heal=Math.min(cap,Math.floor(actual*data.healRatio)); if(heal>0){ st.healedThisWindow+=s.healPlayer(heal,'solar_flame',{skillId:'solar_flame'}); } } }); } } ; system.passiveUpdaters.push(updater); return ()=>{ const st=system.passiveState.solarFlame; st?.visuals?.forEach(v=>v.destroy?.()); system.passiveUpdaters=system.passiveUpdaters.filter(fn=>fn!==updater); }; } };
