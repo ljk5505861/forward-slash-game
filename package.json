@@ -27,7 +27,8 @@
     "validate:01049-attached-visual-fix": "node scripts/validate-01049-attached-visual-fix.mjs",
     "validate:01050-sheath-burn-visual-tune": "node scripts/validate-01050-sheath-burn-visual-tune.mjs",
     "validate:01051-sheath-x-burn-text": "node scripts/validate-01051-sheath-x-burn-text.mjs",
-    "validate:01052-burn-stack-readability": "node scripts/validate-01052-burn-stack-readability.mjs"
+    "validate:01052-burn-stack-readability": "node scripts/validate-01052-burn-stack-readability.mjs",
+    "validate:01053-poison-summon-rework": "node scripts/validate-01053-poison-summon-rework.mjs"
   },
   "dependencies": {
     "phaser": "latest",

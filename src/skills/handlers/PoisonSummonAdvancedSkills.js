@@ -3,220 +3,44 @@ import { TAGS } from '../../config/tags.js';
 import { CombatEvents } from '../../core/CombatEvents.js';
 import { StatusEffects } from '../../systems/StatusEffectSystem.js';
 
-const SOURCE_POISON_CHAIN='poison_chain';
-const SOURCE_POISON_KING='poison_king';
-const MIN_INSECT_INTERVAL_MS=650;
-const MAX_SINGLE_EXTEND_MS=1800;
-const MAX_EFFECT_REMAINING_MS=12000;
-const MIN_INFECTION_SCORE=45;
-const CHAIN_REBUILD_MS=800;
-const BERSERK_MS=4000;
-
-const levels=(values,build,milestones={})=>values.map((value,index)=>({ ...build(value,index+1), ...(milestones[index+1]?{milestoneText:milestones[index+1]}:{}) }));
-const removeUpdater=(system,updater)=>{ const index=system.passiveUpdaters.indexOf(updater); if(index>=0) system.passiveUpdaters.splice(index,1); };
-const sumBonuses=bonuses=>Object.values(bonuses||{}).reduce((sum,value)=>sum+(Number(value)||0),0);
-const ensureRuntime=p=>{
-  p.parasiticGuAbsorbBonuses??={}; p.parasiticGuGrowthCapBonuses??={}; p.parasiticGuDamageBonuses??={};
-  p.poisonInsectDamageBonuses??={}; p.poisonInsectAttackSpeedBonuses??={}; p.poisonInsectExtendBonuses??={};
-};
-const dist=(a,b)=>Math.hypot((a?.x||0)-(b?.x||0),(a?.y||0)-(b?.y||0));
-const destroyVisual=o=>{ if(!o) return; o.destroy?.(); };
-const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
-const poisonNeedleData=system=>system.getData('poison_cloud')||{poisonDamage:6,poisonMs:3200,poisonIntervalMs:700,maxStacks:15};
-const isBoss=e=>!!(e?.isBoss||e?.isMidBoss||e?.isFinalBoss);
-
-function ensurePoisonRuntime(scene){
-  if(scene.poisonSummonRuntime) return scene.poisonSummonRuntime;
-  const runtime={
-    parasiticGuSnapshot:null,
-    recentPoisonChainTargets:new Map(),
-    poisonChainRebuildUntil:0,
-    poisonKing:null,
-    getParasiticGuSnapshot(){ return this.parasiticGuSnapshot||{host:null,growth:0,maxGrowth:0}; },
-    setParasiticGuSnapshot(snapshot){ this.parasiticGuSnapshot=snapshot||null; },
-    recordPoisonChainTarget(target,time=scene.getGameplayTime?.()||0){ if(target) this.recentPoisonChainTargets.set(target,time); },
-    prunePoisonChainTargets(time=scene.getGameplayTime?.()||0){ this.recentPoisonChainTargets.forEach((seenAt,target)=>{ if(time-seenAt>4000||!scene.targeting?.valid?.(target)) this.recentPoisonChainTargets.delete(target); }); },
-    getRecentPoisonChainTargets(){ const now=scene.getGameplayTime?.()||0; this.prunePoisonChainTargets(now); return [...this.recentPoisonChainTargets.keys()].slice(0,6); },
-    getRecentPoisonChainTargetCount(){ return this.getRecentPoisonChainTargets().length; },
-    clearRecentPoisonChainTargets(){ this.recentPoisonChainTargets.clear(); },
-    setPoisonChainRebuildUntil(time){ this.poisonChainRebuildUntil=Math.max(this.poisonChainRebuildUntil||0,time||0); },
-    isPoisonChainRebuilding(time=scene.getGameplayTime?.()||0){ return time<(this.poisonChainRebuildUntil||0); },
-    getPoisonKing(){ return this.poisonKing&&!this.poisonKing.dead?this.poisonKing:null; },
-    hasPoisonKing(){ return !!this.getPoisonKing(); },
-    setPoisonKing(king){ this.poisonKing=king||null; },
-    resetPoisonSummonRuntime(){ this.parasiticGuSnapshot=null; this.recentPoisonChainTargets.clear(); this.poisonChainRebuildUntil=0; this.poisonKing=null; }
-  };
-  scene.poisonSummonRuntime=runtime;
-  return runtime;
-}
+export const POISON_ADVANCED_TUNING=Object.freeze({
+  chain:{ rebuildMs:1800, extendRadius:230, extendChance:0.38, extendChanceL3:0.62, checkMs:1200, checkMsL3:760, maxLinksPerNode:2, transferStacksOnDeathRatio:0.5 },
+  king:{ reviveMs:4200, baseHp:180, biteIntervalMs:900, biteDamage:28, poisonDamage:8, poisonStacks:1, growthRatio:0.22, growthRatioL3:0.34, growthStage:45, maxStage:6, hpPerStage:35, damagePerStage:6, poisonPerStage:1, scalePerStage:0.08, stageHealL3:24, biteDamageMultiplierL6:1.45, biteStacksL6:2, biteHealRatioL6:0.12, biteHealCapMaxHpRatio:0.015, domainRadius:135, domainIntervalMs:900, domainDamage:7 }
+});
+const levels=(rows,build,milestones={})=>rows.map((row,i)=>({...build(row,i+1),...(milestones[i+1]?{milestoneText:milestones[i+1]}:{})}));
+const removeUpdater=(system,fn)=>{ const i=system.passiveUpdaters.indexOf(fn); if(i>=0) system.passiveUpdaters.splice(i,1); };
+const dist=(a,b)=>Math.hypot((a.x||0)-(b.x||0),(a.y||0)-(b.y||0));
+const normalPoison=p=>p?.type===StatusEffects.POISON&&p.actualDamage>0&&!p.effect?.poisonMeta?.nonNormal&&!p.effect?.noPoisonKingRecursive;
+function addPoison(system,target,stacks,durationMs,value,sourceId,meta={}){ const d=system.getData('poison_cloud')||{}; return system.scene.statusEffects.add(StatusEffects.POISON,target,{durationMs,intervalMs:d.poisonIntervalMs||700,value:value||d.poisonDamage||6,stacks,maxStacks:Math.max(d.maxStacks||15,stacks),sourceId,damageMultiplier:1,baseDamageMultiplierWithoutProfession:1,professionMultiplier:1,professionApplied:true,poisonMeta:meta}); }
+function healEntity(entity,amount,max){ const before=entity.hp??0; entity.hp=Math.min(max??entity.maxHp??before,before+Math.max(0,amount)); return entity.hp-before; }
 
 const CONFIGS={
-  poison_chain:{ id:SOURCE_POISON_CHAIN,name:'毒链',rarity:'EPIC',handler:SOURCE_POISON_CHAIN,passive:true,maxLevel:9,requiredSkillId:'bone_eating_insect',tags:[TAGS.POISON,TAGS.DOT,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON],cooldownMs:999999,targetType:'passive',color:0x42e76d,short:'链',description:'中毒目标受到真实毒伤时，将部分毒性传导给附近敌人。',levels:levels([
-    [1,0.70,140,700],[1,0.80,155,650],[2,0.88,165,620],[2,0.96,175,580],[2,1.04,185,540],[2,1.12,195,500],[3,1.18,205,470],[3,1.24,215,440],[3,1.30,220,400]
-  ],([maxLinks,damageRatio,radius,internalCooldownMs])=>({maxLinks,damageRatio,radius,internalCooldownMs,desc:`毒伤跳动时，向${radius}范围内最多${maxLinks}名目标传导${Math.round(damageRatio*100)}%毒链伤害。`}),{3:'连接目标提高至2个',6:'传导比例和范围提高',9:'最多连接3个目标，冷却缩短'}) },
-  poison_king:{ id:SOURCE_POISON_KING,name:'毒王',rarity:'EPIC',handler:SOURCE_POISON_KING,passive:false,maxLevel:9,requiredSkillId:SOURCE_POISON_CHAIN,targetType:'self',tags:[TAGS.POISON,TAGS.DOT,TAGS.SUMMON,TAGS.ACTIVE_SKILL,TAGS.BUILD_POISON_SUMMON],color:0x1f9d45,short:'王',description:'吞噬场上部分感染孵化毒王；感染规模越大，毒王形态和战斗能力越强。',levels:levels([
-    [19000,0.25,0.20,8500,140,36,1500,0.10,0.10,0.10,0.10,0.05,0,8,120,10,10,1],
-    [18600,0.27,0.22,8800,160,44,1450,0.12,0.12,0.12,0.12,0.06,0,8,130,12,10,1],
-    [18200,0.30,0.25,9200,185,54,1400,0.15,0.15,0.15,0.15,0.08,0,7,140,14,11,1],
-    [17800,0.32,0.27,9500,215,66,1350,0.18,0.18,0.18,0.18,0.10,0.03,7,150,16,11,1],
-    [17400,0.34,0.30,9800,250,80,1300,0.21,0.21,0.21,0.21,0.12,0.05,6,160,18,12,2],
-    [17000,0.37,0.33,10200,290,96,1240,0.25,0.25,0.25,0.25,0.15,0.07,6,170,20,12,2],
-    [16600,0.39,0.36,10600,335,116,1180,0.28,0.28,0.28,0.28,0.17,0.09,5,180,22,13,2],
-    [16200,0.42,0.40,11000,385,140,1120,0.32,0.32,0.32,0.32,0.19,0.11,5,185,24,14,2],
-    [15500,0.45,0.45,11600,450,170,1050,0.36,0.36,0.36,0.36,0.22,0.14,5,190,26,15,3]
-  ],([cooldownMs,consumeRatio,guGrowthContributionRatio,durationMs,hp,biteDamage,attackIntervalMs,absorbBonus,growthCapBonus,guDamageBonus,insectDamageBonus,insectAttackSpeedBonus,insectExtendBonus,burstStackThreshold,burstRadius,burstDamagePerStack,burstMaxStacks,burstPoisonStacks])=>({cooldownMs,consumeRatio,guGrowthContributionRatio,durationMs,hp,biteDamage,attackIntervalMs,absorbBonus,growthCapBonus,guDamageBonus,insectDamageBonus,insectAttackSpeedBonus,insectExtendBonus,burstStackThreshold,burstRadius,burstDamagePerStack,burstMaxStacks,burstPoisonStacks,desc:'吞噬感染孵化毒王，感染规模越大形态越强。'}),{3:'吞毒成长\n提高感染吞噬比例，毒王持续时间和基础战斗能力增强。',6:'万毒之躯\n毒王攻击附加中毒，移动留下毒雾，并成为毒链中心节点。',9:'毒王降世\n高感染时直接孵化完全体；毒王周期孵化毒虫，退场后重新播散毒性。'}) }
+  poison_chain:{ id:'poison_chain',name:'毒链',rarity:'EPIC',handler:'poison_chain',passive:true,maxLevel:9,requiredSkillId:'parasitic_gu',tags:[TAGS.POISON,TAGS.DOT,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON],cooldownMs:999999,targetType:'passive',color:0x42e76d,short:'链',description:'投出毒链建立会自行扩张的感染网络，节点逐步连接附近中毒敌人。',levels:levels([[0.38,1200],[0.42,1100],[0.62,760],[0.64,730],[0.66,700],[0.68,680],[0.7,650],[0.72,620],[0.74,600]],([extendChance,checkMs],level)=>({extendChance,checkMs,extendRadius:POISON_ADVANCED_TUNING.chain.extendRadius,maxLinksPerNode:2,rebuildMs:POISON_ADVANCED_TUNING.chain.rebuildMs,desc:level>=9?'节点死亡时会把毒网续接到附近目标。':level>=6?'新施加毒层会向相邻节点传递1层，但不会递归。':level>=3?'毒链更容易且更频繁扩张。':'选择一名中毒敌人作为初始节点并逐步扩张。'}),{3:'毒链蔓延：提高延伸概率并缩短判定间隔',6:'毒素传导：新毒层向相邻节点传递1层',9:'瘟疫不绝：节点死亡时立即续网'} )},
+  poison_king:{ id:'poison_king',name:'毒王',rarity:'EPIC',handler:'poison_king',passive:true,maxLevel:9,requiredSkillId:'poison_chain',targetType:'passive',tags:[TAGS.POISON,TAGS.DOT,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON],color:0x1f9d45,short:'王',description:'召唤一只常驻毒王，拥有独立血量，撕咬上毒并吸收全场正常毒伤成长。',levels:levels([[180,28,0.22],[195,31,0.24],[210,34,0.34],[225,37,0.34],[240,40,0.34],[260,58,0.34],[280,63,0.36],[305,68,0.38],[330,74,0.4]],([hp,biteDamage,growthRatio],level)=>({hp,biteDamage,growthRatio,biteIntervalMs:POISON_ADVANCED_TUNING.king.biteIntervalMs,poisonDamage:POISON_ADVANCED_TUNING.king.poisonDamage,poisonStacks:level>=6?2:1,growthStage:POISON_ADVANCED_TUNING.king.growthStage,maxStage:POISON_ADVANCED_TUNING.king.maxStage,reviveMs:POISON_ADVANCED_TUNING.king.reviveMs,desc:level>=9?'毒王周围形成跟随移动的毒领域。':level>=6?'剧毒撕咬伤害提高，上毒层数增加并对中毒目标回血。':level>=3?'毒伤转化成长更快，阶段提升时额外回血。':'常驻毒王撕咬敌人并施加中毒。'}),{3:'吸毒成长：成长效率提高，升阶额外恢复生命',6:'剧毒撕咬：撕咬更强、上毒更多并回血',9:'毒领域：周围敌人周期性受毒伤并被上毒'} )}
 };
-
-const FORMS=[
-  {id:'normal',name:'普通体',min:45,scale:1,duration:1,hp:1,damage:1,interval:1,mistMs:2400,range:130,aura:1,color:0x174f26,spawnMax:0},
-  {id:'mature',name:'成熟体',min:100,scale:1.18,duration:1.12,hp:1.35,damage:1.25,interval:0.92,mistMs:2200,range:155,aura:1.15,color:0x239a43,spawnMax:1},
-  {id:'complete',name:'完全体',min:170,scale:1.38,duration:1.25,hp:1.75,damage:1.55,interval:0.84,mistMs:1950,range:185,aura:1.30,color:0x31d45c,spawnMax:2},
-  {id:'berserk',name:'暴走体',min:240,scale:1.58,duration:1.32,hp:2.10,damage:1.90,interval:0.72,mistMs:1250,range:210,aura:1.45,color:0x75ff63,spawnMax:3}
-];
-const formForPower=(power,level)=>{ let form=FORMS[0]; FORMS.forEach(f=>{ if(power>=f.min) form=f; }); if(level>=9&&power>=170&&form.min<170) form=FORMS[2]; return form; };
-
 export function configurePoisonSummonAdvancedSkills(){ Object.entries(CONFIGS).forEach(([id,cfg])=>{ SKILLS[id]={...cfg}; }); }
 
-export const PoisonChainSkill={ bind(system){
-  const s=system.scene; const runtime=ensurePoisonRuntime(s); const sourceReady=new WeakMap(); const tickKeys=new Set(); const visuals=new Set();
-  const showLine=(from,to)=>{ const g=s.add.graphics().setDepth(148); g.lineStyle(5,0x4cff78,0.9); g.lineBetween(from.x,from.y-48,to.x,to.y-48); visuals.add(g); s.tweens.add({targets:g,alpha:0,duration:180,onComplete:()=>{ visuals.delete(g); destroyVisual(g); }}); };
-  const off=s.eventBus.on(CombatEvents.STATUS_TICK,p=>{
-    const data=system.getData(SOURCE_POISON_CHAIN); if(!data) return;
-    const now=s.getGameplayTime(); if(runtime.isPoisonChainRebuilding(now)) return;
-    if(p.type!==StatusEffects.POISON||p.source!=='poison'||p.actualDamage<=0||p.effect?.type!==StatusEffects.POISON) return;
-    if(p.noPoisonChain||p.damageKind==='poisonChain'||p.effect?.sourceId===SOURCE_POISON_CHAIN) return;
-    const source=p.target; if(!s.targeting.valid(source)) return;
-    if(now<(sourceReady.get(source)||0)) return;
-    const tickKey=`${p.statusId||p.effect?.id}:${p.effect?.nextTickAt||now}:${source.id||source.name||''}`; if(tickKeys.has(tickKey)) return; tickKeys.add(tickKey); if(tickKeys.size>160) tickKeys.clear();
-    const all=s.targeting.all().filter(e=>e!==source&&dist(e,source)<=data.radius);
-    const infected=all.filter(e=>s.statusEffects.has(e,StatusEffects.POISON));
-    let pool=(infected.length?infected:all).sort((a,b)=>dist(a,source)-dist(b,source)||s.statusEffects.getStackCount(b,StatusEffects.POISON)-s.statusEffects.getStackCount(a,StatusEffects.POISON)).slice(0,data.maxLinks);
-    if(!pool.length) return; sourceReady.set(source,now+data.internalCooldownMs);
-    runtime.recordPoisonChainTarget(source,now);
-    const damage=Math.max(1,Math.round(p.actualDamage*data.damageRatio));
-    pool.forEach(target=>{ runtime.recordPoisonChainTarget(target,now); showLine(source,target); s.combatSystem.damageEnemy(target,damage,{ source:'skill', skillId:SOURCE_POISON_CHAIN, damageKind:'poisonChain', tags:[TAGS.POISON,TAGS.DOT,TAGS.BUILD_POISON_SUMMON], allowLifeSteal:false, noKnockback:true, noPoisonChain:true, noPoisonKingBurst:true }); });
-  });
-  return ()=>{ off?.(); tickKeys.clear(); visuals.forEach(destroyVisual); visuals.clear(); };
-} };
+export const PoisonChainSkill={ bind(system){ const s=system.scene,nodes=new Map(),edges=new Set(),visuals=new Map(); let nextBuildAt=0;
+  const nodeTargets=()=>[...nodes.keys()].filter(e=>s.targeting.valid(e)&&s.statusEffects.has(e,StatusEffects.POISON));
+  const addNode=e=>{ if(!e||nodes.has(e)) return false; nodes.set(e,{nextAt:s.getGameplayTime()+200,links:new Set()}); return true; };
+  const removeNode=e=>{ const n=nodes.get(e); if(!n) return; [...n.links].forEach(o=>{ nodes.get(o)?.links.delete(e); edges.delete(edgeKey(e,o)); visuals.get(edgeKey(e,o))?.destroy?.(); visuals.delete(edgeKey(e,o)); }); nodes.delete(e); };
+  const edgeKey=(a,b)=>`${a.id||a.__uid||a.x}:${b.id||b.__uid||b.x}`;
+  const connect=(a,b)=>{ const na=nodes.get(a),nb=nodes.get(b); if(!na||!nb||na.links.size>=2||nb.links.size>=2||na.links.has(b)) return; na.links.add(b); nb.links.add(a); edges.add(edgeKey(a,b)); const g=s.add.graphics().setDepth(145); visuals.set(edgeKey(a,b),g); };
+  const chooseSeed=()=>s.targeting.all().find(e=>s.targeting.valid(e)&&s.statusEffects.has(e,StatusEffects.POISON));
+  const extend=(e,data)=>{ const n=nodes.get(e); if(!n||n.links.size>=2||Math.random()>data.extendChance) return; const candidates=s.targeting.all().filter(t=>t!==e&&!nodes.has(t)&&s.targeting.valid(t)&&s.statusEffects.has(t,StatusEffects.POISON)&&dist(t,e)<=data.extendRadius); if(candidates[0]&&addNode(candidates[0])) connect(e,candidates[0]); };
+  const offApply=s.eventBus.on(CombatEvents.STATUS_APPLIED,p=>{ if(p.type!==StatusEffects.POISON||!nodes.has(p.target)||p.effect?.poisonMeta?.chainTransfer) return; if(system.getLevel('poison_chain')<6) return; const n=nodes.get(p.target), adj=[...n.links].find(x=>s.targeting.valid(x)); if(adj) addPoison(system,adj,1,2600,system.getData('poison_cloud')?.poisonDamage||6,`poison_chain_transfer_${p.effect?.id||s.getGameplayTime()}`,{chainTransfer:true}); });
+  const offKill=s.eventBus.on(CombatEvents.ENEMY_KILLED,p=>{ if(!nodes.has(p.enemy)) return; const data=system.getData('poison_chain'); const old=p.enemy, stacks=p.poisonStacksBeforeDeath||s.statusEffects.getStackCount(old,StatusEffects.POISON); removeNode(old); if(system.getLevel('poison_chain')<9) return; const near=s.targeting.all().filter(e=>s.targeting.valid(e)&&!nodes.has(e)).sort((a,b)=>dist(a,old)-dist(b,old)); const poisoned=near.find(e=>s.statusEffects.has(e,StatusEffects.POISON)); const target=poisoned||near[0]; if(target){ if(!poisoned) addPoison(system,target,1,2600,system.getData('poison_cloud')?.poisonDamage||6,`poison_chain_death_seed_${s.getGameplayTime()}`,{chainDeathRelay:true}); else addPoison(system,target,Math.max(1,Math.floor(stacks*POISON_ADVANCED_TUNING.chain.transferStacksOnDeathRatio)),2600,system.getData('poison_cloud')?.poisonDamage||6,`poison_chain_death_relay_${s.getGameplayTime()}`,{chainDeathRelay:true}); addNode(target); } });
+  const updater=()=>{ const now=s.getGameplayTime(), data=system.getData('poison_chain'); if(!data){ nodes.clear(); visuals.forEach(v=>v.destroy?.()); visuals.clear(); return; } nodeTargets().forEach(e=>{ const n=nodes.get(e); if(now>=n.nextAt){ n.nextAt=now+data.checkMs; extend(e,data); } }); [...nodes.keys()].forEach(e=>{ if(!s.targeting.valid(e)||!s.statusEffects.has(e,StatusEffects.POISON)) removeNode(e); }); if(!nodes.size&&now>=nextBuildAt){ nextBuildAt=now+data.rebuildMs; addNode(chooseSeed()); } visuals.forEach(g=>g.clear()); nodes.forEach((n,a)=>n.links.forEach(b=>{ const k=edgeKey(a,b), g=visuals.get(k); if(g) g.lineStyle(4,0x66ff88,0.8).lineBetween(a.x,a.y-46,b.x,b.y-46); })); };
+  system.passiveUpdaters.push(updater); updater(); return ()=>{ offApply(); offKill(); removeUpdater(system,updater); visuals.forEach(v=>v.destroy?.()); visuals.clear(); nodes.clear(); edges.clear(); } } };
 
-function infectionSnapshot(system){
-  const s=system.scene, runtime=ensurePoisonRuntime(s), now=s.getGameplayTime();
-  const enemies=s.targeting.all().filter(e=>s.targeting.valid(e));
-  let score=0,totalStacks=0,totalRemainScore=0;
-  const poisoned=enemies.filter(e=>s.statusEffects.has(e,StatusEffects.POISON));
-  poisoned.forEach(e=>{
-    score+=isBoss(e)?18:10;
-    const stacks=s.statusEffects.getStackCount(e,StatusEffects.POISON); totalStacks+=stacks; score+=stacks*(isBoss(e)?3:2);
-    const remainMs=s.statusEffects.getEffects(e,StatusEffects.POISON).reduce((sum,fx)=>sum+Math.max(0,(fx.expiresAt||now)-now),0);
-    const remainScore=Math.min(isBoss(e)?12:8,Math.floor(remainMs/1000)); totalRemainScore+=remainScore; score+=remainScore;
-  });
-  const gu=runtime.getParasiticGuSnapshot();
-  if(gu.host&&s.targeting.valid(gu.host)){ score+=15; score+=Math.min(18,Math.floor((gu.growth||0)/2)); }
-  const recentPoisonChainNodes=runtime.getRecentPoisonChainTargetCount(); score+=Math.min(6,recentPoisonChainNodes)*5;
-  return { score, enemies, poisoned, totalStacks, totalRemainScore, gu, recentPoisonChainNodes };
-}
-
-function reducePoison(system,target,ratio){
-  const s=system.scene, now=s.getGameplayTime(), boss=isBoss(target);
-  const effects=s.statusEffects.getEffects(target,StatusEffects.POISON).filter(effect=>(effect.stacks||1)>0);
-  const before=effects.reduce((sum,effect)=>sum+(effect.stacks||1),0);
-  if(before<=0) return {stacks:0,seconds:0};
-  const actualRatio=boss?ratio*0.5:ratio;
-  const minimumTotal=boss?Math.ceil(before*0.70):1;
-  let remainingToConsume=Math.min(Math.floor(before*actualRatio),Math.max(0,before-minimumTotal));
-  let consumedStacks=0, consumedMs=0;
-  const ordered=[...effects].sort((a,b)=>(b.stacks||1)-(a.stacks||1)||((a.expiresAt||now)-(b.expiresAt||now))||((a.id||0)-(b.id||0)));
-  for(const effect of ordered){
-    if(remainingToConsume<=0) break;
-    const previousStacks=effect.stacks||1;
-    const consume=Math.min(previousStacks,remainingToConsume);
-    const nextStacks=previousStacks-consume;
-    remainingToConsume-=consume; consumedStacks+=consume;
-    if(nextStacks<=0){
-      s.statusEffects.removeEffect(effect,'poisonKingConsumed');
-    } else {
-      effect.stacks=nextStacks;
-      s.statusEffects.emit?.(CombatEvents.STATUS_STACK_CHANGED,{ effect, target, type:StatusEffects.POISON, previousStacks, stacks:nextStacks, delta:nextStacks-previousStacks, sourceId:effect.sourceId });
-    }
-  }
-  const minRemain=boss?1800:900;
-  s.statusEffects.getEffects(target,StatusEffects.POISON).forEach(effect=>{
-    const remain=Math.max(0,(effect.expiresAt||now)-now);
-    const reduce=Math.min(Math.floor(remain*actualRatio),Math.max(0,remain-minRemain));
-    if(reduce>0){ effect.expiresAt-=reduce; consumedMs+=reduce; }
-  });
-  return {stacks:consumedStacks,seconds:consumedMs/1000};
-}
-
-function applyKingAura(system,data,form){
-  const p=system.scene.playerData; ensureRuntime(p); const mult=form.aura||1;
-  ['parasiticGuAbsorbBonuses','parasiticGuGrowthCapBonuses','parasiticGuDamageBonuses','poisonInsectDamageBonuses','poisonInsectAttackSpeedBonuses','poisonInsectExtendBonuses'].forEach(k=>{ if(p[k]) delete p[k][SOURCE_POISON_KING]; });
-  p.parasiticGuAbsorbBonuses[SOURCE_POISON_KING]=data.absorbBonus*mult;
-  p.parasiticGuGrowthCapBonuses[SOURCE_POISON_KING]=data.growthCapBonus*mult;
-  p.parasiticGuDamageBonuses[SOURCE_POISON_KING]=data.guDamageBonus*mult;
-  p.poisonInsectDamageBonuses[SOURCE_POISON_KING]=data.insectDamageBonus*mult;
-  p.poisonInsectAttackSpeedBonuses[SOURCE_POISON_KING]=data.insectAttackSpeedBonus*mult;
-  p.poisonInsectExtendBonuses[SOURCE_POISON_KING]=data.insectExtendBonus*mult;
-}
-function clearKingAura(scene){ const p=scene.playerData; ['parasiticGuAbsorbBonuses','parasiticGuGrowthCapBonuses','parasiticGuDamageBonuses','poisonInsectDamageBonuses','poisonInsectAttackSpeedBonuses','poisonInsectExtendBonuses'].forEach(k=>{ if(p?.[k]) delete p[k][SOURCE_POISON_KING]; }); }
-
-export const PoisonKingSkill={
-  canCast(system){
-    const s=system.scene, runtime=ensurePoisonRuntime(s), now=s.getGameplayTime();
-    if(runtime.hasPoisonKing()) return failPrecast(s,'毒王已存在',now);
-    if(now<(s._poisonKingCanCastRetryUntil||0)) return { failed:true, throttled:true, reason:s._poisonKingCanCastFailure||'感染不足' };
-    const snap=infectionSnapshot(system);
-    const hasGuHost=!!(snap.gu.host&&s.targeting.valid(snap.gu.host));
-    if(!snap.enemies.length) return failPrecast(s,'感染不足',now);
-    if(!snap.poisoned.length&&!hasGuHost) return failPrecast(s,'感染不足',now);
-    if(snap.score<MIN_INFECTION_SCORE) return failPrecast(s,'感染不足',now);
-    s._poisonKingCanCastRetryUntil=0; s._poisonKingCanCastFailure='';
-    return { success:true, snapshot:snap };
-  },
-  cast(system,cfg,data,level){
-    const s=system.scene, runtime=ensurePoisonRuntime(s), now=s.getGameplayTime();
-    if(runtime.hasPoisonKing()) return { failed:true, reason:'毒王已存在' };
-    const snap=infectionSnapshot(system);
-    if(!snap.enemies.length||(!snap.poisoned.length&&!(snap.gu.host&&s.targeting.valid(snap.gu.host)))||snap.score<MIN_INFECTION_SCORE) return { failed:true, reason:'感染不足' };
-    let consumedPoisonStacks=0, consumedPoisonSeconds=0;
-    snap.poisoned.forEach(e=>{ const c=reducePoison(system,e,data.consumeRatio); consumedPoisonStacks+=c.stacks; consumedPoisonSeconds+=c.seconds; });
-    const parasiticGrowthContribution=Math.min(snap.gu.growth||0,(snap.gu.growth||0)*data.guGrowthContributionRatio);
-    runtime.clearRecentPoisonChainTargets(); runtime.setPoisonChainRebuildUntil(now+CHAIN_REBUILD_MS);
-    const lifeLossBonus=Math.min(20,snap.enemies.reduce((sum,e)=>sum+Math.max(0,(e.maxHp||0)-(e.hp||0))/(e.maxHp||1),0));
-    const kingPower=clamp(Math.round(snap.score+consumedPoisonStacks*4+consumedPoisonSeconds*1.5+parasiticGrowthContribution*3+snap.recentPoisonChainNodes*6+lifeLossBonus),0,320);
-    const form=formForPower(kingPower,level);
-    spawnKing(system,data,level,kingPower,form,{consumedPoisonStacks,consumedPoisonSeconds});
-    return { success:true };
-  },
-  bind(system){
-    const s=system.scene, runtime=ensurePoisonRuntime(s), bursted=new WeakSet(), visuals=new Set();
-    const off=s.eventBus.on(CombatEvents.ENEMY_KILLED,payload=>{ const king=runtime.getPoisonKing(); const data=system.getData(SOURCE_POISON_KING); const enemy=payload.enemy; if(!king||!data||!enemy||payload.noPoisonKingBurst||payload.damageKind==='poisonKingBurst'||bursted.has(enemy)) return; const stacks=payload.poisonStacksBeforeDeath||0; if(stacks<data.burstStackThreshold) return; bursted.add(enemy); const formMult={normal:1,mature:1.1,complete:1.25,berserk:1.4}[king.form.id]||1; const damage=Math.min(360,Math.max(1,Math.round(Math.min(data.burstMaxStacks,stacks)*data.burstDamagePerStack*formMult))); const r=data.burstRadius; const o=s.add.circle(enemy.x,enemy.y,r,0x37d666,0.14).setStrokeStyle(5,0x5dff83,0.86).setDepth(149); visuals.add(o); s.tweens.add({targets:o,alpha:0,scale:1.18,duration:260,onComplete:()=>{ visuals.delete(o); o.destroy(); }}); s.targeting.all().filter(e=>e!==enemy&&dist(e,enemy)<=r).forEach(target=>{ s.combatSystem.damageEnemy(target,damage,{ source:'skill', skillId:SOURCE_POISON_KING, damageKind:'poisonKingBurst', tags:[TAGS.POISON,TAGS.DOT,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON], allowLifeSteal:false, noKnockback:true, noPoisonChain:true, noPoisonKingBurst:true, noPoisonKingRecursive:true, noPoisonSpread:true }); addPoison(system,target,data.burstPoisonStacks,2400,8,`poison_king_burst_${s.getGameplayTime()}_${target.id||''}`); }); });
-    const updater=()=>updateKing(system); system.passiveUpdaters.push(updater);
-    return ()=>{ off?.(); removeUpdater(system,updater); endKing(system,'skillRemoved'); clearKingAura(s); visuals.forEach(destroyVisual); visuals.clear(); runtime.resetPoisonSummonRuntime?.(); };
-  },
-  cleanup(system){ endKing(system,'skillRemoved'); }
-};
-
-function failPrecast(s,text,now=s.getGameplayTime?.()||0){ s._poisonKingCanCastRetryUntil=now+350; s._poisonKingCanCastFailure=text; s._poisonKingFailTextAt??=0; if(now>=s._poisonKingFailTextAt){ s.floatText?.(s.player.x,s.player.y-118,text,'#9aff79'); s._poisonKingFailTextAt=now+650; } return { failed:true, reason:text }; }
-function addPoison(system,target,stacks,durationMs,value,sourceId){ const data=poisonNeedleData(system); system.scene.statusEffects.add(StatusEffects.POISON,target,{ durationMs, intervalMs:data.poisonIntervalMs||700, value:value||data.poisonDamage||6, stacks, maxStacks:Math.max(data.maxStacks||15,stacks), sourceId, damageMultiplier:1, baseDamageMultiplierWithoutProfession:1, professionMultiplier:1, professionApplied:true, noPoisonKingBurst:true }); }
-
-function spawnKing(system,data,level,power,form,absorbedPoison){
-  const s=system.scene, runtime=ensurePoisonRuntime(s), now=s.getGameplayTime();
-  const view=s.add.container(s.player.x+110,s.player.y-58).setDepth(147); const body=s.add.ellipse(0,0,58,38,form.color,0.95).setStrokeStyle(4,0xb7ff82,0.8); const eye1=s.add.circle(14,-6,4,0xf2ffd2,1); const eye2=s.add.circle(26,-5,3,0xf2ffd2,1); const sac=s.add.circle(-20,6,13,0x77ff66,0.35); view.add([sac,body,eye1,eye2]); view.setScale(form.scale);
-  const king={ id:`poison_king_${now}`, view, hp:Math.round(data.hp*form.hp), maxHp:Math.round(data.hp*form.hp), power, form, level, expiresAt:now+Math.min(16000,Math.round(data.durationMs*form.duration)), target:null, nextAttackAt:now+400, nextMistAt:now+700, nextSpawnAt:now+2600, nextTrailAt:now+650, tempInsects:[], mistZones:[], chainVisuals:new Set(), absorbedPoison, dead:false, ending:false, berserkUntil:form.id==='berserk'?now+BERSERK_MS:0 };
-  runtime.setPoisonKing(king); applyKingAura(system,data,form); s.floatText?.(s.player.x+110,s.player.y-118,`毒王孵化 ${form.name}`,'#9dff73');
-}
-
-function updateKing(system){ const s=system.scene, runtime=ensurePoisonRuntime(s), king=runtime.getPoisonKing(); if(!king) return; const now=s.getGameplayTime(); if(now>=king.expiresAt) return endKing(system,'expired'); const anchor={x:clamp(s.player.x+120,40,(s.scale?.width||960)-40),y:s.player.y-58}; const target=chooseKingTarget(system,king); king.target=target; const desired=target?{x:clamp(target.x-38,40,(s.scale?.width||960)-40),y:target.y-54}:anchor; const returning=target&&now+180<king.nextAttackAt; const goal=returning?anchor:desired; king.view.x+=(goal.x-king.view.x)*0.12; king.view.y+=(goal.y-king.view.y)*0.12; if(king.level>=6&&now>=king.nextTrailAt){ createTrailMist(system,king); king.nextTrailAt=now+650; } if(target&&now>=king.nextAttackAt) bite(system,king,target); if(now>=king.nextMistAt) poisonMist(system,king); if(king.level>=9&&king.form.min>=170&&now>=king.nextSpawnAt){ spawnTempInsect(system,king); king.nextSpawnAt=now+2600; } updateTempInsects(system,king); cleanupMistZones(system,king); }
-function chooseKingTarget(system,king){ const s=system.scene; const all=s.targeting.all().filter(e=>s.targeting.valid(e)); if(!all.length) return null; const boss=all.find(isBoss); if(boss) return boss; const gu=ensurePoisonRuntime(s).getParasiticGuSnapshot(); if(gu.host&&s.targeting.valid(gu.host)) return gu.host; return all.sort((a,b)=>s.statusEffects.getStackCount(b,StatusEffects.POISON)-s.statusEffects.getStackCount(a,StatusEffects.POISON)||Math.abs(a.x-s.player.x)-Math.abs(b.x-s.player.x))[0]; }
-function bite(system,king,target){ const s=system.scene, data=system.getData(SOURCE_POISON_KING,king.level), now=s.getGameplayTime(); const berserk=king.form.id==='berserk'&&now<king.berserkUntil; const interval=Math.max(520,Math.round(data.attackIntervalMs*king.form.interval*(berserk?0.72:1))); king.nextAttackAt=now+interval; const damage=Math.max(1,Math.round(data.biteDamage*king.form.damage)); s.combatSystem.damageEnemy(target,damage,{ source:'skill', skillId:SOURCE_POISON_KING, damageKind:'poisonKingBite', tags:[TAGS.POISON,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON], allowLifeSteal:false, noKnockback:true, noPoisonChain:true, noPoisonKingBurst:true, noPoisonKingRecursive:true, noSwordTrigger:true }); if(king.level>=6){ addPoison(system,target,king.form.min>=170?2:1,3200,poisonNeedleData(system).poisonDamage||6,`poison_king_bite_${king.id}_${now}_${target.id||''}`); chainCenter(system,king,target,damage); } if(!s.targeting.valid(target)&&king.form.spawnMax>0) spawnTempInsect(system,king); }
-function poisonMist(system,king){ const s=system.scene, now=s.getGameplayTime(), berserk=king.form.id==='berserk'&&now<king.berserkUntil; const interval=berserk?1250:(king.form.id==='berserk'?1800:king.form.mistMs); king.nextMistAt=now+interval; const stacks=king.form.min>=170?2:1; const damage=Math.max(1,Math.round((poisonNeedleData(system).poisonDamage||6)*king.form.damage)); const targets=s.targeting.all().filter(e=>dist(e,king.view)<=king.form.range).slice(0,6); targets.forEach(e=>{ s.combatSystem.damageEnemy(e,damage,{source:'skill',skillId:SOURCE_POISON_KING,damageKind:'poisonKingMist',tags:[TAGS.POISON,TAGS.DOT,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON],allowLifeSteal:false,noKnockback:true,noPoisonChain:true,noPoisonKingBurst:true,noPoisonKingRecursive:true}); addPoison(system,e,stacks,3200,poisonNeedleData(system).poisonDamage||6,`poison_king_mist_${king.id}_${now}_${e.id||''}`); if(!s.targeting.valid(e)&&king.form.spawnMax>0) spawnTempInsect(system,king); }); const o=s.add.circle(king.view.x,king.view.y,king.form.range,0x40e060,0.08).setDepth(143); s.tweens.add({targets:o,alpha:0,duration:420,onComplete:()=>o.destroy()}); }
-function createTrailMist(system,king){ const s=system.scene; while(king.mistZones.length>=4) king.mistZones.shift().view?.destroy?.(); const zone={x:king.view.x,y:king.view.y,r:92,expiresAt:s.getGameplayTime()+1200,hit:new WeakSet(),view:s.add.circle(king.view.x,king.view.y,92,0x4ce878,0.06).setDepth(142)}; king.mistZones.push(zone); s.targeting.all().filter(e=>dist(e,zone)<=zone.r&&!zone.hit.has(e)).forEach(e=>{ zone.hit.add(e); addPoison(system,e,1,2600,poisonNeedleData(system).poisonDamage||6,`poison_king_trail_${king.id}_${s.getGameplayTime()}_${e.id||''}`); }); }
-function cleanupMistZones(system,king){ const now=system.scene.getGameplayTime(); king.mistZones=king.mistZones.filter(z=>{ if(now<z.expiresAt) return true; z.view?.destroy?.(); return false; }); }
-function chainCenter(system,king,mainTarget,damage){ if(king.level<6) return; const s=system.scene, count=king.level>=8?3:2; const targets=s.targeting.all().filter(e=>e!==mainTarget&&s.statusEffects.has(e,StatusEffects.POISON)).sort((a,b)=>dist(a,king.view)-dist(b,king.view)).slice(0,count); targets.forEach(e=>{ const g=s.add.graphics().setDepth(148); g.lineStyle(4,0x8cff78,0.85).lineBetween(king.view.x,king.view.y,e.x,e.y-48); king.chainVisuals.add(g); s.tweens.add({targets:g,alpha:0,duration:160,onComplete:()=>{ king.chainVisuals.delete(g); g.destroy(); }}); s.combatSystem.damageEnemy(e,Math.max(1,Math.round(damage*0.25)),{source:'skill',skillId:SOURCE_POISON_KING,damageKind:'poisonKingCenterChain',tags:[TAGS.POISON,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON],allowLifeSteal:false,noKnockback:true,noPoisonChain:true,noPoisonKingBurst:true,noPoisonKingRecursive:true}); }); }
-function spawnTempInsect(system,king){ if(king.form.spawnMax<=0) return; king.tempInsects=king.tempInsects.filter(i=>!i.dead); if(king.tempInsects.length>=king.form.spawnMax) return; const s=system.scene; const view=s.add.circle(king.view.x-10,king.view.y+10,5,0xc8ff73,0.9).setStrokeStyle(2,0x426d24,1).setDepth(146); king.tempInsects.push({view,attacksLeft:2,readyAt:s.getGameplayTime()+180,dead:false}); }
-function updateTempInsects(system,king){ const s=system.scene, data=system.getData('bone_eating_insect')||{damage:14,extendMs:700,attackIntervalMs:1400}, now=s.getGameplayTime(); king.tempInsects.forEach(insect=>{ if(insect.dead) return; const targets=s.targeting.all().filter(e=>s.statusEffects.has(e,StatusEffects.POISON)); const target=(targets[0]||s.targeting.all()[0]); if(!target){ insect.view.x+=(king.view.x-insect.view.x)*0.16; insect.view.y+=(king.view.y-insect.view.y)*0.16; return; } insect.view.x+=(target.x-insect.view.x)*0.18; insect.view.y+=(target.y-45-insect.view.y)*0.18; if(now<insect.readyAt||dist(insect.view,target)>34) return; insect.readyAt=now+Math.max(650,data.attackIntervalMs||1400); insect.attacksLeft-=1; s.combatSystem.damageEnemy(target,Math.max(1,Math.round((data.damage||14)*0.6*king.form.damage)),{source:'skill',skillId:SOURCE_POISON_KING,damageKind:'poisonKingTempInsect',tags:[TAGS.POISON,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON],allowLifeSteal:false,noKnockback:true,noPoisonChain:true,noPoisonKingBurst:true,noPoisonKingRecursive:true}); s.statusEffects.getEffects(target,StatusEffects.POISON).forEach(effect=>{ effect.expiresAt=Math.min(now+MAX_EFFECT_REMAINING_MS,effect.expiresAt+Math.round((data.extendMs||700)*0.5)); }); if(insect.attacksLeft<=0){ insect.dead=true; insect.view.destroy(); } }); king.tempInsects=king.tempInsects.filter(i=>!i.dead); }
-function endKing(system,reason){ const s=system.scene, runtime=ensurePoisonRuntime(s), king=runtime.getPoisonKing(); if(!king||king.ending) return; king.ending=true; const shouldReturn=king.level>=9&&(reason==='expired'||reason==='skillRemoved'); if(shouldReturn) returnInfection(system,king); king.dead=true; clearKingAura(s); king.view?.destroy?.(); king.mistZones?.forEach(z=>z.view?.destroy?.()); king.tempInsects?.forEach(i=>i.view?.destroy?.()); king.chainVisuals?.forEach(destroyVisual); runtime.setPoisonKing(null); }
-function returnInfection(system,king){ const s=system.scene, data=poisonNeedleData(system); const total=Math.floor((king.absorbedPoison?.consumedPoisonStacks||0)*0.55); if(total<=0) return; const targets=s.targeting.all().filter(e=>s.targeting.valid(e)).sort((a,b)=>(isBoss(b)-isBoss(a))||((s.statusEffects.has(a,StatusEffects.POISON)?1:0)-(s.statusEffects.has(b,StatusEffects.POISON)?1:0))||s.statusEffects.getStackCount(a,StatusEffects.POISON)-s.statusEffects.getStackCount(b,StatusEffects.POISON)||Math.abs(a.x-s.player.x)-Math.abs(b.x-s.player.x)).slice(0,5); if(!targets.length) return; let remain=total; targets.forEach((target,index)=>{ const left=targets.length-index; const stacks=Math.min(4,Math.max(1,Math.floor(remain/left))); if(remain<=0) return; const give=Math.min(stacks,remain); remain-=give; addPoison(system,target,give,3200,data.poisonDamage||6,`poison_king_return_${king.id}_${target.id||index}`); }); const o=s.add.circle(s.player.x,s.player.y-60,220,0x62f66d,0.10).setStrokeStyle(5,0x9dff73,0.75).setDepth(150); s.tweens.add({targets:o,alpha:0,scale:1.18,duration:520,onComplete:()=>o.destroy()}); }
-
-export const poisonSummonBonusUtils={ sumBonuses, ensureRuntime, MIN_INSECT_INTERVAL_MS, MAX_SINGLE_EXTEND_MS, MAX_EFFECT_REMAINING_MS, ensurePoisonRuntime };
+export const PoisonKingSkill={ bind(system){ const s=system.scene; let king=null,nextRespawnAt=0,lastAt=s.getGameplayTime();
+  const spawn=()=>{ const d=system.getData('poison_king'); if(!d||king) return; const view=s.add.container(s.player.x+90,s.player.y-55).setDepth(147); const body=s.add.ellipse(0,0,58,38,0x1f9d45,0.95).setStrokeStyle(4,0xb7ff82,0.8); const eye=s.add.circle(17,-5,4,0xf2ffd2,1); view.add([body,eye]); const hp=d.hp; king={view,hp,maxHp:hp,growth:0,stage:0,target:null,nextBiteAt:s.getGameplayTime()+500,nextDomainAt:s.getGameplayTime()+700,domain:null,dead:false}; };
+  const die=()=>{ if(!king) return; king.view?.destroy?.(); king.domain?.destroy?.(); king=null; nextRespawnAt=s.getGameplayTime()+((system.getData('poison_king')||{}).reviveMs||4200); };
+  const grow=amount=>{ const d=system.getData('poison_king'); if(!king||!d||king.stage>=d.maxStage) return; king.growth+=amount*d.growthRatio; while(king.growth>=d.growthStage&&king.stage<d.maxStage){ king.growth-=d.growthStage; king.stage++; king.maxHp+=POISON_ADVANCED_TUNING.king.hpPerStage; king.hp=Math.min(king.maxHp,king.hp+POISON_ADVANCED_TUNING.king.hpPerStage+(system.getLevel('poison_king')>=3?POISON_ADVANCED_TUNING.king.stageHealL3:0)); king.view.setScale(1+king.stage*POISON_ADVANCED_TUNING.king.scalePerStage); } };
+  const offTick=s.eventBus.on(CombatEvents.STATUS_TICK,p=>{ if(normalPoison(p)) grow(p.actualDamage); });
+  const choose=()=>s.targeting.all().filter(e=>s.targeting.valid(e)).sort((a,b)=>dist(a,king.view)-dist(b,king.view))[0]||null;
+  const bite=(target,d)=>{ const lvl=system.getLevel('poison_king'), poisoned=s.statusEffects.has(target,StatusEffects.POISON); const dmg=Math.round((d.biteDamage+king.stage*POISON_ADVANCED_TUNING.king.damagePerStage)*(lvl>=6?POISON_ADVANCED_TUNING.king.biteDamageMultiplierL6:1)); const before=target.hp||0; s.combatSystem.damageEnemy(target,dmg,{source:'skill',skillId:'poison_king',damageKind:'poisonKingBite',tags:[TAGS.POISON,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON],allowLifeSteal:false,noKnockback:true,noPoisonChain:true}); const actual=Math.max(0,before-(target.hp||0)); addPoison(system,target,d.poisonStacks,3600,d.poisonDamage+king.stage*POISON_ADVANCED_TUNING.king.poisonPerStage,`poison_king_bite_${s.getGameplayTime()}`,{poisonKingApplied:true}); if(lvl>=6&&poisoned) healEntity(king,Math.min(actual*POISON_ADVANCED_TUNING.king.biteHealRatioL6,king.maxHp*POISON_ADVANCED_TUNING.king.biteHealCapMaxHpRatio),king.maxHp); };
+  const domain=(d)=>{ if(system.getLevel('poison_king')<9) return; if(!king.domain) king.domain=s.add.circle(king.view.x,king.view.y,POISON_ADVANCED_TUNING.king.domainRadius,0x40e060,0.08).setStrokeStyle(3,0x7dff73,0.55).setDepth(143); king.domain.x=king.view.x; king.domain.y=king.view.y; s.targeting.all().filter(e=>s.targeting.valid(e)&&dist(e,king.view)<=POISON_ADVANCED_TUNING.king.domainRadius).forEach(e=>{ s.combatSystem.damageEnemy(e,POISON_ADVANCED_TUNING.king.domainDamage,{source:'skill',skillId:'poison_king',damageKind:'poisonKingDomain',tags:[TAGS.POISON,TAGS.DOT,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON],allowLifeSteal:false,noKnockback:true,noPoisonChain:true}); addPoison(system,e,1,2800,d.poisonDamage,`poison_king_domain_${s.getGameplayTime()}_${e.id||''}`,{poisonDomain:true}); }); };
+  const updater=()=>{ const now=s.getGameplayTime(), dt=(now-lastAt)/1000; lastAt=now; const d=system.getData('poison_king'); if(!d){ die(); return; } if(!king&&now>=nextRespawnAt) spawn(); if(!king) return; king.hp-=0*dt; if(king.hp<=0) return die(); const t=choose(); king.target=t; const goal=t?{x:t.x-42,y:t.y-54}:{x:s.player.x+95,y:s.player.y-55}; king.view.x+=(goal.x-king.view.x)*0.1; king.view.y+=(goal.y-king.view.y)*0.1; if(t&&now>=king.nextBiteAt){ king.nextBiteAt=now+d.biteIntervalMs; bite(t,d); } if(now>=king.nextDomainAt){ king.nextDomainAt=now+POISON_ADVANCED_TUNING.king.domainIntervalMs; domain(d); } if(king.domain){ king.domain.x=king.view.x; king.domain.y=king.view.y; } };
+  system.passiveUpdaters.push(updater); updater(); return ()=>{ offTick(); removeUpdater(system,updater); die(); } }, cleanup(system){} };
+export const poisonSummonBonusUtils={ sumBonuses:b=>Object.values(b||{}).reduce((s,v)=>s+(Number(v)||0),0), ensureRuntime:p=>p, ensurePoisonRuntime:s=>({}) };
