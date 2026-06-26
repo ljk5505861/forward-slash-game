@@ -11,7 +11,15 @@ export default class FlyingSwordSystem {
   createSword(options={}){
     const config={ ...DEFAULTS, ...options };
     const sword={ id:this.nextId++, type:config.type||'base', ownerSkillId:config.ownerSkillId||'', temporary:!!config.temporary, damageScale:config.damageScale, flightSpeed:config.flightSpeed||1, bodyScale:config.bodyScale||1, glowScale:config.glowScale||1, state:'orbit', target:null, angle:config.angle??0, orbitRadius:config.orbitRadius, orbitSpeed:config.orbitSpeed, expiresAt:config.durationMs?this.scene.getGameplayTime()+config.durationMs:0, inheritedTags:[...(config.inheritedTags||[])], affinities:normalizeAffinities(config.affinities), shadowSword:!!config.shadowSword, sourceAfterimageId:config.sourceAfterimageId||null, view:null };
-    if(config.visible!==false){ sword.view=this.scene.add.rectangle(this.scene.player.x-58,this.scene.player.y-72,config.shadowSword?34:44,config.shadowSword?6:8,config.color??0xcff5ff,config.shadowSword?0.55:0.95).setStrokeStyle(2,config.shadowSword?0xc8c2ff:0xffffff,config.shadowSword?0.45:0.8).setDepth(145); }
+    if(config.visible!==false){
+      const color=config.color??0xcff5ff;
+      if(config.ownerSkillId==='sword_wave'&&!config.shadowSword&&this.scene.add.container){
+        const glow=this.scene.add.rectangle(0,0,62,16,color,0.24).setStrokeStyle(1,0xffffff,0.22);
+        const blade=this.scene.add.rectangle(0,0,44,8,color,0.95).setStrokeStyle(2,0xffffff,0.8);
+        sword.view=this.scene.add.container(this.scene.player.x-58,this.scene.player.y-72,[glow,blade]).setDepth(145);
+        sword.view.blade=blade; sword.view.glow=glow;
+      } else sword.view=this.scene.add.rectangle(this.scene.player.x-58,this.scene.player.y-72,config.shadowSword?34:44,config.shadowSword?6:8,color,config.shadowSword?0.55:0.95).setStrokeStyle(2,config.shadowSword?0xc8c2ff:0xffffff,config.shadowSword?0.45:0.8).setDepth(145);
+    }
     this.swords.push(sword);
     this.scene.eventBus?.emit?.(CombatEvents.SWORD_CREATED,{ sword });
     return sword;
@@ -59,6 +67,19 @@ export default class FlyingSwordSystem {
   }
 
   setState(id,state,target=null){ const sword=this.getById(id); if(!sword) return null; sword.state=state; sword.target=target; return sword; }
+
+  applySwordVisualScale(id, bodyScale=1, glowScale=bodyScale){
+    const sword=this.getById(id);
+    if(!sword?.view) return false;
+    sword.bodyScale=bodyScale;
+    sword.glowScale=glowScale;
+    if(sword.view.blade&&sword.view.glow){
+      sword.view.setScale?.(1,1);
+      sword.view.blade.setScale?.(bodyScale,bodyScale);
+      sword.view.glow.setScale?.(glowScale,glowScale);
+    } else sword.view.setScale?.(bodyScale,glowScale);
+    return true;
+  }
 
   markAttack(id,target,meta={}){
     const sword=this.getById(id);
@@ -113,7 +134,7 @@ export default class FlyingSwordSystem {
         const factor=Math.min(0.62,0.20*(sword.flightSpeed||1));
         sword.view.x+=(sword.target.x-sword.view.x)*factor;
         sword.view.y+=((sword.target.y-48)-sword.view.y)*factor;
-        sword.view.rotation=Math.atan2((sword.target.y-48)-sword.view.y,sword.target.x-sword.view.x); sword.view.setScale?.(sword.bodyScale||1,(sword.glowScale||sword.bodyScale||1));
+        sword.view.rotation=Math.atan2((sword.target.y-48)-sword.view.y,sword.target.x-sword.view.x); this.applySwordVisualScale(sword.id,sword.bodyScale||1,sword.glowScale||sword.bodyScale||1);
       } else this.returnToOrbit(sword.id);
     });
   }

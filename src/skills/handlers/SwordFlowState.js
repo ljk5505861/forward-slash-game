@@ -66,13 +66,6 @@ export function sheathInheritedStats(system){
   const st=refreshSwordQuality(system), main=mainSwordStats(system), q=QUALITY_MULTIPLIERS[st.mainQuality]||QUALITY_MULTIPLIERS.COMMON, lv=swordLevelBonuses(system.getLevel('sword_wave'));
   return { damageMultiplier:1+(q.damage-1)*0.6+(lv.finalDamage-1)*0.5, sizeMultiplier:1+(main.bodySize-1)*0.7, glowMultiplier:1+(main.glowSize-1)*0.7, fireSoul:st.affinities.fire||0, poisonSoul:st.affinities.poison||0, hasMain:hasMainSword(system) };
 }
-export function rollSwordCrit(scene, amount, stats){
-  const p=scene.playerData||{};
-  const chance=Math.max(0,Math.min(0.95,(p.critChance||0)+(stats?.critChance||0)));
-  const crit=Math.random()<chance;
-  const multiplier=(p.critMultiplier||1.5)+(stats?.critMultiplierBonus||0);
-  return { crit, damage:crit?Math.round(amount*multiplier):amount };
-}
 export function applyElementalSouls(system, target, stats, sourceId, weakened=false){
   const s=system.scene, level=swordTombLevel(system);
   if(level<6 || !target) return;

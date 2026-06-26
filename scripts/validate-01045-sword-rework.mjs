@@ -9,6 +9,8 @@ const entry = src('src/skills/handlers/EntryArchetypeSkills.js');
 const sword = src('src/skills/handlers/SwordReworkSkills.js');
 const index = src('src/skills/handlers/index.js');
 const flow = src('src/skills/handlers/SwordFlowState.js');
+const combat = src('src/systems/CombatSystem.js');
+const flying = src('src/systems/FlyingSwordSystem.js');
 const pkg = JSON.parse(src('package.json'));
 
 assert.equal(SKILLS.sword_wave.levels[2].milestoneText.includes('御剑迅捷'), true, '御剑术3级是御剑迅捷');
@@ -61,12 +63,19 @@ assert.match(sword, /endAt:s\.getGameplayTime\(\)\+900[\s\S]*t>=1[\s\S]*sword\.d
 assert.equal(SKILLS.sword_sheath.levels[8].secondDelayMs, 200, '剑匣9级第二把剑存在延迟');
 assert.equal(SKILLS.sword_sheath.levels[0].warmupMs >= 5000, true, '剑匣1级温养不低于5秒');
 assert.equal(SKILLS.sword_sheath.levels[8].warmupMs >= 3500, true, '剑匣9级温养不低于3.5秒');
-assert.equal(SKILLS.sword_tomb.levels[8].executeRatio, 0.18, '剑冢斩杀线最高18%');
+assert.equal(Math.max(...SKILLS.sword_tomb.levels.map(l=>l.executeRatio)), 0.18, '剑冢配置最高斩杀线为18%');
+assert.doesNotMatch(sword, /Math\.min\(0\.32|executeRatio:\s*Math\.min|executeRatio\+st\.effectiveSouls/, '剑冢运行时代码不再提高斩杀线');
 assert.match(flow, /StatusEffects\.BURN/);
 assert.match(flow, /StatusEffects\.POISON/);
+const entrySwordBlock = entry.slice(entry.indexOf('export const EntrySwordSkill='), entry.indexOf('export const EntryHeavyHitSkill='));
 assert.match(entry, /state\.chain=\{ targets:\[\.\.\.targets\]/, '神话主剑快照当前目标');
 assert.match(entry, /sword\.target!==target[\s\S]*markAttack/, '神话主剑真实切换目标移动');
-const entrySwordBlock = entry.slice(entry.indexOf('export const EntrySwordSkill='), entry.indexOf('export const EntryHeavyHitSkill='));
+assert.doesNotMatch(entrySwordBlock, /Math\.random|rollSwordCrit|PLAYER_CRIT/, '御剑术处理器不独立暴击、不手动发暴击事件');
+assert.match(entrySwordBlock, /canCrit:true[\s\S]*bonusCritChance:stats\.critChance[\s\S]*bonusCritMultiplier:stats\.critMultiplierBonus/, '御剑术通过统一伤害参数提供暴击加成');
+assert.match(combat, /bonusCritChance[\s\S]*bonusCritMultiplier[\s\S]*CombatEvents\.PLAYER_CRIT/, '统一战斗系统支持单次暴击加成并发出暴击事件');
+assert.match(flying, /view\.blade[\s\S]*view\.glow/, '常驻主剑拥有独立剑体和剑光');
+assert.match(flying, /blade\.setScale\?\.\(bodyScale,bodyScale\)[\s\S]*glow\.setScale\?\.\(glowScale,glowScale\)/, '剑体和剑光分别应用不同尺寸倍率');
+assert.match(flying, /sword\.view\.x\+=|sword\.view\.x\+=/, '飞剑视图整体同步移动');
 assert.doesNotMatch(entrySwordBlock, /lineHitTargets|pierce|贯穿|弹射|范围伤害/, '御剑术普通至史诗没有路径/范围/弹射伤害');
 ['split_sword','rotating_sword','execution_sword','myriad_swords','heaven_splitting_sword'].forEach(id=>{
   assert.equal(SKILLS[id], undefined, `${id} 不在技能池中`);

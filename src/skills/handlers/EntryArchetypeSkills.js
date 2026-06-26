@@ -1,7 +1,7 @@
 import { SKILLS } from '../../config/skills.js';
 import { TAGS } from '../../config/tags.js';
 import { StatusEffects } from '../../systems/StatusEffectSystem.js';
-import { applyElementalSouls, mainSwordStats, rollSwordCrit } from './SwordFlowState.js';
+import { applyElementalSouls, mainSwordStats } from './SwordFlowState.js';
 
 const nineLevels = (values, build, milestones={}) => values.map((value, index) => ({
   ...build(value, index + 1),
@@ -126,12 +126,8 @@ export const EntrySwordSkill={
     const hitTarget=(target,stats)=>{
       const s=system.scene;
       if(!target||!s.targeting.valid(target)) return false;
-      const result=rollSwordCrit(s,stats.damage,stats);
-      const damaged=s.combatSystem.damageEnemy(target,result.damage,{source:'skill',skillId:'sword_wave',tags:SKILLS.sword_wave.tags,allowLifeSteal:false,noKnockback:true,crit:result.crit});
-      if(damaged){
-        applyElementalSouls(system,target,stats,'sword_wave',false);
-        if(result.crit) s.eventBus.emit('PLAYER_CRIT',{ enemy:target, damage:result.damage, forcedCrit:false, source:'skill', skillId:'sword_wave' });
-      }
+      const damaged=s.combatSystem.damageEnemy(target,stats.damage,{source:'skill',skillId:'sword_wave',tags:SKILLS.sword_wave.tags,allowLifeSteal:false,noKnockback:true,canCrit:true,bonusCritChance:stats.critChance,bonusCritMultiplier:stats.critMultiplierBonus});
+      if(damaged) applyElementalSouls(system,target,stats,'sword_wave',false);
       return damaged;
     };
     return passiveUpdater(system,'sword_wave',(data,level)=>{
@@ -141,7 +137,7 @@ export const EntrySwordSkill={
       while(owned.length<1) owned.push(s.flyingSwords.createSword({ownerSkillId:'sword_wave',type:'imperial',damageScale:1,color:0xb8f7ff}));
       while(owned.length>1){ const removed=owned.pop(); s.flyingSwords.removeSword(removed.id,'singleMainSword'); }
       const sword=owned[0], now=s.getGameplayTime(), stats=mainSwordStats(system,data);
-      if(sword){ sword.flightSpeed=stats.speed; sword.bodyScale=stats.bodySize; sword.glowScale=stats.glowSize; sword.view?.setScale?.(stats.bodySize,stats.glowSize); }
+      if(sword){ sword.flightSpeed=stats.speed; sword.bodyScale=stats.bodySize; sword.glowScale=stats.glowSize; s.flyingSwords.applySwordVisualScale?.(sword.id,stats.bodySize,stats.glowSize); }
       if(state.chain){
         const chain=state.chain;
         if(chain.returning){

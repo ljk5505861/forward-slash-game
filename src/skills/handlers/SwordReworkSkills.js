@@ -75,7 +75,7 @@ export const SwordTombSkill = {
       if(!data||level<=0){ st.tomb?.view?.destroy?.(); st.tomb=null; st.domain?.views?.forEach(v=>v.destroy?.()); st.domain=null; return; }
       if(!st.tomb) st.tomb={ nextAt:now+400, view:s.add.triangle(s.player.x,s.player.y-145,0,34,28,0,56,34,0xcbb6ff,0.8).setStrokeStyle(3,0xffffff,0.55).setDepth(139) };
       st.tomb.view?.setPosition(s.player.x,s.player.y-138+Math.sin(now*0.003)*5);
-      if(hasMainSword(system)) refreshSwordQuality(system); else { data={...data, damage:Math.round(data.damage+st.effectiveSouls*1.5+(st.affinities.fire||0)*5+(st.affinities.poison||0)*4), executeRatio:Math.min(0.32,data.executeRatio+st.effectiveSouls*0.001), intervalMs:Math.max(620,data.intervalMs-st.effectiveSouls*8) }; }
+      if(hasMainSword(system)) refreshSwordQuality(system); else { data={...data, damage:Math.round(data.damage+st.effectiveSouls*1.5+(st.affinities.fire||0)*5+(st.affinities.poison||0)*4), intervalMs:Math.max(620,data.intervalMs-st.effectiveSouls*8) }; }
       tryPromoteSwordTomb(system);
       if(st.mythicOwner===SWORD_MYTHIC.TOMB) updateDomain(system,st,data,now);
       if(now<st.tomb.nextAt) return;
