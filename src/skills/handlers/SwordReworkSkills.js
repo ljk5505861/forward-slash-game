@@ -6,7 +6,7 @@ import { addSoulFromEnemy, absorbElementalSouls, applyElementalSouls, getSwordFl
 
 const PhaserRef = globalThis.Phaser || { Math:{ Distance:{ Between:(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1) } } };
 const nineLevels = (rows, build, milestones={}) => rows.map((row,index)=>({ ...build(row,index+1), ...(milestones[index+1]?{ milestoneText:milestones[index+1] }:{}) }));
-export const SWORD_SHEATH_BACK_OFFSET_X=28;
+export const SWORD_SHEATH_BACK_OFFSET_X=36;
 export const SWORD_SHEATH_BACK_OFFSET_Y=26;
 export const SWORD_TOMB_OFFSET_Y=138;
 const sheathAnchor=player=>{ const dir=player.flipX?-1:1; return { dir, x:player.x-dir*SWORD_SHEATH_BACK_OFFSET_X, y:player.y-SWORD_SHEATH_BACK_OFFSET_Y, rotation:0 }; };
