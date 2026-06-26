@@ -6,6 +6,10 @@ import { addSoulFromEnemy, absorbElementalSouls, applyElementalSouls, getSwordFl
 
 const PhaserRef = globalThis.Phaser || { Math:{ Distance:{ Between:(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1) } } };
 const nineLevels = (rows, build, milestones={}) => rows.map((row,index)=>({ ...build(row,index+1), ...(milestones[index+1]?{ milestoneText:milestones[index+1] }:{}) }));
+export const SWORD_SHEATH_BACK_OFFSET_X=34;
+export const SWORD_SHEATH_BACK_OFFSET_Y=48;
+export const SWORD_TOMB_OFFSET_Y=138;
+const sheathAnchor=player=>{ const dir=player.flipX?-1:1; return { dir, x:player.x-dir*SWORD_SHEATH_BACK_OFFSET_X, y:player.y-SWORD_SHEATH_BACK_OFFSET_Y, rotation:-0.45*dir }; };
 
 export const SWORD_REWORK_SKILLS = {
   sword_sheath:{
@@ -54,13 +58,13 @@ export const SwordSheathSkill = {
   bind(system){
     return passiveUpdater(system,'sword_sheath',(data,level)=>{
       const s=system.scene, st=getSwordFlowState(system); if(!data||level<=0){ st.sheath?.view?.destroy?.(); st.sheath?.charge?.destroy?.(); st.sheath=null; return; }
-      const now=s.getGameplayTime();
-      if(!st.sheath){ st.sheath={ readyAt:now+data.warmupMs, pending:[], view:s.add.rectangle(s.player.x-88,s.player.y-42,34,58,0x2a3558,0.82).setStrokeStyle(3,0x9deaff,0.8).setDepth(138), charge:s.add.rectangle(s.player.x-88,s.player.y-42,18,34,0x9deaff,0.15).setDepth(139) }; }
-      const sh=st.sheath, dir=s.player.flipX?-1:1, ox=s.player.x-dir*82, oy=s.player.y-54+Math.sin(now*0.004)*4;
-      sh.view?.setPosition(ox,oy)?.setRotation(-0.35*dir); const progress=1-Math.max(0,(sh.readyAt-now)/data.warmupMs); sh.charge?.setPosition(ox,oy)?.setScale(1,0.35+progress*1.1)?.setAlpha(0.15+progress*0.65)?.setRotation(-0.35*dir);
-      sh.pending=sh.pending.filter(item=>{ if(now<item.at) return true; spawnSheathProjectile(system,st,data,{x:ox,y:oy},dir); return false; });
+      const now=s.getGameplayTime(), anchor=sheathAnchor(s.player);
+      if(!st.sheath){ st.sheath={ readyAt:now+data.warmupMs, pending:[], view:s.add.rectangle(anchor.x,anchor.y,30,54,0x2a3558,0.82).setStrokeStyle(3,0x9deaff,0.8).setDepth(18), charge:s.add.rectangle(anchor.x,anchor.y,16,32,0x9deaff,0.15).setDepth(19) }; }
+      const sh=st.sheath;
+      sh.view?.setPosition(anchor.x,anchor.y)?.setRotation(anchor.rotation); const progress=1-Math.max(0,(sh.readyAt-now)/data.warmupMs); sh.charge?.setPosition(anchor.x,anchor.y)?.setScale(1,0.35+progress*1.1)?.setAlpha(0.15+progress*0.65)?.setRotation(anchor.rotation);
+      sh.pending=sh.pending.filter(item=>{ if(now<item.at) return true; spawnSheathProjectile(system,st,data,{x:anchor.x,y:anchor.y},anchor.dir); return false; });
       if(now<sh.readyAt || sh.pending.length) return;
-      spawnSheathProjectile(system,st,data,{x:ox,y:oy},dir);
+      spawnSheathProjectile(system,st,data,{x:anchor.x,y:anchor.y},anchor.dir);
       if(data.volley>=2) sh.pending.push({ at:now+(data.secondDelayMs||200) });
       sh.readyAt=now+data.warmupMs+(data.volley>=2?(data.secondDelayMs||200):0);
     });
@@ -73,8 +77,9 @@ export const SwordTombSkill = {
     const updater=()=>{
       let data=system.getData('sword_tomb'), level=system.getLevel('sword_tomb'), s=system.scene, st=getSwordFlowState(system), now=s.getGameplayTime();
       if(!data||level<=0){ st.tomb?.view?.destroy?.(); st.tomb=null; st.domain?.views?.forEach(v=>v.destroy?.()); st.domain=null; return; }
-      if(!st.tomb) st.tomb={ nextAt:now+400, view:s.add.triangle(s.player.x,s.player.y-145,0,34,28,0,56,34,0xcbb6ff,0.8).setStrokeStyle(3,0xffffff,0.55).setDepth(139) };
-      st.tomb.view?.setPosition(s.player.x,s.player.y-138+Math.sin(now*0.003)*5);
+      const tx=s.player.x, ty=s.player.y-SWORD_TOMB_OFFSET_Y;
+      if(!st.tomb) st.tomb={ nextAt:now+400, view:s.add.triangle(tx,ty,0,34,28,0,56,34,0xcbb6ff,0.8).setStrokeStyle(3,0xffffff,0.55).setDepth(139) };
+      st.tomb.view?.setPosition(tx,ty);
       if(hasMainSword(system)) refreshSwordQuality(system); else { data={...data, damage:Math.round(data.damage+st.effectiveSouls*1.5+(st.affinities.fire||0)*5+(st.affinities.poison||0)*4), intervalMs:Math.max(620,data.intervalMs-st.effectiveSouls*8) }; }
       tryPromoteSwordTomb(system);
       if(st.mythicOwner===SWORD_MYTHIC.TOMB) updateDomain(system,st,data,now);

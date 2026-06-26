@@ -10,7 +10,7 @@ const read=p=>fs.readFileSync(new URL(`../${p}`, import.meta.url),'utf8');
 const snapshot=state=>JSON.stringify(state);
 const detailAt=(id,level)=>getSkillDetailData(id,{skill:{id,level}});
 
-assert.equal(GAME_VERSION,'0.10.46');
+assert.equal(GAME_VERSION,'0.10.47');
 const skillBar=read('src/ui/SkillBar.js');
 assert.match(skillBar,/import\s+Phaser\s+from\s+['"]phaser['"]/);
 assert.match(skillBar,/SKILL_DETAIL_LONG_PRESS_MS\s*=\s*450/);
@@ -96,7 +96,8 @@ for(const word of ['当前品质','当前魂魄进度','神话名额','当前伤
 
 const flame=read('src/skills/handlers/FlameCoreSkills.js');
 assert.match(flame,/SOLAR_FLAME_VERTICAL_OFFSET\s*=\s*230/);
-assert.match(flame,/setPosition\?\.\(s\.player\.x\s*,\s*s\.player\.y-SOLAR_FLAME_VERTICAL_OFFSET\)/);
+assert.match(flame,/setPosition\?\.\(s\.player\.x,s\.player\.y-SOLAR_FLAME_VERTICAL_OFFSET\)/);
+assert.match(flame,/setPosition\?\.\(s\.player\.x\+SOLAR_FLAME_SECONDARY_OFFSET_X,s\.player\.y-SOLAR_FLAME_VERTICAL_OFFSET-SOLAR_FLAME_SECONDARY_OFFSET_Y\)/);
 assert.ok(!flame.includes('setScrollFactor(0).setDepth(900)'));
 const ind=read('src/ui/EnemyStatusIndicators.js');
 assert.ok(!ind.includes('StatusEffectSystem'));
@@ -104,7 +105,7 @@ assert.ok(ind.includes('IconPlaceholder'));
 assert.ok(ind.includes('StackText'));
 assert.match(ind,/burnStacks\s*=\s*0/);
 assert.match(ind,/setVisible\(false\).*setAlpha\(0\).*setStrokeStyle\(0/s);
-assert.match(ind,/setText\(stacks>0\?String\(stacks\):''\)/);
+assert.match(ind,/setText\(stacks>0\?`灼 \$\{stacks\}`:''\)/);
 assert.match(ind,/setVisible\(stacks>0\)/);
 const status=read('src/systems/StatusEffectSystem.js');
 assert.match(status,/setStacks\(target,type,count\)[\s\S]*if\(type===StatusEffects\.BURN\) this\.syncBurnIndicator\(target\)/);
@@ -120,4 +121,4 @@ assert.match(swordState,/const LV6 = \{ critChance:0\.15, critMultiplierBonus:0\
 assert.match(swordState,/const LV9 = \{ finalDamage:1\.5, bodySize:1\.3, glowSize:1\.3 \}/);
 assert.match(flame,/\[8,0\.0,1,900,0,0\]/);
 assert.match(flame,/burnDamage:5,burnMs:3400,burnIntervalMs:600/);
-console.log('validate-01046-skill-detail-ui passed');
+console.log('validate-01046-skill-detail-ui passed on v0.10.47');
