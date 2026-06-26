@@ -1,8 +1,6 @@
 import { configureEntryArchetypeSkills, EntryFireballSkill, EntrySwordSkill, EntryPoisonNeedleSkill, EntryHeavyHitSkill, EntryIronWallSkill, EntryMovementSkill } from './EntryArchetypeSkills.js';
 import { configureFlameCoreSkills, FireSeedSkill, BurnBurstSkill, SolarFlameSkill } from './FlameCoreSkills.js';
-import { configureSwordCoreSkills, SplitSwordSkill, RotatingSwordSkill } from './SwordCoreSkills.js';
-import { configureSwordAdvancedSkills, ExecutionSwordSkill, MyriadSwordsSkill } from './SwordAdvancedSkills.js';
-import { configureSwordUltimateSkills, HeavenSplittingSwordSkill } from './SwordUltimateSkills.js';
+import { configureSwordReworkSkills, SwordSheathSkill, SwordTombSkill } from './SwordReworkSkills.js';
 import { configureStrengthCoreSkills, GiantForceSkill, BloodthirstSkill } from './StrengthCoreSkills.js';
 import { configureStrengthAdvancedSkills, FrenzySkill, BloodRageBurstSkill } from './StrengthAdvancedSkills.js';
 import { configureStrengthUltimateSkills, LastStandSkill } from './StrengthUltimateSkills.js';
@@ -18,9 +16,7 @@ import { configurePoisonSummonUltimateSkills, PlagueMotherSkill } from './Poison
 
 configureEntryArchetypeSkills();
 configureFlameCoreSkills();
-configureSwordCoreSkills();
-configureSwordAdvancedSkills();
-configureSwordUltimateSkills();
+configureSwordReworkSkills();
 configureStrengthCoreSkills();
 configureStrengthAdvancedSkills();
 configureStrengthUltimateSkills();
@@ -34,4 +30,4 @@ configurePoisonSummonCoreSkills();
 configurePoisonSummonAdvancedSkills();
 configurePoisonSummonUltimateSkills();
 
-export const SKILL_HANDLERS={entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_heavy_hit:EntryHeavyHitSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,fire_seed:FireSeedSkill,burn_burst:BurnBurstSkill,solar_flame:SolarFlameSkill,split_sword:SplitSwordSkill,rotating_sword:RotatingSwordSkill,execution_sword:ExecutionSwordSkill,myriad_swords:MyriadSwordsSkill,heaven_splitting_sword:HeavenSplittingSwordSkill,giant_force:GiantForceSkill,bloodthirst:BloodthirstSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,armor_break_shockwave:ArmorBreakShockwaveSkill,immovable_mountain:ImmovableMountainSkill,black_tortoise_body:BlackTortoiseBodySkill,phantom_step:PhantomStepSkill,shadow_assault:ShadowAssaultSkill,swift_shadow:SwiftShadowSkill,instant_step:InstantStepSkill,myriad_afterimage:MyriadAfterimageSkill,parasitic_gu:ParasiticGuSkill,bone_eating_insect:BoneEatingInsectSkill,poison_chain:PoisonChainSkill,poison_king:PoisonKingSkill,plague_mother:PlagueMotherSkill,frenzy:FrenzySkill,blood_rage_burst:BloodRageBurstSkill,last_stand:LastStandSkill};
+export const SKILL_HANDLERS={entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_heavy_hit:EntryHeavyHitSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,fire_seed:FireSeedSkill,burn_burst:BurnBurstSkill,solar_flame:SolarFlameSkill,sword_sheath:SwordSheathSkill,sword_tomb:SwordTombSkill,giant_force:GiantForceSkill,bloodthirst:BloodthirstSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,armor_break_shockwave:ArmorBreakShockwaveSkill,immovable_mountain:ImmovableMountainSkill,black_tortoise_body:BlackTortoiseBodySkill,phantom_step:PhantomStepSkill,shadow_assault:ShadowAssaultSkill,swift_shadow:SwiftShadowSkill,instant_step:InstantStepSkill,myriad_afterimage:MyriadAfterimageSkill,parasitic_gu:ParasiticGuSkill,bone_eating_insect:BoneEatingInsectSkill,poison_chain:PoisonChainSkill,poison_king:PoisonKingSkill,plague_mother:PlagueMotherSkill,frenzy:FrenzySkill,blood_rage_burst:BloodRageBurstSkill,last_stand:LastStandSkill};
