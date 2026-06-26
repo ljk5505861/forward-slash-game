@@ -43,7 +43,7 @@ const configs = {
     description:'自动向前方发射直线毒针，命中路径上的敌人并施加中毒。',
     levels:nineLevels([
       [26,6,1,1700,3],[32,6,1,1620,3],[52,10,2,1550,3],[62,10,2,1480,3],[75,13,2,1420,3],[91,13,3,1360,999],[109,16,3,1300,999],[130,18,3,1240,999],[156,21,4,1160,999]
-    ],([damage,poisonDamage,poisonStacks,cooldownMs,maxHits],level)=>({ damage,poisonDamage,poisonStacks,cooldownMs,maxHits,pierce:maxHits,poisonMs:4200,poisonIntervalMs:700,maxStacks:15,poisonHealingRatio:0.03,poisonHealingCapMaxHpPerSecond:0.01,desc:level>=9?'正常中毒伤害会按实际毒伤3%治疗玩家，每秒最多为最大生命1%。':level>=6?'毒针完全贯穿直线路径上的全部敌人。':level>=3?'剧毒淬炼后，直接伤害与中毒伤害提高30%。':'发射直线毒针，最多命中路径上的3名敌人。' }),{
+    ],([damage,poisonDamage,poisonStacks,cooldownMs,maxHits],level)=>({ damage,poisonDamage,poisonStacks,cooldownMs,maxHits,pierce:maxHits,poisonMs:4200,poisonIntervalMs:700,maxStacks:15,poisonNeedleLineWidth:56,poisonNeedleMaxRange:760,poisonHealingRatio:0.03,poisonHealingCapMaxHpPerSecond:0.01,desc:level>=9?'正常中毒伤害会按实际毒伤3%治疗玩家，每秒最多为最大生命1%。':level>=6?'毒针完全贯穿直线路径上的全部敌人。':level>=3?'剧毒淬炼后，直接伤害与中毒伤害提高30%。':'发射直线毒针，最多命中路径上的3名敌人。' }),{
       3:'剧毒淬炼：毒针直接伤害和中毒持续伤害提高30%',
       6:'无尽穿透：取消最多命中3人的限制',
       9:'毒血回生：正常毒伤按3%治疗玩家，每秒上限1%最大生命'
@@ -110,25 +110,38 @@ export const EntryFireballSkill={
 export const EntryPoisonNeedleSkill={
 
   bind(system){
-    const s=system.scene; let windowStart=0, healedThisWindow=0;
+    const s=system.scene; let windowStart=0, healedThisWindow=0, pendingPoisonHealing=0;
     const off=s.eventBus.on(CombatEvents.STATUS_TICK,p=>{
       const data=system.getData('poison_cloud'), level=system.getLevel('poison_cloud');
       if(level<9||!data||p.type!==StatusEffects.POISON||p.actualDamage<=0||p.effect?.poisonMeta?.nonNormal) return;
       const now=s.getGameplayTime(); if(now-windowStart>=1000){ windowStart=now; healedThisWindow=0; }
-      const player=s.playerData, max=player.maxHp||player.maxHealth||player.hp||0;
-      const cap=player.ignorePoisonHealingCap?Infinity:max*(data.poisonHealingCapMaxHpPerSecond||0.01);
-      const room=Math.max(0,cap-healedThisWindow); const amount=Math.min(room,p.actualDamage*(data.poisonHealingRatio||0.03));
-      if(amount>0){ const before=player.hp||0; player.hp=Math.min(max,before+amount); healedThisWindow+=Math.max(0,(player.hp||0)-before); }
+      const max=s.playerData.maxHp||s.playerData.maxHealth||s.playerData.hp||0;
+      const perSecondCap=s.playerData.ignorePoisonHealingCap?Number.POSITIVE_INFINITY:max*(data.poisonHealingCapMaxHpPerSecond||0.01);
+      const room=Math.max(0,perSecondCap-healedThisWindow);
+      if(room<=0) return;
+      pendingPoisonHealing+=p.actualDamage*(data.poisonHealingRatio||0.03);
+      const request=Math.min(Math.floor(pendingPoisonHealing),Math.floor(room));
+      if(request<=0) return;
+      const healed=s.healPlayer?.(request,'poison_healing',{skillId:'poison_cloud',actualPoisonDamage:p.actualDamage})||0;
+      if(healed>0){ healedThisWindow+=healed; pendingPoisonHealing=Math.max(0,pendingPoisonHealing-healed); }
     });
     return ()=>off?.();
   },
   cast(system,cfg,data,level,ctx){
     const s=system.scene;
-    const targets=s.targeting.all().filter(e=>e.x>=s.player.x-30).sort((a,b)=>a.x-b.x).slice(0,data.maxHits||data.pierce||3);
-    ctx.originalTargets=targets;
-    ctx.originalTarget=targets[0]||null;
-    targets.forEach((target,index)=>{
-      system.projectile(s.player.x,s.player.y-55-index*5,target.x,target.y-45,0x60e878);
+    const origin={x:s.player.x,y:s.player.y-55};
+    const maxRange=data.poisonNeedleMaxRange||760, halfWidth=(data.poisonNeedleLineWidth||56)/2;
+    const first=s.targeting.all().filter(e=>s.targeting.valid(e)&&e.x>=origin.x-10).sort((a,b)=>Math.hypot(a.x-origin.x,a.y-origin.y)-Math.hypot(b.x-origin.x,b.y-origin.y))[0];
+    if(!first) return { failed:true };
+    const len=Math.max(1,Math.hypot(first.x-origin.x,(first.y-45)-origin.y));
+    const dir={x:(first.x-origin.x)/len,y:((first.y-45)-origin.y)/len};
+    const candidates=s.targeting.all().map(e=>{ const cx=e.x-origin.x, cy=(e.y-45)-origin.y; const along=cx*dir.x+cy*dir.y; const perp=Math.abs(cx*dir.y-cy*dir.x); return {e,along,perp}; }).filter(h=>h.along>=0&&h.along<=maxRange&&h.perp<=halfWidth&&s.targeting.valid(h.e)).sort((a,b)=>a.along-b.along);
+    const targets=candidates.slice(0,data.maxHits||3).map(h=>h.e);
+    ctx.originalTargets=targets; ctx.originalTarget=targets[0]||null;
+    const endAlong=targets.length?Math.max(...targets.map(t=>{ const cx=t.x-origin.x, cy=(t.y-45)-origin.y; return cx*dir.x+cy*dir.y; })):maxRange;
+    const end={x:origin.x+dir.x*Math.min(maxRange,endAlong),y:origin.y+dir.y*Math.min(maxRange,endAlong)};
+    system.projectile(origin.x,origin.y,end.x,end.y,0x60e878,220);
+    targets.forEach(target=>{
       system.hit(target,system.damageValue(data.damage,ctx),cfg,level,ctx,system.baseDamageValue(data.damage,ctx));
       s.statusEffects.add(StatusEffects.POISON,target,{ durationMs:data.poisonMs,intervalMs:data.poisonIntervalMs,value:data.poisonDamage,stacks:data.poisonStacks,maxStacks:data.maxStacks,sourceId:'entry_poison_needle',poisonMeta:{normal:true,sourceSkillId:'poison_cloud'},damageMultiplier:ctx.damageMultiplier,baseDamageMultiplierWithoutProfession:ctx.baseDamageMultiplierWithoutProfession,professionMultiplier:ctx.professionMultiplier,professionApplied:true });
     });

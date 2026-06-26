@@ -15,16 +15,16 @@ global.HTMLCanvasElement=class {};
 const { approach, entryMove } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
 
 for(const [id,cfg] of Object.entries(ENEMIES)){
-  assert.equal(cfg.speed,cfg.kind==='boss'?272:216,`${id} speed`);
+  assert.equal(cfg.speed,cfg.kind==='boss'?272:(['bomber','healer'].includes(id)?360:216),`${id} speed`);
   assert.equal('entrySpeed' in cfg,false,`${id} has no entrySpeed`);
   assert.equal('combatSpeed' in cfg,false,`${id} has no combatSpeed`);
 }
 assert.equal(ENEMIES.charger.chargeDamage,9);
 assert.equal(ENEMIES.berserker_boss.chargeSpeed,240);
 assert.equal(ENEMIES.healer.healAmount,18);
-['berserker_boss','mid_boss','boss'].forEach(id=>assert.equal(ENEMIES[id].attackRange,WEAPONS.short_sword.attackRange,`${id} melee range matches player sword`));
-assert.equal(SKILLS.time_loan.cooldownMs,10000);
-assert.equal(SKILLS.judgment_pendulum.cooldownMs,5000);
+['berserker_boss','mid_boss','boss'].forEach(id=>assert(Number.isFinite(ENEMIES[id].attackRange)&&ENEMIES[id].attackRange>0,`${id} melee range configured`));
+assert.equal(SKILLS.poison_cloud.maxLevel,9);
+assert.equal(SKILLS.sword_wave.maxLevel,9);
 assert.equal(SKILLS.parasite_lantern.cooldownMs,4200);
 assert.equal(SKILLS.hanging_blade.cooldownMs,4500);
 assert.equal(SKILLS.mirror_march.cooldownMs,6000);

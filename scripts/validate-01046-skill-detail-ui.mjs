@@ -10,7 +10,7 @@ const read=p=>fs.readFileSync(new URL(`../${p}`, import.meta.url),'utf8');
 const snapshot=state=>JSON.stringify(state);
 const detailAt=(id,level)=>getSkillDetailData(id,{skill:{id,level}});
 
-assert.equal(GAME_VERSION,'0.10.52');
+assert.equal(GAME_VERSION,'0.10.53');
 const skillBar=read('src/ui/SkillBar.js');
 assert.match(skillBar,/import\s+Phaser\s+from\s+['"]phaser['"]/);
 assert.match(skillBar,/SKILL_DETAIL_LONG_PRESS_MS\s*=\s*450/);
@@ -27,7 +27,7 @@ assert.match(skillBar,/Clamp\([^,]+,[^,]*0,[^)]*maxScroll/);
 for(const ev of ['pointerdown','pointermove','pointerup','pointerupoutside','pointercancel','wheel']) assert.ok(skillBar.includes(ev),ev);
 
 const keys=Object.keys(SKILLS);
-assert.equal(keys.length,31);
+assert.equal(keys.length,29);
 assert.deepEqual(validateSkillDetailContent(),[]);
 for(const id of keys){
   const cfg=SKILLS[id];
@@ -57,7 +57,10 @@ const sheath=detailAt('sword_sheath',1).currentEffects.join('|');
 assert.ok(sheath.includes('温养时间：6秒'));
 assert.ok(sheath.includes('剑体尺寸倍率：0.95倍'));
 assert.ok(detailAt('frenzy',1).currentEffects.join('|').includes('狂怒分档：'));
-assert.ok(detailAt('poison_king',1).currentEffects.join('|').includes('感染吞噬比例：25%'));
+assert.ok(detailAt('poison_king',1).currentEffects.join('|').includes('毒王成长转化比例：22%'));
+assert.ok(detailAt('poison_cloud',9).currentEffects.join('|').includes('毒伤回血比例：3%'));
+assert.ok(detailAt('parasitic_gu',1).currentEffects.join('|').includes('分裂所需毒能'));
+assert.ok(detailAt('poison_chain',3).currentEffects.join('|').includes('毒链延伸概率'));
 const mountain=detailAt('immovable_mountain',1).currentEffects.join('|');
 assert.ok(mountain.includes('每层防御加成：3'));
 const solar=detailAt('solar_flame',1).currentEffects.join('|');
@@ -121,4 +124,4 @@ assert.match(swordState,/const LV6 = \{ critChance:0\.15, critMultiplierBonus:0\
 assert.match(swordState,/const LV9 = \{ finalDamage:1\.5, bodySize:1\.3, glowSize:1\.3 \}/);
 assert.match(flame,/\[8,0\.0,1,900,0,0\]/);
 assert.match(flame,/burnDamage:5,burnMs:3400,burnIntervalMs:600/);
-console.log('validate-01046-skill-detail-ui passed on v0.10.52');
+console.log('validate-01046-skill-detail-ui passed on v0.10.53');

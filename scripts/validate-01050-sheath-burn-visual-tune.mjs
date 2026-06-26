@@ -15,7 +15,7 @@ const skillsConfig=read('src/config/skills.js');
 const balanceConfig=read('src/config/balance.js');
 const enemiesConfig=read('src/config/enemies.js');
 
-assert.equal(GAME_VERSION,'0.10.52','game version is 0.10.52');
+assert.equal(GAME_VERSION,'0.10.53','game version is 0.10.53');
 
 assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_X=36;/,'sheath x offset remains at the v0.10.51 position');
 assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_Y=26;/,'sheath y offset remains unchanged');

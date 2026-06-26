@@ -6,5 +6,5 @@ const scene={ balance:BALANCE, scale:{height:1280}, playerData:createPlayerRunti
 const stage=new StageSystem(scene); scene.stageSystem=stage; stage.start();
 stage.onBossKilled('boss1'); stage.onBossKilled('boss1'); assert.deepEqual(scene.artifacts,['boss1']); stage.beginAfterBossReward('boss1'); stage.beginAfterBossReward('boss1'); assert.deepEqual(scene.campfires,['boss1']);
 stage.onBossKilled('boss2'); stage.onBossKilled('boss2'); assert.deepEqual(scene.artifacts,['boss1','boss2']); stage.beginAfterBossReward('boss2'); stage.beginAfterBossReward('boss2'); assert.equal(scene.professions,1); stage.onProfessionChosen(); stage.onProfessionChosen(); assert.deepEqual(scene.campfires,['boss1','boss2']);
-stage.onBossKilled('boss3'); stage.onBossKilled('boss3'); assert.equal(scene.wins,1);
+stage.onBossKilled('boss6'); stage.onBossKilled('boss6'); assert.equal(scene.wins,1);
 console.log('[validate:midboss-reward-flow] PASS Boss rewards are StageSystem-owned and unique');
