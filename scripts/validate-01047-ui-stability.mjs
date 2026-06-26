@@ -30,9 +30,11 @@ const sword=read('src/skills/handlers/SwordReworkSkills.js');
 assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_X=34/);
 assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_Y=48/);
 assert.match(sword,/SWORD_TOMB_OFFSET_Y=138/);
+assert.match(sword,/x:player\.x-dir\*SWORD_SHEATH_BACK_OFFSET_X/);
+assert.match(sword,/y:player\.y-SWORD_SHEATH_BACK_OFFSET_Y/);
 assert.match(sword,/setDepth\(18\)/);
 assert.match(sword,/setDepth\(19\)/);
-assert.match(sword,/const tx=stable\(s\.player\.x\), ty=stable\(s\.player\.y-SWORD_TOMB_OFFSET_Y\)/);
+assert.match(sword,/const tx=s\.player\.x, ty=s\.player\.y-SWORD_TOMB_OFFSET_Y/);
 assert.doesNotMatch(sword,/oy=.*Math\.sin/);
 assert.doesNotMatch(sword,/SWORD_TOMB_OFFSET_Y.*Math\.sin/);
 
@@ -40,12 +42,12 @@ const flying=read('src/systems/FlyingSwordSystem.js');
 assert.doesNotMatch(flying,/const bob=/);
 assert.doesNotMatch(flying,/Math\.sin\(time\*0\.004/);
 assert.match(flying,/sword\.view\.setPosition\?\.\(slot\.x,slot\.y\)/);
-assert.match(flying,/x:stable\(player\.x\+behindDirection\*horizontal\)/);
+assert.match(flying,/x:player\.x\+behindDirection\*horizontal/);
+assert.match(flying,/y:player\.y\+vertical/);
 
 const flame=read('src/skills/handlers/FlameCoreSkills.js');
-assert.match(flame,/const primaryX=stable\(s\.player\.x\)/);
-assert.match(flame,/primaryY=stable\(s\.player\.y-SOLAR_FLAME_VERTICAL_OFFSET\)/);
-assert.match(flame,/secondaryX=stable\(s\.player\.x\+SOLAR_FLAME_SECONDARY_OFFSET_X\)/);
+assert.match(flame,/setPosition\?\.\(s\.player\.x,s\.player\.y-SOLAR_FLAME_VERTICAL_OFFSET\)/);
+assert.match(flame,/setPosition\?\.\(s\.player\.x\+SOLAR_FLAME_SECONDARY_OFFSET_X,s\.player\.y-SOLAR_FLAME_VERTICAL_OFFSET-SOLAR_FLAME_SECONDARY_OFFSET_Y\)/);
 
 const pkg=JSON.parse(read('package.json'));
 assert.equal(pkg.scripts['validate:01047-ui-stability'],'node scripts/validate-01047-ui-stability.mjs');
