@@ -4,7 +4,6 @@ const DEFAULTS = Object.freeze({ orbitRadius:72, orbitSpeed:1.8, damageScale:1, 
 const STANDARD_AFFINITIES = Object.freeze(['fire','poison','blood','shield','afterimage']);
 const normalizeAffinity = (affinity) => (typeof affinity === 'string' && affinity.trim()) ? affinity.trim() : '';
 const normalizeAffinities = (affinities=[]) => [...new Set((Array.isArray(affinities)?affinities:[]).map(normalizeAffinity).filter(Boolean))];
-const stable=value=>Math.round(value);
 
 export default class FlyingSwordSystem {
   constructor(scene){ this.scene=scene; this.swords=[]; this.nextId=1; }
@@ -106,7 +105,7 @@ export default class FlyingSwordSystem {
     if(sword?.shadowSword&&sword.sourceAfterimageId){
       const a=this.scene.afterimages?.getById?.(sword.sourceAfterimageId);
       const v=a?.view;
-      if(v) return { x:stable(v.x-22), y:stable(v.y-34), rotation:-0.12 };
+      if(v) return { x:v.x-22, y:v.y-34, rotation:-0.12 };
     }
     const player=this.scene.player;
     const facingLeft=!!player.flipX;
@@ -115,7 +114,7 @@ export default class FlyingSwordSystem {
     const column=Math.floor(index/4);
     const horizontal=58+row*24+column*18;
     const vertical=-92+row*22-column*10;
-    return { x:stable(player.x+behindDirection*horizontal), y:stable(player.y+vertical), rotation:facingLeft?Math.PI:0 };
+    return { x:player.x+behindDirection*horizontal, y:player.y+vertical, rotation:facingLeft?Math.PI:0 };
   }
 
   update(time){
