@@ -1,5 +1,7 @@
 import { ENEMIES } from '../config/enemies.js';
-import { createEnemyStatusIndicators, updateEnemyStatusIndicators } from '../ui/EnemyStatusIndicators.js';
+import { createEnemyStatusIndicators, updateEnemyStatusIndicators, ENEMY_UI_LAYOUT } from '../ui/EnemyStatusIndicators.js';
+
+const enemyTop=enemy=>enemy.y-enemy.height/2;
 
 export default function createEnemy(scene, config, x, groundTopY) {
   const enemy = scene.add.rectangle(x, groundTopY - config.height / 2, config.width, config.height, config.color, 1).setStrokeStyle(6, config.stroke, 1).setDepth(20);
@@ -44,11 +46,12 @@ export default function createEnemy(scene, config, x, groundTopY) {
     burnTick:null,
     level:config.level||1,
   });
-  enemy.hpBarBg = scene.add.rectangle(x, enemy.y - config.height / 2 - 18, config.width, 8, 0x221111).setDepth(21);
-  enemy.hpBar = scene.add.rectangle(x - config.width / 2, enemy.y - config.height / 2 - 18, config.width, 8, 0xff4444).setOrigin(0, 0.5).setDepth(22);
-  enemy.nameText = scene.add.text(x, enemy.y - config.height / 2 - 42, config.name, { fontFamily:'Arial', fontSize:'18px', color:'#fff', stroke:'#000', strokeThickness:3 }).setOrigin(0.5).setDepth(22);
-  enemy.levelText = scene.add.text(x, enemy.y - config.height / 2 - 62, `Lv.${enemy.level}`, { fontFamily:'Arial', fontSize:'15px', color:'#dbeafe', stroke:'#000', strokeThickness:3 }).setOrigin(0.5).setDepth(22);
+  const top=enemyTop(enemy);
+  enemy.hpBarBg = scene.add.rectangle(x, top-ENEMY_UI_LAYOUT.hpBarOffsetY, config.width, 8, 0x221111).setDepth(21);
+  enemy.hpBar = scene.add.rectangle(x - config.width / 2, top-ENEMY_UI_LAYOUT.hpBarOffsetY, config.width, 8, 0xff4444).setOrigin(0, 0.5).setDepth(22);
+  enemy.nameText = scene.add.text(x, top-ENEMY_UI_LAYOUT.nameOffsetY, config.name, { fontFamily:'Arial', fontSize:'18px', color:'#fff', stroke:'#000', strokeThickness:3 }).setOrigin(0.5).setDepth(22);
+  enemy.levelText = scene.add.text(x, top-ENEMY_UI_LAYOUT.levelOffsetY, `Lv.${enemy.level}`, { fontFamily:'Arial', fontSize:'15px', color:'#dbeafe', stroke:'#000', strokeThickness:3 }).setOrigin(0.5).setDepth(22);
   createEnemyStatusIndicators(scene, enemy);
   return enemy;
 }
-export function syncEnemyUi(enemy) { if (!enemy?.active) return; const w = enemy.width; enemy.hpBarBg?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 18); enemy.hpBar?.setPosition(enemy.x - w / 2, enemy.y - enemy.height / 2 - 18).setDisplaySize(w * Math.max(0, enemy.hp / enemy.maxHp), 8); enemy.nameText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 42); enemy.levelText?.setPosition(enemy.x, enemy.y - enemy.height / 2 - 62); updateEnemyStatusIndicators(enemy, enemy.scene?.statusEffects?.getStackCount?.(enemy,'BURN')||0); }
+export function syncEnemyUi(enemy) { if (!enemy?.active) return; const w = enemy.width; const top=enemyTop(enemy); enemy.hpBarBg?.setPosition(enemy.x, top-ENEMY_UI_LAYOUT.hpBarOffsetY); enemy.hpBar?.setPosition(enemy.x - w / 2, top-ENEMY_UI_LAYOUT.hpBarOffsetY).setDisplaySize(w * Math.max(0, enemy.hp / enemy.maxHp), 8); enemy.nameText?.setPosition(enemy.x, top-ENEMY_UI_LAYOUT.nameOffsetY); enemy.levelText?.setPosition(enemy.x, top-ENEMY_UI_LAYOUT.levelOffsetY); updateEnemyStatusIndicators(enemy, enemy.scene?.statusEffects?.getStackCount?.(enemy,'BURN')||0); }
