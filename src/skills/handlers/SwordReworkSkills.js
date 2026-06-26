@@ -6,10 +6,11 @@ import { addSoulFromEnemy, absorbElementalSouls, applyElementalSouls, getSwordFl
 
 const PhaserRef = globalThis.Phaser || { Math:{ Distance:{ Between:(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1) } } };
 const nineLevels = (rows, build, milestones={}) => rows.map((row,index)=>({ ...build(row,index+1), ...(milestones[index+1]?{ milestoneText:milestones[index+1] }:{}) }));
-export const SWORD_SHEATH_BACK_OFFSET_X=34;
-export const SWORD_SHEATH_BACK_OFFSET_Y=48;
+export const SWORD_SHEATH_BACK_OFFSET_X=28;
+export const SWORD_SHEATH_BACK_OFFSET_Y=34;
 export const SWORD_TOMB_OFFSET_Y=138;
 const sheathAnchor=player=>{ const dir=player.flipX?-1:1; return { dir, x:player.x-dir*SWORD_SHEATH_BACK_OFFSET_X, y:player.y-SWORD_SHEATH_BACK_OFFSET_Y, rotation:0 }; };
+export function syncSwordAttachedVisuals(system){ const s=system.scene, st=getSwordFlowState(system); if(s?.player&&st.sheath?.container){ const anchor=sheathAnchor(s.player); st.sheath.container.setPosition(anchor.x,anchor.y).setRotation(0); } if(s?.player&&st.tomb?.view){ st.tomb.view.setPosition(s.player.x,s.player.y-SWORD_TOMB_OFFSET_Y); } }
 
 export const SWORD_REWORK_SKILLS = {
   sword_sheath:{
@@ -54,6 +55,7 @@ function spawnSheathProjectile(system, st, data, origin, dir){
 }
 
 export const SwordSheathSkill = {
+  syncAttachedVisuals:syncSwordAttachedVisuals,
   bind(system){
     const updater=()=>{
       const s=system.scene, st=getSwordFlowState(system), data=system.getData('sword_sheath'), level=system.getLevel('sword_sheath');
@@ -61,7 +63,7 @@ export const SwordSheathSkill = {
       const now=s.getGameplayTime(), anchor=sheathAnchor(s.player);
       if(!st.sheath){ const container=s.add.container(anchor.x,anchor.y).setDepth(18).setRotation(0); const view=s.add.rectangle(0,0,30,54,0x2a3558,0.82).setStrokeStyle(3,0x9deaff,0.8); const charge=s.add.rectangle(0,0,16,32,0x9deaff,0.15); container.add([view,charge]); st.sheath={ readyAt:now+data.warmupMs, pending:[], container, view, charge, chargeReady:false }; }
       const sh=st.sheath;
-      sh.container?.setPosition(anchor.x,anchor.y)?.setRotation(0);
+      syncSwordAttachedVisuals(system);
       const chargeReady=now>=sh.readyAt;
       if(sh.chargeReady!==chargeReady){ sh.charge?.setAlpha(chargeReady?0.72:0.15); sh.chargeReady=chargeReady; }
       sh.pending=sh.pending.filter(item=>{ if(now<item.at) return true; spawnSheathProjectile(system,st,data,{x:anchor.x,y:anchor.y},anchor.dir); return false; });
@@ -82,6 +84,7 @@ export const SwordSheathSkill = {
 };
 
 export const SwordTombSkill = {
+  syncAttachedVisuals:syncSwordAttachedVisuals,
   bind(system){
     const offKill=system.scene.eventBus.on(CombatEvents.ENEMY_KILLED,(payload={})=>{ if(payload.skillId==='sword_tomb') addSoul(system,payload.enemy,payload); });
     const updater=()=>{
@@ -89,7 +92,7 @@ export const SwordTombSkill = {
       if(!data||level<=0){ st.tomb?.view?.destroy?.(); st.tomb=null; st.domain?.views?.forEach(v=>v.destroy?.()); st.domain=null; return; }
       const tx=s.player.x, ty=s.player.y-SWORD_TOMB_OFFSET_Y;
       if(!st.tomb) st.tomb={ nextAt:now+400, view:s.add.triangle(tx,ty,0,34,28,0,56,34,0xcbb6ff,0.8).setStrokeStyle(3,0xffffff,0.55).setDepth(139) };
-      st.tomb.view?.setPosition(tx,ty);
+      syncSwordAttachedVisuals(system);
       if(hasMainSword(system)) refreshSwordQuality(system); else { data={...data, damage:Math.round(data.damage+st.effectiveSouls*1.5+(st.affinities.fire||0)*5+(st.affinities.poison||0)*4), intervalMs:Math.max(620,data.intervalMs-st.effectiveSouls*8) }; }
       tryPromoteSwordTomb(system);
       if(st.mythicOwner===SWORD_MYTHIC.TOMB) updateDomain(system,st,data,now);

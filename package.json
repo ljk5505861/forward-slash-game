@@ -23,7 +23,8 @@
     "validate:01040-skill-damage": "node scripts/validate-01040-skill-damage.mjs",
     "validate:01046-skill-detail-ui": "node scripts/validate-01046-skill-detail-ui.mjs",
     "validate:01047-ui-stability": "node scripts/validate-01047-ui-stability.mjs",
-    "validate:01048-visual-polish": "node scripts/validate-01048-visual-polish.mjs"
+    "validate:01048-visual-polish": "node scripts/validate-01048-visual-polish.mjs",
+    "validate:01049-attached-visual-fix": "node scripts/validate-01049-attached-visual-fix.mjs"
   },
   "dependencies": {
     "phaser": "latest",
