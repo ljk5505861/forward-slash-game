@@ -21,7 +21,10 @@ assert.doesNotMatch(sheathBlock,/setScale\(/,'sheath standby has no per-frame sc
 assert.match(sheathBlock,/s\.add\.container\(anchor\.x,anchor\.y\)[\s\S]*container\.add\(\[view,charge\]\)/,'sheath frame and charge are in one Container');
 assert.match(sheathBlock,/container=s\.add\.container\(anchor\.x,anchor\.y\)\.setDepth\(18\)\.setRotation\(0\)/,'sheath container depth is below player and rotation is fixed');
 assert.match(sheathBlock,/sh\.container\?\.setPosition\(anchor\.x,anchor\.y\)\?\.setRotation\(0\)/,'sheath update sets container position once with fixed rotation');
-assert.match(sheathBlock,/st\.sheath\?\.container\?\.destroy\?\.\(\)/,'sheath cleanup destroys the container');
+assert.match(sheathBlock,/system\.passiveUpdaters\.push\(updater\);[\s\S]*updater\(\);[\s\S]*return \(\)=>\{/,'sheath bind returns a real cleanup callback');
+assert.match(sheathBlock,/system\.passiveUpdaters=system\.passiveUpdaters\.filter\(fn=>fn!==updater\)/,'sheath cleanup unregisters its passive updater');
+assert.match(sheathBlock,/return \(\)=>\{[\s\S]*st\.sheath\?\.container\?\.destroy\?\.\(\);[\s\S]*st\.sheath=null;/,'sheath cleanup destroys the container and clears runtime state');
+assert.doesNotMatch(sheathBlock,/return passiveUpdater\(/,'sheath does not use the old empty passive cleanup');
 assert.deepEqual(SKILLS.sword_sheath.levels.map(l=>l.damage),[32,38,44,52,60,70,82,96,104],'sword_sheath damage unchanged');
 assert.deepEqual(SKILLS.sword_sheath.levels.map(l=>l.warmupMs),[6000,5700,5200,5000,4700,4500,4300,4100,4000],'sword_sheath warmup unchanged');
 assert.deepEqual(SKILLS.sword_sheath.levels.map(l=>l.range),[560,590,620,650,690,725,760,800,840],'sword_sheath range unchanged');
