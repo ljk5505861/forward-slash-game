@@ -47,7 +47,6 @@ assert.match(indicators,/STATUS_ITEM_WIDTH=18/,'status row reserves compact 18px
 assert.deepEqual(SKILLS.sword_tomb.levels.map(l=>l.executeRatio),[0.10,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.18],'sword_tomb execute ratios unchanged');
 assert.deepEqual(SKILLS.sword_wave.levels.map(l=>l.damage),[34,42,50,58,68,78,90,102,116],'sword_wave damage unchanged');
 
-
 assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_X=28/,'sheath x offset is closer to the player than v0.10.48');
 assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_Y=34/,'sheath y offset is lower than v0.10.48');
 assert.doesNotMatch(sword,/SWORD_SHEATH_BACK_OFFSET_X=34/,'sheath x offset is not the v0.10.48 value');
@@ -65,9 +64,13 @@ assert.match(flame,/syncAttachedVisuals:syncSolarFlameAttachedVisuals/,'solar fl
 assert.match(flying,/syncAttachedVisuals\(\)\{[\s\S]*formationPosition\(index,this\.scene\.getGameplayTime\?\.\(\)\|\|0,sword\)/,'flying sword orbit visuals have a syncAttachedVisuals pass');
 assert.match(afterimage,/syncAttachedVisuals\(\)\{[\s\S]*afterimage\.view\.setPosition\?\.\(target\.x,target\.y\)/,'afterimage visuals snap in sync pass without lerp');
 assert.doesNotMatch(afterimage,/\+=\(targetX-afterimage\.view\.x\)\*0\.22|\+=\(targetY-afterimage\.view\.y\)\*0\.22/,'afterimage visual follow no longer lerps behind player');
-assert.match(skillSystem,/syncAttachedVisuals\(\)\{ Object\.values\(SKILL_HANDLERS\)\.forEach\(handler=>handler\?\.syncAttachedVisuals\?\.\(this\)\); \}/,'SkillSystem has unified attached visual sync entry');
-assert.match(scene,/syncAttachedVisuals\(\)\{ this\.afterimages\?\.syncAttachedVisuals\?\.\(\); this\.skillSystem\?\.syncAttachedVisuals\?\.\(\); this\.flyingSwords\?\.syncAttachedVisuals\?\.\(\); \}/,'GameScene has unified attached visuals phase');
-assert.match(scene,/this\.stageSystem\.update\(time\); this\.syncAttachedVisuals\(\);/,'GameScene syncs attached visuals after gameplay movement and systems update');
+assert.match(skillSystem,/POST_UPDATE_EVENT=Phaser\.Scenes\?\.Events\?\.POST_UPDATE\|\|'postupdate'/,'attached visuals use Phaser POST_UPDATE event');
+assert.match(skillSystem,/postUpdateAttachedVisualSync=\(\)=>this\.scene\.syncAttachedVisuals\?\.\(\)/,'post-update callback delegates to unified scene sync');
+assert.match(skillSystem,/this\.scene\.events\?\.on\?\.\(POST_UPDATE_EVENT,this\.postUpdateAttachedVisualSync\)/,'post-update callback is registered after physics plugin setup');
+assert.match(skillSystem,/this\.scene\.events\?\.off\?\.\(POST_UPDATE_EVENT,this\.postUpdateAttachedVisualSync\)/,'post-update callback is removed on shutdown');
+assert.match(skillSystem,/attachedVisualSyncers=\[\.\.\.new Set\(Object\.values\(SKILL_HANDLERS\)/,'duplicate handler sync functions are deduplicated');
+assert.match(skillSystem,/syncAttachedVisuals\(\)\{ this\.attachedVisualSyncers\.forEach\(sync=>sync\(this\)\); \}/,'SkillSystem uses the deduplicated sync list');
+assert.match(scene,/syncAttachedVisuals\(\)\{ this\.afterimages\?\.syncAttachedVisuals\?\.\(\); this\.skillSystem\?\.syncAttachedVisuals\?\.\(\); this\.flyingSwords\?\.syncAttachedVisuals\?\.\(\); \}/,'GameScene keeps the unified attached visuals order');
 assert.deepEqual(SKILLS.solar_flame.levels.map(l=>l.damage),[8,9,10,11,12,13,14,15,16],'solar flame damage unchanged');
 assert.deepEqual(SKILLS.solar_flame.levels.map(l=>l.intervalMs),[900,880,860,840,820,800,780,760,740],'solar flame interval unchanged');
 assert.deepEqual(SKILLS.fire_seed.levels.map(l=>l.damage),[28,31,34,38,42,46,50,55,60],'fire seed damage unchanged');
