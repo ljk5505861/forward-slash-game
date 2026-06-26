@@ -4,6 +4,7 @@ const DEFAULTS = Object.freeze({ orbitRadius:72, orbitSpeed:1.8, damageScale:1, 
 const STANDARD_AFFINITIES = Object.freeze(['fire','poison','blood','shield','afterimage']);
 const normalizeAffinity = (affinity) => (typeof affinity === 'string' && affinity.trim()) ? affinity.trim() : '';
 const normalizeAffinities = (affinities=[]) => [...new Set((Array.isArray(affinities)?affinities:[]).map(normalizeAffinity).filter(Boolean))];
+const stable=value=>Math.round(value);
 
 export default class FlyingSwordSystem {
   constructor(scene){ this.scene=scene; this.swords=[]; this.nextId=1; }
@@ -101,11 +102,11 @@ export default class FlyingSwordSystem {
     return true;
   }
 
-  formationPosition(index,time,sword=null){
+  formationPosition(index,_time,sword=null){
     if(sword?.shadowSword&&sword.sourceAfterimageId){
       const a=this.scene.afterimages?.getById?.(sword.sourceAfterimageId);
       const v=a?.view;
-      if(v) return { x:v.x-22+Math.sin(time*0.004+index)*8, y:v.y-34+Math.cos(time*0.004+index)*5, rotation:-0.12 };
+      if(v) return { x:stable(v.x-22), y:stable(v.y-34), rotation:-0.12 };
     }
     const player=this.scene.player;
     const facingLeft=!!player.flipX;
@@ -114,8 +115,7 @@ export default class FlyingSwordSystem {
     const column=Math.floor(index/4);
     const horizontal=58+row*24+column*18;
     const vertical=-92+row*22-column*10;
-    const bob=Math.sin(time*0.004+index*0.85)*4;
-    return { x:player.x+behindDirection*horizontal, y:player.y+vertical+bob, rotation:facingLeft?Math.PI:0 };
+    return { x:stable(player.x+behindDirection*horizontal), y:stable(player.y+vertical), rotation:facingLeft?Math.PI:0 };
   }
 
   update(time){
@@ -127,9 +127,8 @@ export default class FlyingSwordSystem {
       if(!sword.view) return;
       if(sword.state==='orbit'){
         const slot=this.formationPosition(index,time,sword);
-        sword.view.x+=(slot.x-sword.view.x)*0.24;
-        sword.view.y+=(slot.y-sword.view.y)*0.24;
-        sword.view.rotation+=(slot.rotation-sword.view.rotation)*0.28;
+        sword.view.setPosition?.(slot.x,slot.y);
+        sword.view.setRotation?.(slot.rotation);
       } else if(sword.state==='attack'&&this.scene.targeting?.valid?.(sword.target)){
         const factor=Math.min(0.62,0.20*(sword.flightSpeed||1));
         sword.view.x+=(sword.target.x-sword.view.x)*factor;
