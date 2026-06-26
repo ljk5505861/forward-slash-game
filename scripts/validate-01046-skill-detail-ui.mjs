@@ -96,8 +96,8 @@ for(const word of ['当前品质','当前魂魄进度','神话名额','当前伤
 
 const flame=read('src/skills/handlers/FlameCoreSkills.js');
 assert.match(flame,/SOLAR_FLAME_VERTICAL_OFFSET\s*=\s*230/);
-assert.match(flame,/const primaryX=stable\(s\.player\.x\)/);
-assert.match(flame,/primaryY=stable\(s\.player\.y-SOLAR_FLAME_VERTICAL_OFFSET\)/);
+assert.match(flame,/setPosition\?\.\(s\.player\.x,s\.player\.y-SOLAR_FLAME_VERTICAL_OFFSET\)/);
+assert.match(flame,/setPosition\?\.\(s\.player\.x\+SOLAR_FLAME_SECONDARY_OFFSET_X,s\.player\.y-SOLAR_FLAME_VERTICAL_OFFSET-SOLAR_FLAME_SECONDARY_OFFSET_Y\)/);
 assert.ok(!flame.includes('setScrollFactor(0).setDepth(900)'));
 const ind=read('src/ui/EnemyStatusIndicators.js');
 assert.ok(!ind.includes('StatusEffectSystem'));
