@@ -10,7 +10,7 @@ const combat=read('src/systems/CombatSystem.js');
 const scene=read('src/scenes/GameScene.js');
 const indicators=read('src/ui/EnemyStatusIndicators.js');
 
-assert.equal(GAME_VERSION,'0.10.51','game version is 0.10.51');
+assert.equal(GAME_VERSION,'0.10.52','game version is 0.10.52');
 assert.match(sword,/rotation:0/,'sword sheath anchor rotation is 0');
 assert.doesNotMatch(sword,/-0\.45\s*\*\s*dir/,'sheath no longer tilts by direction');
 const sheathBlock=sword.slice(sword.indexOf('export const SwordSheathSkill'),sword.indexOf('export const SwordTombSkill'));
@@ -34,14 +34,13 @@ assert.match(combat,/enemy\.nameText\?\.x \?\? enemy\.x/,'CombatSystem damage te
 assert.match(combat,/enemy\.nameText\?\.y \?\? enemy\.y-100/,'CombatSystem damage text reads enemy.nameText y with compatible fallback');
 assert.doesNotMatch(combat,/floatText\(enemy\.x,\s*enemy\.y-60/,'damageEnemy no longer uses enemy.y - 60 as primary damage text origin');
 assert.match(scene,/floatText\(x,y,text,color\)\{ const t=this\.add\.text\(x,y,text,[\s\S]*this\.tweens\.add\(\{targets:t,y:y-42,alpha:0,duration:650/,'GameScene.floatText core animation signature remains unchanged');
-assert.match(indicators,/setText\(stacks>0\?`灼\$\{stacks\}`:''\)/,'burn text has compact 灼${stacks} format');
-assert.doesNotMatch(indicators,/灼 \$\{stacks\}/,'burn text has no middle space');
-assert.match(indicators,/fontSize:'12px'/,'burn status font size is 12px');
-assert.match(indicators,/fontStyle:'normal'/,'burn status uses normal font weight');
-assert.match(indicators,/color:'#ffb36b'/,'burn status color is pale orange');
+assert.match(indicators,/setText\(stacks>0\?String\(stacks\):''\)/,'burn text displays only the stack number');
+assert.doesNotMatch(indicators,/灼/,'burn text no longer contains the 灼 label');
+assert.match(indicators,/fontSize:'16px'/,'burn status font size is 16px');
+assert.match(indicators,/fontStyle:'bold'/,'burn status is bold');
+assert.match(indicators,/color:'#ff9a3d'/,'burn status uses clear orange');
 assert.doesNotMatch(indicators,/stroke:/,'burn status has no text stroke');
 assert.doesNotMatch(indicators,/strokeThickness:/,'burn status has no stroke thickness');
-assert.match(indicators,/setText\(stacks>0\?`灼\$\{stacks\}`:''\)/,'zero stacks still clear text');
 assert.match(indicators,/setVisible\(stacks>0\)/,'zero stacks still hide status row');
 assert.match(indicators,/STATUS_ITEM_WIDTH=18/,'status row reserves compact 18px status slots');
 assert.deepEqual(SKILLS.sword_tomb.levels.map(l=>l.executeRatio),[0.10,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.18],'sword_tomb execute ratios unchanged');

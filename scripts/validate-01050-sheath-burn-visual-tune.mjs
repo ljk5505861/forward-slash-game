@@ -15,11 +15,11 @@ const skillsConfig=read('src/config/skills.js');
 const balanceConfig=read('src/config/balance.js');
 const enemiesConfig=read('src/config/enemies.js');
 
-assert.equal(GAME_VERSION,'0.10.51','game version is 0.10.51');
+assert.equal(GAME_VERSION,'0.10.52','game version is 0.10.52');
 
-assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_X=36;/,'sheath x offset moved outward from v0.10.50');
-assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_Y=26;/,'sheath y offset remains unchanged from v0.10.50');
-assert.doesNotMatch(sword,/export const SWORD_SHEATH_BACK_OFFSET_X=28;/,'sheath x offset is no longer the v0.10.50 value');
+assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_X=36;/,'sheath x offset remains at the v0.10.51 position');
+assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_Y=26;/,'sheath y offset remains unchanged');
+assert.doesNotMatch(sword,/export const SWORD_SHEATH_BACK_OFFSET_X=28;/,'old sheath x offset stays removed');
 assert.match(sword,/rotation:0/,'sword sheath anchor rotation is 0');
 assert.match(sword,/const sheathAnchor=player=>\{ const dir=player\.flipX\?-1:1; return \{ dir, x:player\.x-dir\*SWORD_SHEATH_BACK_OFFSET_X, y:player\.y-SWORD_SHEATH_BACK_OFFSET_Y, rotation:0 \}; \};/,'sheath anchor still uses fixed body-relative offsets');
 const sheathBlock=sword.slice(sword.indexOf('export const SwordSheathSkill'),sword.indexOf('export const SwordTombSkill'));
@@ -41,13 +41,13 @@ assert.deepEqual(SKILLS.sword_wave.levels.map(l=>l.damage),[34,42,50,58,68,78,90
 assert.deepEqual(SKILLS.fireball.levels.map(l=>l.damage),[30,34,38,42,46,42,46,50,54],'entry fireball damage unchanged');
 assert.deepEqual(SKILLS.burn_burst.levels.map(l=>l.burnDamage),[5,5,5,5,5,5,5,5,5],'burn burst burn damage unchanged');
 
-assert.match(indicators,/setText\(stacks>0\?`灼\$\{stacks\}`:''\)/,'burn text remains compact 灼${stacks}');
-assert.doesNotMatch(indicators,/灼 \$\{stacks\}/,'burn text has no middle space');
-assert.match(indicators,/fontSize:'12px'/,'burn status font size remains 12px');
-assert.match(indicators,/fontStyle:'normal'/,'burn status uses normal font weight');
+assert.match(indicators,/setText\(stacks>0\?String\(stacks\):''\)/,'burn indicator displays only the numeric stack count');
+assert.doesNotMatch(indicators,/灼/,'burn indicator no longer includes the 灼 label');
+assert.match(indicators,/fontSize:'16px'/,'burn status font size is 16px');
+assert.match(indicators,/fontStyle:'bold'/,'burn status uses bold weight');
 assert.match(indicators,/STATUS_ITEM_WIDTH=18/,'status row remains compact 18px slots');
-assert.match(indicators,/color:'#ffb36b'/,'burn status color is pale orange');
-assert.doesNotMatch(indicators,/color:'#fff27a'/,'burn status no longer uses v0.10.50 bright yellow');
+assert.match(indicators,/color:'#ff9a3d'/,'burn status color is a clearer orange');
+assert.doesNotMatch(indicators,/color:'#ffb36b'/,'burn status no longer uses the previous pale orange');
 assert.doesNotMatch(indicators,/stroke:/,'burn status has no text stroke');
 assert.doesNotMatch(indicators,/strokeThickness:/,'burn status has no stroke thickness');
 assert.match(indicators,/statusRowOffsetY:15/,'enemy status row vertical position unchanged');
