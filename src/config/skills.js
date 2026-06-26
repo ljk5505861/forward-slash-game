@@ -20,17 +20,17 @@ export const SKILLS = {
 
 const milestoneData = {
   fireball: {
-    3: '获得爆炸范围', 6: '额外发射一枚火球', 9: '燃烧目标死亡或结束时产生爆裂',
+    3: '明显缩短冷却', 6: '每次发射2颗火球', 9: '命中后产生范围爆炸',
     levels: [
-      {damage:30,radius:0,shots:1,desc:'发射1枚火球命中前方敌人。'},
-      {damage:36,radius:0,shots:1,desc:'火球基础伤害提高。'},
-      {damage:42,radius:48,shots:1,milestoneText:'获得爆炸范围',desc:'火球伤害提高，并获得小范围爆炸。'},
-      {damage:45,radius:52,shots:1,desc:'爆炸范围和伤害小幅提高。'},
-      {damage:48,radius:56,shots:1,desc:'火球爆炸更稳定。'},
-      {damage:50,radius:58,shots:2,milestoneText:'额外发射一枚火球',desc:'发射2枚火球，爆炸范围进一步提高。'},
-      {damage:54,radius:62,shots:2,desc:'双火球伤害提高。'},
-      {damage:58,radius:66,shots:2,burnDamage:4,burnMs:1800,burnIntervalMs:600,desc:'双火球附带短暂燃烧。'},
-      {damage:62,radius:72,shots:2,burnDamage:5,burnMs:2400,burnIntervalMs:600,burnBurst:true,burnBurstRadius:90,burnBurstDamage:18,milestoneText:'燃烧目标爆裂',desc:'燃烧目标死亡或燃烧结束时产生爆裂。'},
+      {damage:30,radius:0,shots:1,cooldownMs:1900,manaCost:3,burnDamage:5,burnMs:3200,burnIntervalMs:600,maxStacks:5,desc:'自动锁定最近敌人，发射1颗法系火球并附加1层灼烧。'},
+      {damage:34,radius:0,shots:1,cooldownMs:1800,manaCost:3,burnDamage:5,burnMs:3200,burnIntervalMs:600,maxStacks:5,desc:'火球伤害提高。'},
+      {damage:38,radius:0,shots:1,cooldownMs:1350,manaCost:3,burnDamage:5,burnMs:3200,burnIntervalMs:600,maxStacks:5,milestoneText:'明显缩短冷却',desc:'冷却明显缩短。'},
+      {damage:42,radius:0,shots:1,cooldownMs:1300,manaCost:3,burnDamage:5,burnMs:3200,burnIntervalMs:600,maxStacks:5,desc:'火球伤害提高。'},
+      {damage:46,radius:0,shots:1,cooldownMs:1250,manaCost:3,burnDamage:5,burnMs:3200,burnIntervalMs:600,maxStacks:5,desc:'火球继续强化。'},
+      {damage:42,radius:0,shots:2,cooldownMs:1250,manaCost:3,burnDamage:5,burnMs:3200,burnIntervalMs:600,maxStacks:5,milestoneText:'双火球',desc:'每次发射2颗火球，优先攻击不同目标。'},
+      {damage:46,radius:0,shots:2,cooldownMs:1200,manaCost:3,burnDamage:5,burnMs:3200,burnIntervalMs:600,maxStacks:5,desc:'双火球伤害提高。'},
+      {damage:50,radius:0,shots:2,cooldownMs:1150,manaCost:3,burnDamage:5,burnMs:3200,burnIntervalMs:600,maxStacks:5,desc:'双火球冷却略降。'},
+      {damage:54,radius:82,explosionScale:0.45,shots:2,cooldownMs:1100,manaCost:3,burnDamage:5,burnMs:3200,burnIntervalMs:600,maxStacks:5,milestoneText:'命中爆炸',desc:'火球命中后产生法系范围爆炸，爆炸也附加灼烧。'},
     ]
   },
   lightning: { 3:'增加打击次数', 6:'降低重复命中衰减', 9:'雷击可向附近敌人连锁', levels:[

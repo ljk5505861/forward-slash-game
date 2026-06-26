@@ -10,15 +10,15 @@ const nineLevels = (values, build, milestones={}) => values.map((value, index) =
 const configs = {
   fireball: {
     id:'fireball', name:'火球', rarity:'COMMON', handler:'entry_fireball', maxLevel:9,
-    tags:[TAGS.FIRE,TAGS.ACTIVE_SKILL,TAGS.PROJECTILE,TAGS.BUILD_FIRE], cooldownMs:1900,
-    targetType:'nearestAhead', color:0xff6533, short:'火',
-    description:'向前方敌人发射火球，命中后点燃目标并叠加燃烧。',
+    tags:[TAGS.MAGIC,TAGS.SPELL,TAGS.FIRE,TAGS.ACTIVE_SKILL,TAGS.PROJECTILE,TAGS.BUILD_FIRE], cooldownMs:1900,
+    targetType:'nearestAhead', color:0xff6533, short:'火', manaCost:3,
+    description:'自动锁定最近敌人发射法系火球，命中附加灼烧，9级后命中爆炸。',
     levels:nineLevels([
-      [50,6,1,1900],[58,6,1,1800],[68,8,2,1750],[78,8,2,1680],[90,10,2,1620],[104,10,3,1560],[120,12,3,1500],[138,12,3,1440],[160,14,4,1360]
-    ],([damage,burnDamage,burnStacks,cooldownMs],level)=>({ damage,burnDamage,burnStacks,cooldownMs,burnMs:3600,burnIntervalMs:600,maxStacks:12,desc:level===1?'发射火球并施加燃烧。':`火球伤害提高，命中叠加${burnStacks}层燃烧。` }),{
-      3:'命中时叠加2层燃烧',
-      6:'命中时叠加3层燃烧',
-      9:'命中时叠加4层燃烧'
+      [30,0,1,1900],[34,0,1,1800],[38,0,1,1350],[42,0,1,1300],[46,0,1,1250],[42,0,2,1250],[46,0,2,1200],[50,0,2,1150],[54,82,2,1100]
+    ],([damage,radius,shots,cooldownMs],level)=>({ damage,radius,shots,cooldownMs,manaCost:3,burnDamage:5,burnMs:3200,burnIntervalMs:600,maxStacks:5,explosionScale:0.45,desc:level>=9?'火球命中后产生法系范围爆炸，爆炸也附加灼烧。':level>=6?'每次发射2颗火球，优先攻击不同目标。':'发射1颗法系火球并附加1层灼烧。' }),{
+      3:'明显缩短冷却',
+      6:'每次发射2颗火球',
+      9:'命中后产生范围爆炸'
     })
   },
   sword_wave: {
@@ -102,15 +102,7 @@ function passiveUpdater(system, key, apply){
 }
 
 export const EntryFireballSkill={
-  cast(system,cfg,data,level,ctx){
-    const s=system.scene;
-    const target=s.targeting.nearestAhead(760);
-    if(!target) return;
-    ctx.originalTarget=target;
-    system.projectile(s.player.x,s.player.y-60,target.x,target.y-45,cfg.color);
-    system.hit(target,system.damageValue(data.damage,ctx),cfg,level,ctx,system.baseDamageValue(data.damage,ctx));
-    s.statusEffects.add(StatusEffects.BURN,target,{ durationMs:data.burnMs,intervalMs:data.burnIntervalMs,value:data.burnDamage,stacks:data.burnStacks,maxStacks:data.maxStacks,sourceId:'entry_fireball',damageMultiplier:ctx.damageMultiplier,baseDamageMultiplierWithoutProfession:ctx.baseDamageMultiplierWithoutProfession,professionMultiplier:ctx.professionMultiplier,professionApplied:true });
-  }
+  cast(system,cfg,data,level,ctx){ return system.castFireball(cfg,data,level,ctx); }
 };
 
 export const EntryPoisonNeedleSkill={

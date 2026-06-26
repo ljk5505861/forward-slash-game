@@ -1,5 +1,7 @@
 export const TAGS = Object.freeze({
   FIRE: 'fire',
+  MAGIC: 'magic',
+  SPELL: 'spell',
   POISON: 'poison',
   LIGHTNING: 'lightning',
   DOT: 'dot',
