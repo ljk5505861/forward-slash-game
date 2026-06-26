@@ -4,7 +4,7 @@ import { GAME_VERSION } from '../src/config/version.js';
 
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
-assert.equal(GAME_VERSION,'0.10.49');
+assert.equal(GAME_VERSION,'0.10.50');
 
 const skillBar=read('src/ui/SkillBar.js');
 assert.match(skillBar,/SOUL_BADGE_SKILLS\s*=\s*new Set\(\['sword_wave','sword_tomb'\]\)/);
@@ -28,7 +28,7 @@ assert.ok(enemy.indexOf('nameOffsetY')<enemy.indexOf('levelOffsetY'),'enemy name
 
 const sword=read('src/skills/handlers/SwordReworkSkills.js');
 assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_X=28/);
-assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_Y=34/);
+assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_Y=26/);
 assert.match(sword,/SWORD_TOMB_OFFSET_Y=138/);
 assert.match(sword,/x:player\.x-dir\*SWORD_SHEATH_BACK_OFFSET_X/);
 assert.match(sword,/y:player\.y-SWORD_SHEATH_BACK_OFFSET_Y/);
