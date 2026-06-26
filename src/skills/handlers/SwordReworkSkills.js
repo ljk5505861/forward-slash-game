@@ -9,8 +9,7 @@ const nineLevels = (rows, build, milestones={}) => rows.map((row,index)=>({ ...b
 export const SWORD_SHEATH_BACK_OFFSET_X=34;
 export const SWORD_SHEATH_BACK_OFFSET_Y=48;
 export const SWORD_TOMB_OFFSET_Y=138;
-const stable=value=>Math.round(value);
-const sheathAnchor=player=>{ const dir=player.flipX?-1:1; return { dir, x:stable(player.x-dir*SWORD_SHEATH_BACK_OFFSET_X), y:stable(player.y-SWORD_SHEATH_BACK_OFFSET_Y), rotation:-0.45*dir }; };
+const sheathAnchor=player=>{ const dir=player.flipX?-1:1; return { dir, x:player.x-dir*SWORD_SHEATH_BACK_OFFSET_X, y:player.y-SWORD_SHEATH_BACK_OFFSET_Y, rotation:-0.45*dir }; };
 
 export const SWORD_REWORK_SKILLS = {
   sword_sheath:{
@@ -78,7 +77,7 @@ export const SwordTombSkill = {
     const updater=()=>{
       let data=system.getData('sword_tomb'), level=system.getLevel('sword_tomb'), s=system.scene, st=getSwordFlowState(system), now=s.getGameplayTime();
       if(!data||level<=0){ st.tomb?.view?.destroy?.(); st.tomb=null; st.domain?.views?.forEach(v=>v.destroy?.()); st.domain=null; return; }
-      const tx=stable(s.player.x), ty=stable(s.player.y-SWORD_TOMB_OFFSET_Y);
+      const tx=s.player.x, ty=s.player.y-SWORD_TOMB_OFFSET_Y;
       if(!st.tomb) st.tomb={ nextAt:now+400, view:s.add.triangle(tx,ty,0,34,28,0,56,34,0xcbb6ff,0.8).setStrokeStyle(3,0xffffff,0.55).setDepth(139) };
       st.tomb.view?.setPosition(tx,ty);
       if(hasMainSword(system)) refreshSwordQuality(system); else { data={...data, damage:Math.round(data.damage+st.effectiveSouls*1.5+(st.affinities.fire||0)*5+(st.affinities.poison||0)*4), intervalMs:Math.max(620,data.intervalMs-st.effectiveSouls*8) }; }
@@ -102,7 +101,7 @@ function updateDomain(system,st,data,now){
   const count=Math.min(10,3+Math.floor(st.effectiveSouls/35));
   while(st.domain.views.length<count) st.domain.views.push(s.add.rectangle(s.player.x,s.player.y-92,38,7,0xd8c9ff,0.76).setStrokeStyle(2,0xffffff,0.45).setDepth(137));
   while(st.domain.views.length>count) st.domain.views.pop().destroy();
-  st.domain.views.forEach((v,i)=>{ const a=now*0.004+i*Math.PI*2/count; v.setPosition(stable(s.player.x+Math.cos(a)*118),stable(s.player.y-70+Math.sin(a)*58)).setRotation(a); });
+  st.domain.views.forEach((v,i)=>{ const a=now*0.004+i*Math.PI*2/count; v.setPosition(s.player.x+Math.cos(a)*118,s.player.y-70+Math.sin(a)*58).setRotation(a); });
   const radius=170, damage=Math.round(data.damage*0.32+st.effectiveSouls*0.22+(st.affinities.fire||0)*3+(st.affinities.poison||0)*3);
   s.targeting.all().filter(e=>PhaserRef.Math.Distance.Between(e.x,e.y,s.player.x,s.player.y)<=radius).forEach(e=>{ const next=st.domain.lastHit.get(e)||0; if(now<next) return; st.domain.lastHit.set(e,now+520); const ok=s.combatSystem.damageEnemy(e,damage,{source:'skill',skillId:'sword_tomb',damageKind:'soulDomain',tags:[...SKILLS.sword_tomb.tags,'area'],allowLifeSteal:false,noKnockback:true}); if(ok) applyElementalSouls(system,e,{fireSoul:st.affinities.fire,poisonSoul:st.affinities.poison},'sword_tomb_domain',false); });
 }
