@@ -58,6 +58,14 @@ assert.ok(sheath.includes('温养时间：6秒'));
 assert.ok(sheath.includes('剑体尺寸倍率：0.95倍'));
 assert.ok(detailAt('frenzy',1).currentEffects.join('|').includes('狂怒分档：'));
 assert.ok(detailAt('poison_king',1).currentEffects.join('|').includes('感染吞噬比例：25%'));
+const mountain=detailAt('immovable_mountain',1).currentEffects.join('|');
+assert.ok(mountain.includes('每层防御加成：3'));
+const solar=detailAt('solar_flame',1).currentEffects.join('|');
+assert.ok(solar.includes('燃爆伤害：78'));
+assert.ok(solar.includes('燃爆范围：100'));
+assert.ok(solar.includes('法力消耗：0'));
+assert.ok(detailAt('fire_seed',1).currentEffects.join('|').includes('法力消耗：5'));
+assert.ok(detailAt('sword_tomb',1).nextLevelPreview.join('|').includes('斩杀线：10% → 11%'));
 
 const detailSource=read('src/ui/skillDetailContent.js');
 assert.ok(!detailSource.includes('tryPromoteSwordTomb'));
