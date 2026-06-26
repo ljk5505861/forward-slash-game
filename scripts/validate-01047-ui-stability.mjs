@@ -4,7 +4,7 @@ import { GAME_VERSION } from '../src/config/version.js';
 
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
-assert.equal(GAME_VERSION,'0.10.47');
+assert.equal(GAME_VERSION,'0.10.48');
 
 const skillBar=read('src/ui/SkillBar.js');
 assert.match(skillBar,/SOUL_BADGE_SKILLS\s*=\s*new Set\(\['sword_wave','sword_tomb'\]\)/);
@@ -18,7 +18,7 @@ assert.match(indicators,/nameOffsetY:70/);
 assert.match(indicators,/levelOffsetY:50/);
 assert.match(indicators,/statusRowOffsetY:15/);
 assert.match(indicators,/x:enemy\.x-enemy\.width\/2/);
-assert.match(indicators,/setText\(stacks>0\?`灼 \$\{stacks\}`:''\)/);
+assert.match(indicators,/setText\(stacks>0\?`灼\$\{stacks\}`:''\)/);
 
 const enemy=read('src/entities/createEnemy.js');
 assert.match(enemy,/top-ENEMY_UI_LAYOUT\.hpBarOffsetY/);
@@ -32,8 +32,8 @@ assert.match(sword,/SWORD_SHEATH_BACK_OFFSET_Y=48/);
 assert.match(sword,/SWORD_TOMB_OFFSET_Y=138/);
 assert.match(sword,/x:player\.x-dir\*SWORD_SHEATH_BACK_OFFSET_X/);
 assert.match(sword,/y:player\.y-SWORD_SHEATH_BACK_OFFSET_Y/);
-assert.match(sword,/setDepth\(18\)/);
-assert.match(sword,/setDepth\(19\)/);
+assert.match(sword,/s\.add\.container\(anchor\.x,anchor\.y\)\.setDepth\(18\)\.setRotation\(0\)/);
+assert.match(sword,/s\.add\.container\(anchor\.x,anchor\.y\)\.setDepth\(18\)\.setRotation\(0\)/);
 assert.match(sword,/const tx=s\.player\.x, ty=s\.player\.y-SWORD_TOMB_OFFSET_Y/);
 assert.doesNotMatch(sword,/oy=.*Math\.sin/);
 assert.doesNotMatch(sword,/SWORD_TOMB_OFFSET_Y.*Math\.sin/);

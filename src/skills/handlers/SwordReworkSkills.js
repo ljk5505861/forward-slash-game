@@ -9,7 +9,7 @@ const nineLevels = (rows, build, milestones={}) => rows.map((row,index)=>({ ...b
 export const SWORD_SHEATH_BACK_OFFSET_X=34;
 export const SWORD_SHEATH_BACK_OFFSET_Y=48;
 export const SWORD_TOMB_OFFSET_Y=138;
-const sheathAnchor=player=>{ const dir=player.flipX?-1:1; return { dir, x:player.x-dir*SWORD_SHEATH_BACK_OFFSET_X, y:player.y-SWORD_SHEATH_BACK_OFFSET_Y, rotation:-0.45*dir }; };
+const sheathAnchor=player=>{ const dir=player.flipX?-1:1; return { dir, x:player.x-dir*SWORD_SHEATH_BACK_OFFSET_X, y:player.y-SWORD_SHEATH_BACK_OFFSET_Y, rotation:0 }; };
 
 export const SWORD_REWORK_SKILLS = {
   sword_sheath:{
@@ -57,11 +57,13 @@ function spawnSheathProjectile(system, st, data, origin, dir){
 export const SwordSheathSkill = {
   bind(system){
     return passiveUpdater(system,'sword_sheath',(data,level)=>{
-      const s=system.scene, st=getSwordFlowState(system); if(!data||level<=0){ st.sheath?.view?.destroy?.(); st.sheath?.charge?.destroy?.(); st.sheath=null; return; }
+      const s=system.scene, st=getSwordFlowState(system); if(!data||level<=0){ st.sheath?.container?.destroy?.(); st.sheath=null; return; }
       const now=s.getGameplayTime(), anchor=sheathAnchor(s.player);
-      if(!st.sheath){ st.sheath={ readyAt:now+data.warmupMs, pending:[], view:s.add.rectangle(anchor.x,anchor.y,30,54,0x2a3558,0.82).setStrokeStyle(3,0x9deaff,0.8).setDepth(18), charge:s.add.rectangle(anchor.x,anchor.y,16,32,0x9deaff,0.15).setDepth(19) }; }
+      if(!st.sheath){ const container=s.add.container(anchor.x,anchor.y).setDepth(18).setRotation(0); const view=s.add.rectangle(0,0,30,54,0x2a3558,0.82).setStrokeStyle(3,0x9deaff,0.8); const charge=s.add.rectangle(0,0,16,32,0x9deaff,0.15); container.add([view,charge]); st.sheath={ readyAt:now+data.warmupMs, pending:[], container, view, charge, chargeReady:false }; }
       const sh=st.sheath;
-      sh.view?.setPosition(anchor.x,anchor.y)?.setRotation(anchor.rotation); const progress=1-Math.max(0,(sh.readyAt-now)/data.warmupMs); sh.charge?.setPosition(anchor.x,anchor.y)?.setScale(1,0.35+progress*1.1)?.setAlpha(0.15+progress*0.65)?.setRotation(anchor.rotation);
+      sh.container?.setPosition(anchor.x,anchor.y)?.setRotation(0);
+      const chargeReady=now>=sh.readyAt;
+      if(sh.chargeReady!==chargeReady){ sh.charge?.setAlpha(chargeReady?0.72:0.15); sh.chargeReady=chargeReady; }
       sh.pending=sh.pending.filter(item=>{ if(now<item.at) return true; spawnSheathProjectile(system,st,data,{x:anchor.x,y:anchor.y},anchor.dir); return false; });
       if(now<sh.readyAt || sh.pending.length) return;
       spawnSheathProjectile(system,st,data,{x:anchor.x,y:anchor.y},anchor.dir);
