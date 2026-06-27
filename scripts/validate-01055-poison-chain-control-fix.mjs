@@ -34,6 +34,7 @@ const visual=(x=0,y=0)=>({
   setStrokeStyle(){ return this; },
   setDepth(){ return this; },
   setAlpha(){ return this; },
+  setAlpha(){ return this; },
   setPosition(nextX,nextY){ this.x=nextX; this.y=nextY; return this; },
   setVisible(value){ this.visible=value; return this; },
   setText(value){ this.text=value; return this; },
