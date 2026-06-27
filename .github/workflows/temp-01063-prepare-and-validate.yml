@@ -1,8 +1,8 @@
 name: temp-01063-prepare-and-validate
 on:
-  push:
+  pull_request:
     branches:
-      - fix/0.10.63-safe-restart
+      - main
 permissions:
   contents: write
 jobs:
