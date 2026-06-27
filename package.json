@@ -35,7 +35,9 @@
     "validate:01057-poison-chain-king-hpbar": "node scripts/validate-01057-poison-chain-king-hpbar.mjs",
     "validate:01058-poison-king-damage-text": "node scripts/validate-01058-poison-king-damage-text.mjs",
     "validate:01059-strength-rework": "node scripts/validate-01059-strength-rework.mjs",
-    "validate:01060-strength-balance": "node scripts/validate-01060-strength-balance.mjs"
+    "validate:01060-strength-balance": "node scripts/validate-01060-strength-balance.mjs",
+    "validate:01061-player-info-panel": "node scripts/validate-01061-player-info-panel.mjs",
+    "validate:player-info": "node scripts/validate-player-info-flow.mjs"
   },
   "dependencies": {
     "phaser": "latest",
