@@ -503,4 +503,118 @@ assert.match(
 
 
 
-console.log('validate-01057-poison-chain-king-hpbar: ok');
+// Poison king damage text uses actual HP loss, shared by attack target and forceDamage.
+{
+  const scene=makeScene();
+  scene.playerData.skills=[{id:'poison_king',level:1}];
+  const system={
+    scene,
+    passiveUpdaters:[],
+    getLevel:id=>id==='poison_king'?1:0,
+    getData(id){ return id==='poison_king'?SKILLS.poison_king.levels[0]:null; }
+  };
+  const cleanup=PoisonKingSkill.bind(system);
+  const king=scene.poisonKingRuntime.get();
+  king.view.x=321;
+  king.view.y=222;
+  const hpBefore=king.hp;
+  const actual=scene.poisonKingRuntime.getAttackTarget().takeDamage(25);
+  assert.equal(actual,25,'attack target returns actual poison king damage');
+  assert.equal(king.hp,hpBefore-25,'attack target reduces poison king hp by actual damage');
+  assert.equal(scene.floatMessages.length,1,'attack target emits exactly one damage float text');
+  assert.deepEqual(scene.floatMessages[0],{x:321,y:174,text:'-25',color:'#ff7777'});
+  cleanup();
+}
+
+// Poison king overkill damage text is capped to remaining HP and appears before destruction.
+{
+  const scene=makeScene();
+  scene.playerData.skills=[{id:'poison_king',level:1}];
+  const system={
+    scene,
+    passiveUpdaters:[],
+    getLevel:id=>id==='poison_king'?1:0,
+    getData(id){ return id==='poison_king'?SKILLS.poison_king.levels[0]:null; }
+  };
+  PoisonKingSkill.bind(system);
+  const king=scene.poisonKingRuntime.get();
+  king.view.x=180;
+  king.view.y=140;
+  king.hp=10;
+  const view=king.view;
+  const bar=king.hpBar.container;
+  const actual=scene.poisonKingRuntime.getAttackTarget().takeDamage(100);
+  assert.equal(actual,10,'overkill returns remaining HP as actual damage');
+  assert.equal(scene.floatMessages.length,1,'overkill emits exactly one damage float text');
+  assert.deepEqual(scene.floatMessages[0],{x:180,y:92,text:'-10',color:'#ff7777'});
+  assert.equal(view.destroyed,true,'poison king body is destroyed after lethal damage text');
+  assert.equal(bar.destroyed,true,'poison king hp bar is destroyed after lethal damage');
+  assert.equal(scene.poisonKingRuntime.get(),null,'poison king dies after lethal overkill');
+}
+
+// Poison king forceDamage also displays one actual damage float text.
+{
+  const scene=makeScene();
+  scene.playerData.skills=[{id:'poison_king',level:1}];
+  const system={
+    scene,
+    passiveUpdaters:[],
+    getLevel:id=>id==='poison_king'?1:0,
+    getData(id){ return id==='poison_king'?SKILLS.poison_king.levels[0]:null; }
+  };
+  const cleanup=PoisonKingSkill.bind(system);
+  const king=scene.poisonKingRuntime.get();
+  king.view.x=400;
+  king.view.y=250;
+  const actual=scene.poisonKingRuntime.forceDamage(17);
+  assert.equal(actual,17,'forceDamage returns actual poison king damage');
+  assert.equal(scene.floatMessages.length,1,'forceDamage emits exactly one damage float text');
+  assert.deepEqual(scene.floatMessages[0],{x:400,y:202,text:'-17',color:'#ff7777'});
+  cleanup();
+}
+
+// Poison king ignores zero damage, dead targets and invalid stale attack targets without text or errors.
+{
+  const scene=makeScene();
+  scene.playerData.skills=[{id:'poison_king',level:1}];
+  const system={
+    scene,
+    passiveUpdaters:[],
+    getLevel:id=>id==='poison_king'?1:0,
+    getData(id){ return id==='poison_king'?SKILLS.poison_king.levels[0]:null; }
+  };
+  const cleanup=PoisonKingSkill.bind(system);
+  const target=scene.poisonKingRuntime.getAttackTarget();
+  assert.equal(target.takeDamage(0),0,'zero damage returns zero');
+  assert.equal(scene.poisonKingRuntime.forceDamage(0),0,'zero forceDamage returns zero');
+  assert.equal(scene.floatMessages.length,0,'zero damage does not emit text');
+  scene.poisonKingRuntime.forceDamage(99999);
+  const countAfterDeath=scene.floatMessages.length;
+  assert.doesNotThrow(()=>target.takeDamage(5),'stale dead target does not throw');
+  assert.equal(target.takeDamage(5),0,'stale dead target returns zero actual damage');
+  assert.equal(scene.poisonKingRuntime.forceDamage(5),0,'dead forceDamage returns zero actual damage');
+  assert.equal(scene.floatMessages.length,countAfterDeath,'dead or stale target emits no extra text');
+  cleanup();
+}
+
+// Poison king damage text uses the latest moved body position at the damage instant.
+{
+  const scene=makeScene();
+  scene.playerData.skills=[{id:'poison_king',level:1}];
+  const system={
+    scene,
+    passiveUpdaters:[],
+    getLevel:id=>id==='poison_king'?1:0,
+    getData(id){ return id==='poison_king'?SKILLS.poison_king.levels[0]:null; }
+  };
+  const cleanup=PoisonKingSkill.bind(system);
+  const king=scene.poisonKingRuntime.get();
+  king.view.x=512;
+  king.view.y=333;
+  scene.poisonKingRuntime.getAttackTarget().takeDamage(8);
+  assert.deepEqual(scene.floatMessages[0],{x:512,y:285,text:'-8',color:'#ff7777'});
+  cleanup();
+}
+
+
+console.log('validate-01058-poison-king-damage-text: ok');

@@ -444,6 +444,12 @@ export const PoisonKingSkill={
       bar.fill?.setDisplaySize?.(bar.width*ratio,bar.height);
       bar.fill?.setPosition?.(-bar.width/2,0);
     };
+    const showDamageText=(target,actualDamage)=>{
+      const damage=Math.max(0,Math.round(actualDamage)||0);
+      const view=target?.view;
+      if(damage<=0||!view) return;
+      s.floatText?.(view.x,view.y-48,`-${damage}`,'#ff7777');
+    };
     const createHpBar=target=>{
       destroyHpBar(target);
       const width=46;
@@ -497,6 +503,7 @@ export const PoisonKingSkill={
               current.hp-Math.max(0,Math.round(amount)||0)
             );
             const actual=before-current.hp;
+            if(actual>0) showDamageText(current,actual);
             updateHpBar(current);
             if(current.hp<=0) die(current);
             return actual;
@@ -509,6 +516,7 @@ export const PoisonKingSkill={
         const before=current.hp;
         current.hp=Math.max(0,current.hp-Math.max(0,amount||0));
         const actual=before-current.hp;
+        if(actual>0) showDamageText(current,actual);
         updateHpBar(current);
         if(current.hp<=0) die(current);
         return actual;
