@@ -39,11 +39,11 @@ export default function createEnemy(scene, config, x, groundTopY) {
     bombWarningMs:config.bombWarningMs,
     attackIntervalMs:config.attackIntervalMs,
     baseAttackIntervalMs:config.attackIntervalMs,
-    enragedAttackIntervalMs:config.enragedAttackIntervalMs,
     attackRange:config.attackRange,
     nextAttackAt:0,
     enraged:false,
     burnTick:null,
+    poisonChainPrisonUntil:0,
     level:config.level||1,
   });
   const top=enemyTop(enemy);
@@ -54,4 +54,4 @@ export default function createEnemy(scene, config, x, groundTopY) {
   createEnemyStatusIndicators(scene, enemy);
   return enemy;
 }
-export function syncEnemyUi(enemy) { if (!enemy?.active) return; const w = enemy.width; const top=enemyTop(enemy); enemy.hpBarBg?.setPosition(enemy.x, top-ENEMY_UI_LAYOUT.hpBarOffsetY); enemy.hpBar?.setPosition(enemy.x - w / 2, top-ENEMY_UI_LAYOUT.hpBarOffsetY).setDisplaySize(w * Math.max(0, enemy.hp / enemy.maxHp), 8); enemy.nameText?.setPosition(enemy.x, top-ENEMY_UI_LAYOUT.nameOffsetY); enemy.levelText?.setPosition(enemy.x, top-ENEMY_UI_LAYOUT.levelOffsetY); updateEnemyStatusIndicators(enemy, enemy.scene?.statusEffects?.getStackCount?.(enemy,'BURN')||0); }
+export function syncEnemyUi(enemy) { if (!enemy?.active) return; const w = enemy.width; const top=enemyTop(enemy); enemy.hpBarBg?.setPosition(enemy.x, top-ENEMY_UI_LAYOUT.hpBarOffsetY); enemy.hpBar?.setPosition(enemy.x - w / 2, top-ENEMY_UI_LAYOUT.hpBarOffsetY).setDisplaySize(w * Math.max(0, enemy.hp / enemy.maxHp), 8); enemy.nameText?.setPosition(enemy.x, top-ENEMY_UI_LAYOUT.nameOffsetY); enemy.levelText?.setPosition(enemy.x, top-ENEMY_UI_LAYOUT.levelOffsetY); const status=enemy.scene?.statusEffects; updateEnemyStatusIndicators(enemy, status?.getStackCount?.(enemy,'BURN')||0, status?.getStackCount?.(enemy,'POISON')||0); }

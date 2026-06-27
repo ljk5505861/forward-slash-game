@@ -4,7 +4,7 @@ import { GAME_VERSION } from '../src/config/version.js';
 
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
-assert.equal(GAME_VERSION,'0.10.54');
+assert.equal(GAME_VERSION,'0.10.55');
 
 const skillBar=read('src/ui/SkillBar.js');
 assert.match(skillBar,/SOUL_BADGE_SKILLS\s*=\s*new Set\(\['sword_wave','sword_tomb'\]\)/);
