@@ -34,7 +34,11 @@ export function installPostRenderSceneRestart(Phaser) {
     const gameEvents = scene?.game?.events;
     const sceneEvents = scene?.events;
 
-    if (!scene || typeof gameEvents?.once !== 'function') {
+    if (
+      !scene
+      || typeof gameEvents?.on !== 'function'
+      || typeof gameEvents?.off !== 'function'
+    ) {
       return immediateRestart.apply(plugin, args);
     }
 
@@ -45,19 +49,20 @@ export function installPostRenderSceneRestart(Phaser) {
     const cancel = () => {
       const pending = pendingRestarts.get(scene);
       if (!pending) return;
-      gameEvents.off?.(postRenderEvent, pending.run);
+      gameEvents.off(postRenderEvent, pending.run);
       pendingRestarts.delete(scene);
     };
 
     const run = () => {
       if (!pendingRestarts.has(scene)) return;
+      gameEvents.off(postRenderEvent, run);
       pendingRestarts.delete(scene);
       sceneEvents?.off?.(shutdownEvent, cancel);
       immediateRestart.apply(plugin, args);
     };
 
     pendingRestarts.set(scene, { run, cancel });
-    gameEvents.once(postRenderEvent, run);
+    gameEvents.on(postRenderEvent, run);
     sceneEvents?.once?.(shutdownEvent, cancel);
 
     return plugin;
