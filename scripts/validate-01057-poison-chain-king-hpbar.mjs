@@ -8,6 +8,7 @@ import { StatusEffects } from '../src/systems/StatusEffectSystem.js';
 import { syncEnemyUi } from '../src/entities/createEnemy.js';
 import { PoisonChainActiveSkill } from '../src/skills/handlers/PoisonSummonInteractionFixes.js';
 import { PoisonKingSkill } from '../src/skills/handlers/PoisonSummonAdvancedSkills.js';
+import SkillSystem from '../src/systems/SkillSystem.js';
 
 class Bus {
   constructor(){ this.handlers=new Map(); }
@@ -35,7 +36,6 @@ const visual=(x=0,y=0)=>({
   setStrokeStyle(){ return this; },
   setDepth(){ return this; },
   setAlpha(){ return this; },
-  setAlpha(){ return this; },
   setPosition(nextX,nextY){ this.x=nextX; this.y=nextY; return this; },
   setVisible(value){ this.visible=value; return this; },
   setText(value){ this.text=value; return this; },
@@ -51,7 +51,7 @@ function makeScene(){
   const scene={
     now:0,
     player:{x:0,y:100},
-    playerData:{skills:[{id:'poison_chain',level:1}],hp:100,maxHp:100},
+    playerData:{skills:[{id:'poison_chain',level:1}],hp:100,maxHp:100,mana:100,maxMana:100,cooldownReduction:0,skillDamageMultiplier:1},
     enemies:[],
     eventBus:bus,
     getGameplayTime(){ return this.now; },
@@ -68,15 +68,27 @@ function makeScene(){
           &&enemy.active!==false
           &&!enemy.isDefeated
           &&enemy.hp>0;
+      },
+      nearestAhead(range){
+        return this.all()
+          .filter(enemy=>enemy.x>=scene.player.x-20&&enemy.x-scene.player.x<=range)
+          .sort((a,b)=>Math.hypot(a.x-scene.player.x,a.y-scene.player.y)-Math.hypot(b.x-scene.player.x,b.y-scene.player.y))[0]||null;
+      },
+      isEnemyFullyInsideViewport(enemy){
+        return this.valid(enemy);
       }
     },
+    created:{graphics:[],circles:[]},
     add:{
       ellipse:(x,y)=>visual(x,y),
-      graphics:()=>visual(),
-      circle:(x,y)=>visual(x,y),
+      graphics:()=>{ const g=visual(); scene.created.graphics.push(g); return g; },
+      circle:(x,y)=>{ const c=visual(x,y); scene.created.circles.push(c); return c; },
       container:(x,y)=>({x,y,active:true,visible:true,children:[],destroyed:false,setDepth(){return this;},add(items){this.children.push(...items);return this;},setVisible(v){this.visible=v;return this;},destroy(){this.active=false;this.destroyed=true;}}),
       rectangle:(x,y,w,h,color,alpha)=>({...visual(x,y),displayWidth:w,displayHeight:h,width:w,height:h,color,alpha,origin:null,setOrigin(x,y){this.origin={x,y};return this;},setDisplaySize(w,h){this.displayWidth=w;this.displayHeight=h;return this;}})
     },
+    tweens:{ add(config){ config?.onComplete?.(); return config; } },
+    hud:{ update(){} },
+    skillBar:{ update(){} },
     floatMessages:[],
     floatText(x,y,text,color){
       this.floatMessages.push({x,y,text,color});
@@ -197,6 +209,22 @@ function makeSystem(scene,level=1){
   };
 }
 
+
+function makeRealSkillSystem(scene){
+  const system=Object.create(SkillSystem.prototype);
+  Object.assign(system,{
+    scene,
+    cooldowns:new Map(),
+    active:[],
+    nextCastId:1,
+    boundPassives:new Map(),
+    passiveState:{},
+    passiveUpdaters:[],
+    attachedVisualSyncers:[]
+  });
+  return system;
+}
+
 assert.equal(GAME_VERSION,'0.10.57');
 assert.equal(SKILLS.poison_chain.passive,false);
 assert.equal(SKILLS.poison_chain.targetType,'nearestAhead');
@@ -205,6 +233,40 @@ assert.equal(SKILLS.poison_chain.levels[0].cooldownMs,5200);
 assert.equal(SKILLS.poison_chain.levels[0].prisonMs,2000);
 assert(SKILLS.poison_chain.tags.includes('activeSkill'));
 assert(SKILLS.poison_chain.tags.includes('projectile'));
+
+
+// End-to-end auto cast: SkillSystem.update drives target checks, handler preflight, cast and cooldown.
+{
+  const scene=makeScene();
+  const clean=enemy('auto-clean',120);
+  scene.enemies=[clean];
+  const system=makeRealSkillSystem(scene);
+  const cleanup=PoisonChainActiveSkill.bind(system);
+  scene.now=1000;
+  system.update(scene.now);
+  assert.equal(scene.created.graphics.length,1,'auto cast creates a visible chain line');
+  assert.equal(scene.created.circles.length,1,'auto cast creates a projectile visual');
+  assert.equal(clean.hp,1000-34,'auto cast deals level 1 poison chain damage');
+  assert.equal(scene.statusEffects.getStackCount(clean,StatusEffects.POISON),1,'auto cast applies one poison stack');
+  assert(scene.poisonChainRuntime.hasNode(clean),'auto cast seeds the poison web node');
+  assert.equal(scene.poisonChainRuntime.isPrisoned(clean),true,'auto cast prisons normal enemy');
+  assert.equal(system.cooldowns.get('poison_chain'),1000+5200,'successful auto cast writes level 1 cooldown');
+  cleanup();
+}
+
+// End-to-end no target: SkillSystem.update does not cast and does not consume cooldown.
+{
+  const scene=makeScene();
+  scene.enemies=[];
+  const system=makeRealSkillSystem(scene);
+  const cleanup=PoisonChainActiveSkill.bind(system);
+  scene.now=1000;
+  system.update(scene.now);
+  assert.equal(scene.created.graphics.length,0,'no target creates no chain line');
+  assert.equal(scene.created.circles.length,0,'no target creates no projectile');
+  assert.equal(system.cooldowns.has('poison_chain'),false,'no target does not write cooldown');
+  cleanup();
+}
 
 // Normal enemy: the thrown chain deals damage, seeds the network and fully disables it for 2 seconds.
 {

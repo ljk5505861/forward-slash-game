@@ -50,7 +50,7 @@ export function configurePoisonChainActiveSkill(){
       TAGS.ACTIVE_SKILL,
       TAGS.PROJECTILE
     ])],
-    description:'自动向前方敌人投出毒链，命中后结算一次毒系直接攻击、施加1层中毒并禁锢普通或精英敌人2秒；Boss只承受直接攻击。随后以目标为节点扩张毒网。',
+    description:'自动向前方敌人投出毒链，命中造成毒系伤害并施加1层中毒。普通和精英敌人被禁锢2秒；Boss免疫禁锢，但仍会受到伤害、上毒并成为毒网节点。',
     levels:base.levels.map((level,index)=>({
       ...level,
       damage:CHAIN_DAMAGE[index],
@@ -58,12 +58,12 @@ export function configurePoisonChainActiveSkill(){
       prisonMs:CHAIN_PRISON_MS,
       castRange:CHAIN_CAST_RANGE,
       desc:index>=8
-        ?'投出毒链造成伤害；普通或精英被完全禁锢2秒，节点死亡时毒网自动续接。Boss免疫禁锢。'
+        ?'投出毒链造成毒系伤害并施加1层中毒；普通或精英被完全禁锢2秒，节点死亡时毒网自动续接。Boss免疫禁锢但仍会成为毒网节点。'
         :index>=5
-          ?'投出毒链造成伤害并禁锢2秒，新施加毒层会向相邻节点传递1层。Boss免疫禁锢。'
+          ?'投出毒链造成毒系伤害并施加1层中毒；普通或精英禁锢2秒，新施加毒层会向相邻节点传递1层。Boss免疫禁锢但仍会成为毒网节点。'
           :index>=2
-            ?'投出毒链造成伤害并禁锢2秒，毒网更容易且更频繁扩张。Boss免疫禁锢。'
-            :'投出毒链造成伤害并禁锢2秒，再从该目标向附近中毒敌人扩张。Boss免疫禁锢。'
+            ?'投出毒链造成毒系伤害并施加1层中毒；普通或精英禁锢2秒，毒网更容易且更频繁扩张。Boss免疫禁锢但仍会成为毒网节点。'
+            :'投出毒链造成毒系伤害并施加1层中毒；普通或精英禁锢2秒，再从该目标向附近中毒敌人扩张。Boss免疫禁锢但仍会成为毒网节点。'
     }))
   };
 }
