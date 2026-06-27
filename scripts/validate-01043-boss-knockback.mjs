@@ -11,7 +11,7 @@ const files = {
 const checks = [];
 const check = (name, ok) => checks.push({ name, ok: !!ok });
 
-check('version is 0.10.54', /GAME_VERSION\s*=\s*['"]0\.10\.53['"]/.test(files.version));
+check('version is 0.10.54', /GAME_VERSION\s*=\s*['"]0\.10\.54['"]/.test(files.version));
 check('unified boss knockback distance config exists', /bossKnockbackDistance\s*:\s*10/.test(files.tuning) && /export const bossKnockbackDistance/.test(files.combat));
 check('boss knockback is capped at configured distance', /enemy\.isBoss\s*\?\s*Math\.min\(requestedDistance\s*,\s*bossKnockbackDistance\)/.test(files.combat));
 check('boss vertical knockback lift is zero', /const lift\s*=\s*enemy\.isBoss\s*\?\s*0\s*:\s*NORMAL_ATTACK_KNOCKBACK_LIFT_PX/.test(files.combat));
@@ -43,7 +43,6 @@ check('ChargerBehavior charge to cooldown syncs immediately', hasImmediateSync('
 check('ChargerBehavior cooldown to idle syncs immediately', /this\.state===['"]cooldown['"]&&t>=this\.next\)\{ this\.state=['"]idle['"]; syncBossSkillState\(s,e,this\.state\);/.test(charger));
 check('ChargerBehavior finishCharge cooldown sync is immediate', /finishCharge[\s\S]*this\.state=['"]cooldown['"]; syncBossSkillState\(s,e,this\.state\);/.test(charger));
 check('ChargerBehavior onRecycle clears skill state', /onRecycle\(\)\{ this\.state=['"]idle['"]; syncBossSkillState\(this\.scene,this\.e,this\.state\);/.test(charger));
-
 
 const failed = checks.filter(c => !c.ok);
 for (const c of checks) console.log(`${c.ok ? 'PASS' : 'FAIL'} ${c.name}`);
