@@ -33,6 +33,7 @@ const visual=(x=0,y=0)=>({
   destroyed:false,
   setStrokeStyle(){ return this; },
   setDepth(){ return this; },
+  setAlpha(){ return this; },
   setPosition(nextX,nextY){ this.x=nextX; this.y=nextY; return this; },
   setVisible(value){ this.visible=value; return this; },
   setText(value){ this.text=value; return this; },
@@ -196,7 +197,7 @@ assert.equal(SKILLS.poison_chain.targetType,'nearestAhead');
 assert.equal(SKILLS.poison_chain.levels[0].damage,34);
 assert.equal(SKILLS.poison_chain.levels[0].cooldownMs,5200);
 assert.equal(SKILLS.poison_chain.levels[0].prisonMs,2000);
-assert(SKILLS.poison_chain.tags.includes('active_skill'));
+assert(SKILLS.poison_chain.tags.includes('activeSkill'));
 assert(SKILLS.poison_chain.tags.includes('projectile'));
 
 // Normal enemy: the thrown chain deals damage, seeds the network and fully disables it for 2 seconds.
