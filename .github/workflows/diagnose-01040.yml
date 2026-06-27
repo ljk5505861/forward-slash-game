@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - codex/v01054-poison-stacks-gu-fix
+  pull_request:
+    branches:
+      - main
 
 jobs:
   diagnose:
