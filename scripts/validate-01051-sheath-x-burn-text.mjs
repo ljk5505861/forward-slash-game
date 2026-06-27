@@ -15,7 +15,7 @@ const burnTextBlock=indicators.slice(
   indicators.indexOf('const poisonText')
 );
 
-assert.equal(GAME_VERSION,'0.10.61','game version is 0.10.61');
+assert.equal(GAME_VERSION,'0.10.62','game version is 0.10.62');
 assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_X=36;/,'sheath remains farther behind the player');
 assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_Y=26;/,'sheath y remains unchanged');
 assert.doesNotMatch(sword,/export const SWORD_SHEATH_BACK_OFFSET_X=28;/,'old overlapping x offset remains removed');
