@@ -10,7 +10,7 @@ const read=p=>fs.readFileSync(new URL(`../${p}`, import.meta.url),'utf8');
 const snapshot=state=>JSON.stringify(state);
 const detailAt=(id,level)=>getSkillDetailData(id,{skill:{id,level}});
 
-assert.equal(GAME_VERSION,'0.10.59');
+assert.equal(GAME_VERSION,'0.10.60');
 const skillBar=read('src/ui/SkillBar.js');
 assert.match(skillBar,/import\s+Phaser\s+from\s+['"]phaser['"]/);
 assert.match(skillBar,/SKILL_DETAIL_LONG_PRESS_MS\s*=\s*450/);
@@ -51,8 +51,8 @@ const giant=detailAt('giant_force',1).currentEffects.join('|');
 assert.ok(giant.includes('基础力量+4'));
 assert.ok(giant.includes('每点总力量增加3最大生命'));
 const bloodthirst=detailAt('bloodthirst',1).currentEffects.join('|');
-assert.ok(bloodthirst.includes('普通攻击吸血：3%'));
-assert.ok(bloodthirst.includes('持续时间：4秒'));
+assert.ok(bloodthirst.includes('普通攻击吸血：5%'));
+assert.ok(bloodthirst.includes('持续时间：5秒'));
 const sheath=detailAt('sword_sheath',1).currentEffects.join('|');
 assert.ok(sheath.includes('温养时间：6秒'));
 assert.ok(sheath.includes('剑体尺寸倍率：0.95倍'));
@@ -126,4 +126,4 @@ assert.match(swordState,/const LV6 = \{ critChance:0\.15, critMultiplierBonus:0\
 assert.match(swordState,/const LV9 = \{ finalDamage:1\.5, bodySize:1\.3, glowSize:1\.3 \}/);
 assert.match(flame,/\[8,0\.0,1,900,0,0\]/);
 assert.match(flame,/burnDamage:5,burnMs:3400,burnIntervalMs:600/);
-console.log('validate-01046-skill-detail-ui passed on v0.10.59');
+console.log('validate-01046-skill-detail-ui passed on v0.10.60');

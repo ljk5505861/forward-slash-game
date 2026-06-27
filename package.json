@@ -34,7 +34,8 @@
     "validate:01056-open-skill-pool": "node scripts/validate-01056-open-skill-pool.mjs",
     "validate:01057-poison-chain-king-hpbar": "node scripts/validate-01057-poison-chain-king-hpbar.mjs",
     "validate:01058-poison-king-damage-text": "node scripts/validate-01058-poison-king-damage-text.mjs",
-    "validate:01059-strength-rework": "node scripts/validate-01059-strength-rework.mjs"
+    "validate:01059-strength-rework": "node scripts/validate-01059-strength-rework.mjs",
+    "validate:01060-strength-balance": "node scripts/validate-01060-strength-balance.mjs"
   },
   "dependencies": {
     "phaser": "latest",

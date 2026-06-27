@@ -18,7 +18,7 @@ const archetypes={
   poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],
 };
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.10.59','game version for v0.10.59 skill regression');
+assert.equal(GAME_VERSION,'0.10.60','game version for v0.10.60 skill regression');
 eq(allSkillIds.length,27,'all current 27 skills listed');
 eq(new Set(allSkillIds).size,27,'all current 27 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
@@ -51,9 +51,13 @@ eq(nums('sword_tomb','executeRatio'),[0.10,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.
 
 // Strength / lifesteal archetype.
 eq(nums('spinning_blade','ratio'),[0.4,0.45,0.55,0.58,0.62,0.65,0.7,0.75,0.8],'spinning_blade.ratio');
-eq(nums('bloodthirst','lifeSteal'),[0.03,0.03,0.04,0.04,0.05,0.05,0.05,0.06,0.06],'bloodthirst.lifeSteal');
+eq(nums('bloodthirst','lifeSteal'),[0.05,0.06,0.07,0.08,0.09,0.10,0.11,0.12,0.12],'bloodthirst.lifeSteal');
+eq(nums('bloodthirst','empoweredLifeSteal'),[0.10,0.11,0.14,0.15,0.17,0.20,0.21,0.22,0.24],'bloodthirst.empoweredLifeSteal');
+assert.equal(SKILLS.bloodthirst.levels[8].lowHpLifeSteal,0.30,'bloodthirst low hp empowered lifesteal');
 assert.ok(SKILLS.giant_force.levels.every(l=>l.strength>0&&l.hpPerStrength>=3),'giant_force strength bonuses valid');
-assert.ok(SKILLS.last_stand.levels.every(l=>l.physicalDamageBonus>0&&l.physicalCritChance>0),'last_stand physical crit bonuses configured');
+eq(nums('last_stand','physicalDamageBonus'),[0.15,0.18,0.22,0.26,0.30,0.35,0.40,0.45,0.50],'last_stand.physicalDamageBonus');
+eq(nums('last_stand','physicalCritChance'),[0.15,0.18,0.22,0.25,0.28,0.37,0.41,0.45,0.50],'last_stand.physicalCritChance');
+eq(nums('last_stand','physicalCritMultiplierBonus'),[0.40,0.50,0.60,0.75,0.90,1.05,1.20,1.35,1.50],'last_stand.physicalCritMultiplierBonus');
 
 // Defense / shield archetype.
 eq(nums('healing','defense'),[2,3,5,7,9,12,15,18,22],'healing.defense');
@@ -92,4 +96,4 @@ assert.match(src('src/skills/handlers/AfterimageCoreSkills.js'),/payload\.damage
 assert.match(poisonAdvanced,/'poison_chain_transfer'/,'poison chain uses stable source id');
 ['split_sword','rotating_sword','execution_sword','myriad_swords','heaven_splitting_sword'].forEach(id=>assert.equal(hasHandler(id),false,`${id} old handler not registered`));
 
-console.log('v0.10.59 skill damage regression validation passed.');
+console.log('v0.10.60 skill damage regression validation passed.');

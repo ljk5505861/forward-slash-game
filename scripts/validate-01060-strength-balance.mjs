@@ -18,6 +18,49 @@ function countedRandom(value,fn){ const old=Math.random; let count=0; Math.rando
 
 assert.equal(GAME_VERSION,'0.10.60');
 assert.equal(Object.keys(SKILLS).length,27,'formal skill count');
+
+// v0.10.60 strength balance tables.
+assert.deepEqual(SKILLS.bloodthirst.levels.map(l=>[l.lifeSteal,l.empoweredLifeSteal,l.durationMs,l.cooldownMs]),[[.05,.10,5000,10000],[.06,.11,5000,10000],[.07,.14,5000,10000],[.08,.15,5500,9500],[.09,.17,5500,9000],[.10,.20,6000,8000],[.11,.21,6000,8000],[.12,.22,6000,8000],[.12,.24,6000,8000]]);
+assert.equal(SKILLS.bloodthirst.levels[8].lowHpLifeSteal,.30); assert.equal(SKILLS.bloodthirst.levels[8].lowHpThreshold,.35);
+assert.deepEqual(SKILLS.last_stand.levels.map(l=>[l.physicalDamageBonus,l.physicalCritChance,l.physicalCritMultiplierBonus,l.physicalCritFinalMultiplier,l.physicalCritDefenseIgnore]),[[.15,.15,.40,1,0],[.18,.18,.50,1,0],[.22,.22,.60,1.08,0],[.26,.25,.75,1.08,0],[.30,.28,.90,1.08,0],[.35,.37,1.05,1.15,0],[.40,.41,1.20,1.15,0],[.45,.45,1.35,1.15,0],[.50,.50,1.50,1.20,.30]]);
+assert.equal(SKILLS.spinning_blade.levels[0].ratio,.40); assert.equal(SKILLS.spinning_blade.levels[5].empoweredRatio,.90); assert.equal(SKILLS.spinning_blade.levels[8].explosionRatio,.50);
+assert.equal('knockback' in SKILLS.spinning_blade.levels[8],false); assert.equal('applyKnockback' in SKILLS.spinning_blade.levels[8],false);
+
+function bindPassive(s,id,level){ s.playerData.skills=[{id,level}]; runPassives(s); }
+function triggerBlood(s,level,{hp=400,maxHp=500,active=false}={}){ s.playerData.skills=[{id:'bloodthirst',level}]; s.playerData.hp=hp; s.playerData.maxHp=maxHp; runPassives(s); if(active){ s.eventBus.emit(CombatEvents.PLAYER_DAMAGED,{enemy:enemy(),hpDamage:10,source:'enemy'}); runPassives(s); } }
+function physicalHitHeal(level,active,hp,maxHp=500,meta={}){ const s=makeScene(),e=enemy({hp:1000}); s.enemies=[e]; triggerBlood(s,level,{hp,maxHp,active}); s.combatSystem.damageEnemy(e,100,{source:'skill',tags:['physical'],noKnockback:true,allowLifeSteal:false,...meta}); return {s,e}; }
+assert.equal(physicalHitHeal(1,false,400).s.playerData.hp,405);
+assert.equal(physicalHitHeal(1,true,400).s.playerData.hp,410);
+assert.equal(physicalHitHeal(3,false,400).s.playerData.hp,407);
+assert.equal(physicalHitHeal(3,true,400).s.playerData.hp,414);
+assert.equal(physicalHitHeal(6,false,400).s.playerData.hp,410);
+assert.equal(physicalHitHeal(6,true,400).s.playerData.hp,420);
+assert.equal(physicalHitHeal(9,false,400).s.playerData.hp,412);
+assert.equal(physicalHitHeal(9,true,400).s.playerData.hp,424);
+assert.equal(physicalHitHeal(9,true,174).s.playerData.hp,204);
+assert.equal(physicalHitHeal(9,true,175).s.playerData.hp,199);
+assert.equal(physicalHitHeal(9,false,100).s.playerData.hp,112);
+assert.equal(physicalHitHeal(9,false,490,500,{allowLifeSteal:false}).s.playerData.hp,500);
+{ const s=makeScene(),e=enemy({hp:50}); s.enemies=[e]; triggerBlood(s,9,{hp:400,maxHp:500}); s.combatSystem.damageEnemy(e,100,{source:'skill',tags:['physical'],noKnockback:true,allowLifeSteal:false}); assert.equal(s.playerData.hp,406); }
+{ const s=makeScene(),e=enemy({hp:1000}); s.enemies=[e]; triggerBlood(s,9,{hp:400,maxHp:500}); s.combatSystem.damageEnemy(e,100,{source:'skill',tags:['fire'],noKnockback:true}); assert.equal(s.playerData.hp,400); }
+{ const s=makeScene(),e=enemy({hp:100000}); s.enemies=[e]; triggerBlood(s,9,{hp:100,maxHp:100000}); s.combatSystem.damageEnemy(e,10000,{source:'skill',tags:['physical'],noKnockback:true,allowLifeSteal:false}); assert.equal(s.playerData.hp,1300); }
+
+{ const s=makeScene(); bindPassive(s,'last_stand',9); assert.equal(s.playerData.physicalDamageBonuses.last_stand,.50); assert.equal(s.playerData.physicalCritChanceBonuses.last_stand,.50); s.playerData.critChance=.05; assert.equal(s.playerData.critChance+s.playerData.physicalCritChanceBonuses.last_stand,.55); }
+{ const s=makeScene(); bindPassive(s,'last_stand',6); assert.equal(s.playerData.physicalCritChanceBonuses.last_stand,.37); }
+{ const s=makeScene(); bindPassive(s,'last_stand',9); assert.equal(s.playerData.physicalCritMultiplierBonuses.last_stand,1.50); assert.equal(s.playerData.critMultiplier+s.playerData.physicalCritMultiplierBonuses.last_stand,3.0); }
+{ const s=makeScene(); bindPassive(s,'last_stand',3); assert.equal(Math.round(s.playerData.physicalCritFinalMultiplierBonuses.last_stand*100),8); }
+{ const s=makeScene(); bindPassive(s,'last_stand',6); assert.equal(Math.round(s.playerData.physicalCritFinalMultiplierBonuses.last_stand*100),15); }
+{ const s=makeScene(); bindPassive(s,'last_stand',9); assert.equal(Math.round(s.playerData.physicalCritFinalMultiplierBonuses.last_stand*100),20); assert.equal(s.playerData.physicalCritDefenseIgnoreBonuses.last_stand,.30); }
+{ const s=makeScene(),e=enemy({hp:1000,defense:100,damageReduction:.5}); s.enemies=[e]; bindPassive(s,'last_stand',9); countedRandom(0,()=>s.combatSystem.damageEnemy(e,100,{source:'skill',tags:['physical'],canCrit:true,noKnockback:true})); assert.equal(e.hp,814); }
+{ const s=makeScene(),e=enemy({hp:1000}); s.enemies=[e]; bindPassive(s,'last_stand',9); countedRandom(0,()=>s.combatSystem.damageEnemy(e,100,{source:'skill',tags:['fire'],canCrit:true,noKnockback:true})); assert.equal(e.hp,850); }
+{ const s=makeScene(),e=enemy({hp:1000}); s.enemies=[e]; bindPassive(s,'last_stand',9); countedRandom(0,()=>s.combatSystem.damageEnemy(e,100,{source:'skill',tags:['poison'],canCrit:true,noKnockback:true})); assert.equal(e.hp,850); }
+{ const s=makeScene(),e=enemy({hp:1000}); s.enemies=[e]; bindPassive(s,'last_stand',9); countedRandom(0,()=>s.combatSystem.damageEnemy(e,100,{source:'skill',tags:['arcane'],canCrit:true,noKnockback:true})); assert.equal(e.hp,850); }
+{ const s=makeScene(); bindPassive(s,'last_stand',9); runPassives(s); assert.equal(s.playerData.physicalDamageBonuses.last_stand,.50); s.playerData.skills=[]; runPassives(s); assert.equal(s.playerData.physicalDamageBonuses.last_stand,undefined); }
+{ const s=makeScene(); bindPassive(s,'last_stand',9); runPassives(s); runPassives(s); assert.equal(s.playerData.physicalCritChanceBonuses.last_stand,.50); }
+
+{ const s=makeScene(),normal=enemy({x:330}),elite=enemy({x:360,isElite:true}),boss=enemy({x:390,isBoss:true}); s.enemies=[normal,elite,boss]; let kb=0; const old=s.combatSystem.applyKnockback.bind(s.combatSystem); s.combatSystem.applyKnockback=(...args)=>{kb++; return old(...args);}; const metas=[]; const oldDamage=s.combatSystem.damageEnemy.bind(s.combatSystem); s.combatSystem.damageEnemy=(e,a,m)=>{metas.push(m); return oldDamage(e,a,m);}; const system={scene:s,passiveUpdaters:[],passiveState:{},getData(){return SKILLS.spinning_blade.levels[8];},getLevel(){return 9;}}; SpinningBladeSkill.bind(system); s.eventBus.emit(CombatEvents.PLAYER_ATTACK_RESOLVED,{weapon:WEAPONS.short_sword,baseDamage:100}); assert.equal(kb,0); assert.deepEqual([normal.x,elite.x,boss.x],[330,360,390]); assert(metas.filter(m=>m.damageKind==='shockwave'||m.damageKind==='empoweredShockwave').every(m=>!('knockback' in m)&&m.applyKnockback!==true)); assert(metas.some(m=>m.damageKind==='shockwaveExplosion'&&m.noKnockback===true)); }
+{ const s=makeScene(),e=enemy({x:330,hp:1000}); s.enemies=[e]; let kb=0; const old=s.combatSystem.applyKnockback.bind(s.combatSystem); s.combatSystem.applyKnockback=(...args)=>{kb++; return old(...args);}; s.combatSystem.performDefaultAttack(e,WEAPONS.short_sword); assert.equal(kb,1); }
+
 const strength=['giant_force','spinning_blade','bloodthirst','last_stand'];
 assert.deepEqual(Object.keys(SKILLS).filter(id=>SKILLS[id].tags?.includes('buildStrength')).sort(),strength.sort());
 assert.equal(SKILLS.frenzy,undefined); assert.equal(SKILLS.blood_rage_burst,undefined);
@@ -40,8 +83,8 @@ countedRandom(0.99,getCount=>{ const s=makeScene(); s.enemies=[enemy({x:300}),en
 { const s=makeScene(),e=enemy({x:330,hp:10000}); s.enemies=[e]; const system={scene:s,passiveUpdaters:[],passiveState:{},getData(){return SKILLS.spinning_blade.levels[8];},getLevel(){return 9;}}; const off=SpinningBladeSkill.bind(system); for(let i=0;i<20;i++){ s.eventBus.emit(CombatEvents.PLAYER_ATTACK_RESOLVED,{weapon:WEAPONS.short_sword,baseDamage:10}); for(const rec of [...system.passiveState.spinningBladeVisuals]) rec.tween?.cfg?.onComplete?.(); } assert.equal(system.passiveState.spinningBladeVisuals.size,0); assert.equal(e.x,330); assert.equal(e.y,850); assert.equal(e.isKnockbackActive||false,false); off(); assert.equal(system.passiveState.spinningBladeVisuals,undefined); }
 { const front=enemy({x:330,hp:1000,defense:9999}),back=enemy({x:360,hp:1000}); const s=makeScene(); s.enemies=[back,front]; const centers=[]; const oldCircle=s.add.circle; s.add.circle=(x,y,r,c,a)=>{if(r===95)centers.push({x,y});return oldCircle(x,y,r,c,a);}; const system={scene:s,passiveUpdaters:[],passiveState:{},getData(){return SKILLS.spinning_blade.levels[8];},getLevel(){return 9;}}; SpinningBladeSkill.bind(system); s.eventBus.emit(CombatEvents.PLAYER_ATTACK_RESOLVED,{weapon:WEAPONS.short_sword,baseDamage:10}); assert.deepEqual(centers[0],{x:330,y:850}); }
 
-{ const s=makeScene(); s.playerData.skills=[{id:'bloodthirst',level:9}]; s.playerData.hp=50; s.playerData.maxHp=200; runPassives(s); s.combatSystem.damagePlayer(enemy(),10,{source:'enemy',undodgeable:true}); runPassives(s); const aura=s.visuals.find(v=>v.r===52&&!v.destroyed); assert.ok(aura); assert.equal(s.playerData.physicalLifeStealBonuses.bloodthirst,.30); s.player.x+=30; s.now+=1000; runPassives(s); assert.equal(aura.x,s.player.x); s.now+=6000; runPassives(s); assert.equal(aura.destroyed,true); const active=s.visuals.filter(v=>v.r===52&&!v.destroyed).length; s.now+=8000; runPassives(s); assert.equal(s.visuals.filter(v=>v.r===52&&!v.destroyed).length,active); }
+{ const s=makeScene(); s.playerData.skills=[{id:'bloodthirst',level:9}]; s.playerData.hp=50; s.playerData.maxHp=200; runPassives(s); s.eventBus.emit(CombatEvents.PLAYER_DAMAGED,{enemy:enemy(),hpDamage:10,source:'enemy'}); runPassives(s); const aura=s.visuals.find(v=>v.r===52&&!v.destroyed); assert.ok(aura); assert.equal(s.playerData.physicalLifeStealBonuses.bloodthirst,.30); s.player.x+=30; s.now+=1000; runPassives(s); assert.equal(aura.x,s.player.x); s.now+=6000; runPassives(s); assert.equal(aura.destroyed,true); const active=s.visuals.filter(v=>v.r===52&&!v.destroyed).length; s.now+=8000; runPassives(s); assert.equal(s.visuals.filter(v=>v.r===52&&!v.destroyed).length,active); }
 
 { const s=makeScene(); s.playerData.skills=[{id:'last_stand',level:9}]; runPassives(s); assert.equal(s.playerData.physicalCritChanceBonuses.last_stand,.50); const e=enemy({hp:500,defense:50,damageReduction:.5}); s.enemies=[e]; countedRandom(0,()=>s.combatSystem.damageEnemy(e,100,{source:'skill',skillId:'physical',tags:['physical'],canCrit:true,noKnockback:true})); assert.equal(s.eventBus.count(CombatEvents.PLAYER_CRIT),1); assert.equal(e.hp,272); }
 
-console.log('validate-01059-strength-rework behavior passed on v0.10.60');
+console.log('validate-01060-strength-balance behavior passed on v0.10.60');
