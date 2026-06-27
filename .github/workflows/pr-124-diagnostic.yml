@@ -1,0 +1,43 @@
+name: PR 124 full validation diagnostic
+
+on:
+  push:
+    branches:
+      - codex/v01055-poison-chain-control-fix
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - name: Capture all validation results
+        run: |
+          set +e
+          : > validation-output.txt
+          for script in $(node -e "const p=require('./package.json'); console.log(Object.keys(p.scripts).filter(k=>k.startsWith('validate:')).join(' '))"); do
+            tmp=$(mktemp)
+            npm run "$script" > "$tmp" 2>&1
+            code=$?
+            if [ "$code" -eq 0 ]; then
+              echo "PASS $script" >> validation-output.txt
+            else
+              echo "FAIL $script" >> validation-output.txt
+              cat "$tmp" >> validation-output.txt
+              echo "----" >> validation-output.txt
+            fi
+            rm -f "$tmp"
+          done
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validation-output
+          path: validation-output.txt
