@@ -30,7 +30,8 @@
     "validate:01052-burn-stack-readability": "node scripts/validate-01052-burn-stack-readability.mjs",
     "validate:01053-poison-summon-rework": "node scripts/validate-01053-poison-summon-rework.mjs && node scripts/validate-01053-poison-summon-regressions.mjs",
     "validate:01054-poison-stacks-gu-fix": "node scripts/validate-01054-poison-stacks-gu-fix.mjs",
-    "validate:01055-poison-chain-control-fix": "node scripts/validate-01055-poison-chain-control-fix.mjs"
+    "validate:01055-poison-chain-control-fix": "node scripts/validate-01055-poison-chain-control-fix.mjs",
+    "validate:01056-open-skill-pool": "node scripts/validate-01056-open-skill-pool.mjs"
   },
   "dependencies": {
     "phaser": "latest",
