@@ -108,22 +108,89 @@ export const EntryFireballSkill={
 };
 
 export const EntryPoisonNeedleSkill={
-
   bind(system){
-    const s=system.scene; let windowStart=0, healedThisWindow=0, pendingPoisonHealing=0;
+    const s=system.scene;
+    let windowStart=0;
+    let healedThisWindow=0;
+    let pendingPoisonHealing=0;
+
+    const healingMultiplier=()=>{
+      const bonuses=s.playerData.healingReceivedMultiplierBonuses||{};
+      return Math.max(
+        0.01,
+        1+Object.values(bonuses).reduce(
+          (sum,value)=>sum+(Number(value)||0),
+          0
+        )
+      );
+    };
+    const maxBaseRequestForActualCap=(actualCap,multiplier)=>{
+      if(!Number.isFinite(actualCap)) return Number.POSITIVE_INFINITY;
+      const cap=Math.max(0,Math.floor(actualCap));
+      if(cap<=0) return 0;
+      return Math.max(0,Math.ceil((cap+1)/multiplier)-1);
+    };
+
     const off=s.eventBus.on(CombatEvents.STATUS_TICK,p=>{
-      const data=system.getData('poison_cloud'), level=system.getLevel('poison_cloud');
-      if(level<9||!data||p.type!==StatusEffects.POISON||p.actualDamage<=0||p.effect?.poisonMeta?.nonNormal) return;
-      const now=s.getGameplayTime(); if(now-windowStart>=1000){ windowStart=now; healedThisWindow=0; }
-      const max=s.playerData.maxHp||s.playerData.maxHealth||s.playerData.hp||0;
-      const perSecondCap=s.playerData.ignorePoisonHealingCap?Number.POSITIVE_INFINITY:max*(data.poisonHealingCapMaxHpPerSecond||0.01);
-      const room=Math.max(0,perSecondCap-healedThisWindow);
-      if(room<=0) return;
+      const data=system.getData('poison_cloud');
+      const level=system.getLevel('poison_cloud');
+      if(
+        level<9
+        || !data
+        || p.type!==StatusEffects.POISON
+        || p.actualDamage<=0
+        || p.effect?.poisonMeta?.nonNormal
+      ){
+        return;
+      }
+
+      const now=s.getGameplayTime();
+      if(now-windowStart>=1000){
+        windowStart=now;
+        healedThisWindow=0;
+      }
+
       pendingPoisonHealing+=p.actualDamage*(data.poisonHealingRatio||0.03);
-      const request=Math.min(Math.floor(pendingPoisonHealing),Math.floor(room));
-      if(request<=0) return;
-      const healed=s.healPlayer?.(request,'poison_healing',{skillId:'poison_cloud',actualPoisonDamage:p.actualDamage})||0;
-      if(healed>0){ healedThisWindow+=healed; pendingPoisonHealing=Math.max(0,pendingPoisonHealing-healed); }
+      const available=Math.floor(pendingPoisonHealing);
+      if(available<=0) return;
+
+      const max=s.playerData.maxHp
+        || s.playerData.maxHealth
+        || s.playerData.hp
+        || 0;
+      if((s.playerData.hp||0)>=max){
+        pendingPoisonHealing%=1;
+        return;
+      }
+
+      const uncapped=s.playerData.ignorePoisonHealingCap===true;
+      const perSecondCap=uncapped
+        ?Number.POSITIVE_INFINITY
+        :max*(data.poisonHealingCapMaxHpPerSecond||0.01);
+      const remainingActual=uncapped
+        ?Number.POSITIVE_INFINITY
+        :Math.max(0,Math.floor(perSecondCap-healedThisWindow));
+      const baseCap=maxBaseRequestForActualCap(
+        remainingActual,
+        healingMultiplier()
+      );
+      const request=Math.min(available,baseCap);
+      if(request<=0){
+        pendingPoisonHealing%=1;
+        return;
+      }
+
+      const healed=s.healPlayer?.(
+        request,
+        'poison_healing',
+        {
+          skillId:'poison_cloud',
+          actualPoisonDamage:p.actualDamage
+        }
+      )||0;
+      pendingPoisonHealing=Math.max(0,pendingPoisonHealing-request);
+      if(healed>0) healedThisWindow+=healed;
+      else pendingPoisonHealing%=1;
     });
     return ()=>off?.();
   },
