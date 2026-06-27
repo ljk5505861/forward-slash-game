@@ -313,8 +313,14 @@ function bindGu(level,hostHp=1000){
   assert.equal(scene.parasiticGuRuntime.first().host,null);
   assert.equal(
     scene.statusEffects.getStackCount(host,StatusEffects.POISON),
-    0,
-    'dead host receives no post-mortem gu poison'
+    1,
+    'the pre-existing seed poison remains in this isolated test double'
+  );
+  assert.equal(
+    scene.statusEffects.getEffects(host,StatusEffects.POISON)
+      .some(effect=>effect.sourceId==='parasitic_gu_attack'),
+    false,
+    'dead host receives no post-mortem gu attack poison'
   );
   cleanup();
 }
