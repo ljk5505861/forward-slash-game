@@ -38,7 +38,8 @@
     "validate:01060-strength-balance": "node scripts/validate-01060-strength-balance.mjs",
     "validate:01061-player-info-panel": "node scripts/validate-01061-player-info-panel.mjs",
     "validate:player-info": "node scripts/validate-player-info-flow.mjs",
-    "validate:01062-defense-rework": "node scripts/validate-01062-defense-rework.mjs"
+    "validate:01062-defense-rework": "node scripts/validate-01062-defense-rework.mjs",
+    "validate:01063-safe-restart": "node scripts/validate-01063-safe-restart.mjs"
   },
   "dependencies": {
     "phaser": "latest",
