@@ -18,7 +18,7 @@ const archetypes={
   poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],
 };
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.10.57','game version for v0.10.57 skill regression');
+assert.equal(GAME_VERSION,'0.10.58','game version for v0.10.58 skill regression');
 eq(allSkillIds.length,29,'all current 29 skills listed');
 eq(new Set(allSkillIds).size,29,'all current 29 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
@@ -94,4 +94,4 @@ assert.match(src('src/skills/handlers/AfterimageCoreSkills.js'),/payload\.damage
 assert.match(poisonAdvanced,/'poison_chain_transfer'/,'poison chain uses stable source id');
 ['split_sword','rotating_sword','execution_sword','myriad_swords','heaven_splitting_sword'].forEach(id=>assert.equal(hasHandler(id),false,`${id} old handler not registered`));
 
-console.log('v0.10.57 skill damage regression validation passed.');
+console.log('v0.10.58 skill damage regression validation passed.');
