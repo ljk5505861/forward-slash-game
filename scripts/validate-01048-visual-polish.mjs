@@ -10,7 +10,7 @@ const combat=read('src/systems/CombatSystem.js');
 const scene=read('src/scenes/GameScene.js');
 const indicators=read('src/ui/EnemyStatusIndicators.js');
 
-assert.equal(GAME_VERSION,'0.10.52','game version is 0.10.52');
+assert.equal(GAME_VERSION,'0.10.53','game version is 0.10.53');
 assert.match(sword,/rotation:0/,'sword sheath anchor rotation is 0');
 assert.doesNotMatch(sword,/-0\.45\s*\*\s*dir/,'sheath no longer tilts by direction');
 const sheathBlock=sword.slice(sword.indexOf('export const SwordSheathSkill'),sword.indexOf('export const SwordTombSkill'));

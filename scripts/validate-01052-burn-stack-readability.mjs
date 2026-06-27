@@ -10,7 +10,7 @@ const sword=read('src/skills/handlers/SwordReworkSkills.js');
 const combat=read('src/systems/CombatSystem.js');
 const skillSystem=read('src/systems/SkillSystem.js');
 
-assert.equal(GAME_VERSION,'0.10.52','game version is 0.10.52');
+assert.equal(GAME_VERSION,'0.10.53','game version is 0.10.53');
 assert.match(indicators,/fontSize:'16px'/,'burn stack number is enlarged to 16px');
 assert.match(indicators,/fontStyle:'bold'/,'burn stack number uses bold weight');
 assert.match(indicators,/color:'#ff9a3d'/,'burn stack number uses clear orange');
