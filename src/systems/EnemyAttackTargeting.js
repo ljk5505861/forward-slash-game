@@ -1,5 +1,13 @@
 import CombatSystem from './CombatSystem.js';
 
+const BEHAVIOR_ATTACKERS = new Set([
+  'charger',
+  'bomber',
+  'healer',
+  'midBoss',
+  'berserkerBoss'
+]);
+
 const distanceBetween=(enemy,target)=>Math.hypot(
   (enemy?.x||0)-(target?.x||0),
   (enemy?.y||0)-(target?.y||0)
@@ -87,14 +95,7 @@ CombatSystem.prototype.damageEnemySummon=function(target,rawDamage,meta={}){
 CombatSystem.prototype.updateEnemyAttack=function(enemy,time){
   const scene=this.scene;
   if(!scene.targeting.valid(enemy)||enemy.isKnockbackActive) return;
-  const behaviorAttackers=new Set([
-    'charger',
-    'bomber',
-    'healer',
-    'midBoss',
-    'berserkerBoss'
-  ]);
-  if(behaviorAttackers.has(enemy.behavior)) return;
+  if(BEHAVIOR_ATTACKERS.has(enemy.behavior)) return;
   if(
     enemy.isBoss
     && !enemy.enraged
