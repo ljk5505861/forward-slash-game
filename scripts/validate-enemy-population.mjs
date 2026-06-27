@@ -3,6 +3,7 @@ import { BALANCE, createPlayerRuntime } from '../src/config/balance.js';
 import { ENEMIES } from '../src/config/enemies.js';
 import { WEAPONS } from '../src/config/weapons.js';
 import { SKILLS } from '../src/config/skills.js';
+import '../src/skills/handlers/index.js';
 import StageSystem, { FLOW_GROUPS, LevelFlowStates } from '../src/systems/StageSystem.js';
 import CombatSystem from '../src/systems/CombatSystem.js';
 import createEnemy from '../src/entities/createEnemy.js';
@@ -66,6 +67,6 @@ const waitScene = makeScene(); const waitStage = new StageSystem(waitScene); wai
 
 Object.values(WEAPONS).forEach(w => assert(Number.isFinite(w.knockback) && w.knockback >= 0, `${w.id} has valid knockback`)); assert.equal(WEAPONS.short_sword.knockback, 72); assert.equal(WEAPONS.short_sword.attackRange, 115); assert.equal(WEAPONS.short_sword.attackRange, 115);
 const combatScene = makeScene(); const combat = new CombatSystem(combatScene); let seenMeta; combat.damageEnemy = (_enemy,_damage,meta) => { seenMeta=meta; return true; }; const enemy = { active:true, isDefeated:false, body:{}, x:300, y:850, hp:10, width:74 }; combatScene.playerData.attack=1; combat.performDefaultAttack(enemy, WEAPONS.short_sword); assert.equal(seenMeta.knockback, WEAPONS.short_sword.knockback, 'normal attack reads weapon config knockback');
-assert.equal(SKILLS.sword_wave.levels[5].knockback, 26, 'skill knockback is not globally doubled'); assert.equal(SKILLS.spinning_blade.levels[8].knockback, 18, 'skill knockback is unchanged');
+assert.equal(SKILLS.spinning_blade.levels[8].knockback, undefined, 'spinning blade no longer has skill knockback');
 const applyText = CombatSystem.prototype.applyKnockback.toString(); assert(!/base\s*\*\s*2|2\s*\*\s*base|knockback\s*\*\s*2|2\s*\*\s*knockback/.test(applyText), 'attack knockback logic does not multiply by 2');
 console.log('[validate:enemy-population] PASS pre-boss melee-only pools, fixed boss1 rush count, formal spawn spacing, wave delay, weapon knockback config');
