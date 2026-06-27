@@ -1,0 +1,25 @@
+name: PR 124 v0.10.55 validation
+
+on:
+  push:
+    branches:
+      - codex/v01055-poison-chain-control-fix
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - run: npm run build
+      - run: npm run validate:01055-poison-chain-control-fix
+      - run: npm run validate:01053-poison-summon-rework
+      - run: npm run validate:01054-poison-stacks-gu-fix
