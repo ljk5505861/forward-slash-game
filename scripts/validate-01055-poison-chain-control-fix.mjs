@@ -332,6 +332,9 @@ assert(SKILLS.poison_chain.tags.includes('projectile'));
   assert.equal(target.poisonIndicator.StackText.value,'12');
 }
 
+const combatSource=fs.readFileSync(new URL('../src/systems/CombatSystem.js',import.meta.url),'utf8');
+assert.match(combatSource,/meta\.source===['"]poison['"]\?['"]#63ff72['"]/, 'poison damage numbers use bright green');
+
 const interactionSource=fs.readFileSync(
   new URL('../src/skills/handlers/PoisonSummonInteractionFixes.js',import.meta.url),
   'utf8'
