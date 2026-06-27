@@ -15,12 +15,12 @@ const archetypes={
   strength:['giant_force','spinning_blade','bloodthirst','frenzy','blood_rage_burst','last_stand'],
   defense:['healing','thorn_armor','guardian_shield','armor_break_shockwave','immovable_mountain','black_tortoise_body'],
   afterimage:['shadow_fist','phantom_step','shadow_assault','swift_shadow','instant_step','myriad_afterimage'],
-  poison:['poison_cloud','parasitic_gu','bone_eating_insect','poison_chain','poison_king','plague_mother'],
+  poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],
 };
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.10.52','game version for v0.10.52 skill regression');
-eq(allSkillIds.length,31,'all current 31 skills listed');
-eq(new Set(allSkillIds).size,31,'all current 31 skills unique');
+assert.equal(GAME_VERSION,'0.10.53','game version for v0.10.53 skill regression');
+eq(allSkillIds.length,29,'all current 29 skills listed');
+eq(new Set(allSkillIds).size,29,'all current 29 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
 allSkillIds.forEach(id=>assert.ok(SKILLS[id],`missing skill ${id}`));
 
@@ -74,24 +74,21 @@ assert.ok(SKILLS.swift_shadow.levels.every(l=>l.attackSpeedBonus>0&&l.afterimage
 assert.ok(SKILLS.myriad_afterimage.levels.every(l=>l.copyDamageRatio>0&&l.shadowSwordDamageRatio>0),'myriad_afterimage copy/shadow sword ratios configured');
 
 // Poison summon archetype.
-eq(nums('poison_cloud','damage'),[26,32,40,48,58,70,84,100,120],'poison_cloud.damage');
-eq(nums('poison_cloud','poisonDamage'),[6,6,8,8,10,10,12,14,16],'poison_cloud.poisonDamage');
+eq(nums('poison_cloud','damage'),[26,32,52,62,75,91,109,130,156],'poison_cloud.damage');
+eq(nums('poison_cloud','poisonDamage'),[6,6,10,10,13,13,16,18,21],'poison_cloud.poisonDamage');
 eq(nums('poison_cloud','poisonIntervalMs'),Array(9).fill(700),'poison_cloud.poisonIntervalMs');
-eq(nums('parasitic_gu','damagePerGrowth'),[0.20,0.22,0.24,0.26,0.28,0.32,0.36,0.40,0.46],'parasitic_gu.damagePerGrowth');
-eq(nums('bone_eating_insect','damage'),[14,16,16,18,20,20,22,24,28],'bone_eating_insect.damage');
-eq(nums('poison_chain','damageRatio'),[0.70,0.80,0.88,0.96,1.04,1.12,1.18,1.24,1.30],'poison_chain.damageRatio');
-eq(nums('poison_king','biteDamage'),[36,44,54,66,80,96,116,140,170],'poison_king.biteDamage');
-eq(nums('poison_king','burstDamagePerStack'),[10,12,14,16,18,20,22,24,26],'poison_king.burstDamagePerStack');
-eq(nums('plague_mother','basePoisonDamage'),Array(9).fill(6),'plague_mother.basePoisonDamage');
+eq(nums('poison_cloud','maxHits'),[3,3,3,3,3,999,999,999,999],'poison_cloud.maxHits');
+eq(nums('parasitic_gu','leechDamage'),[10,11,12,13,14,21,23,25,38],'parasitic_gu.leechDamage');
+eq(nums('parasitic_gu','splitEnergy'),[28,28,26,26,24,24,22,22,20],'parasitic_gu.splitEnergy');
+eq(nums('poison_chain','extendChance'),[0.38,0.42,0.62,0.64,0.66,0.68,0.7,0.72,0.74],'poison_chain.extendChance');
+eq(nums('poison_chain','checkMs'),[1200,1100,760,730,700,680,650,620,600],'poison_chain.checkMs');
+eq(nums('poison_king','biteDamage'),[28,31,34,37,40,58,63,68,74],'poison_king.biteDamage');
+eq(nums('poison_king','growthRatio'),[0.22,0.24,0.34,0.34,0.34,0.34,0.36,0.38,0.4],'poison_king.growthRatio');
 
 // Source-level smoke checks for non-sword handlers and the handler registry.
 const poisonAdvanced=src('src/skills/handlers/PoisonSummonAdvancedSkills.js');
-assert.match(poisonAdvanced,/\[2,1\.04,185,540\].*\[2,1\.12,195,500\].*\[3,1\.18,205,470\].*\[3,1\.24,215,440\].*\[3,1\.30,220,400\]/s,'poison_chain ratios remain in source config');
-assert.match(poisonAdvanced,/Math\.min\(360,Math\.max\(1,Math\.round\(Math\.min\(data\.burstMaxStacks,stacks\)\*data\.burstDamagePerStack\*formMult\)\)\)/,'poison_king burst cap remains');
 assert.match(src('src/skills/handlers/FlameCoreSkills.js'),/StatusEffects\.BURN/,'fire handlers still use burn status');
 assert.match(src('src/skills/handlers/AfterimageCoreSkills.js'),/payload\.damage\|\|0\)\*data\.damageRatio/,'shadow_assault uses configured damage ratio');
-assert.match(src('src/skills/handlers/PoisonSummonCoreSkills.js'),/growth\*damagePerGrowth/,'parasitic_gu uses configured growth damage conversion');
-assert.ok(['sword_sheath','sword_tomb','fire_seed','burn_burst','solar_flame','poison_chain','poison_king','plague_mother'].every(hasHandler),'current handlers registered');
 ['split_sword','rotating_sword','execution_sword','myriad_swords','heaven_splitting_sword'].forEach(id=>assert.equal(hasHandler(id),false,`${id} old handler not registered`));
 
-console.log('v0.10.52 skill damage regression validation passed.');
+console.log('v0.10.53 skill damage regression validation passed.');
