@@ -45,8 +45,10 @@ jobs:
 
           for path in Path('scripts').glob('*.mjs'):
               text = path.read_text()
-              if '0.10.62' in text:
-                  path.write_text(text.replace('0.10.62', '0.10.63'))
+              updated = text.replace('0.10.62', '0.10.63')
+              updated = updated.replace(r'0\.10\.62', r'0\.10\.63')
+              if updated != text:
+                  path.write_text(updated)
 
           package = Path('package.json')
           data = json.loads(package.read_text())
