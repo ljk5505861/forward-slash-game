@@ -9,9 +9,9 @@ on:
       - main
 
 jobs:
-  validate:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,8 +20,46 @@ jobs:
           cache: npm
       - run: npm install
       - run: npm run build
-      - name: Run all validation scripts
-        run: |
-          for script in $(node -e "const p=require('./package.json'); console.log(Object.keys(p.scripts).filter(k=>k.startsWith('validate:')).join(' '))"); do
-            npm run "$script" || exit 1
-          done
+
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        script:
+          - validate:tags
+          - validate:reward-bias
+          - validate:gameplay-entry
+          - validate:selection-ui
+          - validate:profession-flow
+          - validate:player-info-flow
+          - validate:shop-flow
+          - validate:enemy-population
+          - validate:midboss-reward-flow
+          - validate:final-shop-flow
+          - validate:life-steal
+          - validate:010-gameplay-loop
+          - validate:0104-balance-knockback
+          - validate:01042-level-system
+          - validate:01043-boss-knockback
+          - validate:01044-flame-rework
+          - validate:01045-sword-rework
+          - validate:01040-skill-damage
+          - validate:01046-skill-detail-ui
+          - validate:01047-ui-stability
+          - validate:01048-visual-polish
+          - validate:01049-attached-visual-fix
+          - validate:01050-sheath-burn-visual-tune
+          - validate:01051-sheath-x-burn-text
+          - validate:01052-burn-stack-readability
+          - validate:01053-poison-summon-rework
+          - validate:01054-poison-stacks-gu-fix
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - run: npm run ${{ matrix.script }}
