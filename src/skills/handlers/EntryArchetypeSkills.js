@@ -70,19 +70,6 @@ const configs = {
       9:'毒血回生：正常毒伤按3%治疗玩家，每秒上限1%最大生命'
     })
   },
-  spinning_blade: {
-    id:'spinning_blade', name:'重击', rarity:'COMMON', handler:'entry_heavy_hit', passive:true, maxLevel:9,
-    tags:['physical',TAGS.NORMAL_ATTACK,TAGS.HEAVY_HIT,TAGS.MELEE,TAGS.BUILD_STRENGTH], cooldownMs:999999,
-    targetType:'passive', color:0xffbb66, short:'重',
-    description:'每数次普通攻击触发一次重击，造成更高伤害和击退。',
-    levels:nineLevels([
-      [5,1.55,0],[5,1.7,0],[4,1.8,0.01],[4,1.95,0.01],[4,2.1,0.02],[3,2.2,0.03],[3,2.35,0.04],[3,2.5,0.05],[2,2.65,0.07]
-    ],([heavyHitEvery,heavyHitMultiplier,heavyHitLifeSteal],level)=>({ heavyHitEvery,heavyHitMultiplier,heavyHitLifeSteal,desc:level===1?'每5次普通攻击触发一次重击。':`每${heavyHitEvery}次攻击触发${Math.round(heavyHitMultiplier*100)}%伤害重击。` }),{
-      3:'每4次攻击触发重击，并获得1%重击吸血',
-      6:'每3次攻击触发重击，并获得3%重击吸血',
-      9:'每2次攻击触发重击，并获得7%重击吸血'
-    })
-  },
   healing: {
     id:'healing', name:'铁壁', rarity:'COMMON', handler:'entry_iron_wall', passive:true, maxLevel:9,
     tags:[TAGS.SHIELD,TAGS.BUILD_DEFENSE], cooldownMs:999999,
@@ -299,21 +286,6 @@ export const EntrySwordSkill={
       const target=s.targeting.nearestAhead(760); if(!target) return;
       s.flyingSwords.markAttack(sword.id,target,{skillId:'sword_wave'});
       sword.attackEndsAt=now+Math.max(90,Math.round(170/stats.speed)); state.readyAt=now+stats.intervalMs;
-    });
-  }
-};
-
-export const EntryHeavyHitSkill={
-  bind(system){
-    let appliedLifeSteal=0;
-    return passiveUpdater(system,'spinning_blade',(data,level)=>{
-      const p=system.scene.playerData;
-      p.heavyHitEvery=data?.heavyHitEvery||0;
-      p.heavyHitMultiplier=data?.heavyHitMultiplier||1.8;
-      p.heavyHitLifeSteal=Math.max(0,(p.heavyHitLifeSteal||0)-appliedLifeSteal);
-      appliedLifeSteal=data?.heavyHitLifeSteal||0;
-      p.heavyHitLifeSteal+=appliedLifeSteal;
-      if(level<=0){ p.heavyHitCounter=0; p.nextAttackIsHeavy=false; }
     });
   }
 };

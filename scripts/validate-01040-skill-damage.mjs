@@ -12,15 +12,15 @@ const hasHandler=(handler)=>new RegExp(`${handler}:`).test(src('src/skills/handl
 const archetypes={
   fire:['fireball','fire_seed','burn_burst','solar_flame'],
   sword:['sword_wave','sword_sheath','sword_tomb'],
-  strength:['giant_force','spinning_blade','bloodthirst','frenzy','blood_rage_burst','last_stand'],
+  strength:['giant_force','spinning_blade','bloodthirst','last_stand'],
   defense:['healing','thorn_armor','guardian_shield','armor_break_shockwave','immovable_mountain','black_tortoise_body'],
   afterimage:['shadow_fist','phantom_step','shadow_assault','swift_shadow','instant_step','myriad_afterimage'],
   poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],
 };
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.10.58','game version for v0.10.58 skill regression');
-eq(allSkillIds.length,29,'all current 29 skills listed');
-eq(new Set(allSkillIds).size,29,'all current 29 skills unique');
+assert.equal(GAME_VERSION,'0.10.59','game version for v0.10.59 skill regression');
+eq(allSkillIds.length,27,'all current 27 skills listed');
+eq(new Set(allSkillIds).size,27,'all current 27 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
 allSkillIds.forEach(id=>assert.ok(SKILLS[id],`missing skill ${id}`));
 
@@ -50,12 +50,10 @@ eq(nums('sword_tomb','executeRatio'),[0.10,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.
 ['split_sword','rotating_sword','execution_sword','myriad_swords','heaven_splitting_sword'].forEach(id=>assert.equal(SKILLS[id],undefined,`${id} removed from skill pool`));
 
 // Strength / lifesteal archetype.
-eq(nums('spinning_blade','heavyHitMultiplier'),[1.55,1.7,1.8,1.95,2.1,2.2,2.35,2.5,2.65],'spinning_blade.heavyHitMultiplier');
-eq(nums('bloodthirst','lifeSteal'),[0.02,0.025,0.03,0.035,0.04,0.045,0.05,0.055,0.06],'bloodthirst.lifeSteal');
-assert.ok(SKILLS.giant_force.levels.every(l=>l.attackBonus>0&&l.knockbackBonus>=0),'giant_force attack/knockback bonuses valid');
-assert.ok(SKILLS.frenzy.levels.every(l=>Array.isArray(l.tiers)&&l.tiers.length>=2),'frenzy tier bonuses configured');
-assert.ok(SKILLS.blood_rage_burst.levels.every(l=>l.damageBonus>0&&l.lifeStealBonus>0),'blood_rage_burst damage/lifesteal bonuses configured');
-assert.ok(SKILLS.last_stand.levels.every(l=>l.durationMs>0&&l.cooldownMs>0),'last_stand timing configured');
+eq(nums('spinning_blade','ratio'),[0.4,0.45,0.55,0.58,0.62,0.65,0.7,0.75,0.8],'spinning_blade.ratio');
+eq(nums('bloodthirst','lifeSteal'),[0.03,0.03,0.04,0.04,0.05,0.05,0.05,0.06,0.06],'bloodthirst.lifeSteal');
+assert.ok(SKILLS.giant_force.levels.every(l=>l.strength>0&&l.hpPerStrength>=3),'giant_force strength bonuses valid');
+assert.ok(SKILLS.last_stand.levels.every(l=>l.physicalDamageBonus>0&&l.physicalCritChance>0),'last_stand physical crit bonuses configured');
 
 // Defense / shield archetype.
 eq(nums('healing','defense'),[2,3,5,7,9,12,15,18,22],'healing.defense');
@@ -94,4 +92,4 @@ assert.match(src('src/skills/handlers/AfterimageCoreSkills.js'),/payload\.damage
 assert.match(poisonAdvanced,/'poison_chain_transfer'/,'poison chain uses stable source id');
 ['split_sword','rotating_sword','execution_sword','myriad_swords','heaven_splitting_sword'].forEach(id=>assert.equal(hasHandler(id),false,`${id} old handler not registered`));
 
-console.log('v0.10.58 skill damage regression validation passed.');
+console.log('v0.10.59 skill damage regression validation passed.');

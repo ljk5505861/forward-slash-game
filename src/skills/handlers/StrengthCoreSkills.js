@@ -1,96 +1,35 @@
 import { SKILLS } from '../../config/skills.js';
 import { TAGS } from '../../config/tags.js';
-import { getWeapon } from '../../config/weapons.js';
+import { CombatEvents } from '../../core/CombatEvents.js';
+import { getTotalStrength, sumRuntimeBonuses } from '../../config/balance.js';
 
-const levels = (values, build, milestones={}) => values.map((value,index)=>({
-  ...build(value,index+1),
-  ...(milestones[index+1]?{milestoneText:milestones[index+1]}:{}),
-}));
+const levels=(rows,build,milestones={})=>rows.map((row,i)=>({...build(row,i+1),...(milestones[i+1]?{milestoneText:milestones[i+1]}:{})}));
+const pct=v=>`${Math.round(v*100)}%`;
+const setBonus=(p,bucket,source,value)=>{ p[bucket]??={}; if(value) p[bucket][source]=value; else delete p[bucket][source]; };
+const clearSource=(p,source)=>['strengthBonuses','attackRangeMultiplierBonuses','physicalDamageBonuses','physicalCritChanceBonuses','physicalCritMultiplierBonuses','physicalCritFinalMultiplierBonuses','physicalCritDefenseIgnoreBonuses','physicalLifeStealBonuses'].forEach(k=>{ if(p[k]) delete p[k][source]; });
+export const getGiantForceStrength=data=>(data?.strength||0)+(data?.bonusStrength||0);
 
-const STRENGTH_CORE_SKILLS = {
-  giant_force: {
-    id:'giant_force', name:'巨力', rarity:'RARE', handler:'giant_force', passive:true, maxLevel:9,
-    coreSkill:true, requiredSkillId:'spinning_blade',
-    tags:['physical',TAGS.NORMAL_ATTACK,TAGS.HEAVY_HIT,TAGS.MELEE,TAGS.BUILD_STRENGTH], cooldownMs:999999,
-    targetType:'passive', color:0xffc06a, short:'力',
-    description:'提高普通攻击伤害与击退距离，让重击获得更强的正面压制力。',
-    levels:levels([
-      [4,8],[6,10],[9,14],[12,18],[15,22],[19,28],[23,34],[28,40],[34,48]
-    ],([attackBonus,knockbackBonus])=>({ attackBonus,knockbackBonus,desc:`攻击力提高${attackBonus}点，普通攻击额外击退${knockbackBonus}距离。` }),{
-      3:'攻击力提高9点，额外击退提高至14',
-      6:'攻击力提高19点，额外击退提高至28',
-      9:'攻击力提高34点，额外击退提高至48'
-    })
-  },
-  bloodthirst: {
-    id:'bloodthirst', name:'嗜血', rarity:'RARE', handler:'bloodthirst', passive:true, maxLevel:9,
-    coreSkill:true, requiredSkillId:'spinning_blade',
-    tags:['physical',TAGS.NORMAL_ATTACK,TAGS.HEAVY_HIT,TAGS.BUILD_STRENGTH], cooldownMs:999999,
-    targetType:'passive', color:0xd84d5c, short:'血',
-    description:'普通攻击获得吸血，重击额外获得更高吸血比例。',
-    levels:levels([
-      [0.02,0.03],[0.025,0.04],[0.03,0.05],[0.035,0.06],[0.04,0.07],[0.045,0.09],[0.05,0.11],[0.055,0.13],[0.06,0.16]
-    ],([lifeSteal,heavyLifeSteal])=>({ lifeSteal,heavyLifeSteal,desc:`普通攻击吸血${Math.round(lifeSteal*100)}%，重击额外吸血${Math.round(heavyLifeSteal*100)}%。` }),{
-      3:'普通攻击吸血提高至3%，重击额外吸血提高至5%',
-      6:'普通攻击吸血提高至5%，重击额外吸血提高至9%',
-      9:'普通攻击吸血提高至6%，重击额外吸血提高至16%'
-    })
-  }
+const giantRows=[[4,0,3],[6,0,3],[9,0,3],[12,0,3],[15,0,3],[19,4,3],[23,4,3],[28,4,3],[34,4,4]];
+const bladeRows=[[.40,220,110,0],[.45,230,116,0],[.55,253,127,0],[.58,263,133,0],[.62,274,139,0],[.65,285,145,.90],[.70,300,153,.98],[.75,315,161,1.06],[.80,330,170,1.15]];
+const bloodRows=[[.03,.06,4000,10000],[.03,.07,4000,10000],[.04,.08,4000,10000],[.04,.09,4250,9500],[.05,.09,4500,9000],[.05,.10,5000,8000],[.05,.11,5000,8000],[.06,.11,5000,8000],[.06,.12,5000,8000]];
+const lastRows=[[.10,.15,.30],[.12,.17,.40],[.14,.19,.50],[.17,.22,.60],[.20,.25,.70],[.23,.33,.80],[.28,.37,.95],[.34,.41,1.05],[.40,.45,1.20]];
+
+const STRENGTH_SKILLS={
+ giant_force:{id:'giant_force',name:'力量体魄',rarity:'COMMON',handler:'giant_force',passive:true,maxLevel:9,coreSkill:true,tags:['physical',TAGS.NORMAL_ATTACK,TAGS.MELEE,TAGS.BUILD_STRENGTH],cooldownMs:999999,targetType:'passive',color:0xffffff,short:'力',description:'获得基础力量；拥有时总力量转化为最大生命，并让角色可见模型随力量变大。',levels:levels(giantRows,([strength,bonusStrength,hpPerStrength],level)=>({strength,bonusStrength,hpPerStrength,attackRangeMultiplier:level>=3?.05:0,desc:`基础力量+${strength}${bonusStrength?`，额外力量+${bonusStrength}`:''}；每点总力量增加${hpPerStrength}最大生命${level>=3?'，普通攻击范围+5%':''}。`}),{3:'强壮体魄：模型成长增强，普通攻击实际范围+5%',6:'力量突破：额外获得4点力量',9:'极道之躯：每点力量增加4最大生命，体型上限提高'})},
+ spinning_blade:{id:'spinning_blade',name:'裂空劲',rarity:'RARE',handler:'spinning_blade',passive:true,maxLevel:9,coreSkill:true,tags:['physical',TAGS.NORMAL_ATTACK,TAGS.BUILD_STRENGTH],cooldownMs:999999,targetType:'passive',color:0x58aaff,short:'裂',description:'每次真实普通攻击向前轰出一道贯穿敌人的物理冲击波。',levels:levels(bladeRows,([ratio,range,width,empoweredRatio],level)=>({ratio,range,width,empoweredRatio,empoweredEvery:level>=6?3:0,empoweredRangeMultiplier:1.3,empoweredWidthMultiplier:1.3,explosionRatio:level>=9?.5:0,explosionRadius:level>=9?95:0,desc:`普通攻击后释放${pct(ratio)}伤害裂空冲击波，距离${range}，宽度${width}${level>=6?`；每第3击强化为${pct(empoweredRatio)}`:''}${level>=9?'；首次命中爆裂50%伤害':''}。`}),{3:'裂空：伤害、距离、宽度和视觉冲击提升',6:'叠浪：每第3次真实普通攻击释放强化冲击波',9:'破岳：冲击波首次命中时产生一次范围爆裂'})},
+ bloodthirst:{id:'bloodthirst',name:'血炼',rarity:'EPIC',handler:'bloodthirst',passive:true,maxLevel:9,coreSkill:true,tags:['physical','lifesteal',TAGS.BUILD_STRENGTH],cooldownMs:999999,targetType:'passive',color:0xb66cff,short:'血',description:'所有玩家直接物理伤害获得吸血；受到敌人实际生命伤害后短暂提高物理吸血。',levels:levels(bloodRows,([lifeSteal,empoweredLifeSteal,durationMs,cooldownMs],level)=>({lifeSteal,empoweredLifeSteal,durationMs,cooldownMs,lowHpLifeSteal:level>=9?.15:0,lowHpThreshold:.35,desc:`常态物理吸血${pct(lifeSteal)}；受伤后${durationMs/1000}秒提高至${pct(empoweredLifeSteal)}，冷却${cooldownMs/1000}秒${level>=9?'；低于35%生命时为15%':''}。`}),{3:'血涌：常态4%，强化8%',6:'沸血：强化10%，持续5秒，冷却8秒',9:'绝境回生：强化期间低血提高至15%'})},
+ last_stand:{id:'last_stand',name:'极道',rarity:'MYTHIC',handler:'last_stand',passive:true,maxLevel:9,coreSkill:true,ultimateSkill:true,tags:['physical','critical',TAGS.BUILD_STRENGTH],cooldownMs:999999,targetType:'passive',color:0xff4b4b,short:'极',description:'常驻强化全部玩家直接物理伤害、物理暴击率与物理暴击伤害。',levels:levels(lastRows,([physicalDamageBonus,physicalCritChance,physicalCritMultiplierBonus],level)=>({physicalDamageBonus,physicalCritChance,physicalCritMultiplierBonus,physicalCritFinalMultiplier:level>=9?1.15:level>=6?1.10:level>=3?1.05:1,physicalCritDefenseIgnore:level>=9?.2:0,desc:`直接物理伤害+${pct(physicalDamageBonus)}，物理暴击率+${pct(physicalCritChance)}，额外暴击伤害+${pct(physicalCritMultiplierBonus)}${level>=3?`，物理暴击最终×${level>=9?'1.15':level>=6?'1.10':'1.05'}`:''}${level>=9?'，物理暴击无视20%防御':''}。`}),{3:'极力：物理暴击最终伤害×1.05',6:'破限：额外5个百分点暴击率，最终倍率×1.10',9:'力破万法：最终倍率×1.15，物理暴击无视20%防御'})}
 };
-
-export function configureStrengthCoreSkills(){
-  Object.entries(STRENGTH_CORE_SKILLS).forEach(([id,config])=>{ SKILLS[id]={...config}; });
-}
-
-export const GiantForceSkill={
-  bind(system){
-    let appliedAttack=0;
-    let appliedKnockback=0;
-    const weapon=getWeapon(system.scene.playerData.weaponId);
-    const updater=()=>{
-      const p=system.scene.playerData;
-      const data=system.getData('giant_force');
-      p.attack=Math.max(1,(p.attack||1)-appliedAttack);
-      weapon.knockback=Math.max(0,(weapon.knockback||0)-appliedKnockback);
-      appliedAttack=data?.attackBonus||0;
-      appliedKnockback=data?.knockbackBonus||0;
-      p.attack+=appliedAttack;
-      weapon.knockback+=appliedKnockback;
-    };
-    system.passiveUpdaters.push(updater);
-    updater();
-    return ()=>{
-      const p=system.scene.playerData;
-      p.attack=Math.max(1,(p.attack||1)-appliedAttack);
-      weapon.knockback=Math.max(0,(weapon.knockback||0)-appliedKnockback);
-      appliedAttack=0;
-      appliedKnockback=0;
-    };
-  }
-};
-
-export const BloodthirstSkill={
-  bind(system){
-    let appliedLifeSteal=0;
-    let appliedHeavyLifeSteal=0;
-    const updater=()=>{
-      const p=system.scene.playerData;
-      const data=system.getData('bloodthirst');
-      p.lifeSteal=Math.max(0,(p.lifeSteal||0)-appliedLifeSteal);
-      p.heavyHitLifeSteal=Math.max(0,(p.heavyHitLifeSteal||0)-appliedHeavyLifeSteal);
-      appliedLifeSteal=data?.lifeSteal||0;
-      appliedHeavyLifeSteal=data?.heavyLifeSteal||0;
-      p.lifeSteal+=appliedLifeSteal;
-      p.heavyHitLifeSteal+=appliedHeavyLifeSteal;
-    };
-    system.passiveUpdaters.push(updater);
-    updater();
-    return ()=>{
-      const p=system.scene.playerData;
-      p.lifeSteal=Math.max(0,(p.lifeSteal||0)-appliedLifeSteal);
-      p.heavyHitLifeSteal=Math.max(0,(p.heavyHitLifeSteal||0)-appliedHeavyLifeSteal);
-      appliedLifeSteal=0;
-      appliedHeavyLifeSteal=0;
-    };
-  }
-};
+export function configureStrengthCoreSkills(){ Object.entries(STRENGTH_SKILLS).forEach(([id,cfg])=>{ SKILLS[id]={...cfg}; }); delete SKILLS.frenzy; delete SKILLS.blood_rage_burst; }
+const syncUi=(s)=>{ s.hud?.update?.(); s.playerHealthBar?.update?.(); if(s.playerInfoPanel?.isOpen) s.playerInfoPanel.render?.(); };
+function applyMaxHp(s,source,nextBonus){ const p=s.playerData; p.maxHpBonuses??={}; const old=p.maxHpBonuses[source]||0; if(old===nextBonus) return false; const base=Math.max(1,(p.maxHp||1)-sumRuntimeBonuses(p.maxHpBonuses)); const ratio=(p.maxHp||0)>0?(p.hp||0)/p.maxHp:1; if(nextBonus) p.maxHpBonuses[source]=nextBonus; else delete p.maxHpBonuses[source]; p.maxHp=Math.max(1,Math.round(base+sumRuntimeBonuses(p.maxHpBonuses))); p.hp=Math.max(0,Math.min(p.maxHp,Math.round(p.maxHp*ratio))); syncUi(s); return true; }
+function capturePlayerVisual(s){ const pl=s.player,body=pl?.body; return {scaleX:pl?.scaleX??pl?.scale??1,scaleY:pl?.scaleY??pl?.scale??1,width:body?.width,height:body?.height,offsetX:body?.offset?.x||0,offsetY:body?.offset?.y||0}; }
+function setPlayerScale(s,scaleX,scaleY,snap){ const pl=s.player; if(!pl?.setScale) return false; const body=pl.body,bottom=pl.getBottom?.(); pl.setScale(scaleX,scaleY); if(bottom!=null&&pl.setY) pl.setY(pl.y+(bottom-pl.getBottom())); if(body&&snap?.width!=null){ body.setSize?.(snap.width,snap.height,false); body.setOffset?.(snap.offsetX,snap.offsetY); } return true; }
+export const GiantForceSkill={ bind(system){ const s=system.scene,p=s.playerData; let applied=false,visualSnap=null,lastScale=null,lastStrength=null,lastAttack=null,lastRange=null; const updater=()=>{ const data=system.getData('giant_force'),lvl=system.getLevel('giant_force'); clearSource(p,'giant_force'); if(!data){ const hpChanged=applyMaxHp(s,'giant_force',0); if(applied){ setPlayerScale(s,visualSnap.scaleX,visualSnap.scaleY,visualSnap); applied=false; visualSnap=null; lastScale=null; if(!hpChanged) syncUi(s); } lastStrength=getTotalStrength(p); lastAttack=(p.attack||1)+lastStrength; lastRange=0; return; } if(!applied){ visualSnap=capturePlayerVisual(s); applied=true; } setBonus(p,'strengthBonuses','giant_force',getGiantForceStrength(data)); setBonus(p,'attackRangeMultiplierBonuses','giant_force',data.attackRangeMultiplier||0); const total=getTotalStrength(p),attack=(p.attack||1)+total,range=p.attackRangeMultiplierBonuses?.giant_force||0; const hpChanged=applyMaxHp(s,'giant_force',total*(data.hpPerStrength||3)); const scale=Math.min(lvl>=9?1.5:lvl>=3?1.4:1.25,1+total*(lvl>=3?.01:.005)); const scaleChanged=scale!==lastScale; if(scaleChanged){ setPlayerScale(s,visualSnap.scaleX*scale,visualSnap.scaleY*scale,visualSnap); lastScale=scale; } const statChanged=lastStrength!==null&&(lastStrength!==total||lastAttack!==attack||lastRange!==range); if(!hpChanged&&statChanged) syncUi(s); lastStrength=total; lastAttack=attack; lastRange=range; }; system.passiveUpdaters.push(updater); updater(); return ()=>{ clearSource(p,'giant_force'); const hpChanged=applyMaxHp(s,'giant_force',0); if(applied){ setPlayerScale(s,visualSnap.scaleX,visualSnap.scaleY,visualSnap); if(!hpChanged) syncUi(s); } applied=false; visualSnap=null; lastScale=null; system.passiveUpdaters=system.passiveUpdaters.filter(fn=>fn!==updater); }; } };
+function trackVisual(s,active,node,tweenConfig){ if(!node) return null; const rec={node,tween:null}; const cleanup=()=>{ active.delete(rec); node.destroy?.(); }; active.add(rec); rec.tween=s.tweens?.add?.({...tweenConfig,targets:node,onComplete:cleanup})||null; return rec; }
+function makeShockwaveVisual(s,x,y,range,width,empowered,active){ if(!s.add?.rectangle) return; const color=empowered?0xffe7a3:0xf8fbff,alpha=empowered?0.34:0.24; const node=s.add.rectangle(x+range/2,y,range,width,color,alpha).setDepth?.(138); node?.setStrokeStyle?.(empowered?8:5,color,empowered?0.9:0.7); trackVisual(s,active,node,{alpha:0,scaleY:1.18,duration:empowered?230:180}); }
+function makeExplosionVisual(s,x,y,radius,active){ if(!s.add?.circle) return; const node=s.add.circle(x,y,radius,0xfff0c0,0.22).setStrokeStyle?.(6,0xffffff,0.82).setDepth?.(142); trackVisual(s,active,node,{alpha:0,scale:1.18,duration:220}); }
+function cleanupVisuals(active){ active.forEach(rec=>{ rec.tween?.stop?.(); rec.tween?.remove?.(); rec.node?.destroy?.(); }); active.clear(); }
+export const SpinningBladeSkill={ bind(system){ const s=system.scene; let count=0,lastAt=0; const activeVisuals=new Set(); system.passiveState.spinningBladeVisuals=activeVisuals; const fire=(payload={})=>{ const data=system.getData('spinning_blade'); if(!data||payload?.fromSpinningBlade) return; const now=s.getGameplayTime?.()??0; if(now-lastAt>4000) count=0; lastAt=now; count++; const empowered=!!(data.empoweredEvery&&count%data.empoweredEvery===0); const ratio=empowered?data.empoweredRatio:data.ratio; const range=data.range*(empowered?1.3:1),width=data.width*(empowered?1.3:1); const base=payload.baseDamage ?? s.combatSystem?.calcNonCritAttackBaseDamage?.(payload.weapon,payload.profile,payload.heavy) ?? s.playerData.attack; const x0=s.player.x,y0=s.player.y-45; const valid=e=>s.targeting.valid(e)&&s.targeting.isEnemyFullyInsideViewport(e)&&e.x>=x0&&e.x-x0<=range&&Math.abs(e.y-y0)<=width/2; const hits=s.targeting.all().filter(valid).sort((a,b)=>(a.x-x0)-(b.x-x0)); makeShockwaveVisual(s,x0,y0,range,width,empowered,activeVisuals); const first=hits[0],explosionSnapshot=first&&data.explosionRatio?{x:first.x,y:first.y}:null; const hitSet=new Set(); hits.forEach(e=>{ if(hitSet.has(e)) return; hitSet.add(e); s.combatSystem.damageEnemy(e,Math.max(1,Math.round(base*ratio)),{source:'skill',skillId:'spinning_blade',damageKind:empowered?'empoweredShockwave':'shockwave',tags:['physical',TAGS.NORMAL_ATTACK,TAGS.BUILD_STRENGTH],canCrit:true,allowLifeSteal:false,knockback:e.isBoss?0:(empowered?32:18),applyKnockback:!e.isBoss,fromSpinningBlade:true}); }); if(explosionSnapshot){ makeExplosionVisual(s,explosionSnapshot.x,explosionSnapshot.y,data.explosionRadius,activeVisuals); const burstHit=new Set(); s.targeting.all().filter(t=>s.targeting.valid(t)&&s.targeting.isEnemyFullyInsideViewport(t)&&Math.hypot(t.x-explosionSnapshot.x,t.y-explosionSnapshot.y)<=data.explosionRadius).sort((a,b)=>Math.hypot(a.x-explosionSnapshot.x,a.y-explosionSnapshot.y)-Math.hypot(b.x-explosionSnapshot.x,b.y-explosionSnapshot.y)).forEach(t=>{ if(burstHit.has(t)) return; burstHit.add(t); s.combatSystem.damageEnemy(t,Math.max(1,Math.round(base*data.explosionRatio)),{source:'skill',skillId:'spinning_blade',damageKind:'shockwaveExplosion',tags:['physical','area',TAGS.BUILD_STRENGTH],canCrit:true,allowLifeSteal:false,noKnockback:true,fromSpinningBlade:true}); }); } }; const off=s.eventBus.on(CombatEvents.PLAYER_ATTACK_RESOLVED,fire); return ()=>{ off?.(); count=0; cleanupVisuals(activeVisuals); if(system.passiveState.spinningBladeVisuals===activeVisuals) delete system.passiveState.spinningBladeVisuals; }; } };
+export const BloodthirstSkill={ bind(system){ const s=system.scene,p=s.playerData; let activeUntil=0,cooldownUntil=0,aura=null; const destroyAura=()=>{ aura?.destroy?.(); aura=null; }; const rate=()=>{ const d=system.getData('bloodthirst'); if(!d) return 0; const now=s.getGameplayTime?.()??0; if(now<activeUntil) return d.lowHpLifeSteal&&p.hp<p.maxHp*d.lowHpThreshold?d.lowHpLifeSteal:d.empoweredLifeSteal; return d.lifeSteal; }; const update=()=>{ const now=s.getGameplayTime?.()??0; if(activeUntil&&now>=activeUntil){ activeUntil=0; destroyAura(); } if(aura){ aura.setPosition?.(s.player.x,s.player.y-48); aura.x=s.player.x; aura.y=s.player.y-48; } setBonus(p,'physicalLifeStealBonuses','bloodthirst',rate()); }; const hitOff=s.eventBus.on(CombatEvents.ENEMY_HIT,m=>{ if(m._bloodthirstDone) return; m._bloodthirstDone=true; if(!m.tags?.includes('physical')||!['attack','skill','normalAttack'].includes(m.source)||m.damage<=0) return; update(); const r=p.physicalLifeStealBonuses?.bloodthirst||0; if(r>0) s.healPlayer?.(Math.floor(m.damage*r),'bloodthirst'); }); const dmgOff=s.eventBus.on(CombatEvents.PLAYER_DAMAGED,m=>{ const d=system.getData('bloodthirst'),now=s.getGameplayTime?.()??0; if(!d||m.hpDamage<=0||!m.enemy||now<activeUntil||now<cooldownUntil) return; activeUntil=now+d.durationMs; cooldownUntil=now+d.cooldownMs; destroyAura(); aura=s.add?.circle?.(s.player.x,s.player.y-48,52,0x8b0000,.18).setDepth?.(130)||null; update(); }); system.passiveUpdaters.push(update); update(); return ()=>{ hitOff?.(); dmgOff?.(); destroyAura(); activeUntil=0; cooldownUntil=0; clearSource(p,'bloodthirst'); system.passiveUpdaters=system.passiveUpdaters.filter(fn=>fn!==update); }; } };
+export const LastStandSkill={ bind(system){ const p=system.scene.playerData; const updater=()=>{ const d=system.getData('last_stand'); clearSource(p,'last_stand'); if(!d) return; setBonus(p,'physicalDamageBonuses','last_stand',d.physicalDamageBonus); setBonus(p,'physicalCritChanceBonuses','last_stand',d.physicalCritChance); setBonus(p,'physicalCritMultiplierBonuses','last_stand',d.physicalCritMultiplierBonus); setBonus(p,'physicalCritFinalMultiplierBonuses','last_stand',d.physicalCritFinalMultiplier-1); setBonus(p,'physicalCritDefenseIgnoreBonuses','last_stand',d.physicalCritDefenseIgnore); }; system.passiveUpdaters.push(updater); updater(); return ()=>{ clearSource(p,'last_stand'); system.passiveUpdaters=system.passiveUpdaters.filter(fn=>fn!==updater); }; } };

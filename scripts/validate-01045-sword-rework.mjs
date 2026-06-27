@@ -67,7 +67,7 @@ assert.equal(Math.max(...SKILLS.sword_tomb.levels.map(l=>l.executeRatio)), 0.18,
 assert.doesNotMatch(sword, /Math\.min\(0\.32|executeRatio:\s*Math\.min|executeRatio\+st\.effectiveSouls/, '剑冢运行时代码不再提高斩杀线');
 assert.match(flow, /StatusEffects\.BURN/);
 assert.match(flow, /StatusEffects\.POISON/);
-const entrySwordBlock = entry.slice(entry.indexOf('export const EntrySwordSkill='), entry.indexOf('export const EntryHeavyHitSkill='));
+const entrySwordBlock = entry.slice(entry.indexOf('export const EntrySwordSkill='), entry.indexOf('export const EntryIronWallSkill='));
 assert.match(entry, /state\.chain=\{ targets:\[\.\.\.targets\]/, '神话主剑快照当前目标');
 assert.match(entry, /sword\.target!==target[\s\S]*markAttack/, '神话主剑真实切换目标移动');
 assert.doesNotMatch(entrySwordBlock, /Math\.random|rollSwordCrit|PLAYER_CRIT/, '御剑术处理器不独立暴击、不手动发暴击事件');
