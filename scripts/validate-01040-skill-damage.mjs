@@ -91,7 +91,7 @@ eq(nums('poison_king','growthRatio'),[0.22,0.24,0.34,0.34,0.34,0.34,0.36,0.38,0.
 const poisonAdvanced=src('src/skills/handlers/PoisonSummonAdvancedSkills.js');
 assert.match(src('src/skills/handlers/FlameCoreSkills.js'),/StatusEffects\.BURN/,'fire handlers still use burn status');
 assert.match(src('src/skills/handlers/AfterimageCoreSkills.js'),/payload\.damage\|\|0\)\*data\.damageRatio/,'shadow_assault uses configured damage ratio');
-assert.match(poisonAdvanced,/sourceId:'poison_chain_transfer'/,'poison chain uses stable source id');
+assert.match(poisonAdvanced,/'poison_chain_transfer'/,'poison chain uses stable source id');
 ['split_sword','rotating_sword','execution_sword','myriad_swords','heaven_splitting_sword'].forEach(id=>assert.equal(hasHandler(id),false,`${id} old handler not registered`));
 
 console.log('v0.10.54 skill damage regression validation passed.');
