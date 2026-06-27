@@ -50,7 +50,7 @@ export function configurePoisonChainActiveSkill(){
       TAGS.ACTIVE_SKILL,
       TAGS.PROJECTILE
     ])],
-    description:'自动向中毒敌人投出毒链，造成伤害并禁锢普通或精英敌人2秒；Boss只受伤害。随后以目标为节点扩张毒网。',
+    description:'自动向中毒敌人投出毒链，命中后结算一次毒系直接攻击并禁锢普通或精英敌人2秒；Boss只承受直接攻击。随后以目标为节点扩张毒网。',
     levels:base.levels.map((level,index)=>({
       ...level,
       damage:CHAIN_DAMAGE[index],
