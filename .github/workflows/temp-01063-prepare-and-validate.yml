@@ -1,0 +1,68 @@
+name: temp-01063-prepare-and-validate
+on:
+  push:
+    branches:
+      - fix/0.10.63-safe-restart
+permissions:
+  contents: write
+jobs:
+  prepare-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/0.10.63-safe-restart
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply v0.10.63 hotfix wiring
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          main = Path('src/main.js')
+          text = main.read_text()
+          import_line = "import { installPostRenderSceneRestart } from './utils/safeSceneRestart.js';"
+          if import_line not in text:
+              anchor = "import { GAME_VERSION_LABEL } from './config/version.js';"
+              assert anchor in text
+              text = text.replace(anchor, anchor + "\n" + import_line, 1)
+          call = 'installPostRenderSceneRestart(Phaser);'
+          if call not in text:
+              anchor = "import './styles.css';"
+              assert anchor in text
+              text = text.replace(anchor, anchor + "\n\n" + call, 1)
+          main.write_text(text)
+
+          version = Path('src/config/version.js')
+          text = version.read_text()
+          assert "0.10.62" in text
+          version.write_text(text.replace("0.10.62", "0.10.63"))
+
+          for path in Path('scripts').glob('*.mjs'):
+              text = path.read_text()
+              if '0.10.62' in text:
+                  path.write_text(text.replace('0.10.62', '0.10.63'))
+
+          package = Path('package.json')
+          data = json.loads(package.read_text())
+          data['scripts']['validate:01063-safe-restart'] = 'node scripts/validate-01063-safe-restart.mjs'
+          package.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+          PY
+      - run: npm install
+      - run: npm run build
+      - name: Run all validation scripts
+        run: |
+          for script in $(node -e "const p=require('./package.json'); console.log(Object.keys(p.scripts).filter(k=>k.startsWith('validate:')).join(' '))"); do
+            npm run "$script"
+          done
+      - name: Commit validated changes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/main.js src/config/version.js scripts package.json
+          git commit -m "fix: defer scene restart until post-render" || exit 0
+          git push origin HEAD:fix/0.10.63-safe-restart
