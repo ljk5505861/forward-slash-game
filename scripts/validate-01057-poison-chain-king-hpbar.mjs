@@ -7,6 +7,8 @@ import { CombatEvents } from '../src/core/CombatEvents.js';
 import { StatusEffects } from '../src/systems/StatusEffectSystem.js';
 import { syncEnemyUi } from '../src/entities/createEnemy.js';
 import { PoisonChainActiveSkill } from '../src/skills/handlers/PoisonSummonInteractionFixes.js';
+import { PoisonKingSkill } from '../src/skills/handlers/PoisonSummonAdvancedSkills.js';
+import SkillSystem from '../src/systems/SkillSystem.js';
 
 class Bus {
   constructor(){ this.handlers=new Map(); }
@@ -34,7 +36,6 @@ const visual=(x=0,y=0)=>({
   setStrokeStyle(){ return this; },
   setDepth(){ return this; },
   setAlpha(){ return this; },
-  setAlpha(){ return this; },
   setPosition(nextX,nextY){ this.x=nextX; this.y=nextY; return this; },
   setVisible(value){ this.visible=value; return this; },
   setText(value){ this.text=value; return this; },
@@ -50,6 +51,7 @@ function makeScene(){
   const scene={
     now:0,
     player:{x:0,y:100},
+    playerData:{skills:[{id:'poison_chain',level:1}],hp:100,maxHp:100,mana:100,maxMana:100,cooldownReduction:0,skillDamageMultiplier:1},
     enemies:[],
     eventBus:bus,
     getGameplayTime(){ return this.now; },
@@ -66,12 +68,27 @@ function makeScene(){
           &&enemy.active!==false
           &&!enemy.isDefeated
           &&enemy.hp>0;
+      },
+      nearestAhead(range){
+        return this.all()
+          .filter(enemy=>enemy.x>=scene.player.x-20&&enemy.x-scene.player.x<=range)
+          .sort((a,b)=>Math.hypot(a.x-scene.player.x,a.y-scene.player.y)-Math.hypot(b.x-scene.player.x,b.y-scene.player.y))[0]||null;
+      },
+      isEnemyFullyInsideViewport(enemy){
+        return this.valid(enemy);
       }
     },
+    created:{graphics:[],circles:[]},
     add:{
       ellipse:(x,y)=>visual(x,y),
-      graphics:()=>visual()
+      graphics:()=>{ const g=visual(); scene.created.graphics.push(g); return g; },
+      circle:(x,y)=>{ const c=visual(x,y); scene.created.circles.push(c); return c; },
+      container:(x,y)=>({x,y,active:true,visible:true,children:[],destroyed:false,setDepth(){return this;},add(items){this.children.push(...items);return this;},setVisible(v){this.visible=v;return this;},destroy(){this.active=false;this.destroyed=true;}}),
+      rectangle:(x,y,w,h,color,alpha)=>({...visual(x,y),displayWidth:w,displayHeight:h,width:w,height:h,color,alpha,origin:null,setOrigin(x,y){this.origin={x,y};return this;},setDisplaySize(w,h){this.displayWidth=w;this.displayHeight=h;return this;}})
     },
+    tweens:{ add(config){ config?.onComplete?.(); return config; } },
+    hud:{ update(){} },
+    skillBar:{ update(){} },
     floatMessages:[],
     floatText(x,y,text,color){
       this.floatMessages.push({x,y,text,color});
@@ -192,6 +209,22 @@ function makeSystem(scene,level=1){
   };
 }
 
+
+function makeRealSkillSystem(scene){
+  const system=Object.create(SkillSystem.prototype);
+  Object.assign(system,{
+    scene,
+    cooldowns:new Map(),
+    active:[],
+    nextCastId:1,
+    boundPassives:new Map(),
+    passiveState:{},
+    passiveUpdaters:[],
+    attachedVisualSyncers:[]
+  });
+  return system;
+}
+
 assert.equal(GAME_VERSION,'0.10.57');
 assert.equal(SKILLS.poison_chain.passive,false);
 assert.equal(SKILLS.poison_chain.targetType,'nearestAhead');
@@ -200,6 +233,40 @@ assert.equal(SKILLS.poison_chain.levels[0].cooldownMs,5200);
 assert.equal(SKILLS.poison_chain.levels[0].prisonMs,2000);
 assert(SKILLS.poison_chain.tags.includes('activeSkill'));
 assert(SKILLS.poison_chain.tags.includes('projectile'));
+
+
+// End-to-end auto cast: SkillSystem.update drives target checks, handler preflight, cast and cooldown.
+{
+  const scene=makeScene();
+  const clean=enemy('auto-clean',120);
+  scene.enemies=[clean];
+  const system=makeRealSkillSystem(scene);
+  const cleanup=PoisonChainActiveSkill.bind(system);
+  scene.now=1000;
+  system.update(scene.now);
+  assert.equal(scene.created.graphics.length,1,'auto cast creates a visible chain line');
+  assert.equal(scene.created.circles.length,1,'auto cast creates a projectile visual');
+  assert.equal(clean.hp,1000-34,'auto cast deals level 1 poison chain damage');
+  assert.equal(scene.statusEffects.getStackCount(clean,StatusEffects.POISON),1,'auto cast applies one poison stack');
+  assert(scene.poisonChainRuntime.hasNode(clean),'auto cast seeds the poison web node');
+  assert.equal(scene.poisonChainRuntime.isPrisoned(clean),true,'auto cast prisons normal enemy');
+  assert.equal(system.cooldowns.get('poison_chain'),1000+5200,'successful auto cast writes level 1 cooldown');
+  cleanup();
+}
+
+// End-to-end no target: SkillSystem.update does not cast and does not consume cooldown.
+{
+  const scene=makeScene();
+  scene.enemies=[];
+  const system=makeRealSkillSystem(scene);
+  const cleanup=PoisonChainActiveSkill.bind(system);
+  scene.now=1000;
+  system.update(scene.now);
+  assert.equal(scene.created.graphics.length,0,'no target creates no chain line');
+  assert.equal(scene.created.circles.length,0,'no target creates no projectile');
+  assert.equal(system.cooldowns.has('poison_chain'),false,'no target does not write cooldown');
+  cleanup();
+}
 
 // Normal enemy: the thrown chain deals damage, seeds the network and fully disables it for 2 seconds.
 {
@@ -298,6 +365,54 @@ assert(SKILLS.poison_chain.tags.includes('projectile'));
   cleanup();
 }
 
+
+// Clean target: poison chain works independently, damages, adds poison, seeds node and prisons.
+{
+  const scene=makeScene();
+  const clean=enemy('clean',120);
+  scene.enemies=[clean];
+  const system=makeSystem(scene,1);
+  const cleanup=PoisonChainActiveSkill.bind(system);
+  assert.equal(PoisonChainActiveSkill.canCast(system),true);
+  const before=clean.hp;
+  PoisonChainActiveSkill.cast(system,SKILLS.poison_chain,SKILLS.poison_chain.levels[0],1,{});
+  assert.equal(clean.hp,before-34);
+  assert.equal(scene.statusEffects.getStackCount(clean,StatusEffects.POISON),1);
+  assert(scene.poisonChainRuntime.hasNode(clean));
+  assert.equal(scene.poisonChainRuntime.isPrisoned(clean),true);
+  cleanup();
+}
+
+// Lethal hit: no node and no prison is left on a dead target.
+{
+  const scene=makeScene();
+  const weak=enemy('weak',120,{hp:20});
+  scene.enemies=[weak];
+  const system=makeSystem(scene,1);
+  const cleanup=PoisonChainActiveSkill.bind(system);
+  PoisonChainActiveSkill.cast(system,SKILLS.poison_chain,SKILLS.poison_chain.levels[0],1,{});
+  assert.equal(weak.isDefeated,true);
+  assert.equal(scene.poisonChainRuntime.hasNode(weak),false);
+  assert.equal(scene.poisonChainRuntime.isPrisoned(weak),false);
+  cleanup();
+}
+
+// Boss can be selected clean, is poisoned and node-seeded, but is not prisoned.
+{
+  const scene=makeScene();
+  const boss=enemy('boss-clean',120,{boss:true,hp:2000});
+  scene.enemies=[boss];
+  const system=makeSystem(scene,1);
+  const cleanup=PoisonChainActiveSkill.bind(system);
+  PoisonChainActiveSkill.cast(system,SKILLS.poison_chain,SKILLS.poison_chain.levels[0],1,{});
+  assert.equal(boss.hp,1966);
+  assert.equal(scene.statusEffects.getStackCount(boss,StatusEffects.POISON),1);
+  assert(scene.poisonChainRuntime.hasNode(boss));
+  assert.equal(scene.poisonChainRuntime.isPrisoned(boss),false);
+  assert.equal(boss.isKnockbackActive,false);
+  cleanup();
+}
+
 // Enemy UI refresh must preserve both orange burn and green poison numbers.
 {
   const text=()=>({
@@ -332,6 +447,47 @@ assert(SKILLS.poison_chain.tags.includes('projectile'));
   assert.equal(target.poisonIndicator.StackText.value,'12');
 }
 
+
+// Poison king hp bar lifecycle and ratio behavior.
+{
+  const scene=makeScene();
+  scene.playerData.skills=[{id:'poison_king',level:1}];
+  const system={
+    scene,
+    passiveUpdaters:[],
+    getLevel:id=>id==='poison_king'?1:0,
+    getData(id){ return id==='poison_king'?SKILLS.poison_king.levels[0]:null; }
+  };
+  const cleanup=PoisonKingSkill.bind(system);
+  let king=scene.poisonKingRuntime.get();
+  assert(king?.hpBar?.container,'poison king creates hp bar');
+  assert.equal(king.hpBar.width,46);
+  const startX=king.hpBar.container.x;
+  scene.enemies=[enemy('dummy',240)];
+  scene.now=100;
+  system.passiveUpdaters.forEach(update=>update());
+  assert.notEqual(king.hpBar.container.x,startX,'hp bar follows movement');
+  scene.poisonKingRuntime.forceDamage(25);
+  assert.equal(king.hpBar.fill.displayWidth,46*(king.hp/king.maxHp));
+  king.hp=Math.min(king.maxHp,king.hp+10);
+  system.passiveUpdaters.forEach(update=>update());
+  assert.equal(king.hpBar.fill.displayWidth,46*(king.hp/king.maxHp));
+  king.maxHp+=50;
+  system.passiveUpdaters.forEach(update=>update());
+  assert.equal(king.hpBar.fill.displayWidth,46*(king.hp/king.maxHp));
+  const oldBar=king.hpBar.container;
+  scene.poisonKingRuntime.forceDamage(99999);
+  assert.equal(oldBar.destroyed,true,'hp bar is destroyed on death');
+  scene.now=5000;
+  system.passiveUpdaters.forEach(update=>update());
+  king=scene.poisonKingRuntime.get();
+  assert(king?.hpBar?.container,'poison king recreates one hp bar on revive');
+  assert.notEqual(king.hpBar.container,oldBar);
+  cleanup();
+  assert.equal(king.hpBar,null,'cleanup destroys current hp bar');
+  assert.equal(system.passiveUpdaters.length,0);
+}
+
 const combatSource=fs.readFileSync(new URL('../src/systems/CombatSystem.js',import.meta.url),'utf8');
 assert.match(combatSource,/meta\.source===['"]poison['"]\?['"]#63ff72['"]/, 'poison damage numbers use bright green');
 
@@ -345,4 +501,6 @@ assert.match(
   'free parasitic gu is hidden until it has a poisoned host'
 );
 
-console.log('validate-01055-poison-chain-control-fix: ok');
+
+
+console.log('validate-01057-poison-chain-king-hpbar: ok');

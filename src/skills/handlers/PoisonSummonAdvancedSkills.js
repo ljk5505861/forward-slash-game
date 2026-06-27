@@ -422,10 +422,55 @@ export const PoisonKingSkill={
     let king=null;
     let nextRespawnAt=0;
 
+    const destroyHpBar=target=>{
+      const bar=target?.hpBar;
+      if(!bar) return;
+      bar.bg?.destroy?.();
+      bar.fill?.destroy?.();
+      bar.container?.destroy?.();
+      target.hpBar=null;
+    };
+    const updateHpBar=target=>{
+      const bar=target?.hpBar;
+      if(!target||!bar) return;
+      if(target.dead||target.hp<=0){
+        bar.container?.setVisible?.(false);
+        return;
+      }
+      const ratio=Math.max(0,Math.min(1,target.hp/Math.max(1,target.maxHp||1)));
+      bar.container?.setVisible?.(true);
+      bar.container.x=target.view.x;
+      bar.container.y=target.view.y-31;
+      bar.fill?.setDisplaySize?.(bar.width*ratio,bar.height);
+      bar.fill?.setPosition?.(-bar.width/2,0);
+    };
+    const createHpBar=target=>{
+      destroyHpBar(target);
+      const width=46;
+      const height=6;
+      const container=s.add.container(target.view.x,target.view.y-31).setDepth(149);
+      const makeRect=(x,y,w,h,color,alpha)=>{
+        const rect=s.add.rectangle?.(x,y,w,h,color,alpha)
+          ||s.add.ellipse?.(x,y,w,h,color,alpha);
+        rect?.setDisplaySize?.(w,h);
+        rect.displayWidth=w;
+        rect.displayHeight=h;
+        return rect;
+      };
+      const bg=makeRect(0,0,width,height,0x07140b,0.62);
+      bg?.setOrigin?.(0.5,0.5);
+      const fill=makeRect(-width/2,0,width,height,0x42e76d,0.95);
+      fill?.setOrigin?.(0,0.5);
+      container.add([bg,fill]);
+      target.hpBar={container,bg,fill,width,height};
+      updateHpBar(target);
+    };
+
     const die=target=>{
       const current=target||king;
       if(!current||king!==current) return false;
       current.dead=true;
+      destroyHpBar(current);
       current.view?.destroy?.();
       current.domain?.destroy?.();
       king=null;
@@ -452,6 +497,7 @@ export const PoisonKingSkill={
               current.hp-Math.max(0,Math.round(amount)||0)
             );
             const actual=before-current.hp;
+            updateHpBar(current);
             if(current.hp<=0) die(current);
             return actual;
           }
@@ -463,6 +509,7 @@ export const PoisonKingSkill={
         const before=current.hp;
         current.hp=Math.max(0,current.hp-Math.max(0,amount||0));
         const actual=before-current.hp;
+        updateHpBar(current);
         if(current.hp<=0) die(current);
         return actual;
       }
@@ -487,8 +534,10 @@ export const PoisonKingSkill={
         nextBiteAt:s.getGameplayTime()+500,
         nextDomainAt:s.getGameplayTime()+700,
         domain:null,
-        dead:false
+        dead:false,
+        hpBar:null
       };
+      createHpBar(king);
       return king;
     };
     const grow=amount=>{
@@ -510,6 +559,7 @@ export const PoisonKingSkill={
         king.view.setScale(
           1+king.stage*POISON_ADVANCED_TUNING.king.scalePerStage
         );
+        updateHpBar(king);
       }
     };
     const offTick=s.eventBus.on(CombatEvents.STATUS_TICK,payload=>{
@@ -649,6 +699,7 @@ export const PoisonKingSkill={
         king.domain.x=king.view.x;
         king.domain.y=king.view.y;
       }
+      updateHpBar(king);
     };
 
     system.passiveUpdaters.push(updater);
