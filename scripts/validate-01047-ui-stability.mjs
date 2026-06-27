@@ -4,7 +4,7 @@ import { GAME_VERSION } from '../src/config/version.js';
 
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
-assert.equal(GAME_VERSION,'0.10.53');
+assert.equal(GAME_VERSION,'0.10.54');
 
 const skillBar=read('src/ui/SkillBar.js');
 assert.match(skillBar,/SOUL_BADGE_SKILLS\s*=\s*new Set\(\['sword_wave','sword_tomb'\]\)/);
@@ -18,7 +18,9 @@ assert.match(indicators,/nameOffsetY:70/);
 assert.match(indicators,/levelOffsetY:50/);
 assert.match(indicators,/statusRowOffsetY:15/);
 assert.match(indicators,/x:enemy\.x-enemy\.width\/2/);
-assert.match(indicators,/setText\(stacks>0\?String\(stacks\):''\)/);
+assert.match(indicators,/setText\(burn>0\?String\(burn\):''\)/);
+assert.match(indicators,/setText\(poison>0\?String\(poison\):''\)/);
+assert.match(indicators,/color:'#63ff72'/);
 
 const enemy=read('src/entities/createEnemy.js');
 assert.match(enemy,/top-ENEMY_UI_LAYOUT\.hpBarOffsetY/);

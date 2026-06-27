@@ -14,8 +14,12 @@ const flame=read('src/skills/handlers/FlameCoreSkills.js');
 const skillsConfig=read('src/config/skills.js');
 const balanceConfig=read('src/config/balance.js');
 const enemiesConfig=read('src/config/enemies.js');
+const burnTextBlock=indicators.slice(
+  indicators.indexOf('const burnText'),
+  indicators.indexOf('const poisonText')
+);
 
-assert.equal(GAME_VERSION,'0.10.53','game version is 0.10.53');
+assert.equal(GAME_VERSION,'0.10.54','game version is 0.10.54');
 
 assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_X=36;/,'sheath x offset remains at the v0.10.51 position');
 assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_Y=26;/,'sheath y offset remains unchanged');
@@ -41,15 +45,15 @@ assert.deepEqual(SKILLS.sword_wave.levels.map(l=>l.damage),[34,42,50,58,68,78,90
 assert.deepEqual(SKILLS.fireball.levels.map(l=>l.damage),[30,34,38,42,46,42,46,50,54],'entry fireball damage unchanged');
 assert.deepEqual(SKILLS.burn_burst.levels.map(l=>l.burnDamage),[5,5,5,5,5,5,5,5,5],'burn burst burn damage unchanged');
 
-assert.match(indicators,/setText\(stacks>0\?String\(stacks\):''\)/,'burn indicator displays only the numeric stack count');
-assert.doesNotMatch(indicators,/灼/,'burn indicator no longer includes the 灼 label');
-assert.match(indicators,/fontSize:'16px'/,'burn status font size is 16px');
-assert.match(indicators,/fontStyle:'bold'/,'burn status uses bold weight');
+assert.match(indicators,/setText\(burn>0\?String\(burn\):''\)/,'burn indicator displays only the numeric stack count');
+assert.doesNotMatch(burnTextBlock,/灼/,'burn indicator no longer includes the 灼 label');
+assert.match(burnTextBlock,/fontSize:'16px'/,'burn status font size is 16px');
+assert.match(burnTextBlock,/fontStyle:'bold'/,'burn status uses bold weight');
 assert.match(indicators,/STATUS_ITEM_WIDTH=18/,'status row remains compact 18px slots');
-assert.match(indicators,/color:'#ff9a3d'/,'burn status color is a clearer orange');
-assert.doesNotMatch(indicators,/color:'#ffb36b'/,'burn status no longer uses the previous pale orange');
-assert.doesNotMatch(indicators,/stroke:/,'burn status has no text stroke');
-assert.doesNotMatch(indicators,/strokeThickness:/,'burn status has no stroke thickness');
+assert.match(burnTextBlock,/color:'#ff9a3d'/,'burn status color is a clearer orange');
+assert.doesNotMatch(burnTextBlock,/color:'#ffb36b'/,'burn status no longer uses the previous pale orange');
+assert.doesNotMatch(burnTextBlock,/stroke:/,'burn status has no text stroke');
+assert.doesNotMatch(burnTextBlock,/strokeThickness:/,'burn status has no stroke thickness');
 assert.match(indicators,/statusRowOffsetY:15/,'enemy status row vertical position unchanged');
 assert.match(indicators,/return \{ x:enemy\.x-enemy\.width\/2, y:top-ENEMY_UI_LAYOUT\.statusRowOffsetY \}/,'enemy status row still starts from left edge below hp bar');
 

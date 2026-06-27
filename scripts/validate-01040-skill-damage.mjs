@@ -18,7 +18,7 @@ const archetypes={
   poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],
 };
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.10.53','game version for v0.10.53 skill regression');
+assert.equal(GAME_VERSION,'0.10.54','game version for v0.10.54 skill regression');
 eq(allSkillIds.length,29,'all current 29 skills listed');
 eq(new Set(allSkillIds).size,29,'all current 29 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
@@ -79,6 +79,8 @@ eq(nums('poison_cloud','poisonDamage'),[6,6,10,10,13,13,16,18,21],'poison_cloud.
 eq(nums('poison_cloud','poisonIntervalMs'),Array(9).fill(700),'poison_cloud.poisonIntervalMs');
 eq(nums('poison_cloud','maxHits'),[3,3,3,3,3,999,999,999,999],'poison_cloud.maxHits');
 eq(nums('parasitic_gu','leechDamage'),[10,11,12,13,14,21,23,25,38],'parasitic_gu.leechDamage');
+eq(nums('parasitic_gu','poisonStacks'),[1,1,1,1,1,2,2,2,2],'parasitic_gu.poisonStacks');
+eq(nums('parasitic_gu','poisonAbsorbRatio'),Array(9).fill(0.03),'parasitic_gu.poisonAbsorbRatio');
 eq(nums('parasitic_gu','splitEnergy'),[28,28,26,26,24,24,22,22,20],'parasitic_gu.splitEnergy');
 eq(nums('poison_chain','extendChance'),[0.38,0.42,0.62,0.64,0.66,0.68,0.7,0.72,0.74],'poison_chain.extendChance');
 eq(nums('poison_chain','checkMs'),[1200,1100,760,730,700,680,650,620,600],'poison_chain.checkMs');
@@ -89,6 +91,7 @@ eq(nums('poison_king','growthRatio'),[0.22,0.24,0.34,0.34,0.34,0.34,0.36,0.38,0.
 const poisonAdvanced=src('src/skills/handlers/PoisonSummonAdvancedSkills.js');
 assert.match(src('src/skills/handlers/FlameCoreSkills.js'),/StatusEffects\.BURN/,'fire handlers still use burn status');
 assert.match(src('src/skills/handlers/AfterimageCoreSkills.js'),/payload\.damage\|\|0\)\*data\.damageRatio/,'shadow_assault uses configured damage ratio');
+assert.match(poisonAdvanced,/'poison_chain_transfer'/,'poison chain uses stable source id');
 ['split_sword','rotating_sword','execution_sword','myriad_swords','heaven_splitting_sword'].forEach(id=>assert.equal(hasHandler(id),false,`${id} old handler not registered`));
 
-console.log('v0.10.53 skill damage regression validation passed.');
+console.log('v0.10.54 skill damage regression validation passed.');
