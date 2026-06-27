@@ -1,4 +1,4 @@
-import { configureEntryArchetypeSkills, EntryFireballSkill, EntrySwordSkill, EntryPoisonNeedleSkill, EntryHeavyHitSkill, EntryIronWallSkill, EntryMovementSkill } from './EntryArchetypeSkills.js';
+import { configureEntryArchetypeSkills, EntryFireballSkill, EntrySwordSkill, EntryPoisonNeedleSkill, EntryIronWallSkill, EntryMovementSkill } from './EntryArchetypeSkills.js';
 import { configureFlameCoreSkills, FireSeedSkill, BurnBurstSkill, SolarFlameSkill } from './FlameCoreSkills.js';
 import { configureSwordReworkSkills, SwordSheathSkill, SwordTombSkill } from './SwordReworkSkills.js';
 import { configureStrengthCoreSkills, GiantForceSkill, SpinningBladeSkill, BloodthirstSkill, LastStandSkill } from './StrengthCoreSkills.js';

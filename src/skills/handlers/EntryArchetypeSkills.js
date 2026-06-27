@@ -290,21 +290,6 @@ export const EntrySwordSkill={
   }
 };
 
-export const EntryHeavyHitSkill={
-  bind(system){
-    let appliedLifeSteal=0;
-    return passiveUpdater(system,'spinning_blade',(data,level)=>{
-      const p=system.scene.playerData;
-      p.heavyHitEvery=data?.heavyHitEvery||0;
-      p.heavyHitMultiplier=data?.heavyHitMultiplier||1.8;
-      p.heavyHitLifeSteal=Math.max(0,(p.heavyHitLifeSteal||0)-appliedLifeSteal);
-      appliedLifeSteal=data?.heavyHitLifeSteal||0;
-      p.heavyHitLifeSteal+=appliedLifeSteal;
-      if(level<=0){ p.heavyHitCounter=0; p.nextAttackIsHeavy=false; }
-    });
-  }
-};
-
 export const EntryIronWallSkill={
   bind(system){
     let appliedDefense=0;
