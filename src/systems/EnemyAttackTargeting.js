@@ -7,16 +7,17 @@ const BEHAVIOR_ATTACKERS = new Set([
   'midBoss',
   'berserkerBoss'
 ]);
-
+const PATCH_MARK='__poisonKingTargetingInstalled';
 const distanceBetween=(enemy,target)=>Math.hypot(
   (enemy?.x||0)-(target?.x||0),
   (enemy?.y||0)-(target?.y||0)
 );
 
 export function installEnemyAttackTargeting(){
-  if(CombatSystem.prototype.getAttackableTargets?.__poisonKingTargeting) return;
+  if(CombatSystem.prototype[PATCH_MARK]) return;
+  CombatSystem.prototype[PATCH_MARK]=true;
 
-  const getAttackableTargets=function(
+  CombatSystem.prototype.getAttackableTargets=function(
     enemy,
     {includePlayer=true,includePoisonKing=true}={}
   ){
@@ -47,8 +48,6 @@ export function installEnemyAttackTargeting(){
     }
     return targets;
   };
-  getAttackableTargets.__poisonKingTargeting=true;
-  CombatSystem.prototype.getAttackableTargets=getAttackableTargets;
 
   CombatSystem.prototype.chooseEnemyAttackTarget=function(
     enemy,
