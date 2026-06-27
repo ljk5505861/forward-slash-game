@@ -76,8 +76,16 @@ try{
     const second=SKILLS[options[1].skillId];
     const third=SKILLS[options[2].skillId];
     assert(first&&second&&third);
-    assert.equal(first.rarity==='MYTHIC'||first.ultimateSkill,true,false);
-    assert.equal(second.rarity==='MYTHIC'||second.ultimateSkill,true,false);
+    assert.equal(
+      first.rarity==='MYTHIC'||first.ultimateSkill,
+      false,
+      'first starting slot is drawn from the non-mythic pool'
+    );
+    assert.equal(
+      second.rarity==='MYTHIC'||second.ultimateSkill,
+      false,
+      'second starting slot is drawn from the non-mythic pool'
+    );
     assert.equal(
       third.rarity==='MYTHIC'||third.ultimateSkill,
       true,
