@@ -13,6 +13,7 @@ import { configureAfterimageUltimateSkills, MyriadAfterimageSkill } from './Afte
 import { configurePoisonSummonCoreSkills } from './PoisonSummonCoreSkills.js';
 import { configurePoisonSummonAdvancedSkills, PoisonKingSkill } from './PoisonSummonAdvancedSkills.js';
 import { configurePoisonChainActiveSkill, ParasiticGuHostVisualSkill, PoisonChainActiveSkill } from './PoisonSummonInteractionFixes.js';
+import { configureTemporaryStartingPool } from './TemporaryStartingPool.js';
 
 configureEntryArchetypeSkills();
 configureFlameCoreSkills();
@@ -29,5 +30,6 @@ configureAfterimageUltimateSkills();
 configurePoisonSummonCoreSkills();
 configurePoisonSummonAdvancedSkills();
 configurePoisonChainActiveSkill();
+configureTemporaryStartingPool();
 
 export const SKILL_HANDLERS={entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_heavy_hit:EntryHeavyHitSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,fire_seed:FireSeedSkill,burn_burst:BurnBurstSkill,solar_flame:SolarFlameSkill,sword_sheath:SwordSheathSkill,sword_tomb:SwordTombSkill,giant_force:GiantForceSkill,bloodthirst:BloodthirstSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,armor_break_shockwave:ArmorBreakShockwaveSkill,immovable_mountain:ImmovableMountainSkill,black_tortoise_body:BlackTortoiseBodySkill,phantom_step:PhantomStepSkill,shadow_assault:ShadowAssaultSkill,swift_shadow:SwiftShadowSkill,instant_step:InstantStepSkill,myriad_afterimage:MyriadAfterimageSkill,parasitic_gu:ParasiticGuHostVisualSkill,poison_chain:PoisonChainActiveSkill,poison_king:PoisonKingSkill,frenzy:FrenzySkill,blood_rage_burst:BloodRageBurstSkill,last_stand:LastStandSkill};
