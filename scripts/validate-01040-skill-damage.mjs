@@ -13,14 +13,14 @@ const archetypes={
   fire:['fireball','fire_seed','burn_burst','solar_flame'],
   sword:['sword_wave','sword_sheath','sword_tomb'],
   strength:['giant_force','spinning_blade','bloodthirst','last_stand'],
-  defense:['healing','thorn_armor','guardian_shield','armor_break_shockwave','immovable_mountain','black_tortoise_body'],
+  defense:['healing','thorn_armor','guardian_shield'],
   afterimage:['shadow_fist','phantom_step','shadow_assault','swift_shadow','instant_step','myriad_afterimage'],
   poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],
 };
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.10.61','game version for v0.10.60 skill regression');
-eq(allSkillIds.length,27,'all current 27 skills listed');
-eq(new Set(allSkillIds).size,27,'all current 27 skills unique');
+assert.equal(GAME_VERSION,'0.10.62','game version for v0.10.60 skill regression');
+eq(allSkillIds.length,24,'all current 24 skills listed');
+eq(new Set(allSkillIds).size,24,'all current 24 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
 allSkillIds.forEach(id=>assert.ok(SKILLS[id],`missing skill ${id}`));
 
@@ -60,12 +60,10 @@ eq(nums('last_stand','physicalCritChance'),[0.15,0.18,0.22,0.25,0.28,0.37,0.41,0
 eq(nums('last_stand','physicalCritMultiplierBonus'),[0.40,0.50,0.60,0.75,0.90,1.05,1.20,1.35,1.50],'last_stand.physicalCritMultiplierBonus');
 
 // Defense / shield archetype.
-eq(nums('healing','defense'),[2,3,5,7,9,12,15,18,22],'healing.defense');
-eq(nums('thorn_armor','flatDamage'),[4,4,6,6,8,8,10,10,12],'thorn_armor.flatDamage');
-eq(nums('guardian_shield','flatShield'),[6,7,8,9,10,11,12,13,15],'guardian_shield.flatShield');
-eq(nums('armor_break_shockwave','damage'),[90,110,132,156,180,204,224,242,260],'armor_break_shockwave.damage');
-assert.ok(SKILLS.immovable_mountain.levels.every(l=>l.maxStacks>0&&l.defensePerStack>0),'immovable_mountain stacks/defense configured');
-assert.ok(SKILLS.black_tortoise_body.levels.every(l=>l.defenseBonus>0&&l.flatShield>0),'black_tortoise_body defense/shield configured');
+eq(nums('healing','defense'),[3,4,6,8,10,13,16,20,25],'healing.defense');
+eq(nums('thorn_armor','flatDamage'),[8,9,10,12,14,16,18,21,25],'thorn_armor.flatDamage');
+eq(nums('guardian_shield','flatShield'),[12,14,16,18,20,24,28,32,36],'guardian_shield.flatShield');
+['armor_break_shockwave','immovable_mountain','black_tortoise_body'].forEach(id=>assert.equal(SKILLS[id],undefined,`${id} removed from skill pool`));
 
 // Afterimage / speed archetype.
 eq(nums('shadow_assault','damageRatio'),[0.44,0.50,0.56,0.62,0.68,0.76,0.84,0.92,1.04],'shadow_assault.damageRatio');

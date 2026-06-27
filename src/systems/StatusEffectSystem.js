@@ -162,7 +162,7 @@ export default class StatusEffectSystem {
       type,
       target,
       durationMs,
-      expiresAt:now+durationMs,
+      expiresAt:options.persistent||options.expiresNaturally===false?Number.POSITIVE_INFINITY:now+durationMs,
       nextTickAt:intervalMs?now+intervalMs:0,
       intervalMs,
       value,
@@ -278,7 +278,7 @@ export default class StatusEffectSystem {
         }
       }
       if(
-        time>=e.expiresAt
+        (!e.persistent&&e.expiresNaturally!==false&&time>=e.expiresAt)
         ||(e.type===StatusEffects.SHIELD&&e.remainingValue<=0)
       ){
         if(e.type===StatusEffects.BURN&&e.burnBurst){
@@ -627,7 +627,7 @@ export default class StatusEffectSystem {
     const p=this.scene.playerData;
     let remaining=damage;
     const shields=this.getEffects(p,StatusEffects.SHIELD)
-      .sort((a,b)=>a.expiresAt-b.expiresAt);
+      .sort((a,b)=>(a.persistent?Number.POSITIVE_INFINITY:a.expiresAt)-(b.persistent?Number.POSITIVE_INFINITY:b.expiresAt));
     for(const effect of shields){
       if(remaining<=0) break;
       const before=effect.remainingValue||0;

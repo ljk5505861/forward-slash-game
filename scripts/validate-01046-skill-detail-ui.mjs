@@ -10,7 +10,7 @@ const read=p=>fs.readFileSync(new URL(`../${p}`, import.meta.url),'utf8');
 const snapshot=state=>JSON.stringify(state);
 const detailAt=(id,level)=>getSkillDetailData(id,{skill:{id,level}});
 
-assert.equal(GAME_VERSION,'0.10.61');
+assert.equal(GAME_VERSION,'0.10.62');
 const skillBar=read('src/ui/SkillBar.js');
 assert.match(skillBar,/import\s+Phaser\s+from\s+['"]phaser['"]/);
 assert.match(skillBar,/SKILL_DETAIL_LONG_PRESS_MS\s*=\s*450/);
@@ -27,7 +27,7 @@ assert.match(skillBar,/Clamp\([^,]+,[^,]*0,[^)]*maxScroll/);
 for(const ev of ['pointerdown','pointermove','pointerup','pointerupoutside','pointercancel','wheel']) assert.ok(skillBar.includes(ev),ev);
 
 const keys=Object.keys(SKILLS);
-assert.equal(keys.length,27);
+assert.equal(keys.length,24);
 assert.deepEqual(validateSkillDetailContent(),[]);
 for(const id of keys){
   const cfg=SKILLS[id];
@@ -58,8 +58,7 @@ assert.ok(sheath.includes('温养时间：6秒'));
 assert.ok(sheath.includes('剑体尺寸倍率：0.95倍'));
 assert.ok(detailAt('last_stand',1).currentEffects.join('|').includes('物理暴击率+15%'));
 assert.ok(detailAt('poison_king',1).currentEffects.join('|').includes('撕咬伤害')||detailAt('poison_king',1).currentEffects.join('|').includes('生命'));
-const mountain=detailAt('immovable_mountain',1).currentEffects.join('|');
-assert.ok(mountain.includes('每层防御加成：3'));
+assert.equal(SKILLS.immovable_mountain,undefined);
 const solar=detailAt('solar_flame',1).currentEffects.join('|');
 assert.ok(solar.includes('燃爆伤害：78'));
 assert.ok(solar.includes('燃爆范围：100'));

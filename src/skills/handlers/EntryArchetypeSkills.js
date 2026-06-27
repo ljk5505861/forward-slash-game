@@ -76,11 +76,11 @@ const configs = {
     targetType:'passive', color:0x8aa0b8, short:'壁',
     description:'永久提高防御，并在高等级获得少量伤害减免。',
     levels:nineLevels([
-      [2,0],[3,0],[5,0],[7,0.02],[9,0.03],[12,0.04],[15,0.05],[18,0.06],[22,0.08]
-    ],([defense,damageReduction],level)=>({ defense,damageReduction,desc:level===1?'永久获得2点防御。':`获得${defense}点防御${damageReduction?`和${Math.round(damageReduction*100)}%减伤`:''}。` }),{
-      3:'防御提高至5点',
-      6:'防御提高至12点，并获得4%伤害减免',
-      9:'防御提高至22点，并获得8%伤害减免'
+      [3,0],[4,0],[6,0.02],[8,0.02],[10,0.03],[13,0.05],[16,0.06],[20,0.07],[25,0.10]
+    ],([defense,damageReduction],level)=>({ defense,damageReduction,desc:`当前等级防御+${defense}，伤害减免${Math.round(damageReduction*100)}%。铁壁不生成护盾。` }),{
+      3:'铁骨：防御提高至6点，并获得2%伤害减免。',
+      6:'铜墙：防御提高至13点，伤害减免提高至5%。',
+      9:'金刚铁壁：防御提高至25点，伤害减免提高至10%。'
     })
   },
   shadow_fist: {
@@ -292,17 +292,25 @@ export const EntrySwordSkill={
 
 export const EntryIronWallSkill={
   bind(system){
-    let appliedDefense=0;
-    let appliedReduction=0;
-    return passiveUpdater(system,'healing',(data)=>{
+    const updater=()=>{
       const p=system.scene.playerData;
-      p.defense=Math.max(0,(p.defense||0)-appliedDefense);
-      p.damageReduction=Math.max(0,(p.damageReduction||0)-appliedReduction);
-      appliedDefense=data?.defense||0;
-      appliedReduction=data?.damageReduction||0;
-      p.defense+=appliedDefense;
-      p.damageReduction=Math.min(0.8,p.damageReduction+appliedReduction);
-    });
+      p.defenseBonuses??={};
+      p.damageReductionBonuses??={};
+      const data=system.getData('healing');
+      if(data){
+        p.defenseBonuses.healing=data.defense||0;
+        if(data.damageReduction) p.damageReductionBonuses.healing=data.damageReduction;
+        else delete p.damageReductionBonuses.healing;
+      } else {
+        delete p.defenseBonuses.healing;
+        delete p.damageReductionBonuses.healing;
+      }
+      system.scene.hud?.update?.();
+      if(system.scene.playerInfoPanel?.isOpen) system.scene.playerInfoPanel.render();
+    };
+    system.passiveUpdaters.push(updater);
+    updater();
+    return ()=>{ const p=system.scene.playerData; delete p.defenseBonuses?.healing; delete p.damageReductionBonuses?.healing; system.passiveUpdaters=system.passiveUpdaters.filter(fn=>fn!==updater); };
   }
 };
 
