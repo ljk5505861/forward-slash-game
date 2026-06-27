@@ -10,8 +10,12 @@ const indicators=read('src/ui/EnemyStatusIndicators.js');
 const skillSystem=read('src/systems/SkillSystem.js');
 const scene=read('src/scenes/GameScene.js');
 const combat=read('src/systems/CombatSystem.js');
+const burnTextBlock=indicators.slice(
+  indicators.indexOf('const burnText'),
+  indicators.indexOf('const poisonText')
+);
 
-assert.equal(GAME_VERSION,'0.10.53','game version is 0.10.53');
+assert.equal(GAME_VERSION,'0.10.54','game version is 0.10.54');
 assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_X=36;/,'sheath remains farther behind the player');
 assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_Y=26;/,'sheath y remains unchanged');
 assert.doesNotMatch(sword,/export const SWORD_SHEATH_BACK_OFFSET_X=28;/,'old overlapping x offset remains removed');
@@ -22,14 +26,14 @@ assert.doesNotMatch(sheathBlock,/Math\.sin|lerp|tweens\.add|setScale\(/i,'sheath
 assert.match(skillSystem,/POST_UPDATE_EVENT=Phaser\.Scenes\?\.Events\?\.POST_UPDATE\|\|'postupdate'/,'post-physics attached sync remains unchanged');
 assert.match(scene,/syncAttachedVisuals\(\)\{ this\.afterimages\?\.syncAttachedVisuals\?\.\(\); this\.skillSystem\?\.syncAttachedVisuals\?\.\(\); this\.flyingSwords\?\.syncAttachedVisuals\?\.\(\); \}/,'attached visual sync order remains unchanged');
 
-assert.match(indicators,/fontSize:'16px'/,'burn text is enlarged to 16px');
-assert.match(indicators,/fontStyle:'bold'/,'burn text uses bold weight');
-assert.match(indicators,/color:'#ff9a3d'/,'burn text uses clearer orange');
-assert.doesNotMatch(indicators,/color:'#ffb36b'/,'previous pale-orange color is removed');
-assert.doesNotMatch(indicators,/stroke:/,'burn text has no stroke color');
-assert.doesNotMatch(indicators,/strokeThickness:/,'burn text has no stroke thickness');
-assert.match(indicators,/setText\(stacks>0\?String\(stacks\):''\)/,'burn text displays only the numeric stack count');
-assert.doesNotMatch(indicators,/灼/,'burn text no longer contains the 灼 label');
+assert.match(burnTextBlock,/fontSize:'16px'/,'burn text is enlarged to 16px');
+assert.match(burnTextBlock,/fontStyle:'bold'/,'burn text uses bold weight');
+assert.match(burnTextBlock,/color:'#ff9a3d'/,'burn text uses clearer orange');
+assert.doesNotMatch(burnTextBlock,/color:'#ffb36b'/,'previous pale-orange color is removed');
+assert.doesNotMatch(burnTextBlock,/stroke:/,'burn text has no stroke color');
+assert.doesNotMatch(burnTextBlock,/strokeThickness:/,'burn text has no stroke thickness');
+assert.match(indicators,/setText\(burn>0\?String\(burn\):''\)/,'burn text displays only the numeric stack count');
+assert.doesNotMatch(burnTextBlock,/灼/,'burn text no longer contains the 灼 label');
 assert.match(indicators,/STATUS_ITEM_WIDTH=18/,'status slot width remains unchanged');
 
 assert.match(combat,/enemy\.nameText\?\.x \?\? enemy\.x/,'damage number origin remains unchanged');
