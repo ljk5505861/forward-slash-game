@@ -27,23 +27,4 @@ jobs:
         run: |
           grep -rl "0.10.64" scripts | xargs -r sed -i "s/0\.10\.64/0.10.65/g"
       - run: npm install
-      - run: npm run build
-      - name: Run every validation script
-        run: |
-          node - <<'NODE'
-          const { spawnSync } = require('node:child_process');
-          const scripts = require('./package.json').scripts;
-          for (const name of Object.keys(scripts).filter(name => name.startsWith('validate:'))) {
-            console.log(`\n=== ${name} ===`);
-            const result = spawnSync('npm', ['run', name], { stdio: 'inherit' });
-            if (result.status !== 0) process.exit(result.status || 1);
-          }
-          console.log('\nALL_VALIDATIONS_PASSED');
-          NODE
-      - name: Commit synced validation versions
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add scripts
-          git diff --cached --quiet || git commit -m "test: sync validations for v0.10.65"
-          git push origin HEAD:fix/0.10.65-myriad-standalone
+      - run: npm run validate:01064-afterimage-rework
