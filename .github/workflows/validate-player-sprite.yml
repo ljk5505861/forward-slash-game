@@ -41,7 +41,7 @@ jobs:
       - name: Commit refreshed assertions
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: test: update version assertions to 0.10.68
+          commit_message: 'test: update version assertions to 0.10.68'
           branch: ${{ github.head_ref }}
           file_pattern: scripts/*.mjs
 
