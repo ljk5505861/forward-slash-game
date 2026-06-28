@@ -1,0 +1,32 @@
+name: Temporary PR 139 validation
+
+on:
+  push:
+    branches:
+      - codex-05yt1q
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - run: npm run build
+      - name: Run all registered validations
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { execFileSync } from 'node:child_process';
+          const pkg=JSON.parse(readFileSync('package.json','utf8'));
+          for(const name of Object.keys(pkg.scripts).filter(name=>name.startsWith('validate:'))){
+            console.log(`\n=== ${name} ===`);
+            execFileSync('npm',['run',name],{stdio:'inherit'});
+          }
+          NODE
+      - name: Run ordinary detail layout regression
+        run: node scripts/validate-01067-myriad-detail-layout.mjs
