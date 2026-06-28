@@ -1,9 +1,9 @@
 name: Temporary PR 139 validation
 
 on:
-  push:
+  pull_request:
     branches:
-      - codex-05yt1q
+      - main
   workflow_dispatch:
 
 jobs:
