@@ -8,7 +8,8 @@ import { MYRIAD_AFTERIMAGE_SKILL_ID, getMyriadAfterimageDetailState, openMyriadA
 export const SKILL_DETAIL_LONG_PRESS_MS = 450;
 const LONG_PRESS_MOVE_CANCEL_PX = 18;
 const DRAG_THRESHOLD_PX = 6;
-const DETAIL_BODY_VISIBLE_HEIGHT = 300;
+const DEFAULT_DETAIL_BODY_VISIBLE_HEIGHT = 430;
+const MYRIAD_DETAIL_BODY_VISIBLE_HEIGHT = 300;
 const DETAIL_COPY_BUTTON_HEIGHT = 116;
 const DETAIL_COPY_BUTTON_WIDTH = 660;
 const SKILL_SLOT_COUNT = 6;
@@ -74,23 +75,27 @@ export default class SkillBar {
   cancelLongPress(pointer=null){ if(pointer&&this.longPress&&this.longPress.pointerId!==pointer.id) return; this.longPress?.timer?.remove?.(false); this.longPress=null; }
 
   showDetail(slotIndex){ const skill=this.scene.playerData.skills[slotIndex]; if(!skill) return; const data=getSkillDetailData(skill.id,{ scene:this.scene, skill }); if(!data) return; this.hideDetail(); this.detailScrollY=0; this.detailData=data; const depth=5000;
+    const hasFixedCopyButton=skill.id===MYRIAD_AFTERIMAGE_SKILL_ID;
+    const bodyVisibleHeight=hasFixedCopyButton?MYRIAD_DETAIL_BODY_VISIBLE_HEIGHT:DEFAULT_DETAIL_BODY_VISIBLE_HEIGHT;
+    const maskCenterY=DESIGN_HEIGHT/2+(hasFixedCopyButton?-30:35);
+    const bodyBaseY=DESIGN_HEIGHT/2-(hasFixedCopyButton?180:165);
     const overlay=this.scene.add.rectangle(DESIGN_WIDTH/2,DESIGN_HEIGHT/2,DESIGN_WIDTH,DESIGN_HEIGHT,0x000000,0.55).setScrollFactor(0).setDepth(depth).setInteractive();
     const panel=this.scene.add.rectangle(DESIGN_WIDTH/2,DESIGN_HEIGHT/2,760,560,0x132039,0.98).setStrokeStyle(4,0x8fb3ff,1).setScrollFactor(0).setDepth(depth+1).setInteractive();
     const title=this.scene.add.text(DESIGN_WIDTH/2-340,DESIGN_HEIGHT/2-250,`${data.name}\n等级：${data.level}/${data.maxLevel}`,{fontFamily:'Arial',fontSize:'24px',color:'#ffffff',stroke:'#000',strokeThickness:4}).setScrollFactor(0).setDepth(depth+3);
     const close=this.scene.add.text(DESIGN_WIDTH/2+330,DESIGN_HEIGHT/2-250,'×',{fontFamily:'Arial',fontSize:'34px',color:'#fff',backgroundColor:'#7f1d1d',padding:{left:12,right:12,top:2,bottom:2}}).setOrigin(0.5).setScrollFactor(0).setDepth(depth+6).setInteractive({useHandCursor:true});
-    const maskShape=this.scene.add.rectangle(DESIGN_WIDTH/2,DESIGN_HEIGHT/2-30,700,DETAIL_BODY_VISIBLE_HEIGHT,0xffffff,0).setScrollFactor(0).setVisible(false);
+    const maskShape=this.scene.add.rectangle(DESIGN_WIDTH/2,maskCenterY,700,bodyVisibleHeight,0xffffff,0).setScrollFactor(0).setVisible(false);
     const mask=maskShape.createGeometryMask();
-    const body=this.scene.add.container(DESIGN_WIDTH/2-340,DESIGN_HEIGHT/2-180).setScrollFactor(0).setDepth(depth+2).setMask(mask);
+    const body=this.scene.add.container(DESIGN_WIDTH/2-340,bodyBaseY).setScrollFactor(0).setDepth(depth+2).setMask(mask);
     const bodyText=this.scene.add.text(0,0,this.formatDetail(data),{fontFamily:'Arial',fontSize:'20px',color:'#eaf2ff',stroke:'#000',strokeThickness:3,lineSpacing:8,wordWrap:{width:680}}).setOrigin(0,0);
     body.add(bodyText);
     const nodes=[overlay,panel,title,close,maskShape,body];
     const contentHeight=bodyText.height;
     const copyButton=this.createMyriadCopyButton(skill.id, slotIndex, depth);
     if(copyButton) nodes.push(...copyButton.nodes);
-    this.detail={overlay,panel,title,close,maskShape,mask,body,bodyText,copyButton,scrollY:0,maxScroll:Math.max(0,contentHeight-DETAIL_BODY_VISIBLE_HEIGHT),isDragging:false,dragPointerId:null,dragStartY:0,dragStartScrollY:0,hasDragged:false,nodes};
+    this.detail={overlay,panel,title,close,maskShape,mask,body,bodyText,copyButton,bodyBaseY,bodyVisibleHeight,scrollY:0,maxScroll:Math.max(0,contentHeight-bodyVisibleHeight),isDragging:false,dragPointerId:null,dragStartY:0,dragStartScrollY:0,hasDragged:false,nodes};
     overlay.on('pointerdown',()=>this.hideDetail()); close.on('pointerdown',()=>this.hideDetail());
     panel.on('pointerdown',(p)=>this.startScroll(p)); panel.on('pointermove',(p)=>this.dragScroll(p)); panel.on('pointerup',(p)=>this.endScroll(p)); panel.on('pointerupoutside',(p)=>this.endScroll(p)); panel.on('pointercancel',(p)=>this.endScroll(p)); panel.on('wheel',(_p,_dx,dy)=>this.wheelScroll(dy));
-    bodyText.setInteractive(new Phaser.Geom.Rectangle(0,0,700,Math.max(DETAIL_BODY_VISIBLE_HEIGHT,bodyText.height)), Phaser.Geom.Rectangle.Contains).on('pointerdown',(p)=>this.startScroll(p)).on('pointermove',(p)=>this.dragScroll(p)).on('pointerup',(p)=>this.endScroll(p)).on('pointerupoutside',(p)=>this.endScroll(p)).on('pointercancel',(p)=>this.endScroll(p)).on('wheel',(_p,_dx,dy)=>this.wheelScroll(dy));
+    bodyText.setInteractive(new Phaser.Geom.Rectangle(0,0,700,Math.max(bodyVisibleHeight,bodyText.height)), Phaser.Geom.Rectangle.Contains).on('pointerdown',(p)=>this.startScroll(p)).on('pointermove',(p)=>this.dragScroll(p)).on('pointerup',(p)=>this.endScroll(p)).on('pointerupoutside',(p)=>this.endScroll(p)).on('pointercancel',(p)=>this.endScroll(p)).on('wheel',(_p,_dx,dy)=>this.wheelScroll(dy));
     this.applyScroll(); }
   createMyriadCopyButton(skillId, slotIndex, depth){
     if(skillId!==MYRIAD_AFTERIMAGE_SKILL_ID) return null;
@@ -117,7 +122,7 @@ export default class SkillBar {
   dragScroll(pointer){ const d=this.detail; if(!d?.isDragging||d.dragPointerId!==pointer.id) return; const delta=pointer.y-d.dragStartY; if(Math.abs(delta)>DRAG_THRESHOLD_PX) d.hasDragged=true; if(d.hasDragged){ d.scrollY=Phaser.Math.Clamp(d.dragStartScrollY-delta,0,d.maxScroll); this.applyScroll(); } }
   endScroll(pointer){ const d=this.detail; if(!d||d.dragPointerId!==pointer.id) return; d.isDragging=false; d.dragPointerId=null; }
   wheelScroll(deltaY){ if(!this.detail) return; this.detail.scrollY=Phaser.Math.Clamp(this.detail.scrollY+deltaY,0,this.detail.maxScroll); this.applyScroll(); }
-  applyScroll(){ if(this.detail) this.detail.body.y=DESIGN_HEIGHT/2-180-this.detail.scrollY; }
+  applyScroll(){ if(this.detail) this.detail.body.y=this.detail.bodyBaseY-this.detail.scrollY; }
   isPointerInCopyButton(pointer){ const bounds=this.detail?.copyButton?.bounds; return !!bounds&&Phaser.Geom.Rectangle.Contains(bounds,pointer.x,pointer.y); }
   hideDetail(){ if(!this.detail) return; const detail=this.detail; this.detail=null; [detail.overlay,detail.panel,detail.close,detail.bodyText].forEach(n=>n?.removeAllListeners?.()); detail.mask?.destroy?.(); detail.nodes.forEach(n=>n?.destroy?.()); }
 
