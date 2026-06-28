@@ -4,51 +4,30 @@ import { ARTIFACTS, ARTIFACT_CATEGORIES } from '../config/artifacts.js';
 import { PROFESSIONS, PROFESSION_ATTACK_PROFILES } from '../config/professions.js';
 import { skillMilestoneText } from '../systems/UpgradeSystem.js';
 
-export const SELECTION_ICON_STYLE = Object.freeze({ colors:[0xff6533,0x66ccff,0x42c978,0xd8b4ff,0xffd166,0x58d7ff] });
-export const resolveSelectionMode = (options=[], explicitMode=null) => explicitMode || (options?.some(o=>o.artifactId||o.kind==='artifact'||o.type==='fallback')?'icon':'card');
-const text = (v, fallback='') => (v===0 ? '0' : (v == null ? fallback : String(v)));
-const lines = (v) => Array.isArray(v) ? v.map(x=>text(x)).filter(Boolean) : text(v).split('\n').filter(Boolean);
-const unique = (items=[]) => [...new Set(items.map(s=>text(s).trim()).filter(Boolean))];
-const seconds = (ms) => `${Number.isInteger(ms/1000) ? ms/1000 : (ms/1000).toFixed(1)} 秒`;
-const cooldownText = (skill={}, levelData={}) => {
-  if(skill.passive || skill.targetType === 'passive' || (levelData.cooldownMs ?? skill.cooldownMs) >= 999000) return '持续生效';
-  const ms = levelData.cooldownMs ?? skill.cooldownMs;
-  return ms ? `冷却：${seconds(ms)}` : '持续生效';
-};
-const meaningfulKeys = ['新增','传播','穿透','击退','护盾','治疗','召唤','连锁','暴击','状态','扩散','爆炸','次数','数量','额外释放','重复命中','全部','返回','跳转'];
-export const isMeaningfulMilestoneChange = (changeText='') => meaningfulKeys.some(key=>text(changeText).includes(key));
-export const extractMilestoneChanges = (skill={}, fromLevel=0) => {
-  const max = skill.maxLevel || skill.levels?.length || 0;
-  const out=[];
-  for(let lv=Math.max(1, fromLevel+1); lv<=max; lv++){
-    const data=skill.levels?.[lv-1];
-    const explicit=lines(data?.milestoneText || data?.milestones);
-    const inferred=explicit.length ? explicit : (data?.milestone===false ? [] : lines(data?.changes).filter(isMeaningfulMilestoneChange));
-    unique(inferred).forEach(change=>out.push(`Lv.${lv}：${change.replace(/^新增：?/, '')}`));
-  }
-  return out;
-};
-const attrLabels = { attack_15:['攻击强化','属性升级','攻击力 +15%'], hp_20:['生命强化','属性升级','最大生命 +20'], as_10:['速度强化','属性升级','攻击速度 +10%'], skill_15:['技能强化','属性升级','技能伤害 +15%'], cdr_8:['冷却强化','属性升级','冷却缩减 +8%'], crit_5:['暴击强化','属性升级','暴击率 +5%'] };
-export function formatSkillSelectionOption(option={}, playerData={}){
-  const skill = option.skillId ? SKILLS[option.skillId] : null;
-  if(!skill){
-    const m=attrLabels[option.id]||[text(option.title,'属性提升').split('\n')[0]||'属性提升','属性升级',lines(option.title).slice(1).join(' / ')||'属性提升'];
-    return { ...option, kind:'attribute', title:m[0], subtitle:m[1], iconText:m[0][0], rarity:'属性', rarityColor:0x62e883, levelText:'', optionLines:[m[1]], detailLines:[m[0], m[2]], confirmText:'' };
-  }
-  const owned=(playerData.skills||[]).find(s=>s.id===skill.id); const cur=owned?.level||0; const target=option.type==='skillLevel'?Math.min(skill.maxLevel||cur+1,cur+1):1;
-  const data=skill.levels?.[Math.max(0,target-1)]||skill.levels?.[0]||{}; const rarity=getRarity(skill.rarity)||{};
-  const milestoneLines=[3,6,9].map(lv=>`${target>=lv?'◆':'◇'} Lv.${lv}：${skillMilestoneText(skill,lv)}${target===lv?'（本次激活）':''}`); const detail=unique([skill.name, option.type==='skillLevel'?'升级':'获得', data.desc||skill.description, cooldownText(skill,data), ...milestoneLines]);
-  return { ...option, kind:'skill', title:skill.name||option.skillId||'未知技能', subtitle:rarity.name||skill.rarity||'普通', iconText:skill.short||skill.name?.[0]||'技', iconColor:skill.color, rarity:rarity.name||skill.rarity||'普通', rarityId:skill.rarity, rarityColor:rarity.color||0x5278c8, rarityUiColor:rarity.uiColor, levelText: option.type==='skillLevel'?`Lv.${cur} → Lv.${target}`:'获得', optionLines:[rarity.name||skill.rarity||'普通', option.type==='skillLevel'?`Lv.${cur} → Lv.${target}`:'获得'], detailLines:detail, confirmText:'' };
+export const SELECTION_ICON_STYLE=Object.freeze({colors:[0xff6533,0x66ccff,0x42c978,0xd8b4ff,0xffd166,0x58d7ff]});
+export const resolveSelectionMode=(options=[],explicitMode=null)=>explicitMode||(options?.some(option=>option.artifactId||option.kind==='artifact'||option.type==='fallback')?'icon':'card');
+const text=(value,fallback='')=>(value===0?'0':(value==null?fallback:String(value)));
+const lines=value=>Array.isArray(value)?value.map(item=>text(item)).filter(Boolean):text(value).split('\n').filter(Boolean);
+const unique=(items=[])=>[...new Set(items.map(item=>text(item).trim()).filter(Boolean))];
+const seconds=ms=>`${Number.isInteger(ms/1000)?ms/1000:(ms/1000).toFixed(1)} 秒`;
+const cooldownText=(skill={},levelData={})=>{ if(skill.passive||skill.targetType==='passive'||(levelData.cooldownMs??skill.cooldownMs)>=999000) return '持续生效'; const ms=levelData.cooldownMs??skill.cooldownMs; return ms?`冷却：${seconds(ms)}`:'持续生效'; };
+const meaningfulKeys=['新增','传播','穿透','击退','护盾','治疗','召唤','连锁','暴击','状态','扩散','爆炸','次数','数量','额外释放','重复命中','全部','返回','跳转'];
+export const isMeaningfulMilestoneChange=(changeText='')=>meaningfulKeys.some(key=>text(changeText).includes(key));
+export const extractMilestoneChanges=(skill={},fromLevel=0)=>{ const max=skill.maxLevel||skill.levels?.length||0,out=[]; for(let level=Math.max(1,fromLevel+1);level<=max;level+=1){ const data=skill.levels?.[level-1]; const explicit=lines(data?.milestoneText||data?.milestones); const inferred=explicit.length?explicit:(data?.milestone===false?[]:lines(data?.changes).filter(isMeaningfulMilestoneChange)); unique(inferred).forEach(change=>out.push(`Lv.${level}：${change.replace(/^新增：?/,'')}`)); } return out; };
+const attrLabels={attack_15:['攻击强化','属性升级','攻击力 +15%'],hp_20:['生命强化','属性升级','最大生命 +20'],as_10:['速度强化','属性升级','攻击速度 +10%'],skill_15:['技能强化','属性升级','技能伤害 +15%'],cdr_8:['冷却强化','属性升级','冷却缩减 +8%'],crit_5:['暴击强化','属性升级','暴击率 +5%']};
+export function formatSkillSelectionOption(option={},playerData={}){
+  const skill=option.skillId?SKILLS[option.skillId]:null;
+  if(!skill){ const fallback=attrLabels[option.id]||[text(option.title,'属性提升').split('\n')[0]||'属性提升','属性升级',lines(option.title).slice(1).join(' / ')||'属性提升']; return {...option,kind:'attribute',title:fallback[0],subtitle:fallback[1],iconText:fallback[0][0],rarity:'属性',rarityColor:0x62e883,levelText:'',optionLines:[fallback[1]],detailLines:[fallback[0],fallback[2]],confirmText:''}; }
+  const owned=(playerData.skills||[]).find(item=>item.id===skill.id),current=owned?.level||0;
+  const isCopyChoice=option.type==='myriadCopySkill';
+  const target=isCopyChoice?Math.max(1,current):(option.type==='skillLevel'?Math.min(skill.maxLevel||current+1,current+1):1);
+  const data=skill.levels?.[Math.max(0,target-1)]||skill.levels?.[0]||{},rarity=getRarity(skill.rarity)||{};
+  const action=isCopyChoice?'复制':option.type==='skillLevel'?'升级':'获得';
+  const milestoneLines=[3,6,9].map(level=>`${target>=level?'◆':'◇'} Lv.${level}：${skillMilestoneText(skill,level)}${!isCopyChoice&&target===level?'（本次激活）':''}`);
+  const detail=unique([skill.name,isCopyChoice?`锁定当前 Lv.${target} 的实际技能效果供残影复制`:action,data.desc||skill.description,cooldownText(skill,data),...milestoneLines]);
+  return {...option,kind:'skill',title:skill.name||option.skillId||'未知技能',subtitle:rarity.name||skill.rarity||'普通',iconText:skill.short||skill.name?.[0]||'技',iconColor:skill.color,rarity:rarity.name||skill.rarity||'普通',rarityId:skill.rarity,rarityColor:rarity.color||0x5278c8,rarityUiColor:rarity.uiColor,levelText:isCopyChoice?`当前 Lv.${target}`:option.type==='skillLevel'?`Lv.${current} → Lv.${target}`:'获得',optionLines:[rarity.name||skill.rarity||'普通',isCopyChoice?`当前 Lv.${target}`:option.type==='skillLevel'?`Lv.${current} → Lv.${target}`:'获得'],detailLines:detail,confirmText:''};
 }
-export function formatArtifactSelectionOption(option={}){
-  if(option.type==='fallback'){
-    const titleLines=lines(option.title||option.name||'保底奖励'); const name=(titleLines[0]||'保底奖励').split('｜')[0]||'保底奖励'; const effects=unique([...titleLines.slice(1).flatMap(line=>line.split('；')), ...lines(option.description)]); const detailLines=effects.length?effects:['获得属性奖励'];
-    return { ...option, kind:'artifact', title:name, subtitle:'属性奖励', rarity:'属性奖励', iconText:name[0], levelText:'', optionLines:['属性奖励'], summaryLines:detailLines.slice(0,2), detailLines:[name,...detailLines], category:'属性奖励', confirmText:'' };
-  }
-  const artifact=ARTIFACTS[option.artifactId]||{}; const name=artifact.name||option.name||option.title||option.artifactId||'法宝奖励'; const category=ARTIFACT_CATEGORIES[artifact.category]?.name||artifact.category||option.category||'法宝'; const effect=artifact.levelText?.[1]||artifact.description||option.description||'获得法宝奖励';
-  const details=unique([name, effect, ...(option.requiredSkillName?[`需要技能：${option.requiredSkillName}`]:[])]);
-  return { ...option, kind:'artifact', title:name, subtitle:'精品', rarity:'精品', iconText:name[0], iconColor:artifact.color, levelText:'', optionLines:['精品'], summaryLines:[effect], detailLines:details, category, confirmText:'' };
-}
-const bonusText = (b={}) => unique([b.attackMultiplier?`基础伤害 +${Math.round((b.attackMultiplier-1)*100)}%`:'', b.maxHp?`最大生命 +${b.maxHp}`:'', b.skillDamageMultiplier?`技能伤害 +${Math.round(b.skillDamageMultiplier*100)}%`:'', b.cooldownReduction?`冷却缩减 +${Math.round(b.cooldownReduction*100)}%`:'', b.attackSpeedMultiplier?`攻击速度 +${Math.round(b.attackSpeedMultiplier*100)}%`:'', b.critChance?`暴击率 +${Math.round(b.critChance*100)}%`:'']).join('，');
-export function formatProfessionSelectionOption(id){ const p=typeof id==='string'?PROFESSIONS[id]:id||{}; const profile=PROFESSION_ATTACK_PROFILES[p.professionAttackProfile]||{}; const attack={swordSlash:'近战长剑攻击',arcaneBolt:'远程法术弹',hunterArrow:'远程弓箭射击'}[profile.type]||profile.type||'默认攻击'; return { ...p, kind:'profession', title:p.name||p.id||'未知职业', subtitle:'职业', iconText:(p.name||'?')[0], iconColor:p.color, optionLines:['职业'], detailLines:[p.name||p.id||'未知职业',p.base?`二阶分支：叠加在 ${PROFESSIONS[p.base]?.name||p.base} 之上`:`普攻：${attack}`,`核心机制：${p.mechanic||p.description||'二阶被动'}`,`基础加成：${bonusText(p.bonuses)||'二阶被动立即生效'}`,`特点：${(p.description||'定位清晰').split('；')[0]}`,], confirmText:'' }; }
-export class SelectionState { constructor(){this.reset();} reset(){this.selectedIndex=-1;this.selectedOption=null;this.confirmed=false;this.isOpen=false;} open(){this.reset();this.isOpen=true;} select(i,o){ if(!this.isOpen||this.confirmed) return false; this.selectedIndex=i; this.selectedOption=o; return true;} selectOrConfirm(i,o,cb){ if(!this.isOpen||this.confirmed) return 'locked'; if(this.selectedIndex===i){ this.confirmed=true; const result=cb?.(this.selectedOption,i); if(result===false){ this.confirmed=false; return 'rejected'; } return 'confirmed'; } this.selectedIndex=i; this.selectedOption=o; return 'selected'; } confirm(cb){ if(!this.isOpen||this.confirmed||this.selectedIndex<0) return false; this.confirmed=true; cb?.(this.selectedOption,this.selectedIndex); return true;} close(){this.reset();} }
+export function formatArtifactSelectionOption(option={}){ if(option.type==='fallback'){ const titleLines=lines(option.title||option.name||'保底奖励'),name=(titleLines[0]||'保底奖励').split('｜')[0]||'保底奖励',effects=unique([...titleLines.slice(1).flatMap(line=>line.split('；')),...lines(option.description)]),detailLines=effects.length?effects:['获得属性奖励']; return {...option,kind:'artifact',title:name,subtitle:'属性奖励',rarity:'属性奖励',iconText:name[0],levelText:'',optionLines:['属性奖励'],summaryLines:detailLines.slice(0,2),detailLines:[name,...detailLines],category:'属性奖励',confirmText:''}; } const artifact=ARTIFACTS[option.artifactId]||{},name=artifact.name||option.name||option.title||option.artifactId||'法宝奖励',category=ARTIFACT_CATEGORIES[artifact.category]?.name||artifact.category||option.category||'法宝',effect=artifact.levelText?.[1]||artifact.description||option.description||'获得法宝奖励',details=unique([name,effect,...(option.requiredSkillName?[`需要技能：${option.requiredSkillName}`]:[])]); return {...option,kind:'artifact',title:name,subtitle:'精品',rarity:'精品',iconText:name[0],iconColor:artifact.color,levelText:'',optionLines:['精品'],summaryLines:[effect],detailLines:details,category,confirmText:''}; }
+const bonusText=(bonuses={})=>unique([bonuses.attackMultiplier?`基础伤害 +${Math.round((bonuses.attackMultiplier-1)*100)}%`:'',bonuses.maxHp?`最大生命 +${bonuses.maxHp}`:'',bonuses.skillDamageMultiplier?`技能伤害 +${Math.round(bonuses.skillDamageMultiplier*100)}%`:'',bonuses.cooldownReduction?`冷却缩减 +${Math.round(bonuses.cooldownReduction*100)}%`:'',bonuses.attackSpeedMultiplier?`攻击速度 +${Math.round(bonuses.attackSpeedMultiplier*100)}%`:'',bonuses.critChance?`暴击率 +${Math.round(bonuses.critChance*100)}%`:'']).join('，');
+export function formatProfessionSelectionOption(id){ const profession=typeof id==='string'?PROFESSIONS[id]:id||{},profile=PROFESSION_ATTACK_PROFILES[profession.professionAttackProfile]||{},attack={swordSlash:'近战长剑攻击',arcaneBolt:'远程法术弹',hunterArrow:'远程弓箭射击'}[profile.type]||profile.type||'默认攻击'; return {...profession,kind:'profession',title:profession.name||profession.id||'未知职业',subtitle:'职业',iconText:(profession.name||'?')[0],iconColor:profession.color,optionLines:['职业'],detailLines:[profession.name||profession.id||'未知职业',profession.base?`二阶分支：叠加在 ${PROFESSIONS[profession.base]?.name||profession.base} 之上`:`普攻：${attack}`,`核心机制：${profession.mechanic||profession.description||'二阶被动'}`,`基础加成：${bonusText(profession.bonuses)||'二阶被动立即生效'}`,`特点：${(profession.description||'定位清晰').split('；')[0]}`],confirmText:''}; }
+export class SelectionState{ constructor(){this.reset();} reset(){this.selectedIndex=-1;this.selectedOption=null;this.confirmed=false;this.isOpen=false;} open(){this.reset();this.isOpen=true;} select(index,option){ if(!this.isOpen||this.confirmed) return false; this.selectedIndex=index;this.selectedOption=option;return true;} selectOrConfirm(index,option,callback){ if(!this.isOpen||this.confirmed) return 'locked'; if(this.selectedIndex===index){this.confirmed=true;const result=callback?.(this.selectedOption,index);if(result===false){this.confirmed=false;return 'rejected';}return 'confirmed';}this.selectedIndex=index;this.selectedOption=option;return 'selected';} confirm(callback){if(!this.isOpen||this.confirmed||this.selectedIndex<0)return false;this.confirmed=true;callback?.(this.selectedOption,this.selectedIndex);return true;} close(){this.reset();} }
