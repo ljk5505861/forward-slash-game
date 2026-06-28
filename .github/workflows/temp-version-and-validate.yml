@@ -28,27 +28,25 @@ jobs:
           grep -rl "0.10.64" scripts | xargs -r sed -i "s/0\.10\.64/0.10.65/g"
       - run: npm install --silent
       - run: npm run build --silent
-      - name: Run all validations with compact output
+      - name: Run validations and save result
+        continue-on-error: true
         run: |
-          node - <<'NODE'
+          node - <<'NODE' > validation-result.txt 2>&1
           const { spawnSync } = require('node:child_process');
           const scripts = require('./package.json').scripts;
           for (const name of Object.keys(scripts).filter(name => name.startsWith('validate:'))) {
             const result = spawnSync('npm', ['run', name], { encoding: 'utf8' });
             if (result.status !== 0) {
-              console.error(`FAILED ${name}`);
-              console.error(result.stdout || '');
-              console.error(result.stderr || '');
+              console.log(`FAILED ${name}`);
+              console.log(result.stdout || '');
+              console.log(result.stderr || '');
               process.exit(result.status || 1);
             }
             console.log(`PASS ${name}`);
           }
           console.log('ALL_VALIDATIONS_PASSED');
           NODE
-      - name: Commit synced validation versions
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add scripts
-          git diff --cached --quiet || git commit -m "test: sync validations for v0.10.65"
-          git push origin HEAD:fix/0.10.65-myriad-standalone
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validation-result
+          path: validation-result.txt
