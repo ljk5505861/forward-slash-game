@@ -8,6 +8,9 @@ import { MYRIAD_AFTERIMAGE_SKILL_ID, getMyriadAfterimageDetailState, openMyriadA
 export const SKILL_DETAIL_LONG_PRESS_MS = 450;
 const LONG_PRESS_MOVE_CANCEL_PX = 18;
 const DRAG_THRESHOLD_PX = 6;
+const DETAIL_BODY_VISIBLE_HEIGHT = 300;
+const DETAIL_COPY_BUTTON_HEIGHT = 116;
+const DETAIL_COPY_BUTTON_WIDTH = 660;
 const SKILL_SLOT_COUNT = 6;
 const COLUMNS = 3;
 const SLOT_W = 196;
@@ -74,28 +77,48 @@ export default class SkillBar {
     const overlay=this.scene.add.rectangle(DESIGN_WIDTH/2,DESIGN_HEIGHT/2,DESIGN_WIDTH,DESIGN_HEIGHT,0x000000,0.55).setScrollFactor(0).setDepth(depth).setInteractive();
     const panel=this.scene.add.rectangle(DESIGN_WIDTH/2,DESIGN_HEIGHT/2,760,560,0x132039,0.98).setStrokeStyle(4,0x8fb3ff,1).setScrollFactor(0).setDepth(depth+1).setInteractive();
     const title=this.scene.add.text(DESIGN_WIDTH/2-340,DESIGN_HEIGHT/2-250,`${data.name}\n等级：${data.level}/${data.maxLevel}`,{fontFamily:'Arial',fontSize:'24px',color:'#ffffff',stroke:'#000',strokeThickness:4}).setScrollFactor(0).setDepth(depth+3);
-    const close=this.scene.add.text(DESIGN_WIDTH/2+330,DESIGN_HEIGHT/2-250,'×',{fontFamily:'Arial',fontSize:'34px',color:'#fff',backgroundColor:'#7f1d1d',padding:{left:12,right:12,top:2,bottom:2}}).setOrigin(0.5).setScrollFactor(0).setDepth(depth+4).setInteractive({useHandCursor:true});
-    const maskShape=this.scene.add.rectangle(DESIGN_WIDTH/2,DESIGN_HEIGHT/2+35,700,430,0xffffff,0).setScrollFactor(0).setVisible(false);
+    const close=this.scene.add.text(DESIGN_WIDTH/2+330,DESIGN_HEIGHT/2-250,'×',{fontFamily:'Arial',fontSize:'34px',color:'#fff',backgroundColor:'#7f1d1d',padding:{left:12,right:12,top:2,bottom:2}}).setOrigin(0.5).setScrollFactor(0).setDepth(depth+6).setInteractive({useHandCursor:true});
+    const maskShape=this.scene.add.rectangle(DESIGN_WIDTH/2,DESIGN_HEIGHT/2-30,700,DETAIL_BODY_VISIBLE_HEIGHT,0xffffff,0).setScrollFactor(0).setVisible(false);
     const mask=maskShape.createGeometryMask();
-    const body=this.scene.add.container(DESIGN_WIDTH/2-340,DESIGN_HEIGHT/2-165).setScrollFactor(0).setDepth(depth+2).setMask(mask);
+    const body=this.scene.add.container(DESIGN_WIDTH/2-340,DESIGN_HEIGHT/2-180).setScrollFactor(0).setDepth(depth+2).setMask(mask);
     const bodyText=this.scene.add.text(0,0,this.formatDetail(data),{fontFamily:'Arial',fontSize:'20px',color:'#eaf2ff',stroke:'#000',strokeThickness:3,lineSpacing:8,wordWrap:{width:680}}).setOrigin(0,0);
     body.add(bodyText);
     const nodes=[overlay,panel,title,close,maskShape,body];
-    const copyButton=this.createMyriadCopyButton(skill.id, body, bodyText);
+    const contentHeight=bodyText.height;
+    const copyButton=this.createMyriadCopyButton(skill.id, slotIndex, depth);
     if(copyButton) nodes.push(...copyButton.nodes);
-    const contentHeight=Math.max(bodyText.height, copyButton?.bottomY||0);
-    this.detail={overlay,panel,title,close,maskShape,mask,body,bodyText,copyButton,scrollY:0,maxScroll:Math.max(0,contentHeight-420),isDragging:false,dragPointerId:null,dragStartY:0,dragStartScrollY:0,hasDragged:false,nodes};
+    this.detail={overlay,panel,title,close,maskShape,mask,body,bodyText,copyButton,scrollY:0,maxScroll:Math.max(0,contentHeight-DETAIL_BODY_VISIBLE_HEIGHT),isDragging:false,dragPointerId:null,dragStartY:0,dragStartScrollY:0,hasDragged:false,nodes};
     overlay.on('pointerdown',()=>this.hideDetail()); close.on('pointerdown',()=>this.hideDetail());
     panel.on('pointerdown',(p)=>this.startScroll(p)); panel.on('pointermove',(p)=>this.dragScroll(p)); panel.on('pointerup',(p)=>this.endScroll(p)); panel.on('pointerupoutside',(p)=>this.endScroll(p)); panel.on('pointercancel',(p)=>this.endScroll(p)); panel.on('wheel',(_p,_dx,dy)=>this.wheelScroll(dy));
-    bodyText.setInteractive(new Phaser.Geom.Rectangle(0,0,700,Math.max(430,bodyText.height)), Phaser.Geom.Rectangle.Contains).on('pointerdown',(p)=>this.startScroll(p)).on('pointermove',(p)=>this.dragScroll(p)).on('pointerup',(p)=>this.endScroll(p)).on('pointerupoutside',(p)=>this.endScroll(p)).on('pointercancel',(p)=>this.endScroll(p)).on('wheel',(_p,_dx,dy)=>this.wheelScroll(dy));
+    bodyText.setInteractive(new Phaser.Geom.Rectangle(0,0,700,Math.max(DETAIL_BODY_VISIBLE_HEIGHT,bodyText.height)), Phaser.Geom.Rectangle.Contains).on('pointerdown',(p)=>this.startScroll(p)).on('pointermove',(p)=>this.dragScroll(p)).on('pointerup',(p)=>this.endScroll(p)).on('pointerupoutside',(p)=>this.endScroll(p)).on('pointercancel',(p)=>this.endScroll(p)).on('wheel',(_p,_dx,dy)=>this.wheelScroll(dy));
     this.applyScroll(); }
-  createMyriadCopyButton(skillId, body, bodyText){ if(skillId!==MYRIAD_AFTERIMAGE_SKILL_ID) return null; const state=getMyriadAfterimageDetailState(this.scene); const enabled=state.changeCount>0; const y=bodyText.height+24; const bg=this.scene.add.rectangle(340,y+68,660,116,enabled?0x2f4f86:0x263044,enabled?0.96:0.72).setStrokeStyle(3,enabled?0xd8b4fe:0x697086,1); const label=this.scene.add.text(340,y+68,`【残影复制】\n当前复制：${state.skillName}\n剩余更换次数：${state.changeCount}\n${enabled?'点击此处更换复制技能':'暂无更换次数'}`,{fontFamily:'Arial',fontSize:'20px',color:enabled?'#ffffff':'#9ca3af',align:'center',stroke:'#000',strokeThickness:3,lineSpacing:7}).setOrigin(0.5); body.add([bg,label]); if(enabled){ bg.setInteractive({useHandCursor:true}).on('pointerdown',pointer=>{ pointer.event?.stopPropagation?.(); this.hideDetail(); openMyriadAfterimageSelection(this.scene,()=>this.showDetail(this.scene.playerData.skills.findIndex(item=>item.id===MYRIAD_AFTERIMAGE_SKILL_ID))); }); label.setInteractive(new Phaser.Geom.Rectangle(-330,-58,660,116),Phaser.Geom.Rectangle.Contains).on('pointerdown',pointer=>{ pointer.event?.stopPropagation?.(); this.hideDetail(); openMyriadAfterimageSelection(this.scene,()=>this.showDetail(this.scene.playerData.skills.findIndex(item=>item.id===MYRIAD_AFTERIMAGE_SKILL_ID))); }); } return {nodes:[bg,label],bottomY:y+132}; }
+  createMyriadCopyButton(skillId, slotIndex, depth){
+    if(skillId!==MYRIAD_AFTERIMAGE_SKILL_ID) return null;
+    const state=getMyriadAfterimageDetailState(this.scene);
+    const enabled=state.changeCount>0;
+    const x=DESIGN_WIDTH/2, y=DESIGN_HEIGHT/2+204;
+    const bg=this.scene.add.rectangle(x,y,DETAIL_COPY_BUTTON_WIDTH,DETAIL_COPY_BUTTON_HEIGHT,enabled?0x2f4f86:0x263044,enabled?0.96:0.72).setStrokeStyle(3,enabled?0xd8b4fe:0x697086,1).setScrollFactor(0).setDepth(depth+3);
+    const label=this.scene.add.text(x,y,`【残影复制】\n当前复制：${state.skillName}\n剩余更换次数：${state.changeCount}\n${enabled?'点击此处更换复制技能':'暂无更换次数'}`,{fontFamily:'Arial',fontSize:'20px',color:enabled?'#ffffff':'#9ca3af',align:'center',stroke:'#000',strokeThickness:3,lineSpacing:7}).setOrigin(0.5).setScrollFactor(0).setDepth(depth+4);
+    const openSelection=(_pointer,_localX,_localY,event)=>{
+      event?.stopPropagation?.();
+      const detailSlotIndex=slotIndex;
+      this.hideDetail();
+      const reopen=()=>this.showDetail(detailSlotIndex);
+      const opened=openMyriadAfterimageSelection(this.scene,reopen,reopen);
+      if(!opened) reopen();
+    };
+    if(enabled){
+      bg.setInteractive(new Phaser.Geom.Rectangle(-DETAIL_COPY_BUTTON_WIDTH/2,-DETAIL_COPY_BUTTON_HEIGHT/2,DETAIL_COPY_BUTTON_WIDTH,DETAIL_COPY_BUTTON_HEIGHT),Phaser.Geom.Rectangle.Contains).on('pointerdown',openSelection);
+    }
+    return {nodes:[bg,label],bg,label,bounds:new Phaser.Geom.Rectangle(x-DETAIL_COPY_BUTTON_WIDTH/2,y-DETAIL_COPY_BUTTON_HEIGHT/2,DETAIL_COPY_BUTTON_WIDTH,DETAIL_COPY_BUTTON_HEIGHT)};
+  }
   formatDetail(d){ const secs=[['技能说明',[d.description]],['当前效果',d.currentEffects],['特殊机制',d.mechanics],['3/6/9级强化',d.milestones.map(m=>`${m.unlocked?'✓':'○'} ${m.level}级：${m.text}`)],['下一等级预览',d.nextLevelPreview]]; return secs.map(([h,arr])=>`【${h}】\n${(arr||[]).join('\n')}`).join('\n\n'); }
-  startScroll(pointer){ if(!this.detail) return; this.detail.isDragging=true; this.detail.dragPointerId=pointer.id; this.detail.dragStartY=pointer.y; this.detail.dragStartScrollY=this.detail.scrollY; this.detail.hasDragged=false; }
+  startScroll(pointer){ if(!this.detail || this.isPointerInCopyButton(pointer)) return; this.detail.isDragging=true; this.detail.dragPointerId=pointer.id; this.detail.dragStartY=pointer.y; this.detail.dragStartScrollY=this.detail.scrollY; this.detail.hasDragged=false; }
   dragScroll(pointer){ const d=this.detail; if(!d?.isDragging||d.dragPointerId!==pointer.id) return; const delta=pointer.y-d.dragStartY; if(Math.abs(delta)>DRAG_THRESHOLD_PX) d.hasDragged=true; if(d.hasDragged){ d.scrollY=Phaser.Math.Clamp(d.dragStartScrollY-delta,0,d.maxScroll); this.applyScroll(); } }
   endScroll(pointer){ const d=this.detail; if(!d||d.dragPointerId!==pointer.id) return; d.isDragging=false; d.dragPointerId=null; }
   wheelScroll(deltaY){ if(!this.detail) return; this.detail.scrollY=Phaser.Math.Clamp(this.detail.scrollY+deltaY,0,this.detail.maxScroll); this.applyScroll(); }
-  applyScroll(){ if(this.detail) this.detail.body.y=DESIGN_HEIGHT/2-165-this.detail.scrollY; }
+  applyScroll(){ if(this.detail) this.detail.body.y=DESIGN_HEIGHT/2-180-this.detail.scrollY; }
+  isPointerInCopyButton(pointer){ const bounds=this.detail?.copyButton?.bounds; return !!bounds&&Phaser.Geom.Rectangle.Contains(bounds,pointer.x,pointer.y); }
   hideDetail(){ if(!this.detail) return; const detail=this.detail; this.detail=null; [detail.overlay,detail.panel,detail.close,detail.bodyText].forEach(n=>n?.removeAllListeners?.()); detail.mask?.destroy?.(); detail.nodes.forEach(n=>n?.destroy?.()); }
 
   update() { const skills = this.scene.playerData.skills; const replacing = !!this.scene.upgradeSystem?.pendingReplacement; const soulCount=Math.floor(Number(this.scene.skillSystem?.passiveState?.swordFlow?.effectiveSouls)||0); this.title.setText(replacing ? '请选择要替换的技能' : `技能槽 ${Math.min(skills.length, SKILL_SLOT_COUNT)}/${SKILL_SLOT_COUNT}`);

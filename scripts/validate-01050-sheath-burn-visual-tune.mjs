@@ -19,7 +19,7 @@ const burnTextBlock=indicators.slice(
   indicators.indexOf('const poisonText')
 );
 
-assert.equal(GAME_VERSION,'0.10.66','game version is 0.10.66');
+assert.equal(GAME_VERSION,'0.10.67','game version is 0.10.67');
 
 assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_X=36;/,'sheath x offset remains at the v0.10.51 position');
 assert.match(sword,/export const SWORD_SHEATH_BACK_OFFSET_Y=26;/,'sheath y offset remains unchanged');
