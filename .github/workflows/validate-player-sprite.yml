@@ -6,44 +6,19 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout branch
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
-
-      - name: Refresh version-only assertions
-        run: |
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          import path from 'node:path';
-
-          const directory = path.resolve('scripts');
-          for (const name of fs.readdirSync(directory)) {
-            if (!name.endsWith('.mjs')) continue;
-            const file = path.join(directory, name);
-            const source = fs.readFileSync(file, 'utf8');
-            if (!source.includes('0.10.67')) continue;
-            fs.writeFileSync(file, source.replaceAll('0.10.67', '0.10.68'));
-          }
-          NODE
-
-      - name: Commit refreshed assertions
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: 'test: update version assertions to 0.10.68'
-          branch: ${{ github.head_ref }}
-          file_pattern: scripts/*.mjs
 
       - name: Install dependencies
         run: npm install
@@ -52,13 +27,36 @@ jobs:
         run: npm run build
 
       - name: Run all validation scripts
+        id: validations
+        continue-on-error: true
         run: |
-          node --input-type=module <<'NODE'
+          node --input-type=module <<'NODE' 2>&1 | tee validation.log
           import { execFileSync } from 'node:child_process';
           import packageJson from './package.json' with { type: 'json' };
 
+          const failed = [];
           for (const name of Object.keys(packageJson.scripts).filter((key) => key.startsWith('validate:'))) {
             console.log(`\n=== npm run ${name} ===`);
-            execFileSync('npm', ['run', name], { stdio: 'inherit' });
+            try {
+              execFileSync('npm', ['run', name], { stdio: 'inherit' });
+            } catch {
+              failed.push(name);
+              console.error(`FAILED_SCRIPT=${name}`);
+            }
+          }
+          if (failed.length) {
+            console.error(`FAILED_SCRIPTS=${failed.join(',')}`);
+            process.exit(1);
           }
           NODE
+
+      - name: Upload validation log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-sprite-validation-log
+          path: validation.log
+
+      - name: Fail when validations failed
+        if: steps.validations.outcome == 'failure'
+        run: exit 1
