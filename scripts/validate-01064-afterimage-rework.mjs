@@ -69,7 +69,7 @@ function makeSystem(scene){
 }
 const runUpdaters=system=>system.passiveUpdaters.slice().forEach(fn=>fn());
 
-assert.equal(GAME_VERSION,'0.10.65');
+assert.equal(GAME_VERSION,'0.10.66');
 assert.equal(SKILLS.shadow_assault,undefined);
 assert.equal(SKILLS.swift_shadow,undefined);
 for(const id of ['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage']){
@@ -123,8 +123,10 @@ assert.deepEqual(SKILLS.myriad_afterimage.levels.map(level=>level.copyRatio),[.1
 {
   const scene=makeScene(); scene.enemies=[enemy({hp:50000})]; scene.playerData.skills=[{id:'myriad_afterimage',level:1},{id:'fireball',level:1}]; const system=makeSystem(scene); const off=MyriadAfterimageSkill.bind(system);
   scene.eventBus.emit(CombatEvents.UPGRADE_CHOSEN,{skillId:'myriad_afterimage',level:1}); scene.time.advance(0);
+  assert.equal(scene.selectionConfig,undefined); assert.equal(scene.playerData.myriadAfterimageChangeCount,1);
+  assert.equal(MyriadAfterimageSkill.openSelection(system,'detail'),true);
   assert.equal(scene.selectionConfig.options.length,2); assert.equal(scene.selectionConfig.options[0].skillId,'normal_attack');
-  scene.selectionConfig.onConfirm({skillId:'fireball'});
+  scene.selectionConfig.onConfirm({skillId:'fireball'}); assert.equal(scene.playerData.myriadAfterimageChangeCount,0);
   scene.afterimages.createAfterimage({ownerSkillId:'phantom_step',durationMs:6000}); scene.afterimages.createAfterimage({ownerSkillId:'phantom_step',durationMs:6000});
   scene.eventBus.emit(CombatEvents.SKILL_CAST_COMPLETED,{skillId:'fireball',skill:SKILLS.fireball,data:{damage:100,shots:1,radius:0},ctx:{castId:1,damageMultiplier:1,baseDamageMultiplierWithoutProfession:1,professionMultiplier:1},target:scene.enemies[0]});
   scene.time.advance(1000); assert.deepEqual(scene.damageCalls.map(call=>call.amount),[15,15,15]); off();
@@ -152,4 +154,4 @@ assert.deepEqual(SKILLS.myriad_afterimage.levels.map(level=>level.copyRatio),[.1
   assert.ok(positions.every(card=>card.x-74>=0&&card.x+74<=720)); assert.ok(positions.some(card=>card.y>300));
 }
 
-console.log('v0.10.65 afterimage behavior validation passed.');
+console.log('v0.10.66 afterimage behavior validation passed.');
