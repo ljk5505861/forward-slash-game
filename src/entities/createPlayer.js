@@ -1,6 +1,7 @@
 const PLAYER_TEXTURE_KEY = 'player-idle';
-const PLAYER_FRAME_KEY = 'trimmed';
-const PLAYER_FRAME = { x: 281, y: 241, width: 427, height: 594 };
+const PLAYER_FRAME_KEY = 'trimmed-v01069';
+const PLAYER_FRAME = { x: 0, y: 0, width: 254, height: 352 };
+const PLAYER_VISUAL_HEIGHT_SCALE = 1.55;
 const PLAYER_TEXTURE_URL = new URL('../player_idle.png', import.meta.url).href;
 
 export default function createPlayer(scene, cfg, groundTopY) {
@@ -60,7 +61,9 @@ export default function createPlayer(scene, cfg, groundTopY) {
       );
     }
 
-    const visualHeight = Math.round(cfg.visualHeight || cfg.height * 1.9);
+    const visualHeight = Math.round(
+      cfg.visualHeight || cfg.height * PLAYER_VISUAL_HEIGHT_SCALE,
+    );
     const visualWidth = Math.round(
       visualHeight * (PLAYER_FRAME.width / PLAYER_FRAME.height),
     );
