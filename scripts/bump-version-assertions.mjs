@@ -12,3 +12,5 @@ for (const name of fs.readdirSync(scriptsDir)) {
   if (!source.includes(fromVersion)) continue;
   fs.writeFileSync(filePath, source.replaceAll(fromVersion, toVersion));
 }
+
+console.log(`Updated version assertions: ${fromVersion} -> ${toVersion}`);
