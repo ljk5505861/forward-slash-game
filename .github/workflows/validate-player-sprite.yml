@@ -59,3 +59,5 @@ jobs:
             execFileSync('npm', ['run', name], { stdio: 'inherit' });
           }
           NODE
+
+# Trigger branch automation after workflow creation.
