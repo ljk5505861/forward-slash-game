@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - 'codex/-v0.10.64'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   validate:
