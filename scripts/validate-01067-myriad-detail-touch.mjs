@@ -13,9 +13,9 @@ await import('../src/skills/handlers/index.js');
 const { default: SkillBar } = await import('../src/ui/SkillBar.js');
 
 function node(type,x=0,y=0,text=''){
-  return {type,x,y,text,width:120,height:40,children:[],handlers:{},depth:0,destroyed:false,interactive:false,
-    setOrigin(){return this;},setScrollFactor(){return this;},setDepth(v){this.depth=v;return this;},setStrokeStyle(){return this;},setFillStyle(){return this;},setVisible(v){this.visible=v;return this;},setMask(v){this.mask=v;return this;},setText(v){this.text=v;return this;},
-    setInteractive(shape,contains){this.interactive=true; this.hitArea=shape; this.hitAreaCallback=contains; return this;},disableInteractive(){this.interactive=false;return this;},
+  return {type,x,y,text,width:120,height:40,children:[],handlers:{},depth:0,destroyed:false,interactive:false,originX:0.5,originY:0.5,
+    setOrigin(x=0.5,y=x){this.originX=x; this.originY=y; return this;},setScrollFactor(){return this;},setDepth(v){this.depth=v;return this;},setStrokeStyle(){return this;},setFillStyle(){return this;},setVisible(v){this.visible=v;return this;},setMask(v){this.mask=v;return this;},setText(v){this.text=v;return this;},
+    setInteractive(shape,contains){this.interactive=true; if(shape?.useHandCursor){ this.hitArea={x:0,y:0,width:this.width,height:this.height}; this.hitAreaCallback=(area,localX,localY)=>localX>=area.x&&localY>=area.y&&localX<=area.x+area.width&&localY<=area.y+area.height; } else { this.hitArea=shape; this.hitAreaCallback=contains; } return this;},disableInteractive(){this.interactive=false;return this;},
     on(event,fn){this.handlers[event]=fn;return this;},removeAllListeners(){this.handlers={};return this;},destroy(){this.destroyed=true;return this;},
     createGeometryMask(){return {destroy(){this.destroyed=true;}};},add(items){(Array.isArray(items)?items:[items]).forEach(item=>this.children.push(item));return this;},
     getBounds(){return {x:this.x-this.width/2,y:this.y-this.height/2,width:this.width,height:this.height};}
@@ -34,6 +34,9 @@ function makeScene({changeCount=1,getData=true}={}){
   return {scene,calls};
 }
 function openDetail(opts){ const {scene,calls}=makeScene(opts); const bar=new SkillBar(scene); bar.showDetail(0); return {bar,scene,calls}; }
+function localPoint(node,worldX,worldY){ return {localX:worldX-(node.x-node.width*node.originX),localY:worldY-(node.y-node.height*node.originY)}; }
+function hitTest(node,worldX,worldY){ const {localX,localY}=localPoint(node,worldX,worldY); return !!node.hitAreaCallback?.(node.hitArea,localX,localY); }
+function dispatchPointerDownIfHit(node,pointer,event){ if(!hitTest(node,pointer.x,pointer.y)) return false; const {localX,localY}=localPoint(node,pointer.x,pointer.y); node.handlers.pointerdown?.(pointer,localX,localY,event); return true; }
 
 let {bar,scene,calls}=openDetail();
 const detail=bar.detail;
@@ -41,14 +44,20 @@ assert.ok(detail.copyButton,'myriad detail creates fixed copy button');
 assert.equal(detail.body.children.includes(detail.copyButton.bg),false,'button background is not inside scroll body container');
 assert.equal(detail.body.children.includes(detail.copyButton.label),false,'button label is not inside scroll body container');
 assert.ok(detail.copyButton.bg.interactive,'enabled button has independent interactive background');
-assert.equal(detail.copyButton.bg.hitArea.width,660,'full button width is interactive');
-assert.equal(detail.copyButton.bg.hitArea.height,116,'full button height is interactive');
+assert.deepEqual(detail.copyButton.bg.hitArea,{x:0,y:0,width:660,height:116},'default rectangle hitArea starts at local 0,0 and covers the full button');
+assert.ok(hitTest(detail.copyButton.bg,31,787),'left-top inside point hits the button');
+assert.ok(hitTest(detail.copyButton.bg,360,844),'center point hits the button');
+assert.ok(hitTest(detail.copyButton.bg,689,901),'right-bottom inside point hits the button');
+assert.equal(hitTest(detail.copyButton.bg,29,844),false,'left outside point misses the button');
+assert.equal(hitTest(detail.copyButton.bg,691,844),false,'right outside point misses the button');
+assert.equal(hitTest(detail.copyButton.bg,360,785),false,'top outside point misses the button');
+assert.equal(hitTest(detail.copyButton.bg,360,903),false,'bottom outside point misses the button');
 assert.ok(detail.copyButton.bg.depth>detail.body.depth,'button background is above scrolling body');
 assert.ok(detail.copyButton.label.depth>detail.body.depth,'button label is above scrolling body');
 assert.equal(detail.maxScroll,Math.max(0,detail.bodyText.height-300),'maxScroll uses reserved fixed-button body height');
 
 let stopped=0;
-detail.copyButton.bg.handlers.pointerdown({id:7,x:360,y:844},0,0,{stopPropagation(){stopped+=1;}});
+assert.equal(dispatchPointerDownIfHit(detail.copyButton.bg,{id:7,x:360,y:844},{stopPropagation(){stopped+=1;}}),true,'center hit dispatches pointerdown');
 assert.equal(stopped,1,'Phaser event parameter stops propagation on pointerdown');
 assert.equal(calls.show,1,'button click opens myriad selection panel');
 assert.equal(bar.detail,null,'button click closes detail before selection opens');
@@ -58,7 +67,7 @@ scene.upgradePanel.last.onCancel();
 assert.ok(bar.detail,'cancel returns to refreshed skill detail');
 assert.equal(scene.playerData.myriadAfterimageChangeCount,1,'cancel does not consume change count');
 scene.upgradePanel.last=null;
-bar.detail.copyButton.bg.handlers.pointerdown({id:8,x:360,y:844},0,0,{stopPropagation(){}});
+assert.equal(dispatchPointerDownIfHit(bar.detail.copyButton.bg,{id:8,x:360,y:844},{stopPropagation(){}}),true,'confirmed replacement click is dispatched only after hit test');
 assert.equal(scene.upgradePanel.last.onConfirm({skillId:'fireball'}),true,'confirming replacement succeeds');
 assert.equal(scene.playerData.myriadAfterimageSkillId,'fireball');
 assert.equal(scene.playerData.myriadAfterimageChangeCount,0);
@@ -90,7 +99,7 @@ bar.showDetail(1);
 assert.equal(bar.detail.copyButton,null,'ordinary skill detail does not show myriad copy button');
 
 ({bar,calls}=openDetail({getData:false}));
-bar.detail.copyButton.bg.handlers.pointerdown({id:9,x:360,y:844},0,0,{stopPropagation(){}});
+assert.equal(dispatchPointerDownIfHit(bar.detail.copyButton.bg,{id:9,x:360,y:844},{stopPropagation(){}}),true,'failed-open click is dispatched only after hit test');
 assert.ok(bar.detail,'failed selection opening restores detail immediately');
 assert.equal(calls.show,0,'failed opening does not leave a selection panel');
 

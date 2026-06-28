@@ -108,7 +108,7 @@ export default class SkillBar {
       if(!opened) reopen();
     };
     if(enabled){
-      bg.setInteractive(new Phaser.Geom.Rectangle(-DETAIL_COPY_BUTTON_WIDTH/2,-DETAIL_COPY_BUTTON_HEIGHT/2,DETAIL_COPY_BUTTON_WIDTH,DETAIL_COPY_BUTTON_HEIGHT),Phaser.Geom.Rectangle.Contains).on('pointerdown',openSelection);
+      bg.setInteractive({useHandCursor:true}).on('pointerdown',openSelection);
     }
     return {nodes:[bg,label],bg,label,bounds:new Phaser.Geom.Rectangle(x-DETAIL_COPY_BUTTON_WIDTH/2,y-DETAIL_COPY_BUTTON_HEIGHT/2,DETAIL_COPY_BUTTON_WIDTH,DETAIL_COPY_BUTTON_HEIGHT)};
   }
