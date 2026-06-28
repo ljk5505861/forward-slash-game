@@ -11,14 +11,16 @@ export default class UpgradePanel{
   constructor(scene){ this.scene=scene; this.nodes=[]; this.cards=[]; this.detailNodes=[]; this.state=new SelectionState(); this.isOpen=false; this.detailTop=500; }
   show(titleOrConfig,optionsArg,onPickArg){
     const config=typeof titleOrConfig==='object'?titleOrConfig:{title:titleOrConfig,options:optionsArg,onConfirm:onPickArg};
-    this.hide(); this.lastConfig=config; this.isOpen=true; this.state.open(); this.options=config.options||[]; this.mode=resolveSelectionMode(this.options,config.mode); this.onConfirm=config.onConfirm; this.formatted=this.options.map(option=>this.mode==='icon'?formatArtifactSelectionOption(option):formatSkillSelectionOption(option,this.scene.playerData));
+    this.hide(); this.lastConfig=config; this.isOpen=true; this.state.open(); this.options=config.options||[]; this.mode=resolveSelectionMode(this.options,config.mode); this.onConfirm=config.onConfirm; this.onCancel=config.onCancel; this.formatted=this.options.map(option=>this.mode==='icon'?formatArtifactSelectionOption(option):formatSkillSelectionOption(option,this.scene.playerData));
     const bg=this.scene.add.rectangle(DESIGN_WIDTH/2,DESIGN_HEIGHT/2,DESIGN_WIDTH,DESIGN_HEIGHT,0x07101f,0.18).setScrollFactor(0).setDepth(DEPTH);
     const label=config.hideTitle?null:this.scene.add.text(DESIGN_WIDTH/2,120,config.title||'选择奖励',{fontFamily:'Arial',fontSize:'36px',color:'#fff',stroke:'#000',strokeThickness:4,wordWrap:{width:650}}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+1);
     this.nodes.push(bg); if(label) this.nodes.push(label);
+    if(config.onCancel) this.createCancelButton(config.cancelText||'取消 / 返回');
     this.createIconOptions();
     this.createDetails(null); this.createDebug();
   }
   makeText(x,y,text,style={},origin=[0,0]){ const node=this.scene.add.text(x,y,text,{fontFamily:'Arial',fontSize:'22px',color:WHITE,wordWrap:{width:540,useAdvancedWrap:true},...style}).setOrigin(...origin).setScrollFactor(0).setDepth(DEPTH+2); this.nodes.push(node); return node; }
+  createCancelButton(text){ const cancel=makeInteractive(this.scene.add.text(DESIGN_WIDTH/2,190,text,{fontFamily:'Arial',fontSize:'24px',color:'#fff',backgroundColor:'#4a2d38',padding:{left:18,right:18,top:9,bottom:9}}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+2)).on('pointerdown',()=>{ this.hide(); this.onCancel?.(); }); this.nodes.push(cancel); return cancel; }
   createIcon(x,y,formatted,index,size=92){ const style=rarityStyle(formatted.rarityId); const color=formatted.iconColor||SELECTION_ICON_STYLE.colors[index%SELECTION_ICON_STYLE.colors.length]; const graphic=this.scene.add.circle(x,y,size/2,color,0.9).setStrokeStyle(5,style.mainColor,0.9).setScrollFactor(0).setDepth(DEPTH+2); const text=this.scene.add.text(x,y,formatted.iconText||'?',{fontFamily:'Arial',fontSize:'36px',color:'#10172a',fontStyle:'bold'}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+3); this.nodes.push(graphic,text); return [graphic,text]; }
   wire(nodes,index,rootHitArea=null){ nodes.forEach(node=>{ makeInteractive(node,node===nodes[0]?rootHitArea:null).on('pointerdown',()=>this.select(index)); }); }
   createCardOptions(){ this.createIconOptions(); }

@@ -32,13 +32,19 @@ export const selectedName=id=>id===NORMAL_ATTACK_ID?'普通攻击':(SKILLS[id]?.
 export const isEligibleMyriadCopySkill=skill=>!!skill&&!!COPY_ADAPTERS[skill.id]&&skill.rarity!=='MYTHIC'&&!skill.ultimateSkill;
 export function eligibleOwned(system){ return (system.scene.playerData.skills||[]).map(item=>SKILLS[item.id]).filter(isEligibleMyriadCopySkill); }
 const clampChangeCount=value=>Math.max(0,Math.min(1,Math.floor(Number(value)||0)));
-function initializeChoiceState(system){
+function hasMyriad(system){ return system.getLevel?.(SOURCE)>0; }
+function restoreChoiceState(system){
+  if(!hasMyriad(system)) return;
   const scene=system.scene;
   scene.playerData.myriadAfterimageSkillId??=NORMAL_ATTACK_ID;
-  if(scene.playerData.myriadAfterimageChangeCount===undefined) scene.playerData.myriadAfterimageChangeCount=eligibleOwned(system).some(skill=>skill.id!==SOURCE)?1:0;
   scene.playerData.myriadAfterimageChangeCount=clampChangeCount(scene.playerData.myriadAfterimageChangeCount);
 }
-function grantUpgradeChange(system){ system.scene.playerData.myriadAfterimageChangeCount=1; }
+function initializeFirstObtain(system){
+  const scene=system.scene;
+  scene.playerData.myriadAfterimageSkillId=NORMAL_ATTACK_ID;
+  scene.playerData.myriadAfterimageChangeCount=eligibleOwned(system).length>0?1:0;
+}
+function grantUpgradeChange(system){ if(hasMyriad(system)) system.scene.playerData.myriadAfterimageChangeCount=1; }
 export function getMyriadAfterimageDetailState(scene){ return { skillId:selectedId(scene), skillName:selectedName(selectedId(scene)), changeCount:clampChangeCount(scene?.playerData?.myriadAfterimageChangeCount) }; }
 function livePersistentAfterimages(scene){
   const now=scene.getGameplayTime();
@@ -146,14 +152,14 @@ export function selectionOptions(system){
   const normal={type:'myriadCopySkill',id:'myriad_normal_attack',title:`普通攻击${current===NORMAL_ATTACK_ID?'（当前）':''}\n玩家普通攻击命中后，本命残影与幻影步残影依次补击。`,skillId:NORMAL_ATTACK_ID,nextLevel:1};
   return [normal,...eligibleOwned(system).map(skill=>({type:'myriadCopySkill',id:`myriad_${skill.id}`,title:`${skill.name}${current===skill.id?'（当前）':''}`,skillId:skill.id,nextLevel:system.getLevel(skill.id)||1}))];
 }
-function openSelection(system,reason='detail',onChanged=null){
+function openSelection(system,reason='detail',onChanged=null,onCancel=onChanged){
   const scene=system.scene,options=selectionOptions(system);
-  if(clampChangeCount(scene.playerData.myriadAfterimageChangeCount)<=0) return false;
+  if(!hasMyriad(system)||clampChangeCount(scene.playerData.myriadAfterimageChangeCount)<=0) return false;
   scene.beginGameplayPause?.(); scene.runState=RunStates.UPGRADING;
-  scene.upgradePanel?.show?.({title:'万象残身：更换复制技能',options,mode:'card',onConfirm:option=>{
+  scene.upgradePanel?.show?.({title:'万象残身：更换复制技能',options,mode:'card',cancelText:'取消 / 返回技能详情',onCancel:()=>{ scene.resumeModalFlow?.(); onCancel?.(); },onConfirm:option=>{
     const current=selectedId(scene);
     if(!option?.skillId||option.skillId===current) return false;
-    if(clampChangeCount(scene.playerData.myriadAfterimageChangeCount)<=0) return false;
+    if(!hasMyriad(system)||clampChangeCount(scene.playerData.myriadAfterimageChangeCount)<=0) return false;
     scene.playerData.myriadAfterimageSkillId=option.skillId;
     scene.playerData.myriadAfterimageChangeCount=0;
     scene.floatText?.(scene.player.x,scene.player.y-132,`万象锁定：${selectedName(option.skillId)}`,'#d8b4fe');
@@ -164,23 +170,23 @@ function openSelection(system,reason='detail',onChanged=null){
   return true;
 }
 
-export function openMyriadAfterimageSelection(scene,onChanged=null){
+export function openMyriadAfterimageSelection(scene,onChanged=null,onCancel=onChanged){
   const system=scene?.skillSystem;
   if(!system?.getData?.(SOURCE)) return false;
-  return openSelection(system,'detail',onChanged);
+  return openSelection(system,'detail',onChanged,onCancel);
 }
 
 
 export const MyriadAfterimageSkill={
   bind(system){
     const scene=system.scene,state={timers:new Set(),seen:new Set(),innateAfterimageId:null};
-    initializeChoiceState(system);
+    restoreChoiceState(system);
     const clearTimers=()=>{ state.timers.forEach(timer=>timer.remove?.(false)); state.timers.clear(); };
     const ensureInnate=()=>ensureInnateAfterimage(system,state);
     system.passiveUpdaters.push(ensureInnate);
     ensureInnate();
-    const offUpgrade=scene.eventBus.on(CombatEvents.UPGRADE_CHOSEN,payload=>{ if(payload?.skillId!==SOURCE) return; if((payload.level||1)>1) grantUpgradeChange(system); else initializeChoiceState(system); });
-    const offStarting=scene.eventBus.on(CombatEvents.STARTING_SKILL_CHOSEN,payload=>{ if(payload?.skillId===SOURCE) initializeChoiceState(system); });
+    const offUpgrade=scene.eventBus.on(CombatEvents.UPGRADE_CHOSEN,payload=>{ if(payload?.skillId!==SOURCE) return; if((payload.level||1)>1) grantUpgradeChange(system); else initializeFirstObtain(system); });
+    const offStarting=scene.eventBus.on(CombatEvents.STARTING_SKILL_CHOSEN,payload=>{ if(payload?.skillId===SOURCE) initializeFirstObtain(system); });
     const offCast=scene.eventBus.on(CombatEvents.SKILL_CAST_COMPLETED,event=>{ const skillId=event?.skillId,adapter=COPY_ADAPTERS[skillId],key=`active:${skillId}:${event?.ctx?.castId}`; if(adapter!=='active'||event?.fromMyriadAfterimage||event?.ctx?.fromMyriadAfterimage||state.seen.has(key)) return; state.seen.add(key); if(state.seen.size>120) state.seen.clear(); dispatchEcho(system,state,{skillId,data:event.data||system.getData(skillId),ctx:event.ctx||{},target:event.target,targets:event.targets||[],tags:event.skill?.tags||SKILLS[skillId]?.tags||[],castId:event.ctx?.castId||scene.getGameplayTime(),event}); });
     const offAttackResolved=scene.eventBus.on(CombatEvents.PLAYER_ATTACK_RESOLVED,event=>{
       if(event?.fromMyriadAfterimage) return;
