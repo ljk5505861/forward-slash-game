@@ -18,18 +18,22 @@ jobs:
           node-version: '20'
       - run: npm install --silent
       - run: npm run build --silent
-      - name: Validate core through 01043
+      - name: Validate core A
         run: |
           npm run validate:tags
           npm run validate:reward-bias
           npm run validate:gameplay-entry
           npm run validate:selection-ui
           npm run validate:profession-flow
+      - name: Validate core B
+        run: |
           npm run validate:player-info-flow
           npm run validate:shop-flow
           npm run validate:enemy-population
           npm run validate:midboss-reward-flow
           npm run validate:final-shop-flow
+      - name: Validate core C
+        run: |
           npm run validate:life-steal
           npm run validate:010-gameplay-loop
           npm run validate:0104-balance-knockback
