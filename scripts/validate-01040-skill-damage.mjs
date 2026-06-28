@@ -66,11 +66,11 @@ eq(nums('guardian_shield','flatShield'),[12,14,16,18,20,24,28,32,36],'guardian_s
 ['armor_break_shockwave','immovable_mountain','black_tortoise_body'].forEach(id=>assert.equal(SKILLS[id],undefined,`${id} removed from skill pool`));
 
 // Afterimage / speed archetype.
-eq(nums('instant_step','damage'),[110,132,156,180,208,240,264,284,300],'instant_step.damage');
-assert.ok(SKILLS.shadow_fist.levels.every(l=>l.dodgeChance>0),'shadow_fist dodge configured');
-assert.ok(SKILLS.phantom_step.levels.every(l=>l.maxAfterimages>=1&&l.durationMs>0),'phantom_step afterimage duration configured');
-assert.ok(SKILLS.traceless.levels.every(l=>l.moveSpeedBonus>0&&l.afterimageDamageBonus>0),'traceless speed/damage configured');
-assert.ok(SKILLS.myriad_afterimage.levels.every(l=>l.copyDamageRatio>0&&l.shadowSwordDamageRatio>0),'myriad_afterimage copy/shadow sword ratios configured');
+eq(nums('instant_step','damageRatio'),[0.60,0.68,0.76,0.84,0.92,1.00,1.10,1.20,1.30],'instant_step.damageRatio');
+assert.ok(SKILLS.shadow_fist.levels.every(l=>l.dodgeChance>0&&l.attackSpeedBonus>0),'shadow_fist attack speed/dodge configured');
+assert.ok(SKILLS.phantom_step.levels.every(l=>l.maxAfterimages>=2&&l.durationMs===6000&&l.damageRatio>0),'phantom_step afterimage duration/damage configured');
+assert.ok(SKILLS.traceless.levels.every(l=>l.dodgeChance>0&&l.dodgeHeal>0),'traceless dodge/heal configured');
+assert.ok(SKILLS.myriad_afterimage.levels.every(l=>l.copyDamageRatio>0),'myriad_afterimage copy ratios configured');
 
 // Poison summon archetype.
 eq(nums('poison_cloud','damage'),[26,32,52,62,75,91,109,130,156],'poison_cloud.damage');

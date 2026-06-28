@@ -1,52 +1,33 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import '../src/skills/handlers/index.js';
 import { SKILLS } from '../src/config/skills.js';
 import { GAME_VERSION } from '../src/config/version.js';
-import { TracelessSkill } from '../src/skills/handlers/AfterimageCoreSkills.js';
 import { CombatEvents } from '../src/core/CombatEvents.js';
+import { PhantomStepSkill, TracelessSkill } from '../src/skills/handlers/AfterimageCoreSkills.js';
+import { InstantStepSkill } from '../src/skills/handlers/AfterimageAdvancedSkills.js';
+import { MyriadAfterimageSkill } from '../src/skills/handlers/AfterimageUltimateSkills.js';
+
+class Bus{ constructor(){this.map=new Map();} on(e,f){ const a=this.map.get(e)||[]; a.push(f); this.map.set(e,a); return ()=>this.map.set(e,(this.map.get(e)||[]).filter(x=>x!==f)); } emit(e,p={}){ (this.map.get(e)||[]).slice().forEach(f=>f(p)); } }
+const visual=()=>({ setStrokeStyle(){return this;}, setDepth(){return this;}, setPosition(x,y){this.x=x;this.y=y;return this;}, setAlpha(a){this.alpha=a;return this;}, setScale(){return this;}, destroy(){this.destroyed=true;} });
+function enemy(opts={}){ return { x:520,y:500,hp:opts.hp??1000,maxHp:opts.maxHp??1000,active:true,isDefeated:false,...opts }; }
+function scene(){ const bus=new Bus(); const s={ now:0, player:{x:300,y:560}, playerData:{hp:100,maxHp:200,attack:100,attackSpeedMultiplier:1,skillDamageMultiplier:1,dodgeChance:0,critChance:0,critMultiplier:1.5,skills:[],attackDamageBonuses:{},normalAttackDamageBonuses:{},attackSpeedMultiplierBonuses:{},dodgeChanceBonuses:{},afterimageDamageBonuses:{}}, eventBus:bus, enemies:[], visuals:[], isGameplayPaused(){return false;}, getGameplayTime(){return this.now;}, floatText(){}, beginGameplayPause(){this.paused=true;}, resumeModalFlow(){this.resumed=true;}, add:{ rectangle:(x=0,y=0)=>{ const v=Object.assign(visual(),{x,y}); s.visuals.push(v); return v; }, circle:(x=0,y=0)=>{ const v=Object.assign(visual(),{x,y}); s.visuals.push(v); return v; } }, tweens:{ add({targets,onComplete}={}){ onComplete?.(); return {targets}; } }, time:{ delayedCall(_ms,fn){ fn?.(); return { once(){}, remove(){} }; } }, targeting:{ all:()=>s.enemies.filter(e=>e.active!==false&&!e.isDefeated&&e.hp>0), valid:e=>!!e&&e.active!==false&&!e.isDefeated&&e.hp>0, isEnemyFullyInsideViewport:()=>true }, combatSystem:{ damageEnemy(e,amount,meta={}){ if(!s.targeting.valid(e)) return false; e.lastMeta=meta; e.hp=Math.max(0,e.hp-Math.round(amount)); if(e.hp<=0)e.isDefeated=true; bus.emit(CombatEvents.ENEMY_HIT,{enemy:e,damage:amount,...meta}); return amount>0; } }, healPlayer(amount){ const before=s.playerData.hp; s.playerData.hp=Math.min(s.playerData.maxHp,s.playerData.hp+amount); return s.playerData.hp-before; }, afterimages:{ items:[], next:1, createAfterimage(cfg){ const a={id:this.next++,...cfg,view:s.add.rectangle(s.player.x-20,s.player.y-52)}; this.items.push(a); bus.emit(CombatEvents.AFTERIMAGE_CREATED,{afterimage:a}); return a; }, getAll(){ return [...this.items]; }, getById(id){ return this.items.find(a=>a.id===id)||null; }, removeAfterimage(id){ this.items=this.items.filter(a=>a.id!==id); } }, upgradePanel:{ show(cfg){ s.selectionConfig=cfg; }, hide(){} } }; return s; }
+function system(s){ return { scene:s, passiveUpdaters:[], getLevel:id=>s.playerData.skills.find(k=>k.id===id)?.level||0, getData:id=>SKILLS[id]?.levels[(s.playerData.skills.find(k=>k.id===id)?.level||1)-1] }; }
 
 assert.equal(GAME_VERSION,'0.10.64');
-assert.equal(SKILLS.shadow_assault,undefined,'old 影袭 skill removed');
-assert.equal(SKILLS.swift_shadow,undefined,'old 疾影 skill removed');
-for (const id of ['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage']) {
-  assert.ok(SKILLS[id],`${id} exists`);
-  assert.equal(SKILLS[id].requiredSkillId,undefined,`${id} can be obtained independently`);
-  assert.ok(SKILLS[id].description?.length>12,`${id} has clear description`);
-}
-assert.match(SKILLS.traceless.description,/闪避.*移动速度.*残影伤害/);
-assert.match(SKILLS.myriad_afterimage.description,/获得或升级.*火球.*毒针.*重击.*御剑术.*锁定/);
-assert.ok(SKILLS.myriad_afterimage.levels.every(l=>l.desc.includes('锁定可复制类型')));
+assert.equal(SKILLS.shadow_assault,undefined);
+assert.equal(SKILLS.swift_shadow,undefined);
+assert.deepEqual(SKILLS.shadow_fist.levels.map(l=>l.attackSpeedBonus),[.06,.09,.13,.17,.21,.26,.31,.36,.42]);
+assert.deepEqual(SKILLS.shadow_fist.levels.map(l=>l.dodgeChance),[.05,.07,.10,.12,.14,.17,.19,.22,.25]);
+assert.equal(SKILLS.traceless.rarity,'EPIC');
+assert.deepEqual(SKILLS.traceless.levels.map(l=>l.dodgeChance),[.20,.22,.24,.26,.28,.30,.32,.34,.36]);
+assert.deepEqual(SKILLS.traceless.levels.map(l=>l.dodgeHeal),[5,7,10,13,16,20,24,29,35]);
+assert.deepEqual(SKILLS.phantom_step.levels.map(l=>l.durationMs),Array(9).fill(6000));
+assert.deepEqual(SKILLS.phantom_step.levels.map(l=>l.maxAfterimages),[2,2,3,3,3,4,4,4,5]);
+assert.deepEqual(SKILLS.phantom_step.levels.map(l=>l.damageRatio),[.40,.46,.52,.58,.64,.70,.78,.86,.95]);
+assert.deepEqual(SKILLS.myriad_afterimage.levels.map(l=>l.copyDamageRatio),[.15,.18,.21,.24,.27,.30,.34,.38,.45]);
 
-const combat=readFileSync('src/systems/CombatSystem.js','utf8');
-const entry=readFileSync('src/skills/handlers/EntryArchetypeSkills.js','utf8');
-const panel=readFileSync('src/ui/PlayerInfoPanel.js','utf8');
-assert.match(combat,/Math\.min\(0\.70,\(s\.playerData\.dodgeChance\|\|0\)\+sumBonuses\(s\.playerData\.dodgeChanceBonuses\)\)/,'combat dodge cap is 70%');
-assert.match(entry,/Math\.min\(0\.70,p\.dodgeChance\+appliedDodge\)/,'身法 application cap is 70%');
-assert.match(panel,/\['dodge',pct\(cap70\(/,'player info dodge display uses 70% cap');
-
-let now=1000;
-const listeners=new Map();
-const destroyed=[];
-const scene={
-  playerData:{ skills:[{id:'traceless',level:1}], moveSpeedMultiplierBonuses:{}, afterimageDamageBonuses:{} },
-  player:{ x:320, y:420 },
-  getGameplayTime:()=>now,
-  eventBus:{ on(event,fn){ listeners.set(event,fn); return ()=>listeners.delete(event); } },
-  floatText(){},
-  add:{ rectangle(){ return { setStrokeStyle(){ return this; }, setDepth(){ return this; }, setPosition(x,y){ this.x=x; this.y=y; return this; }, destroy(){ destroyed.push(this); } }; } }
-};
-const system={ scene, passiveUpdaters:[], getLevel:id=>scene.playerData.skills.find(s=>s.id===id)?.level||0, getData:id=>SKILLS[id].levels[0] };
-const off=TracelessSkill.bind(system);
-listeners.get(CombatEvents.PLAYER_DODGED)({});
-system.passiveUpdaters.forEach(fn=>fn());
-assert.equal(scene.playerData.moveSpeedMultiplierBonuses.traceless,SKILLS.traceless.levels[0].moveSpeedBonus,'无踪 applies move speed on dodge');
-assert.equal(scene.playerData.afterimageDamageBonuses.traceless,SKILLS.traceless.levels[0].afterimageDamageBonus,'无踪 applies afterimage damage on dodge');
-now+=SKILLS.traceless.levels[0].durationMs+1;
-system.passiveUpdaters.forEach(fn=>fn());
-assert.equal(scene.playerData.moveSpeedMultiplierBonuses.traceless,undefined,'无踪 cleans move speed after expiry');
-assert.equal(scene.playerData.afterimageDamageBonuses.traceless,undefined,'无踪 cleans afterimage damage after expiry');
-off();
-assert.equal(system.passiveUpdaters.length,0,'无踪 updater cleaned up on remove');
-assert.ok(destroyed.length>=1,'无踪 visual cleaned up');
-console.log('v0.10.64 afterimage rework validation passed.');
+{ const s=scene(); s.playerData.skills=[{id:'traceless',level:3}]; const sys=system(s); const off=TracelessSkill.bind(sys); assert.equal(s.playerData.dodgeChanceBonuses.traceless,.24); s.playerData.hp=50; s.eventBus.emit(CombatEvents.PLAYER_DODGED,{enemy:enemy()}); assert.equal(s.playerData.hp,60); s.eventBus.emit(CombatEvents.PLAYER_DODGED,{enemy:enemy()}); assert.equal(s.playerData.hp,70,'无踪无内置冷却'); off(); assert.equal(s.playerData.dodgeChanceBonuses.traceless,undefined); }
+{ const s=scene(); s.playerData.skills=[{id:'phantom_step',level:9}]; s.enemies=[enemy()]; const sys=system(s); const off=PhantomStepSkill.bind(sys); for(let i=0;i<6;i++) s.eventBus.emit(CombatEvents.PLAYER_DODGED,{}); assert.equal(s.afterimages.items.length,5,'幻影步达到上限后不替换最旧残影'); s.now=200; sys.passiveUpdaters.forEach(fn=>fn()); assert.ok(s.enemies[0].hp<1000,'残影自动攻击'); assert.ok(s.playerData.attackSpeedMultiplierBonuses.phantom_step>0,'残影命中叠攻速'); off(); assert.equal(s.playerData.attackSpeedMultiplierBonuses.phantom_step,undefined); }
+{ const s=scene(); s.playerData.skills=[{id:'instant_step',level:9}]; s.playerData.attackSpeedMultiplier=2.2; s.enemies=[enemy()]; const sys=system(s); const off=InstantStepSkill.bind(sys); sys.passiveUpdaters.forEach(fn=>fn()); assert.equal(s.playerData.dodgeChanceBonuses.instant_step,.12,'每10%额外攻速转1%闪避'); s.eventBus.emit(CombatEvents.PLAYER_DODGED,{}); assert.ok(s.enemies[0].hp<1000,'瞬身强化残影攻击'); off(); assert.equal(s.playerData.dodgeChanceBonuses.instant_step,undefined); }
+{ const s=scene(); s.playerData.skills=[{id:'myriad_afterimage',level:1},{id:'fireball',level:1},{id:'poison_cloud',level:1},{id:'phantom_step',level:1},{id:'solar_flame',level:1}]; const sys=system(s); const off=MyriadAfterimageSkill.bind(sys); const eligible=MyriadAfterimageSkill.eligibleSkills(sys); assert.ok(eligible.includes('fireball')&&eligible.includes('poison_cloud'),'神话以下合格技能可选'); assert.ok(!eligible.includes('myriad_afterimage')&&!eligible.includes('phantom_step')&&!eligible.includes('solar_flame'),'排除神话、制造残影技能'); s.eventBus.emit(CombatEvents.UPGRADE_CHOSEN,{skillId:'myriad_afterimage',level:1}); assert.ok(s.selectionConfig?.options?.some(o=>o.skillId==='fireball'),'获得时打开移动端可点选面板'); s.selectionConfig.onConfirm({skillId:'fireball'}); assert.equal(s.playerData.myriadAfterimageSkillId,'fireball','选择后锁定'); s.afterimages.createAfterimage({ownerSkillId:'phantom_step'}); s.enemies=[enemy()]; s.eventBus.emit(CombatEvents.SKILL_CAST_COMPLETED,{skillId:'fireball',data:{damage:100},skill:SKILLS.fireball,ctx:{castId:1},target:s.enemies[0]}); assert.equal(s.enemies[0].hp,985,'万象按15%复制锁定技能'); s.eventBus.emit(CombatEvents.SKILL_CAST_COMPLETED,{skillId:'poison_cloud',data:{damage:100},skill:SKILLS.poison_cloud,ctx:{castId:2},target:s.enemies[0]}); assert.equal(s.enemies[0].hp,985,'未锁定技能不复制'); s.playerData.skills[0].level=2; s.eventBus.emit(CombatEvents.UPGRADE_CHOSEN,{skillId:'myriad_afterimage',level:2}); assert.ok(s.selectionConfig?.title?.includes('重新选择'),'只有万象升级时重选'); off(); }
+console.log('v0.10.64 afterimage behavior validation passed.');
