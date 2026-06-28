@@ -14,7 +14,7 @@ const burnTextBlock=indicators.slice(
   indicators.indexOf('const poisonText')
 );
 
-assert.equal(GAME_VERSION,'0.10.68','game version is 0.10.68');
+assert.equal(GAME_VERSION,'0.10.69','game version is 0.10.69');
 assert.match(burnTextBlock,/fontSize:'16px'/,'burn stack number is enlarged to 16px');
 assert.match(burnTextBlock,/fontStyle:'bold'/,'burn stack number uses bold weight');
 assert.match(burnTextBlock,/color:'#ff9a3d'/,'burn stack number uses clear orange');
