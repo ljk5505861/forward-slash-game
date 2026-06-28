@@ -1,0 +1,29 @@
+name: Temporary myriad standalone validation
+
+on:
+  push:
+    branches:
+      - 'codex/-v0.10.64'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm run build
+      - name: Run all validation scripts
+        run: |
+          node - <<'NODE'
+          const { spawnSync } = require('node:child_process');
+          const scripts = require('./package.json').scripts;
+          for (const name of Object.keys(scripts).filter(name => name.startsWith('validate:'))) {
+            console.log(`\n=== ${name} ===`);
+            const result = spawnSync('npm', ['run', name], { stdio: 'inherit' });
+            if (result.status !== 0) process.exit(result.status || 1);
+          }
+          console.log('\nALL_VALIDATIONS_PASSED');
+          NODE
