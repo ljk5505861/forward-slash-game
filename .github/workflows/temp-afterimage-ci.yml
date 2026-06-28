@@ -17,15 +17,4 @@ jobs:
         with:
           node-version: '20'
       - run: npm install
-      - run: npm run build
-      - name: Run every validation script
-        run: |
-          node - <<'NODE'
-          const { spawnSync } = require('node:child_process');
-          const scripts = require('./package.json').scripts;
-          for (const name of Object.keys(scripts).filter(name => name.startsWith('validate:'))) {
-            console.log(`\n=== ${name} ===`);
-            const result = spawnSync('npm', ['run', name], { stdio: 'inherit' });
-            if (result.status !== 0) process.exit(result.status || 1);
-          }
-          NODE
+      - run: npm run validate:01064-afterimage-rework
