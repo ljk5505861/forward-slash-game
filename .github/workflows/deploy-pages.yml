@@ -2,11 +2,11 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, fix/player-sprite-v01069]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -15,26 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  bump-version-assertions:
-    if: github.ref == 'refs/heads/fix/player-sprite-v01069'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          ref: fix/player-sprite-v01069
-
-      - name: Update assertions
-        run: node scripts/bump-version-assertions.mjs
-
-      - name: Commit updated assertions
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: test: update version assertions to 0.10.69
-          file_pattern: scripts/*.mjs
-
   build:
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -60,7 +41,6 @@ jobs:
           path: dist
 
   deploy:
-    if: github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
