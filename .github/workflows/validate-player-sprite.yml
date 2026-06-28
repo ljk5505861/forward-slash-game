@@ -1,6 +1,9 @@
 name: Validate player sprite
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - feat/player-idle-sprite
