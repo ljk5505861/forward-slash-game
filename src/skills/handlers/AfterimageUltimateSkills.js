@@ -7,13 +7,13 @@ const SOURCE='myriad_afterimage';
 const SUPPORTED=new Set(['fireball','poison_cloud']);
 const lv=(rows)=>rows.map(([maxCopyAfterimages,copyDamageRatio,echoDelayMs,shadowSwordDamageRatio,shadowSwordIntervalMultiplier,inheritHalfStatusStacks,allAfterimages],i)=>({
   maxCopyAfterimages,copyDamageRatio,echoDelayMs,shadowSwordDamageRatio,shadowSwordIntervalMultiplier,inheritHalfStatusStacks,allAfterimages,
-  desc:`残影继承火球、毒针、重击与御剑术的部分能力，复制伤害${Math.round(copyDamageRatio*100)}%。`,
+  desc:`锁定可复制类型：火球、毒针、重击与御剑术；获得或升级时会按已拥有技能重选锁定，复制伤害${Math.round(copyDamageRatio*100)}%。`,
   ...({3:{milestoneText:'最多两个残影可以继承火球、毒针、重击与御剑术。'},6:{milestoneText:'最多三个残影参与继承，残影火球与毒针可继承更多异常层数。'},9:{milestoneText:'场上所有残影均可继承基础流派能力，继承效果提高至50%。'}}[i+1]||{})
 }));
 
-const CONFIG={ id:SOURCE, name:'万象残身', rarity:'MYTHIC', handler:SOURCE, passive:true, maxLevel:9, requiredSkillId:'instant_step', ultimateSkill:true,
+const CONFIG={ id:SOURCE, name:'万象残身', rarity:'MYTHIC', handler:SOURCE, passive:true, maxLevel:9, ultimateSkill:true,
   tags:['shadow','afterimage',TAGS.BUILD_AFTERIMAGE], cooldownMs:999999, targetType:'passive', color:0x9b7cff, short:'象',
-  description:'残影继承火球、毒针、重击与御剑术的部分能力，强度取决于真实残影数量。',
+  description:'获得或升级时从已拥有的火球、毒针、重击与御剑术中重选并锁定可复制类型；残影按锁定类型复制，强度取决于真实残影数量。',
   levels:lv([[1,0.25,240,0.25,1.35,false,false],[1,0.28,230,0.28,1.32,false,false],[2,0.30,220,0.30,1.30,false,false],[2,0.34,205,0.34,1.26,false,false],[2,0.37,190,0.37,1.22,false,false],[3,0.40,175,0.40,1.18,true,false],[3,0.43,165,0.43,1.15,true,false],[3,0.46,155,0.46,1.12,true,false],[Number.MAX_SAFE_INTEGER,0.50,140,0.50,1.08,true,true]])
 };
 
@@ -69,10 +69,24 @@ function copyPoison(system,state,event,data){
   }));
 }
 
+function copyHeavyHit(system,state,event,data){
+  const s=system.scene, original=event.enemy;
+  participants(s,data).forEach((afterimage,index)=>schedule(state,s,index*data.echoDelayMs,()=>{
+    if(!validRuntime(system,afterimage,'giant_force')) return;
+    const target=s.targeting.valid(original)?original:nearestFrom(s,afterimage.view?.x??s.player.x);
+    if(!target) return;
+    const m=meta(afterimage,'heavy_hit',event.castId||`${s.getGameplayTime()}_${index}`);
+    const afterimageDamageBonus=Object.values(s.playerData.afterimageDamageBonuses||{}).reduce((sum,value)=>sum+(Number(value)||0),0);
+    const amount=Math.max(1,Math.round((event.damage||s.playerData.attack||1)*data.copyDamageRatio*(1+afterimageDamageBonus)));
+    pulse(s,afterimage,0xd9d9ff);
+    s.combatSystem.damageEnemy(target,amount,{ source:'skill', skillId:SOURCE, damageKind:'myriadHeavyHit', tags:['physical',TAGS.HEAVY_HIT,TAGS.BUILD_AFTERIMAGE], afterimage:true, heavyHit:true, allowLifeSteal:false, noKnockback:true, ...m });
+  }));
+}
+
 function clearShadowSwords(system,state){ const s=system.scene; state.swords.forEach(id=>s.flyingSwords?.removeSword(id,'myriadCleared')); state.swords.clear(); }
 function syncShadowSwords(system,state){
   const s=system.scene, data=system.getData(SOURCE), swordData=system.getData('sword_wave');
-  if(!data||!swordData||!s.flyingSwords){ clearShadowSwords(system,state); return; }
+  if(!data||!swordData||!s.flyingSwords||!state.locked?.has('sword_wave')){ clearShadowSwords(system,state); return; }
   const live=new Set(validAfterimages(s).map(a=>a.id));
   [...state.swords.entries()].forEach(([aid,sid])=>{ if(!live.has(aid)||!s.flyingSwords.getById(sid)){ s.flyingSwords.removeSword(sid,'afterimageGone'); state.swords.delete(aid); } });
   validAfterimages(s).forEach(a=>{ if(state.swords.has(a.id)) return; const sword=s.flyingSwords.createSword({ ownerSkillId:SOURCE, type:'shadow', shadowSword:true, sourceAfterimageId:a.id, color:0x8f7cff, orbitRadius:42, orbitSpeed:1.4, inheritedTags:['shadow','afterimage',TAGS.BUILD_AFTERIMAGE] }); state.swords.set(a.id,sword.id); });
@@ -84,19 +98,21 @@ function syncShadowSwords(system,state){
 export const MyriadAfterimageSkill={
   bind(system){
     const s=system.scene;
-    const state={ timers:new Set(), swords:new Map(), seen:new Set() };
+    const state={ timers:new Set(), swords:new Map(), seen:new Set(), lockedKey:'' };
+    const refreshLocks=()=>{ const data=system.getData(SOURCE); if(!data) return null; const owned=['fireball','poison_cloud','giant_force','sword_wave'].filter(id=>hasSkill(system,id)); const key=`${system.getLevel(SOURCE)}:${owned.join('|')}`; if(state.lockedKey!==key){ state.lockedKey=key; state.locked=new Set(owned); } return data; };
     const clearTimers=()=>{ state.timers.forEach(t=>t.remove?.(false)); state.timers.clear(); };
     const onCastDone=(event={})=>{
       if(event.fromMyriadAfterimage||event.ctx?.fromMyriadAfterimage||!SUPPORTED.has(event.skillId)||state.seen.has(`${event.skillId}:${event.ctx?.castId}`)) return;
-      const data=system.getData(SOURCE); if(!data||!validAfterimages(s).length) return;
+      const data=refreshLocks(); if(!data||!validAfterimages(s).length||!state.locked?.has(event.skillId)) return;
       state.seen.add(`${event.skillId}:${event.ctx?.castId}`); if(state.seen.size>80) state.seen.clear();
       if(event.skillId==='fireball') copyFireball(system,state,event,{...data,originalTarget:event.target});
       if(event.skillId==='poison_cloud') copyPoison(system,state,event,data);
     };
     const offCast=s.eventBus.on(CombatEvents.SKILL_CAST_COMPLETED,onCastDone);
+    const offHit=s.eventBus.on(CombatEvents.PLAYER_HIT,event=>{ const data=refreshLocks(); if(!data||!event.heavyHit||event.afterimage||event.fromMyriadAfterimage||!state.locked?.has('giant_force')||!validAfterimages(s).length) return; copyHeavyHit(system,state,event,data); });
     const offRemoved=s.eventBus.on(CombatEvents.AFTERIMAGE_REMOVED,({afterimage})=>{ const sid=state.swords.get(afterimage.id); if(sid) s.flyingSwords?.removeSword(sid,'afterimageRemoved'); state.swords.delete(afterimage.id); });
-    const updater=()=>syncShadowSwords(system,state);
+    const updater=()=>{ refreshLocks(); syncShadowSwords(system,state); };
     system.passiveUpdaters.push(updater);
-    return ()=>{ offCast?.(); offRemoved?.(); clearTimers(); clearShadowSwords(system,state); const i=system.passiveUpdaters.indexOf(updater); if(i>=0) system.passiveUpdaters.splice(i,1); };
+    return ()=>{ offCast?.(); offHit?.(); offRemoved?.(); clearTimers(); clearShadowSwords(system,state); const i=system.passiveUpdaters.indexOf(updater); if(i>=0) system.passiveUpdaters.splice(i,1); };
   }
 };

@@ -321,7 +321,7 @@ export const EntryMovementSkill={
       const p=system.scene.playerData;
       p.dodgeChance=Math.max(0,(p.dodgeChance||0)-appliedDodge);
       appliedDodge=data?.dodgeChance||0;
-      p.dodgeChance=Math.min(0.75,p.dodgeChance+appliedDodge);
+      p.dodgeChance=Math.min(0.70,p.dodgeChance+appliedDodge);
     });
   }
 };

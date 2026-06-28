@@ -14,13 +14,13 @@ const archetypes={
   sword:['sword_wave','sword_sheath','sword_tomb'],
   strength:['giant_force','spinning_blade','bloodthirst','last_stand'],
   defense:['healing','thorn_armor','guardian_shield'],
-  afterimage:['shadow_fist','phantom_step','shadow_assault','swift_shadow','instant_step','myriad_afterimage'],
+  afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],
   poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],
 };
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.10.63','game version for v0.10.60 skill regression');
-eq(allSkillIds.length,24,'all current 24 skills listed');
-eq(new Set(allSkillIds).size,24,'all current 24 skills unique');
+assert.equal(GAME_VERSION,'0.10.64','game version for v0.10.60 skill regression');
+eq(allSkillIds.length,23,'all current 23 skills listed');
+eq(new Set(allSkillIds).size,23,'all current 23 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
 allSkillIds.forEach(id=>assert.ok(SKILLS[id],`missing skill ${id}`));
 
@@ -66,11 +66,10 @@ eq(nums('guardian_shield','flatShield'),[12,14,16,18,20,24,28,32,36],'guardian_s
 ['armor_break_shockwave','immovable_mountain','black_tortoise_body'].forEach(id=>assert.equal(SKILLS[id],undefined,`${id} removed from skill pool`));
 
 // Afterimage / speed archetype.
-eq(nums('shadow_assault','damageRatio'),[0.44,0.50,0.56,0.62,0.68,0.76,0.84,0.92,1.04],'shadow_assault.damageRatio');
 eq(nums('instant_step','damage'),[110,132,156,180,208,240,264,284,300],'instant_step.damage');
 assert.ok(SKILLS.shadow_fist.levels.every(l=>l.dodgeChance>0),'shadow_fist dodge configured');
 assert.ok(SKILLS.phantom_step.levels.every(l=>l.maxAfterimages>=1&&l.durationMs>0),'phantom_step afterimage duration configured');
-assert.ok(SKILLS.swift_shadow.levels.every(l=>l.attackSpeedBonus>0&&l.afterimageDamageBonus>=0),'swift_shadow speed/damage configured');
+assert.ok(SKILLS.traceless.levels.every(l=>l.moveSpeedBonus>0&&l.afterimageDamageBonus>0),'traceless speed/damage configured');
 assert.ok(SKILLS.myriad_afterimage.levels.every(l=>l.copyDamageRatio>0&&l.shadowSwordDamageRatio>0),'myriad_afterimage copy/shadow sword ratios configured');
 
 // Poison summon archetype.
@@ -90,7 +89,6 @@ eq(nums('poison_king','growthRatio'),[0.22,0.24,0.34,0.34,0.34,0.34,0.36,0.38,0.
 // Source-level smoke checks for non-sword handlers and the handler registry.
 const poisonAdvanced=src('src/skills/handlers/PoisonSummonAdvancedSkills.js');
 assert.match(src('src/skills/handlers/FlameCoreSkills.js'),/StatusEffects\.BURN/,'fire handlers still use burn status');
-assert.match(src('src/skills/handlers/AfterimageCoreSkills.js'),/payload\.damage\|\|0\)\*data\.damageRatio/,'shadow_assault uses configured damage ratio');
 assert.match(poisonAdvanced,/'poison_chain_transfer'/,'poison chain uses stable source id');
 ['split_sword','rotating_sword','execution_sword','myriad_swords','heaven_splitting_sword'].forEach(id=>assert.equal(hasHandler(id),false,`${id} old handler not registered`));
 

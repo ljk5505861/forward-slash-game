@@ -10,7 +10,7 @@ const levels = (values, build, milestones={}) => values.map((value,index)=>({
 const AFTERIMAGE_CORE_SKILLS = {
   phantom_step: {
     id:'phantom_step', name:'幻影步', rarity:'RARE', handler:'phantom_step', passive:true, maxLevel:9,
-    coreSkill:true, requiredSkillId:'shadow_fist',
+    coreSkill:true,
     tags:['shadow',TAGS.BUILD_AFTERIMAGE], cooldownMs:999999,
     targetType:'passive', color:0x8e83ff, short:'幻',
     description:'成功闪避时生成残影；连续闪避会缩短下一次残影生成间隔。',
@@ -22,18 +22,18 @@ const AFTERIMAGE_CORE_SKILLS = {
       9:'最多维持4个残影，基础生成间隔缩短至1.75秒'
     })
   },
-  shadow_assault: {
-    id:'shadow_assault', name:'影袭', rarity:'RARE', handler:'shadow_assault', passive:true, maxLevel:9,
-    coreSkill:true, requiredSkillId:'shadow_fist',
-    tags:['shadow','physical',TAGS.NORMAL_ATTACK,TAGS.BUILD_AFTERIMAGE], cooldownMs:999999,
-    targetType:'passive', color:0xa9a3ff, short:'袭',
-    description:'普通攻击命中后，场上残影依次模仿该次攻击。',
+  traceless: {
+    id:'traceless', name:'无踪', rarity:'RARE', handler:'traceless', passive:true, maxLevel:9,
+    coreSkill:true,
+    tags:['shadow','movement','dodge',TAGS.BUILD_AFTERIMAGE], cooldownMs:999999,
+    targetType:'passive', color:0xb7f7ff, short:'踪',
+    description:'闪避后短暂进入无踪，提高移动速度与残影伤害；再次闪避会刷新持续时间。',
     levels:levels([
-      [0.44,240],[0.50,230],[0.56,220],[0.62,210],[0.68,200],[0.76,190],[0.84,180],[0.92,170],[1.04,150]
-    ],([damageRatio,echoDelayMs])=>({ damageRatio,echoDelayMs,lifeStealScale:0.25,desc:`每个残影造成本次普通攻击${Math.round(damageRatio*100)}%的模仿伤害。` }),{
-      3:'残影模仿伤害提高至56%',
-      6:'残影模仿伤害提高至76%，出手更快',
-      9:'残影模仿伤害提高至104%，出手间隔缩短至0.15秒'
+      [0.08,0.10,1800],[0.09,0.12,1900],[0.10,0.14,2000],[0.11,0.16,2100],[0.12,0.18,2200],[0.13,0.21,2350],[0.14,0.24,2500],[0.15,0.27,2650],[0.16,0.30,2800]
+    ],([moveSpeedBonus,afterimageDamageBonus,durationMs])=>({ moveSpeedBonus,afterimageDamageBonus,durationMs,desc:`闪避后${(durationMs/1000).toFixed(1)}秒内移动速度+${Math.round(moveSpeedBonus*100)}%，残影伤害+${Math.round(afterimageDamageBonus*100)}%。` }),{
+      3:'无踪移动速度提高至10%，残影伤害提高至14%',
+      6:'无踪持续2.35秒，残影伤害提高至21%',
+      9:'无踪持续2.8秒，残影伤害提高至30%'
     })
   }
 };
@@ -58,31 +58,23 @@ export const PhantomStepSkill={
       if(now<nextReadyAt) return;
       const owned=s.afterimages.getAll().filter(a=>a.ownerSkillId==='phantom_step');
       if(owned.length>=data.maxAfterimages) s.afterimages.removeAfterimage(owned[0].id,'replaced');
-      s.afterimages.createAfterimage({ ownerSkillId:'phantom_step', durationMs:data.durationMs, attackRatio:0, attackSpeedBonus:data.attackSpeedBonus, color:0x8e83ff, inheritedSkills:['shadow_assault'] });
+      s.afterimages.createAfterimage({ ownerSkillId:'phantom_step', durationMs:data.durationMs, attackRatio:0, attackSpeedBonus:data.attackSpeedBonus, color:0x8e83ff });
       const reduction=Math.max(0,(streak-1)*data.streakReductionMs);
       nextReadyAt=now+Math.max(data.minCooldownMs,data.baseCooldownMs-reduction);
     });
   }
 };
 
-export const ShadowAssaultSkill={
+export const TracelessSkill={
   bind(system){
     const s=system.scene;
-    return s.eventBus.on(CombatEvents.PLAYER_HIT,payload=>{
-      const data=system.getData('shadow_assault');
-      if(!data||payload.fromMyriadAfterimage||payload.afterimage||payload.source!=='attack'||!s.targeting.valid(payload.enemy)||!s.afterimages) return;
-      const afterimages=s.afterimages.getAll();
-      afterimages.forEach((afterimage,index)=>{
-        s.time.delayedCall(index*data.echoDelayMs,()=>{
-          if(!s.targeting.valid(payload.enemy)||!s.afterimages?.getById(afterimage.id)) return;
-          const afterimageDamageBonus=Object.values(s.playerData.afterimageDamageBonuses||{}).reduce((sum,value)=>sum+(Number(value)||0),0);
-          const amount=Math.max(1,Math.round((payload.damage||0)*data.damageRatio*(1+afterimageDamageBonus)));
-          s.combatSystem.damageEnemy(payload.enemy,amount,{ source:'skill', damageKind:'afterimageAttack', skillId:'shadow_assault', tags:[...(payload.tags||[]),'shadow',TAGS.BUILD_AFTERIMAGE], afterimage:true, heavyHit:!!payload.heavyHit, allowLifeSteal:true, lifeStealScale:data.lifeStealScale, noKnockback:true, fromMyriadAfterimage:!!payload.fromMyriadAfterimage, noInstantStep:true });
-          const slash=s.add.rectangle(payload.enemy.x-12-index*5,payload.enemy.y-52,payload.heavyHit?66:54,payload.heavyHit?10:7,0xa9a3ff,0.65).setDepth(148);
-          slash.rotation=-0.45;
-          s.tweens.add({targets:slash,x:payload.enemy.x+22,alpha:0,duration:150,onComplete:()=>slash.destroy()});
-        });
-      });
-    });
+    const state={ expiresAt:0, aura:null, appliedKey:'' };
+    const ensure=()=>{ const p=s.playerData; p.moveSpeedMultiplierBonuses??={}; p.afterimageDamageBonuses??={}; };
+    const clear=()=>{ if(s.playerData.moveSpeedMultiplierBonuses) delete s.playerData.moveSpeedMultiplierBonuses.traceless; if(s.playerData.afterimageDamageBonuses) delete s.playerData.afterimageDamageBonuses.traceless; state.aura?.destroy?.(); state.aura=null; state.appliedKey=''; state.expiresAt=0; };
+    const apply=data=>{ ensure(); const key=`${system.getLevel('traceless')}:${state.expiresAt}`; if(state.appliedKey===key) return; s.playerData.moveSpeedMultiplierBonuses.traceless=data.moveSpeedBonus; s.playerData.afterimageDamageBonuses.traceless=data.afterimageDamageBonus; state.appliedKey=key; };
+    const off=s.eventBus.on(CombatEvents.PLAYER_DODGED,()=>{ const data=system.getData('traceless'); if(!data) return; state.expiresAt=s.getGameplayTime()+data.durationMs; apply(data); s.floatText?.(s.player.x,s.player.y-118,'无踪','#b7f7ff'); });
+    const updater=()=>{ const data=system.getData('traceless'); if(!data){ clear(); return; } if(state.expiresAt && s.getGameplayTime()<=state.expiresAt){ apply(data); if(!state.aura) state.aura=s.add.rectangle(s.player.x,s.player.y-50,58,84,0xb7f7ff,0.08).setStrokeStyle(2,0xe8fbff,0.2).setDepth(93); state.aura.setPosition(s.player.x,s.player.y-50); } else if(state.expiresAt) clear(); };
+    system.passiveUpdaters.push(updater);
+    return ()=>{ off?.(); const i=system.passiveUpdaters.indexOf(updater); if(i>=0) system.passiveUpdaters.splice(i,1); clear(); };
   }
 };
