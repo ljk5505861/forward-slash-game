@@ -12,9 +12,25 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Run isolated validation
+      - name: Clone branch
+        run: git clone --quiet --depth 1 --branch 'codex/-v0.10.64' https://github.com/ljk5505861/forward-slash-game.git repo
+      - name: Install dependencies
+        working-directory: repo
+        run: npm install
+      - name: Build
+        working-directory: repo
+        run: npm run build
+      - name: Run all validation scripts
+        working-directory: repo
         run: |
-          git clone --quiet --depth 1 --branch 'codex/-v0.10.64' https://github.com/ljk5505861/forward-slash-game.git repo
-          cd repo
-          npm install --silent
-          npm run validate:01064-afterimage-rework
+          node - <<'NODE'
+          const { spawnSync } = require('node:child_process');
+          const scripts = require('./package.json').scripts;
+          const names = Object.keys(scripts).filter(name => name.startsWith('validate:'));
+          for (const name of names) {
+            console.log(`\n=== ${name} ===`);
+            const result = spawnSync('npm', ['run', name], { stdio: 'inherit' });
+            if (result.status !== 0) process.exit(result.status || 1);
+          }
+          console.log('\nALL_VALIDATIONS_PASSED');
+          NODE
