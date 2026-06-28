@@ -6,14 +6,16 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -36,11 +38,12 @@ jobs:
           }
           NODE
 
-      - name: Upload refreshed validation scripts
-        uses: actions/upload-artifact@v4
+      - name: Commit refreshed assertions
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          name: refreshed-validation-scripts
-          path: scripts
+          commit_message: test: update version assertions to 0.10.68
+          branch: ${{ github.head_ref }}
+          file_pattern: scripts/*.mjs
 
       - name: Install dependencies
         run: npm install
@@ -59,5 +62,3 @@ jobs:
             execFileSync('npm', ['run', name], { stdio: 'inherit' });
           }
           NODE
-
-# Trigger branch automation after workflow creation.
