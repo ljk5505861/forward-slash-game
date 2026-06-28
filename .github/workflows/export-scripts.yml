@@ -1,0 +1,21 @@
+name: Export validation scripts
+
+on:
+  push:
+    branches:
+      - feat/player-idle-sprite
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Upload scripts
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-scripts
+          path: scripts
