@@ -12,9 +12,9 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: npm install
-      - run: npm run validate:01064-afterimage-rework
+      - name: Run isolated validation
+        run: |
+          git clone --quiet --depth 1 --branch 'codex/-v0.10.64' https://github.com/ljk5505861/forward-slash-game.git repo
+          cd repo
+          npm install --silent
+          npm run validate:01064-afterimage-rework
