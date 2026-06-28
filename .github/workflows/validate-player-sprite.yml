@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install dependencies
         run: npm install
@@ -30,13 +30,32 @@ jobs:
         run: npm run build
 
       - name: Run all validation scripts
+        id: validations
+        shell: bash
         run: |
-          node --input-type=module <<'NODE'
+          status=0
+          : > validation.log
+          node --input-type=module <<'NODE' 2>&1 | tee -a validation.log || status=1
           import { execFileSync } from 'node:child_process';
           import packageJson from './package.json' with { type: 'json' };
 
+          let failed = false;
           for (const name of Object.keys(packageJson.scripts).filter((key) => key.startsWith('validate:'))) {
             console.log(`\n=== npm run ${name} ===`);
-            execFileSync('npm', ['run', name], { stdio: 'inherit' });
+            try {
+              execFileSync('npm', ['run', name], { stdio: 'inherit' });
+            } catch {
+              failed = true;
+              console.error(`FAILED_SCRIPT=${name}`);
+            }
           }
+          if (failed) process.exit(1);
           NODE
+          exit $status
+
+      - name: Upload validation log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-log
+          path: validation.log
