@@ -40,7 +40,8 @@
     "validate:player-info": "node scripts/validate-player-info-flow.mjs",
     "validate:01062-defense-rework": "node scripts/validate-01062-defense-rework.mjs",
     "validate:01063-safe-restart": "node scripts/validate-01063-safe-restart.mjs",
-    "validate:01064-afterimage-rework": "node scripts/validate-01064-afterimage-rework.mjs"
+    "validate:01064-afterimage-rework": "node scripts/validate-01064-afterimage-rework.mjs",
+    "validate:01066-myriad-detail-selection": "node scripts/validate-01066-myriad-detail-selection.mjs"
   },
   "dependencies": {
     "phaser": "latest",
