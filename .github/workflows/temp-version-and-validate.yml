@@ -1,4 +1,4 @@
-name: Temporary v0.10.65 version sync and validation
+name: Temporary v0.10.65 validation
 
 on:
   push:
@@ -8,47 +8,59 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-
 jobs:
-  sync-and-validate:
-    if: github.actor != 'github-actions[bot]'
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: fix/0.10.65-myriad-standalone
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Sync validation version assertions
-        run: |
-          grep -rl "0.10.64" scripts | xargs -r sed -i "s/0\.10\.64/0.10.65/g"
-      - name: Commit synced validation versions
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add scripts
-          git diff --cached --quiet || git commit -m "test: sync validations for v0.10.65"
-          git push origin HEAD:fix/0.10.65-myriad-standalone
       - run: npm install --silent
       - run: npm run build --silent
-      - name: Run all validation scripts
+      - name: Validate core through 01043
         run: |
-          node - <<'NODE'
-          const { spawnSync } = require('node:child_process');
-          const scripts = require('./package.json').scripts;
-          for (const name of Object.keys(scripts).filter(name => name.startsWith('validate:'))) {
-            const result = spawnSync('npm', ['run', name], { encoding: 'utf8' });
-            if (result.status !== 0) {
-              console.error(`FAILED ${name}`);
-              console.error(result.stdout || '');
-              console.error(result.stderr || '');
-              process.exit(result.status || 1);
-            }
-            console.log(`PASS ${name}`);
-          }
-          console.log('ALL_VALIDATIONS_PASSED');
-          NODE
+          npm run validate:tags
+          npm run validate:reward-bias
+          npm run validate:gameplay-entry
+          npm run validate:selection-ui
+          npm run validate:profession-flow
+          npm run validate:player-info-flow
+          npm run validate:shop-flow
+          npm run validate:enemy-population
+          npm run validate:midboss-reward-flow
+          npm run validate:final-shop-flow
+          npm run validate:life-steal
+          npm run validate:010-gameplay-loop
+          npm run validate:0104-balance-knockback
+          npm run validate:01042-level-system
+          npm run validate:01043-boss-knockback
+      - name: Validate 01044 through 01052
+        run: |
+          npm run validate:01044-flame-rework
+          npm run validate:01045-sword-rework
+          npm run validate:01040-skill-damage
+          npm run validate:01046-skill-detail-ui
+          npm run validate:01047-ui-stability
+          npm run validate:01048-visual-polish
+          npm run validate:01049-attached-visual-fix
+          npm run validate:01050-sheath-burn-visual-tune
+          npm run validate:01051-sheath-x-burn-text
+          npm run validate:01052-burn-stack-readability
+      - name: Validate 01053 through 01058
+        run: |
+          npm run validate:01053-poison-summon-rework
+          npm run validate:01054-poison-stacks-gu-fix
+          npm run validate:01055-poison-chain-control-fix
+          npm run validate:01056-open-skill-pool
+          npm run validate:01057-poison-chain-king-hpbar
+          npm run validate:01058-poison-king-damage-text
+      - name: Validate 01059 through 01064
+        run: |
+          npm run validate:01059-strength-rework
+          npm run validate:01060-strength-balance
+          npm run validate:01061-player-info-panel
+          npm run validate:player-info
+          npm run validate:01062-defense-rework
+          npm run validate:01063-safe-restart
+          npm run validate:01064-afterimage-rework
