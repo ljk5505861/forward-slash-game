@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - ready_for_review
+      - synchronize
   push:
     branches:
       - fix/player-sprite-v01069
