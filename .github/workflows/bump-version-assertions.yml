@@ -1,6 +1,9 @@
 name: Bump version assertions
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - fix/player-sprite-v01069
