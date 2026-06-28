@@ -147,7 +147,7 @@ function enemy(name,hp=1000){
   };
 }
 
-assert.equal(GAME_VERSION,'0.10.64');
+assert.equal(GAME_VERSION,'0.10.65');
 assert.equal(POISON_STACK_CAP,15);
 assert.equal(SKILLS.parasitic_gu.levels[0].poisonAbsorbRatio,0.03);
 assert.equal(SKILLS.parasitic_gu.levels[0].poisonStacks,1);

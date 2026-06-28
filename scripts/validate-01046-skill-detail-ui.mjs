@@ -10,7 +10,7 @@ const read=p=>fs.readFileSync(new URL(`../${p}`, import.meta.url),'utf8');
 const snapshot=state=>JSON.stringify(state);
 const detailAt=(id,level)=>getSkillDetailData(id,{skill:{id,level}});
 
-assert.equal(GAME_VERSION,'0.10.64');
+assert.equal(GAME_VERSION,'0.10.65');
 const skillBar=read('src/ui/SkillBar.js');
 assert.match(skillBar,/import\s+Phaser\s+from\s+['"]phaser['"]/);
 assert.match(skillBar,/SKILL_DETAIL_LONG_PRESS_MS\s*=\s*450/);
