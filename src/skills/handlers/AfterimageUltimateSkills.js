@@ -4,29 +4,46 @@ import { CombatEvents, RunStates } from '../../core/CombatEvents.js';
 import { StatusEffects } from '../../systems/StatusEffectSystem.js';
 
 const SOURCE='myriad_afterimage';
+const NORMAL_ATTACK_ID='normal_attack';
 const COPY_RATIOS=[0.15,0.18,0.21,0.24,0.27,0.30,0.34,0.38,0.45];
 const ECHO_DELAYS=[240,230,220,205,190,175,165,155,140];
 const COPY_ADAPTERS=Object.freeze({
+  [NORMAL_ATTACK_ID]:'normalAttack',
   fireball:'active',fire_seed:'active',burn_burst:'active',poison_cloud:'active',poison_chain:'active',spinning_blade:'attackResolved',
   traceless:'heal',bloodthirst:'heal',guardian_shield:'shield',thorn_armor:'damage',sword_wave:'damage',sword_sheath:'damage',sword_tomb:'damage',parasitic_gu:'damage'
 });
 const levels=()=>COPY_RATIOS.map((copyRatio,index)=>({
   copyRatio,echoDelayMs:ECHO_DELAYS[index],copyFullShape:index>=2,refreshAfterimages:index>=5,extraHalfEcho:index>=8,
-  desc:`选择并锁定一个合格的神话以下技能；场上全部持续残影依次复制，单个残影效果为${Math.round(copyRatio*100)}%。`,
-  ...({3:{milestoneText:'万法留影：复制保留范围、穿透、连锁、异常状态及技能固有效果。'},6:{milestoneText:'影随法动：复制开始时刷新全部持续残影至完整6秒。'},9:{milestoneText:'万象齐鸣：整轮结束后，第一名仍有效残影额外复制一次，效果为正常复制的50%。'}}[index+1]||{})
+  desc:`获得1个常驻本命残影，并选择普通攻击或一个合格技能供全部残影复制；单个残影效果为${Math.round(copyRatio*100)}%。`,
+  ...({3:{milestoneText:'万法留影：复制保留范围、穿透、连锁、异常状态及技能固有效果。'},6:{milestoneText:'影随法动：复制开始时刷新全部幻影步残影至完整6秒。'},9:{milestoneText:'万象齐鸣：整轮结束后，第一名仍有效残影额外复制一次，效果为正常复制的50%。'}}[index+1]||{})
 }));
 const CONFIG={
   id:SOURCE,name:'万象残身',rarity:'MYTHIC',handler:SOURCE,passive:true,maxLevel:9,ultimateSkill:true,
   tags:['shadow','afterimage',TAGS.BUILD_AFTERIMAGE],cooldownMs:999999,targetType:'passive',color:0x9b7cff,short:'象',
-  description:'选择并锁定一个已拥有的合格技能；被选技能正常释放或触发时，全部持续残影依次复制。只有万象残身升级时才能重新选择。',levels:levels()
+  description:'获得1个常驻本命残影；选择普通攻击或一个已拥有的合格技能供本命残影与幻影步残影复制。只有万象残身升级时才能重新选择。',levels:levels()
 };
 
 export function configureAfterimageUltimateSkills(){ SKILLS[SOURCE]={...CONFIG}; }
 
-const selectedId=scene=>scene.playerData?.myriadAfterimageSkillId||null;
+const selectedId=scene=>scene.playerData?.myriadAfterimageSkillId||NORMAL_ATTACK_ID;
+const selectedName=id=>id===NORMAL_ATTACK_ID?'普通攻击':(SKILLS[id]?.name||id);
 const isEligibleSkill=skill=>!!skill&&!!COPY_ADAPTERS[skill.id]&&skill.rarity!=='MYTHIC'&&!skill.ultimateSkill;
 function eligibleOwned(system){ return (system.scene.playerData.skills||[]).map(item=>SKILLS[item.id]).filter(isEligibleSkill); }
-function livePersistentAfterimages(scene){ const now=scene.getGameplayTime(); return (scene.afterimages?.getAll?.()||[]).filter(afterimage=>afterimage.ownerSkillId==='phantom_step'&&(!afterimage.expiresAt||afterimage.expiresAt>now)); }
+function livePersistentAfterimages(scene){
+  const now=scene.getGameplayTime();
+  return (scene.afterimages?.getAll?.()||[])
+    .filter(afterimage=>(afterimage.ownerSkillId===SOURCE||afterimage.ownerSkillId==='phantom_step')&&(!afterimage.expiresAt||afterimage.expiresAt>now))
+    .sort((left,right)=>(left.ownerSkillId===SOURCE?-1:0)-(right.ownerSkillId===SOURCE?-1:0)||(left.createdAt||0)-(right.createdAt||0));
+}
+function ensureInnateAfterimage(system,state){
+  const scene=system.scene;
+  if(!system.getData(SOURCE)||!scene.afterimages) return null;
+  const existing=scene.afterimages.getAll().find(afterimage=>afterimage.ownerSkillId===SOURCE);
+  if(existing){ state.innateAfterimageId=existing.id; return existing; }
+  const afterimage=scene.afterimages.createAfterimage({ownerSkillId:SOURCE,durationMs:0,attackRatio:0,attackSpeedBonus:0,color:0xc8b5ff});
+  state.innateAfterimageId=afterimage.id;
+  return afterimage;
+}
 function nearestFrom(scene,x){ if(scene.targeting.valid(scene.currentTarget)) return scene.currentTarget; return scene.targeting.all().filter(enemy=>scene.targeting.valid(enemy)).sort((a,b)=>Math.abs(a.x-x)-Math.abs(b.x-x))[0]||null; }
 function schedule(state,scene,delay,fn){ let timer=null; timer=scene.time.delayedCall(Math.max(0,delay),()=>{ state.timers.delete(timer); fn(); }); state.timers.add(timer); return timer; }
 function pulse(scene,afterimage,color=0x9b7cff){ const view=afterimage.view; if(!view) return; scene.tweens.add({targets:view,alpha:0.5,duration:80,yoyo:true}); const flare=scene.add.circle(view.x,view.y,22,color,0.18).setDepth(146); scene.tweens.add({targets:flare,alpha:0,scale:1.35,duration:180,onComplete:()=>flare.destroy()}); }
@@ -66,6 +83,24 @@ function copyPoisonChain(system,state,afterimage,trigger,scale,full){
   const scene=system.scene,data=trigger.data||{},ctx=trigger.ctx||{},originX=afterimage.view?.x??scene.player.x; const target=scene.targeting.valid(trigger.target)?trigger.target:nearestFrom(scene,originX); if(!target) return; dealActiveDamage(system,target,data.damage||0,ctx,scale,'poison_chain',trigger.tags,'myriadPoisonChain'); if(!full) return; addPoison(system,target,{...data,poisonDamage:system.getData('poison_cloud')?.poisonDamage||1,poisonMs:2600,poisonIntervalMs:700,maxStacks:15},ctx,scale,`myriad_poison_chain_${afterimage.id}_${trigger.castId}`,1); if(!target.isBoss){ const until=scene.getGameplayTime()+(data.prisonMs||2000); target.poisonChainPrisonUntil=Math.max(target.poisonChainPrisonUntil||0,until); target.nextAttackAt=Math.max(target.nextAttackAt||0,until); target.body?.setVelocityX?.(0); schedule(state,scene,data.prisonMs||2000,()=>{ if(target.poisonChainPrisonUntil<=scene.getGameplayTime()) target.poisonChainPrisonUntil=0; }); } const chained=scene.targeting.all().filter(enemy=>enemy!==target&&scene.targeting.valid(enemy)&&Math.hypot(enemy.x-target.x,enemy.y-target.y)<=(data.extendRadius||180)).sort((a,b)=>Math.hypot(a.x-target.x,a.y-target.y)-Math.hypot(b.x-target.x,b.y-target.y))[0]; if(chained){ dealActiveDamage(system,chained,(data.damage||0)*0.5,ctx,scale,'poison_chain',trigger.tags,'myriadPoisonChainLink'); addPoison(system,chained,{...data,poisonDamage:system.getData('poison_cloud')?.poisonDamage||1,poisonMs:2600,poisonIntervalMs:700,maxStacks:15},ctx,scale,`myriad_poison_chain_link_${afterimage.id}_${trigger.castId}`,1); }
 }
 function copyActive(system,state,afterimage,trigger,scale,full){ if(trigger.skillId==='fireball') return copyFireball(system,state,afterimage,trigger,scale,full); if(trigger.skillId==='poison_cloud') return copyPoisonNeedle(system,state,afterimage,trigger,scale,full); if(trigger.skillId==='fire_seed') return copyFireSeed(system,state,afterimage,trigger,scale,full); if(trigger.skillId==='burn_burst') return copyBurnBurst(system,state,afterimage,trigger,scale,full); if(trigger.skillId==='poison_chain') return copyPoisonChain(system,state,afterimage,trigger,scale,full); }
+function copyNormalAttack(system,state,afterimage,trigger,scale){
+  const scene=system.scene,event=trigger.event||{},originX=afterimage.view?.x??scene.player.x;
+  const target=scene.targeting.valid(event.enemy)?event.enemy:nearestFrom(scene,originX);
+  if(!target) return false;
+  const physical=event.profile?.type!=='arcaneBolt';
+  let amount=Math.max(1,Math.round((event.baseDamage||scene.playerData.attack||1)*scale));
+  let meta={canCrit:true,professionApplied:false};
+  if(event.weapon&&scene.combatSystem?.calcAttackDamage){
+    const result=scene.combatSystem.calcAttackDamage(event.weapon,event.profile||null,!!event.heavy,physical);
+    amount=Math.max(1,Math.round(result.damage*scale));
+    meta={critResolved:true,crit:!!result.crit,professionApplied:true,professionMultiplier:result.professionMult||1,baseAmountBeforeProfession:Math.max(1,Math.round((result.baseBeforeProfession||result.damage)*scale))};
+  }
+  const damaged=scene.combatSystem.damageEnemy(target,amount,{source:'skill',skillId:SOURCE,originalSkillId:NORMAL_ATTACK_ID,damageKind:'myriadNormalAttack',tags:[TAGS.NORMAL_ATTACK,physical?'physical':'arcane','shadow',TAGS.BUILD_AFTERIMAGE],afterimage:true,allowLifeSteal:false,canTriggerArtifacts:false,noKnockback:true,fromMyriadAfterimage:true,noInstantStep:true,noSwordTrigger:true,noHeavenSplit:true,noDeathExplosion:true,noPoisonSpread:true,...meta});
+  const x=afterimage.view?.x??scene.player.x,y=afterimage.view?.y??scene.player.y-52,targetX=target.x,targetY=target.y;
+  const slash=scene.add.rectangle(x+18,y,48,6,physical?0xd8ccff:0x9ee8ff,0.62).setDepth(148); slash.rotation=-0.35;
+  scene.tweens.add({targets:slash,x:targetX,y:targetY-45,alpha:0,duration:150,onComplete:()=>slash.destroy()});
+  return !!damaged;
+}
 function copySpinningBlade(system,state,afterimage,trigger,scale,full){
   const scene=system.scene,data=system.getData('spinning_blade'); if(!data) return; const origin={x:afterimage.view?.x??scene.player.x,y:(afterimage.view?.y??scene.player.y)-4}; const base=trigger.event.baseDamage||scene.playerData.attack||1; const targets=scene.targeting.all().filter(enemy=>scene.targeting.valid(enemy)&&enemy.x>=origin.x&&enemy.x-origin.x<=data.range&&Math.abs(enemy.y-origin.y)<=data.width/2).sort((a,b)=>a.x-b.x); const hits=full?targets:targets.slice(0,1); hits.forEach(target=>dealEventDamage(system,target,{...trigger.event,baseAmountBeforeProfession:base,professionMultiplier:1,tags:['physical',TAGS.NORMAL_ATTACK,TAGS.BUILD_STRENGTH]},data.ratio*scale,'spinning_blade','myriadShockwave')); if(full&&data.explosionRatio&&hits[0]){ const center={x:hits[0].x,y:hits[0].y}; scene.targeting.all().filter(enemy=>scene.targeting.valid(enemy)&&Math.hypot(enemy.x-center.x,enemy.y-center.y)<=data.explosionRadius).forEach(target=>dealEventDamage(system,target,{...trigger.event,baseAmountBeforeProfession:base,professionMultiplier:1,tags:['physical','area',TAGS.BUILD_STRENGTH]},data.explosionRatio*scale,'spinning_blade','myriadShockwaveExplosion')); }
 }
@@ -74,33 +109,75 @@ function copyTriggeredDamage(system,state,afterimage,trigger,scale,full){
 }
 function copyHeal(system,state,afterimage,trigger,scale){ const scene=system.scene; const configured=trigger.skillId==='traceless'?system.getData('traceless')?.dodgeHeal:0; const base=configured||trigger.event.amount||0; const amount=Math.max(1,Math.round(base*scale)); const healed=scene.healPlayer?.(amount,SOURCE,{skillId:SOURCE,originalSkillId:trigger.skillId,fromMyriadAfterimage:true})||0; if(healed>0) scene.floatText?.(afterimage.view?.x??scene.player.x,(afterimage.view?.y??scene.player.y)-70,`残影 +${healed}`,'#d8b4fe'); }
 function copyShield(system,state,afterimage,trigger,scale){ const scene=system.scene,effect=trigger.event.effect||{}; const amount=Math.max(1,Math.round((trigger.event.amount||effect.initialValue||0)*scale)); scene.statusEffects?.add?.(StatusEffects.SHIELD,scene.playerData,{durationMs:effect.durationMs||1,persistent:!!effect.persistent||effect.expiresNaturally===false,expiresNaturally:effect.expiresNaturally!==false,value:amount,remainingValue:amount,sourceId:`myriad_afterimage_guardian_${afterimage.id}_${scene.getGameplayTime()}`,fromMyriadAfterimage:true}); }
-function executeCopy(system,state,afterimage,trigger,scale,full){ const adapter=COPY_ADAPTERS[trigger.skillId]; pulse(system.scene,afterimage,trigger.skillId==='traceless'||trigger.skillId==='bloodthirst'?0xd8b4fe:trigger.skillId==='guardian_shield'?0x8fd7ff:0x9b7cff); if(adapter==='active') return copyActive(system,state,afterimage,trigger,scale,full); if(adapter==='attackResolved') return copySpinningBlade(system,state,afterimage,trigger,scale,full); if(adapter==='heal') return copyHeal(system,state,afterimage,trigger,scale); if(adapter==='shield') return copyShield(system,state,afterimage,trigger,scale); if(adapter==='damage') return copyTriggeredDamage(system,state,afterimage,trigger,scale,full); }
+function executeCopy(system,state,afterimage,trigger,scale,full){
+  const adapter=COPY_ADAPTERS[trigger.skillId];
+  pulse(system.scene,afterimage,trigger.skillId==='traceless'||trigger.skillId==='bloodthirst'?0xd8b4fe:trigger.skillId==='guardian_shield'?0x8fd7ff:0x9b7cff);
+  if(adapter==='normalAttack') return copyNormalAttack(system,state,afterimage,trigger,scale);
+  if(adapter==='active') return copyActive(system,state,afterimage,trigger,scale,full);
+  if(adapter==='attackResolved') return copySpinningBlade(system,state,afterimage,trigger,scale,full);
+  if(adapter==='heal') return copyHeal(system,state,afterimage,trigger,scale);
+  if(adapter==='shield') return copyShield(system,state,afterimage,trigger,scale);
+  if(adapter==='damage') return copyTriggeredDamage(system,state,afterimage,trigger,scale,full);
+}
 function dispatchEcho(system,state,trigger){
-  const scene=system.scene,data=system.getData(SOURCE); if(!data||selectedId(scene)!==trigger.skillId||scene.playerData.hp<=0) return 0; const participants=livePersistentAfterimages(scene); if(!participants.length) return 0; if(data.refreshAfterimages){ const expiresAt=scene.getGameplayTime()+6000; participants.forEach(afterimage=>{ afterimage.expiresAt=expiresAt; }); }
+  const scene=system.scene,data=system.getData(SOURCE);
+  if(!data||selectedId(scene)!==trigger.skillId||scene.playerData.hp<=0) return 0;
+  ensureInnateAfterimage(system,state);
+  const participants=livePersistentAfterimages(scene);
+  if(!participants.length) return 0;
+  if(data.refreshAfterimages){ const expiresAt=scene.getGameplayTime()+6000; participants.filter(afterimage=>afterimage.ownerSkillId==='phantom_step').forEach(afterimage=>{ afterimage.expiresAt=expiresAt; }); }
   participants.forEach((afterimage,index)=>schedule(state,scene,index*data.echoDelayMs,()=>{ if(!system.getData(SOURCE)||selectedId(scene)!==trigger.skillId||scene.playerData.hp<=0||!scene.afterimages?.getById?.(afterimage.id)) return; executeCopy(system,state,afterimage,trigger,data.copyRatio,data.copyFullShape); }));
   if(data.extraHalfEcho){ schedule(state,scene,participants.length*data.echoDelayMs+80,()=>{ if(!system.getData(SOURCE)||selectedId(scene)!==trigger.skillId||scene.playerData.hp<=0) return; const first=participants.find(afterimage=>scene.afterimages?.getById?.(afterimage.id)); if(first) executeCopy(system,state,first,trigger,data.copyRatio*0.5,data.copyFullShape); }); }
   return participants.length;
 }
+function selectionOptions(system){
+  const scene=system.scene,current=selectedId(scene);
+  const normal={type:'myriadCopySkill',id:'myriad_normal_attack',title:`普通攻击${current===NORMAL_ATTACK_ID?'（当前）':''}\n玩家普通攻击命中后，本命残影与幻影步残影依次补击。`,skillId:NORMAL_ATTACK_ID,nextLevel:1};
+  return [normal,...eligibleOwned(system).map(skill=>({type:'myriadCopySkill',id:`myriad_${skill.id}`,title:`${skill.name}${current===skill.id?'（当前）':''}`,skillId:skill.id,nextLevel:system.getLevel(skill.id)||1}))];
+}
 function openSelection(system,reason='obtain'){
-  const scene=system.scene,current=selectedId(scene); const options=eligibleOwned(system).map(skill=>({type:'myriadCopySkill',id:`myriad_${skill.id}`,title:`锁定复制：${skill.name}`,skillId:skill.id,nextLevel:system.getLevel(skill.id)||1}));
-  if(!options.length){ if(reason==='obtain') scene.playerData.myriadAfterimageSkillId=null; return false; }
-  if(reason==='upgrade'&&options.length===1&&options[0].skillId===current) return false;
+  const scene=system.scene,current=selectedId(scene),options=selectionOptions(system);
+  if(reason==='obtain'&&options.length===1){
+    scene.playerData.myriadAfterimageSkillId=NORMAL_ATTACK_ID;
+    scene.floatText?.(scene.player.x,scene.player.y-132,'万象锁定：普通攻击','#d8b4fe');
+    return false;
+  }
+  if(reason==='upgrade'&&options.length===1&&current===NORMAL_ATTACK_ID) return false;
   scene.beginGameplayPause?.(); scene.runState=RunStates.UPGRADING;
-  scene.upgradePanel?.show?.({title:reason==='upgrade'?'万象残身升级：选择保留或更换复制技能':'万象残身：选择复制技能',options,mode:'card',onConfirm:option=>{ scene.playerData.myriadAfterimageSkillId=option.skillId; scene.floatText?.(scene.player.x,scene.player.y-132,`万象锁定：${SKILLS[option.skillId]?.name||option.skillId}`,'#d8b4fe'); scene.resumeModalFlow?.(); return true; }});
+  scene.upgradePanel?.show?.({title:reason==='upgrade'?'万象残身升级：选择保留或更换复制技能':'万象残身：选择复制技能',options,mode:'card',onConfirm:option=>{ scene.playerData.myriadAfterimageSkillId=option.skillId; scene.floatText?.(scene.player.x,scene.player.y-132,`万象锁定：${selectedName(option.skillId)}`,'#d8b4fe'); scene.resumeModalFlow?.(); return true; }});
   return true;
 }
 
 export const MyriadAfterimageSkill={
   bind(system){
-    const scene=system.scene,state={timers:new Set(),seen:new Set()}; const clearTimers=()=>{ state.timers.forEach(timer=>timer.remove?.(false)); state.timers.clear(); }; const queueSelection=reason=>schedule(state,scene,0,()=>openSelection(system,reason));
+    const scene=system.scene,state={timers:new Set(),seen:new Set(),innateAfterimageId:null};
+    scene.playerData.myriadAfterimageSkillId??=NORMAL_ATTACK_ID;
+    const clearTimers=()=>{ state.timers.forEach(timer=>timer.remove?.(false)); state.timers.clear(); };
+    const queueSelection=reason=>schedule(state,scene,0,()=>openSelection(system,reason));
+    const ensureInnate=()=>ensureInnateAfterimage(system,state);
+    system.passiveUpdaters.push(ensureInnate);
+    ensureInnate();
     const offUpgrade=scene.eventBus.on(CombatEvents.UPGRADE_CHOSEN,payload=>{ if(payload?.skillId===SOURCE) queueSelection((payload.level||1)>1?'upgrade':'obtain'); });
     const offStarting=scene.eventBus.on(CombatEvents.STARTING_SKILL_CHOSEN,payload=>{ if(payload?.skillId===SOURCE) queueSelection('obtain'); });
     const offCast=scene.eventBus.on(CombatEvents.SKILL_CAST_COMPLETED,event=>{ const skillId=event?.skillId,adapter=COPY_ADAPTERS[skillId],key=`active:${skillId}:${event?.ctx?.castId}`; if(adapter!=='active'||event?.fromMyriadAfterimage||event?.ctx?.fromMyriadAfterimage||state.seen.has(key)) return; state.seen.add(key); if(state.seen.size>120) state.seen.clear(); dispatchEcho(system,state,{skillId,data:event.data||system.getData(skillId),ctx:event.ctx||{},target:event.target,targets:event.targets||[],tags:event.skill?.tags||SKILLS[skillId]?.tags||[],castId:event.ctx?.castId||scene.getGameplayTime(),event}); });
-    const offAttackResolved=scene.eventBus.on(CombatEvents.PLAYER_ATTACK_RESOLVED,event=>{ if(selectedId(scene)==='spinning_blade'&&system.getData('spinning_blade')) dispatchEcho(system,state,{skillId:'spinning_blade',event:event||{},target:event?.enemy,tags:SKILLS.spinning_blade?.tags||[],castId:scene.getGameplayTime()}); });
+    const offAttackResolved=scene.eventBus.on(CombatEvents.PLAYER_ATTACK_RESOLVED,event=>{
+      if(event?.fromMyriadAfterimage) return;
+      const choice=selectedId(scene);
+      if(choice===NORMAL_ATTACK_ID){ dispatchEcho(system,state,{skillId:NORMAL_ATTACK_ID,event:event||{},target:event?.enemy,tags:[TAGS.NORMAL_ATTACK],castId:scene.getGameplayTime()}); return; }
+      if(choice==='spinning_blade'&&system.getData('spinning_blade')) dispatchEcho(system,state,{skillId:'spinning_blade',event:event||{},target:event?.enemy,tags:SKILLS.spinning_blade?.tags||[],castId:scene.getGameplayTime()});
+    });
     const offEnemyHit=scene.eventBus.on(CombatEvents.ENEMY_HIT,event=>{ const skillId=event?.skillId,adapter=COPY_ADAPTERS[skillId]; if(adapter!=='damage'||event?.fromMyriadAfterimage||event?.afterimage||!event?.enemy) return; if(skillId==='thorn_armor'&&event.damageKind==='thornBurst') return; dispatchEcho(system,state,{skillId,event,target:event.enemy,tags:event.tags||SKILLS[skillId]?.tags||[],castId:scene.getGameplayTime()}); });
     const offHealed=scene.eventBus.on(CombatEvents.PLAYER_HEALED,event=>{ const skillId=event?.skillId||event?.source; if(COPY_ADAPTERS[skillId]!=='heal'||event?.fromMyriadAfterimage) return; dispatchEcho(system,state,{skillId,event,target:null,tags:SKILLS[skillId]?.tags||[],castId:scene.getGameplayTime()}); });
     const offShield=scene.eventBus.on(CombatEvents.SHIELD_GAINED,event=>{ if(!String(event?.sourceId||'').startsWith('guardian_shield')||event?.effect?.fromMyriadAfterimage) return; dispatchEcho(system,state,{skillId:'guardian_shield',event,target:null,tags:SKILLS.guardian_shield?.tags||[],castId:scene.getGameplayTime()}); });
-    return ()=>{ offUpgrade?.(); offStarting?.(); offCast?.(); offAttackResolved?.(); offEnemyHit?.(); offHealed?.(); offShield?.(); clearTimers(); state.seen.clear(); Reflect.deleteProperty(scene.playerData,'myriadAfterimageSkillId'); };
+    return ()=>{
+      offUpgrade?.(); offStarting?.(); offCast?.(); offAttackResolved?.(); offEnemyHit?.(); offHealed?.(); offShield?.();
+      clearTimers(); state.seen.clear();
+      system.passiveUpdaters=system.passiveUpdaters.filter(fn=>fn!==ensureInnate);
+      scene.afterimages?.getAll?.().filter(afterimage=>afterimage.ownerSkillId===SOURCE).forEach(afterimage=>scene.afterimages.removeAfterimage(afterimage.id,'skillRemoved'));
+      Reflect.deleteProperty(scene.playerData,'myriadAfterimageSkillId');
+    };
   },
-  eligibleSkills(system){ return eligibleOwned(system).map(skill=>skill.id); },openSelection,copyAdapters:COPY_ADAPTERS
+  eligibleSkills(system){ return [NORMAL_ATTACK_ID,...eligibleOwned(system).map(skill=>skill.id)]; },
+  openSelection,
+  copyAdapters:COPY_ADAPTERS
 };
