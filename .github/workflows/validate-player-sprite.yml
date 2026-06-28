@@ -18,6 +18,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Export updated version assertions
+        run: node scripts/export-version-assertions.mjs 0.10.67 0.10.68
+
+      - name: Upload updated version assertions
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-assertions
+          path: version-assertions
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
