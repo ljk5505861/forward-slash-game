@@ -3,21 +3,6 @@ const PLAYER_FRAME_KEY = 'trimmed';
 const PLAYER_FRAME = { x: 281, y: 241, width: 427, height: 594 };
 const PLAYER_TEXTURE_URL = new URL('../player_idle.png', import.meta.url).href;
 
-function configureBody(player, cfg) {
-  const bodyWidth = cfg.bodyWidth || Math.round(cfg.width * 0.72);
-  const bodyHeight = cfg.bodyHeight || Math.round(cfg.height * 0.9);
-  const scaleX = Math.abs(player.scaleX) || 1;
-  const scaleY = Math.abs(player.scaleY) || 1;
-  const sourceBodyWidth = bodyWidth / scaleX;
-  const sourceBodyHeight = bodyHeight / scaleY;
-
-  player.body.setSize(sourceBodyWidth, sourceBodyHeight);
-  player.body.setOffset(
-    (player.width - sourceBodyWidth) / 2,
-    player.height - sourceBodyHeight,
-  );
-}
-
 export default function createPlayer(scene, cfg, groundTopY) {
   const player = scene.add
     .rectangle(
