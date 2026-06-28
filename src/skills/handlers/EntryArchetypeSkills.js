@@ -87,13 +87,13 @@ const configs = {
     id:'shadow_fist', name:'身法', rarity:'COMMON', handler:'entry_movement', passive:true, maxLevel:9,
     tags:['shadow',TAGS.BUILD_AFTERIMAGE], cooldownMs:999999,
     targetType:'passive', color:0x7766ff, short:'身',
-    description:'提高闪避率；成功闪避是后续残影技能的核心入口。',
+    description:'提高攻击速度与闪避率；成功闪避是残影体系的核心入口。',
     levels:nineLevels([
-      0.05,0.07,0.10,0.12,0.14,0.17,0.19,0.22,0.25
-    ],(dodgeChance,level)=>({ dodgeChance,desc:`获得${Math.round(dodgeChance*100)}%闪避率。` }),{
-      3:'闪避率提高至10%',
-      6:'闪避率提高至17%',
-      9:'闪避率提高至25%'
+      [0.06,0.05],[0.09,0.07],[0.13,0.10],[0.17,0.12],[0.21,0.14],[0.26,0.17],[0.31,0.19],[0.36,0.22],[0.42,0.25]
+    ],([attackSpeedBonus,dodgeChance],level)=>({ attackSpeedBonus,dodgeChance,desc:`攻击速度+${Math.round(attackSpeedBonus*100)}%，闪避率+${Math.round(dodgeChance*100)}%。` }),{
+      3:'攻速提高至13%，闪避率提高至10%',
+      6:'攻速提高至26%，闪避率提高至17%',
+      9:'攻速提高至42%，闪避率提高至25%'
     })
   }
 };
@@ -316,12 +316,18 @@ export const EntryIronWallSkill={
 
 export const EntryMovementSkill={
   bind(system){
-    let appliedDodge=0;
-    return passiveUpdater(system,'shadow_fist',(data)=>{
+    let appliedDodge=0, appliedAttackSpeed=0;
+    const updater=()=>{
+      const data=system.getData('shadow_fist');
       const p=system.scene.playerData;
       p.dodgeChance=Math.max(0,(p.dodgeChance||0)-appliedDodge);
+      p.attackSpeedMultiplier=Math.max(0.2,(p.attackSpeedMultiplier||1)-appliedAttackSpeed);
       appliedDodge=data?.dodgeChance||0;
-      p.dodgeChance=Math.min(0.75,p.dodgeChance+appliedDodge);
-    });
+      appliedAttackSpeed=data?.attackSpeedBonus||0;
+      p.dodgeChance=Math.min(0.70,p.dodgeChance+appliedDodge);
+      p.attackSpeedMultiplier+=appliedAttackSpeed;
+    };
+    system.passiveUpdaters.push(updater); updater();
+    return ()=>{ const p=system.scene.playerData; p.dodgeChance=Math.max(0,(p.dodgeChance||0)-appliedDodge); p.attackSpeedMultiplier=Math.max(0.2,(p.attackSpeedMultiplier||1)-appliedAttackSpeed); system.passiveUpdaters=system.passiveUpdaters.filter(fn=>fn!==updater); };
   }
 };

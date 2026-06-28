@@ -87,7 +87,7 @@ export default class CombatSystem {
     const s=this.scene;
     if(s.isGameplayPaused?.()||s.playerData.hp<=0) return;
     const directAttack=isDirectEnemyAttack(enemy,meta);
-    if(this.canDodge(meta)&&Math.random()<Math.max(0,Math.min(0.95,(s.playerData.dodgeChance||0)+sumBonuses(s.playerData.dodgeChanceBonuses)))){
+    if(this.canDodge(meta)&&Math.random()<Math.max(0,Math.min(0.70,(s.playerData.dodgeChance||0)+sumBonuses(s.playerData.dodgeChanceBonuses)))){
       s.floatText(s.player.x,s.player.y-86,'闪避','#b7f7ff');
       s.eventBus.emit(CombatEvents.PLAYER_DODGED,{ enemy, rawDamage, attackType:meta.attackType||meta.source||'unknown', forced:false, directAttack, ...meta });
       return;
