@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - 'fix/0.10.65-myriad-standalone'
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
