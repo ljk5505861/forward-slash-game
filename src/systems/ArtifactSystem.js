@@ -45,6 +45,7 @@ export default class ArtifactSystem {
   shiftTimers(pausedDuration, pausedAt){ this.cooldowns.forEach((readyAt,id)=>{ if(readyAt>pausedAt) this.cooldowns.set(id, readyAt+pausedDuration); }); }
   highHpDamageMultiplier(){ if(!this.has('army_breaker_token')) return 1; return this.scene.playerData.hp/this.scene.playerData.maxHp>0.8 ? 1.18 : 1; }
   tryTrigger(cfg,payload){
+    if(payload?.canTriggerArtifacts===false) return;
     const now=this.scene.getGameplayTime();
     if(now<(this.cooldowns.get(cfg.id)||0)) return;
     if(cfg.id==='flame_heart' && (payload.type!==StatusEffects.BURN || (payload.stacks||0)<8)) return;
