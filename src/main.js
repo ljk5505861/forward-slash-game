@@ -2,9 +2,11 @@ import Phaser from 'phaser';
 import gameConfig from './config/gameConfig.js';
 import { GAME_VERSION_LABEL } from './config/version.js';
 import { installPostRenderSceneRestart } from './utils/safeSceneRestart.js';
+import { installPostRenderTextDestroy } from './utils/safeTextDestroy.js';
 import './styles.css';
 
 installPostRenderSceneRestart(Phaser);
+installPostRenderTextDestroy(Phaser);
 
 const preventGesture = (event) => event.preventDefault();
 

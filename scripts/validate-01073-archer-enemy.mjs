@@ -12,7 +12,7 @@ global.HTMLCanvasElement=class {};
 const { default: EnemyBehaviorManager, entryMove } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
 const { default: CombatSystem } = await import('../src/systems/CombatSystem.js');
 
-assert.equal(GAME_VERSION,'0.10.73');
+assert.equal(GAME_VERSION,'0.10.74');
 assert(ENEMIES.archer, 'archer config exists');
 assert.equal(ENEMIES.archer.behavior,'archer');
 assert.equal(ENEMIES.archer.attackRange,450);
@@ -33,6 +33,7 @@ const makeScene = (targets=[]) => {
     targeting:{ isEnemyFullyInsideViewport(){return true;}, shouldRecycleEnemyLeft(){return false;}, getEnemyRightRespawnX(){return 900;} },
     combatSystem:{
       getAttackableTargets(){ return targets; },
+      getSelectableEnemyAttackTargets(){ return targets.filter(t=>t.type!=='spiritWolf'||t.x>=scene.player.x); },
       getPlayerAttackTarget(){ return scene.player; },
       chooseEnemyAttackTarget(enemy,range){ return targets.filter(t=>t.isAlive()).map(t=>({t,d:Math.hypot(enemy.x-t.x,enemy.y-t.y)})).filter(o=>o.d<=range).sort((a,b)=>a.d-b.d)[0]?.t ?? null; },
       damageAttackTarget(t,amount,meta){ calls.push({target:t,amount,meta}); t.takeDamage?.(amount,meta); }
@@ -51,7 +52,8 @@ const enemy = (x=700) => ({ ...ENEMIES.archer, x, y:100, active:true, isDefeated
 { const t=target(300); const {scene,arrows}=makeScene([t]); const e=enemy(700); const m=new EnemyBehaviorManager(scene); m.attach(e); m.update(0); assert.equal(arrows[0].destroyed,false); m.recycleEnemy(e); assert.equal(arrows[0].destroyed,true,'recycle destroys unfinished arrows'); }
 { const t=target(300); const {scene,arrows}=makeScene([t]); const e=enemy(700); const m=new EnemyBehaviorManager(scene); m.attach(e); m.update(0); m.destroy(); assert.equal(arrows[0].destroyed,true,'destroy destroys unfinished arrows'); }
 { const t=target(100); const {scene}=makeScene([t]); const e=enemy(700); const m=new EnemyBehaviorManager(scene); m.attach(e); m.update(0); assert.notEqual(e.body.vx,0); m.pause(); assert.equal(e.body.vx,0,'pause stops archer movement'); }
-{ const wolf=target(300,100,'spiritWolf'); const {scene,calls}=makeScene([wolf]); const e=enemy(700); const m=new EnemyBehaviorManager(scene); m.attach(e); m.update(0); assert.equal(calls[0].target,wolf,'spirit wolf can be selected as arrow target'); }
+{ const wolf=target(300,100,'spiritWolf'); const {scene,calls}=makeScene([wolf]); const e=enemy(700); const m=new EnemyBehaviorManager(scene); m.attach(e); m.update(0); assert.equal(calls[0].target,wolf,'frontline spirit wolf can be selected as arrow target'); }
+{ const player=target(500,100,'player'); const wolf=target(300,100,'spiritWolf'); const {scene,calls}=makeScene([player,wolf]); scene.player=player; const e=enemy(700); const m=new EnemyBehaviorManager(scene); m.attach(e); m.update(0); assert.equal(calls[0].target,player,'backline spirit wolf cannot be selected as arrow target'); }
 
 { const wolf=target(300,100,'spiritWolf'); wolf.damageEvents=[]; wolf.takeDamage=function(amount,meta){ this.damageEvents.push({amount,meta}); this.hp-=amount; }; const {scene,calls}=makeScene([wolf]); const e=enemy(700); e.nextAttackAt=0; scene.enemies=[e]; scene.skillSystem={passiveState:{spiritWolves:{wolves:[wolf]}}}; scene.playerData={hp:100,maxHp:100,weaponId:'short_sword'}; scene.targeting.all=()=>scene.enemies; scene.targeting.valid=x=>!!x?.active&&!x.isDefeated; scene.targeting.nearestAhead=()=>null; scene.professionSystem={currentAttackProfile:()=>null}; scene.combatSystem=new CombatSystem(scene); const manager=new EnemyBehaviorManager(scene); manager.attach(e); manager.update(1000); scene.combatSystem.update(1000); assert.equal(wolf.damageEvents.length,1,'archer behavior plus CombatSystem same-frame update deals damage once'); assert.deepEqual(wolf.damageEvents.map(d=>d.meta.source),['archerArrow']); assert.equal(wolf.damageEvents.some(d=>d.meta.source==='enemyMelee'),false,'archer does not also produce generic enemyMelee damage'); manager.update(1200); scene.combatSystem.update(1200); assert.equal(wolf.damageEvents.length,1,'archer cooldown prevents another hit before next arrow'); manager.destroy(); }
 
@@ -73,4 +75,4 @@ assert.equal(stage.makeWaveIds(['grunt','bomber'],8,5).filter(x=>x.id==='bomber'
 assert(!StageSystem.prototype.updateRush.toString().includes("'archer'"),'boss rush code does not spawn archers');
 assert(!StageSystem.prototype.updateRush.toString().includes("'bomber','healer'"),'boss rush code does not spawn bomber/healer pair');
 
-console.log('[validate:01073-archer-enemy] PASS archer config, behavior cleanup, no-retreat ranged movement, and v0.10.73 wave rules');
+console.log('[validate:01073-archer-enemy] PASS archer config, behavior cleanup, no-retreat ranged movement, and v0.10.74 wave rules');

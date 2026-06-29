@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { installPostRenderSceneRestart } from '../src/utils/safeSceneRestart.js';
+import { installPostRenderTextDestroy } from '../src/utils/safeTextDestroy.js';
 
 class Events {
   constructor(){ this.listeners=new Map(); }
@@ -35,13 +36,17 @@ class FakeScenePlugin {
   }
 }
 
+class FakeText { destroy(){ this.destroyed=(this.destroyed||0)+1; return this; } }
 const Phaser={
   Scenes:{ ScenePlugin:FakeScenePlugin, Events:{ SHUTDOWN:'shutdown' } },
+  GameObjects:{ Text:FakeText },
   Core:{ Events:{ POST_RENDER:'postrender' } },
 };
 
 assert.equal(installPostRenderSceneRestart(Phaser),true);
-assert.equal(installPostRenderSceneRestart(Phaser),false,'guard installs only once');
+assert.equal(installPostRenderSceneRestart(Phaser),false,'restart guard installs only once');
+assert.equal(installPostRenderTextDestroy(Phaser),true);
+assert.equal(installPostRenderTextDestroy(Phaser),false,'text destroy guard installs only once');
 
 // Reproduce the reported path: the restart button fires while the current
 // Phaser frame is still being processed. The original synchronous restart

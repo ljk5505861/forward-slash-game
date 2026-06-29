@@ -16,7 +16,7 @@ const systemFor=(scene,levels)=>({scene,passiveUpdaters:[],getLevel:id=>levels[i
 const installKing=(scene,x,y,hp=100)=>{ const king={type:'poison_king',x,y,hp,isAlive(){return this.hp>0},takeDamage(a){const d=Math.min(this.hp,Math.max(0,Math.round(a)||0));this.hp-=d;return d;}}; scene.poisonKingRuntime={getAttackTarget:()=>king}; return king; };
 const withRandom=(value,fn)=>{ const old=Math.random; Math.random=()=>value; try{return fn();} finally{Math.random=old;} };
 
-assert.equal(GAME_VERSION,'0.10.73','game version is 0.10.73');
+assert.equal(GAME_VERSION,'0.10.74','game version is 0.10.74');
 const poisonIds=Object.values(SKILLS).filter(s=>s.tags?.includes('build_poison_summon')||['poison_cloud','parasitic_gu','poison_chain','poison_king'].includes(s.id)).map(s=>s.id).sort();
 assert.deepEqual(poisonIds,['parasitic_gu','poison_chain','poison_cloud','poison_king'].sort(),'poison summon pool has exactly four skills');
 for (const removed of ['bone_eating_insect','plague_mother']) assert.equal(SKILLS[removed],undefined,`${removed} removed from skill pool/details`);

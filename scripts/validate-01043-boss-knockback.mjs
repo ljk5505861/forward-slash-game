@@ -11,7 +11,7 @@ const files = {
 const checks = [];
 const check = (name, ok) => checks.push({ name, ok: !!ok });
 
-check('version is 0.10.73', /GAME_VERSION\s*=\s*['"]0\.10\.73['"]/.test(files.version));
+check('version is 0.10.74', /GAME_VERSION\s*=\s*['"]0\.10\.74['"]/.test(files.version));
 check('unified boss knockback distance config exists', /bossKnockbackDistance\s*:\s*10/.test(files.tuning) && /export const bossKnockbackDistance/.test(files.combat));
 check('boss knockback is capped at configured distance', /enemy\.isBoss\s*\?\s*Math\.min\(requestedDistance\s*,\s*bossKnockbackDistance\)/.test(files.combat));
 check('boss vertical knockback lift is zero', /const lift\s*=\s*enemy\.isBoss\s*\?\s*0\s*:\s*NORMAL_ATTACK_KNOCKBACK_LIFT_PX/.test(files.combat));
@@ -34,4 +34,4 @@ if (failed.length) {
   console.error(failed);
   process.exit(1);
 }
-console.log(`v0.10.73 boss knockback validation passed (${checks.length} checks).`);
+console.log(`v0.10.74 boss knockback validation passed (${checks.length} checks).`);
