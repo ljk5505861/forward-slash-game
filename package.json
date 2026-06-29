@@ -45,10 +45,12 @@
     "validate:01067-myriad-detail-touch": "node scripts/validate-01067-myriad-detail-touch.mjs",
     "validate:01070-player-image": "node scripts/validate-01070-player-image.mjs",
     "validate:01071-spirit-wolves": "node scripts/validate-01071-spirit-wolves.mjs && node scripts/validate-01071-spirit-wolves-resources.mjs && node scripts/validate-01071-spirit-wolves-myriad.mjs",
-    "validate:01073-archer-enemy": "node scripts/validate-01073-archer-enemy.mjs"
+    "validate:01073-archer-enemy": "node scripts/validate-01073-archer-enemy.mjs",
+    "validate:01074-ios-canvas-text-lifecycle": "node scripts/validate-01074-ios-canvas-text-lifecycle.mjs",
+    "validate:01074-playtest-fixes": "node scripts/validate-01074-playtest-fixes.mjs"
   },
   "dependencies": {
-    "phaser": "latest",
+    "phaser": "4.1.0",
     "vite": "latest"
   },
   "devDependencies": {}

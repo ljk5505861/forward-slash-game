@@ -27,7 +27,7 @@ function makeSystemWithSkill(level=1){ return addSkillToScene(makeScene(),level)
 function makeRealSystemWithSkill(level=1){ return addSkillToScene(makeRealScene(),level); }
 function update(sys,s,time){ s.setTime(time); sys.update(time); }
 
-assert.equal(GAME_VERSION,'0.10.73');
+assert.equal(GAME_VERSION,'0.10.74');
 assert.equal(Object.keys(SKILLS).length,24);
 assert.ok(SKILLS.spirit_wolves);
 assert.equal(SKILLS.spirit_wolves.requiredSkillId,undefined);
@@ -90,18 +90,29 @@ assert.deepEqual(basePlayerStats(realPlayer),{attack:realPlayer.baseAttack,maxHp
   const {s,sys,state}=makeSystemWithSkill(6); update(sys,s,0); const before=s.calls.damage.length; sys.removeSkillRuntime(SPIRIT_WOLVES_ID); assert.equal(s.calls.damage.length,before,'remove cleanup does not explode'); sys.addOrLevel(SPIRIT_WOLVES_ID); update(sys,s,0); const updater=state().updater; s.events.emit('shutdown'); assert.equal(state().wolves.length,0,'shutdown alone destroys wolves'); assert.equal(sys.passiveUpdaters.includes(updater),false,'shutdown alone removes updater'); assert.equal(sys.cooldowns.has(SPIRIT_WOLVES_ID),false,'shutdown alone clears cooldown'); assert.equal(s.calls.damage.length,before,'shutdown cleanup does not explode');
 }
 {
-  const s=makeRealScene(); s.player.x=500; const wolf={type:'spiritWolf',x:130,y:100,hp:50,maxHp:50,active:true,lastMeta:null,isAlive(){return this.hp>0;},takeDamage(amount,meta){this.lastMeta=meta;this.hp=Math.max(0,this.hp-amount);}}; s.skillSystem={passiveState:{spiritWolves:{wolves:[wolf]}}}; const healer={active:true,isDefeated:false,isBoss:false,behavior:'healer',x:100,y:100,hp:100,maxHp:100,damage:10,speed:40,attackRange:100,preferredRange:80,attackIntervalMs:2200,body:{setVelocityX(v){this.velocityX=v;}},setFillStyle(){}}; s.enemies=[healer]; const manager=new EnemyBehaviorManager(s); manager.attach(healer); manager.update(0); assert.equal(wolf.hp,43,'healer fallback attacks the nearby spirit wolf'); assert.equal(wolf.lastMeta?.source,'healerFallback'); assert.equal(wolf.lastMeta?.attackType,'healer'); manager.destroy();
+  const s=makeRealScene(); s.player.x=150; const wolf={type:'spiritWolf',x:130,y:100,hp:50,maxHp:50,active:true,lastMeta:null,isAlive(){return this.hp>0;},takeDamage(amount,meta){this.lastMeta=meta;this.hp=Math.max(0,this.hp-amount);}}; s.skillSystem={passiveState:{spiritWolves:{wolves:[wolf]}},beforePlayerDamage:()=>null,beforePlayerHpDamage:()=>null}; const healer={active:true,isDefeated:false,isBoss:false,behavior:'healer',x:100,y:100,hp:100,maxHp:100,damage:10,speed:40,attackRange:100,preferredRange:80,attackIntervalMs:2200,body:{setVelocityX(v){this.velocityX=v;}},setFillStyle(){}}; s.enemies=[healer]; const manager=new EnemyBehaviorManager(s); manager.attach(healer); manager.update(0); assert.equal(wolf.hp,50,'healer fallback ignores a spirit wolf behind the player'); assert.equal(s.playerData.hp,s.playerData.maxHp-7,'healer fallback attacks player when all wolves are behind'); manager.destroy();
 }
 {
   const s=makeScene(); s.playerData.artifacts=[{id:'blood_jade'}]; s.playerData.hp=s.playerData.maxHp-20; const artifacts=new ArtifactSystem(s); artifacts.load(); s.eventBus.emit(CombatEvents.ENEMY_KILLED,{enemy:enemy(),canTriggerArtifacts:false,source:'skill',skillId:SPIRIT_WOLVES_ID}); assert.equal(s.calls.healed,0,'suppressed summon kill does not trigger artifact'); s.eventBus.emit(CombatEvents.ENEMY_KILLED,{enemy:enemy(),canTriggerArtifacts:true,source:'attack'}); assert.equal(s.calls.healed,6,'ordinary eligible kill still triggers artifact'); artifacts.cleanup();
 }
 {
   const {s,sys,state}=makeSystemWithSkill(1); update(sys,s,0); const w=state().wolves[0]; const start=w.x; update(sys,s,1000); assert.ok(w.x>start,'no enemies: wolf moves right'); const ahead=w.x; s.player.x=50; update(sys,s,1050); assert.ok(w.x>=ahead,'wolf does not move left back to the player'); s.player.x=100; s.cameras.main.worldView.right=360; for(let t=1100;t<=3500;t+=50) update(sys,s,t); assert.ok(w.x<=312,'wolf clamps to right camera margin instead of leaving screen'); assert.ok(w.x<=s.player.x+260+1||w.x===312,'wolf does not run infinitely beyond lead target');
-  const xs=[]; for(let i=0;i<3;i++){ w.takeDamage(1,{enemy:{x:w.x+20},attackType:'melee'}); xs.push(w.x); } assert.ok(xs[0]>xs[1]&&xs[1]>xs[2],'three knockbacks cumulatively reduce x'); w.x=s.player.x+5; w.takeDamage(1,{enemy:{x:w.x+20},attackType:'melee'}); assert.ok(w.x<s.player.x,'wolf can be behind player'); const knocked=w.x; update(sys,s,s.getGameplayTime()+200); assert.equal(w.x,knocked,'no forward compensation during knockback recovery'); update(sys,s,s.getGameplayTime()+400); assert.ok(w.x>knocked,'after recovery wolf resumes moving right');
+  const xs=[]; for(let i=0;i<3;i++){ w.takeDamage(1,{enemy:{x:w.x+20},attackType:'melee'}); xs.push(w.x); } assert.ok(xs[0]>xs[1]&&xs[1]>xs[2],'three knockbacks cumulatively reduce x'); w.x=s.player.x+5; w.takeDamage(1,{enemy:{x:w.x+20},attackType:'melee'}); assert.ok(w.x<s.player.x,'wolf can be behind player'); const knocked=w.x; update(sys,s,s.getGameplayTime()+200); assert.equal(w.x,knocked,'no forward compensation during knockback recovery'); update(sys,s,s.getGameplayTime()+900); assert.ok(w.x>knocked,'after recovery wolf resumes moving right');
 }
 {
   const a=makeSystemWithSkill(1), b=makeSystemWithSkill(1); update(a.sys,a.s,0); update(b.sys,b.s,0); const wa=a.state().wolves[0], wb=b.state().wolves[0]; const ax=wa.x,bx=wb.x; for(let t=1000/30;t<=1000;t+=1000/30) update(a.sys,a.s,t); for(let t=1000/120;t<=1000;t+=1000/120) update(b.sys,b.s,t); assert.ok(Math.abs((wa.x-ax)-(wb.x-bx))<20,'30fps and 120fps one-second displacement is close');
 }
+
+{
+  const {s,sys,state}=makeSystemWithSkill(1); s.player.x=220; update(sys,s,0); const w=state().wolves[0]; w.x=260; w.y=100; w.defense=0; const start=w.x; [0,50,100,150].forEach((t,i)=>{ s.setTime(t); w.takeDamage(1,{enemy:{x:w.x+20,isElite:false},attackType:'melee'}); assert.equal(w.x,start-34*(i+1),`hit ${i+1} applies 34px knockback`); assert.equal(w.knockbackUntil,260*(i+1),`hit ${i+1} accumulates recovery`); }); assert.equal(w.x,start-136); assert.ok(w.x<s.player.x,'wolf is really pushed behind player'); const knocked=w.x; for(const t of [200,400,800,1000]) update(sys,s,t); assert.equal(w.x,knocked,'wolf cannot move forward during accumulated hit stun'); update(sys,s,1200); assert.ok(w.x>knocked,'wolf resumes forward pursuit after accumulated hit stun');
+}
+{
+  const {s,sys,state}=makeRealSystemWithSkill(1); update(sys,s,0); const w=state().wolves[0]; w.x=s.player.x-10; w.y=s.player.y; w.hp=50; w.defense=0; s.playerData.hp=100; s.playerData.dodgeChance=0; const e={x:s.player.x+20,y:s.player.y,active:true,isDefeated:false,hp:20,maxHp:20,damage:5,attackRange:80,nextAttackAt:0,attackIntervalMs:1000,behavior:'grunt'}; s.enemies=[e]; s.targeting.valid=x=>!!x?.active&&!x.isDefeated; s.combatSystem.updateEnemyAttack(e,0); assert.equal(s.playerData.hp,95,'melee hits player when wolf is behind'); assert.equal(w.hp,50,'behind wolf does not block melee'); w.x=s.player.x+1; e.nextAttackAt=0; s.combatSystem.updateEnemyAttack(e,0); assert.equal(w.hp,45,'frontline wolf blocks melee again'); assert.equal(s.playerData.hp,95,'player is not hit while frontline wolf blocks');
+}
+{
+  const {s,sys,state}=makeRealSystemWithSkill(1); update(sys,s,0); const w=state().wolves[0]; w.x=s.player.x-10; w.y=s.player.y; w.hp=50; w.defense=0; s.playerData.hp=100; const e={x:s.player.x,y:s.player.y,active:true,isDefeated:false,hp:20,maxHp:20,damage:5}; const hits=s.combatSystem.damageTargetsInRadius(s.player.x,s.player.y,80,3,{enemy:e,source:'bomb',attackType:'bomb',dodgeable:false}); assert.ok(hits.some(h=>h.target===w&&h.damage===3),'area damage still hits a behind-player wolf'); assert.ok(hits.some(h=>h.target.type==='player'&&h.damage===3),'area damage also hits player');
+}
+
 assert.equal(/SNAP|LEASH|initialized/.test(fs.readFileSync('src/skills/handlers/SpiritWolvesSkill.js','utf8')),false,'obsolete SNAP/LEASH/initialized logic removed');
 assert.equal(inheritRatioForLevel(1),.20); assert.equal(inheritRatioForLevel(9),.30);
-console.log('v0.10.73 spirit wolves validation passed.');
+console.log('v0.10.74 spirit wolves validation passed.');
