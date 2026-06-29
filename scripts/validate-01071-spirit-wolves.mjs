@@ -27,7 +27,7 @@ function makeSystemWithSkill(level=1){ return addSkillToScene(makeScene(),level)
 function makeRealSystemWithSkill(level=1){ return addSkillToScene(makeRealScene(),level); }
 function update(sys,s,time){ s.setTime(time); sys.update(time); }
 
-assert.equal(GAME_VERSION,'0.10.72');
+assert.equal(GAME_VERSION,'0.10.73');
 assert.equal(Object.keys(SKILLS).length,24);
 assert.ok(SKILLS.spirit_wolves);
 assert.equal(SKILLS.spirit_wolves.requiredSkillId,undefined);
@@ -94,4 +94,4 @@ assert.deepEqual(basePlayerStats(realPlayer),{attack:realPlayer.baseAttack,maxHp
 }
 assert.equal(/SNAP|LEASH|initialized/.test(fs.readFileSync('src/skills/handlers/SpiritWolvesSkill.js','utf8')),false,'obsolete SNAP/LEASH/initialized logic removed');
 assert.equal(inheritRatioForLevel(1),.20); assert.equal(inheritRatioForLevel(9),.30);
-console.log('v0.10.72 spirit wolves validation passed.');
+console.log('v0.10.73 spirit wolves validation passed.');

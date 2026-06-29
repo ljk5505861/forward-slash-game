@@ -19,4 +19,4 @@ assert.equal(system.createCastContext(SPIRIT_WOLVES_ID).normal,true);
 assert.equal(calls,2);
 off();
 assert.equal(system.createCastContext,original);
-console.log('v0.10.72 spirit wolf normal active cast validation passed.');
+console.log('v0.10.73 spirit wolf normal active cast validation passed.');

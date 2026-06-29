@@ -13,7 +13,7 @@ const enemy=(o={})=>({x:300,y:850,hp:1000,maxHp:1000,active:true,defense:0,damag
 function scene(){ const bus=new Bus(), p=createPlayerRuntime(); const s={now:0,player:{x:220,y:850},playerData:p,enemies:[],eventBus:bus,floatTexts:[],balance:{enemyFadeMs:1,stageWorldWidth:10000},targeting:{valid:e=>!!e&&e.active!==false&&!e.isDefeated&&(e.hp??0)>0,isEnemyFullyInsideViewport(){return true},all(){return s.enemies.filter(this.valid)}},professionSystem:{getDamageMultiplier(){return 1}},artifactSystem:{highHpDamageMultiplier(){return 1}},statusEffects:null,skillSystem:null,isGameplayPaused(){return false},getGameplayTime(){return this.now},floatText(){},hud:{update(){}},finishRun(){this.finished=true},awardGold(){},tweens:{add(c){c.onComplete?.();return{}}}}; s.statusEffects=new StatusEffectSystem(s); s.combatSystem=new CombatSystem(s); s.skillSystem=new SkillSystem(s); return s; }
 const run=s=>s.skillSystem.passiveUpdaters.forEach(f=>f());
 
-assert.equal(GAME_VERSION,'0.10.72');
+assert.equal(GAME_VERSION,'0.10.73');
 assert.equal(Object.values(SKILLS).filter(s=>!s.temporary).length,24);
 assert.deepEqual(Object.values(SKILLS).filter(s=>s.tags?.includes('buildDefense')).map(s=>s.id).sort(),['guardian_shield','healing','thorn_armor'].sort());
 for(const id of ['armor_break_shockwave','immovable_mountain','black_tortoise_body']){ assert.equal(SKILLS[id],undefined); assert.equal(SKILL_HANDLERS[id],undefined); }
