@@ -24,7 +24,7 @@ const [
   import('../src/config/balance.js'),
   import('../src/config/version.js')
 ]);
-assert.equal(GAME_VERSION,'0.10.71');
+assert.equal(GAME_VERSION,'0.10.72');
 assert.equal(new SelectionState().selectedIndex,-1,'SelectionState is instantiated through the real class');
 
 const src = readFileSync(new URL('../src/ui/PlayerInfoPanel.js', import.meta.url),'utf8');

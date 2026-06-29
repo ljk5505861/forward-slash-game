@@ -44,7 +44,7 @@
     "validate:01066-myriad-detail-selection": "node scripts/validate-01066-myriad-detail-selection.mjs",
     "validate:01067-myriad-detail-touch": "node scripts/validate-01067-myriad-detail-touch.mjs",
     "validate:01070-player-image": "node scripts/validate-01070-player-image.mjs",
-    "validate:01071-spirit-wolves": "node scripts/validate-01071-spirit-wolves.mjs && node scripts/validate-01071-spirit-wolves-resources.mjs"
+    "validate:01071-spirit-wolves": "node scripts/validate-01071-spirit-wolves.mjs && node scripts/validate-01071-spirit-wolves-resources.mjs && node scripts/validate-01071-spirit-wolves-myriad.mjs"
   },
   "dependencies": {
     "phaser": "latest",

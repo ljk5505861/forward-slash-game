@@ -15,15 +15,15 @@ export const SKILLS = {
   mirror_march:{id:'mirror_march',name:'镜像行军',rarity:'RARE',tags:[TAGS.SUMMON,'physical',TAGS.NORMAL_ATTACK],maxLevel:3,cooldownMs:6000,targetType:'self',color:0xaad7ff,short:'镜',handler:'mirror_march',description:'召唤分身跟随玩家并同步普通攻击。',levels:[{clones:2,durationMs:4200,ratio:0.35,desc:'召唤2个分身，跟随玩家并同步普通攻击。'},{clones:2,durationMs:5600,ratio:0.48,desc:'分身持续时间和同步攻击伤害提高。',changes:['持续时间：4.2秒 → 5.6秒','分身伤害：35% → 48%']},{clones:3,durationMs:5600,ratio:0.5,desc:'分身数量提升为3个，伤害略微提高。',changes:['分身伤害：48% → 50%','新增：分身数量 2 → 3']}]},
   judgment_pendulum:{id:'judgment_pendulum',name:'断罪钟摆',rarity:'EPIC',tags:['holy','area',TAGS.ACTIVE_SKILL,TAGS.MELEE],maxLevel:3,cooldownMs:5000,targetType:'random',color:0xd8b4ff,short:'钟',handler:'judgment_pendulum',description:'巨大钟摆左右横扫，多次命中屏幕敌人。',levels:[{damage:34,sweeps:2,width:520,desc:'召唤巨大钟摆左右横扫2次，命中范围内多个敌人。'},{damage:40,sweeps:3,width:620,desc:'钟摆横扫次数、范围和伤害提高。',changes:['伤害：34 → 40','横扫次数：2 → 3','横扫宽度：520 → 620']},{damage:42,sweeps:4,width:650,finalScale:1.7,desc:'钟摆横扫4次，最后一次造成额外伤害。',changes:['伤害：40 → 42','横扫次数：3 → 4','横扫宽度：620 → 650','新增：最后一击170%伤害']}]},
 
-  spirit_wolves:{id:'spirit_wolves',name:'召唤灵狼',rarity:'EPIC',tags:[TAGS.SUMMON,'physical',TAGS.MELEE],maxLevel:9,cooldownMs:8000,targetType:'self',color:0x9fd7ff,short:'狼',handler:'spirit_wolves',description:'独立召唤两只可被攻击和击退的灵狼，全部死亡后才重新冷却。召唤伤害不触发玩家吸血、普攻附带效果、暴击、法宝或普攻事件。',levels:[
-    {inheritRatio:.20,cooldownMs:8000,desc:'首次获得先冷却8秒，随后同时召唤2只灵狼；每只继承玩家基础攻击、基础最大生命、基础防御20%，两只全部死亡后才进入冷却。'},
+  spirit_wolves:{id:'spirit_wolves',name:'召唤灵狼',rarity:'COMMON',tags:[TAGS.SUMMON,'physical',TAGS.MELEE],maxLevel:9,cooldownMs:8000,targetType:'self',color:0x9fd7ff,short:'狼',handler:'spirit_wolves',description:'独立召唤两只可被攻击和击退的灵狼，全部死亡后才重新冷却。召唤伤害不触发玩家吸血、普攻附带效果、暴击、法宝或普攻事件。',levels:[
+    {inheritRatio:.20,cooldownMs:8000,desc:'首次正式释放立即同时召唤2只灵狼；每只继承玩家基础攻击、基础最大生命、基础防御20%，两只全部死亡后才进入8秒冷却。'},
     {inheritRatio:.21,cooldownMs:8000,desc:'灵狼基础属性继承提高到21%，仍可被敌人攻击和击退。'},
     {inheritRatio:.22,cooldownMs:8000,splashRadius:90,splashScale:.35,milestoneText:'群狼撕咬',desc:'继承提高到22%；灵狼普通攻击对主目标造成完整伤害，并对90范围内其他敌人造成35%溅射，主目标不重复受伤。'},
     {inheritRatio:.23,cooldownMs:8000,splashRadius:90,splashScale:.35,desc:'灵狼基础属性继承提高到23%，全部死亡后才进入下一轮冷却。'},
     {inheritRatio:.24,cooldownMs:8000,splashRadius:90,splashScale:.35,desc:'灵狼基础属性继承提高到24%，召唤伤害仍不触发玩家本体连锁。'},
     {inheritRatio:.25,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,milestoneText:'亡命爆裂',desc:'继承提高到25%；灵狼生命归零自然死亡时产生120范围爆炸，造成自身攻击力80%伤害，清理/重启/移除不触发。'},
     {inheritRatio:.26,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到26%，被击退后会继续追踪敌人。'},
-    {inheritRatio:.28,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到28%，距离玩家过远会安全回到附近。'},
+    {inheritRatio:.28,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到28%；即使被击退到玩家身后，也会依靠自身速度重新向前推进。'},
     {inheritRatio:.30,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,scaleBonus:.15,milestoneText:'狼王血脉',desc:'每只灵狼继承30%玩家基础攻击、基础最大生命、基础防御，并获得约15%体型强化；仍只召唤2只。'}]},
   time_loan:{id:'time_loan',name:'时间借贷',rarity:'MYTHIC',tags:['time',TAGS.ACTIVE_SKILL],maxLevel:3,cooldownMs:10000,targetType:'self',color:0xff4b4b,short:'时',handler:'time_loan',description:'刷新其他技能冷却并让其他技能额外释放。',levels:[{extraCasts:1,windowMs:1200,desc:'刷新所有其他技能冷却，并让其他技能额外释放1轮。'},{extraCasts:1,windowMs:2200,desc:'时间爆发窗口延长，其他技能更稳定地释放额外1轮。',changes:['爆发窗口：1.2秒 → 2.2秒']},{extraCasts:2,windowMs:2200,desc:'时间爆发内其他技能额外释放2轮。',changes:['额外释放轮数：1 → 2']}]},
 };
