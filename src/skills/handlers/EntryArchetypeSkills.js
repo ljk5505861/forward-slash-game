@@ -97,15 +97,15 @@ const configs = {
     })
   },
   spirit_wolves:{id:'spirit_wolves',name:'召唤灵狼',rarity:'COMMON',tags:[TAGS.SUMMON,'physical',TAGS.MELEE],maxLevel:9,cooldownMs:8000,targetType:'self',color:0x9fd7ff,short:'狼',handler:'spirit_wolves',description:'独立召唤两只可被攻击和击退的灵狼，全部死亡后才重新冷却。召唤伤害不触发玩家吸血、普攻附带效果、暴击、法宝或普攻事件。',levels:[
-    {inheritRatio:.20,cooldownMs:8000,desc:'首次正式释放立即同时召唤2只灵狼；每只继承玩家基础攻击、基础最大生命、基础防御20%，两只全部死亡后才进入8秒冷却。'},
-    {inheritRatio:.21,cooldownMs:8000,desc:'灵狼基础属性继承提高到21%，仍可被敌人攻击和击退。'},
-    {inheritRatio:.22,cooldownMs:8000,splashRadius:90,splashScale:.35,milestoneText:'群狼撕咬',desc:'继承提高到22%；灵狼普通攻击对主目标造成完整伤害，并对90范围内其他敌人造成35%溅射，主目标不重复受伤。'},
-    {inheritRatio:.23,cooldownMs:8000,splashRadius:90,splashScale:.35,desc:'灵狼基础属性继承提高到23%，全部死亡后才进入下一轮冷却。'},
-    {inheritRatio:.24,cooldownMs:8000,splashRadius:90,splashScale:.35,desc:'灵狼基础属性继承提高到24%，召唤伤害仍不触发玩家本体连锁。'},
-    {inheritRatio:.25,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,milestoneText:'亡命爆裂',desc:'继承提高到25%；灵狼生命归零自然死亡时产生120范围爆炸，造成自身攻击力80%伤害，清理/重启/移除不触发。'},
-    {inheritRatio:.26,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到26%，被击退后会继续追踪敌人。'},
-    {inheritRatio:.28,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到28%；即使被击退到玩家身后，也会依靠自身速度重新向前推进。'},
-    {inheritRatio:.30,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,scaleBonus:.15,milestoneText:'狼王血脉',desc:'每只灵狼继承30%玩家基础攻击、基础最大生命、基础防御，并获得约15%体型强化；仍只召唤2只。'}]}
+    {inheritRatio:.20,hpInheritRatio:.15,cooldownMs:8000,desc:'首次正式释放立即同时召唤2只灵狼；每只继承玩家基础攻击和基础防御20%、基础最大生命15%，两只全部死亡后才进入8秒冷却。'},
+    {inheritRatio:.21,hpInheritRatio:.16,cooldownMs:8000,desc:'灵狼基础攻击和基础防御继承提高到21%、基础最大生命继承提高到16%，仍可被敌人攻击和击退。'},
+    {inheritRatio:.22,hpInheritRatio:.17,cooldownMs:8000,splashRadius:90,splashScale:.35,milestoneText:'群狼撕咬',desc:'灵狼基础攻击和基础防御继承提高到22%、基础最大生命继承提高到17%；灵狼普通攻击对主目标造成完整伤害，并对90范围内其他敌人造成35%溅射，主目标不重复受伤。'},
+    {inheritRatio:.23,hpInheritRatio:.18,cooldownMs:8000,splashRadius:90,splashScale:.35,desc:'灵狼基础攻击和基础防御继承提高到23%、基础最大生命继承提高到18%，全部死亡后才进入下一轮冷却。'},
+    {inheritRatio:.24,hpInheritRatio:.19,cooldownMs:8000,splashRadius:90,splashScale:.35,desc:'灵狼基础攻击和基础防御继承提高到24%、基础最大生命继承提高到19%，召唤伤害仍不触发玩家本体连锁。'},
+    {inheritRatio:.25,hpInheritRatio:.20,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,milestoneText:'亡命爆裂',desc:'灵狼基础攻击和基础防御继承提高到25%、基础最大生命继承提高到20%；灵狼生命归零自然死亡时产生120范围爆炸，造成自身攻击力80%伤害，清理/重启/移除不触发。'},
+    {inheritRatio:.26,hpInheritRatio:.21,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础攻击和基础防御继承提高到26%、基础最大生命继承提高到21%，被击退后会继续追踪敌人。'},
+    {inheritRatio:.28,hpInheritRatio:.23,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础攻击和基础防御继承提高到28%、基础最大生命继承提高到23%；即使被击退到玩家身后，也会依靠自身速度重新向前推进。'},
+    {inheritRatio:.30,hpInheritRatio:.25,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,scaleBonus:.15,milestoneText:'狼王血脉',desc:'每只灵狼继承30%玩家基础攻击和基础防御、25%基础最大生命，并获得约15%体型强化；仍只召唤2只。'}]}
 };
 
 export function configureEntryArchetypeSkills(){

@@ -9,7 +9,7 @@ const { default: CombatSystem, FRONTLINE_SWITCH_THRESHOLD } = await import('../s
 const { default: EnemyBehaviorManager } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
 const { GAME_VERSION } = await import('../src/config/version.js');
 
-assert.equal(GAME_VERSION,'0.10.75');
+assert.equal(GAME_VERSION,'0.10.76');
 assert.equal(FRONTLINE_SWITCH_THRESHOLD,18);
 const src = {
   wolf: fs.readFileSync('src/skills/handlers/SpiritWolvesSkill.js','utf8'),
@@ -38,8 +38,8 @@ const enemy=(x=360,range=70)=>({x,y:100,active:true,destroy(){this.active=false;
 // C. wolf smooth knockback source-level invariants, including dt=0 fix
 assert.match(src.wolf,/pendingKnockbackDistance=\(Number\(w\.pendingKnockbackDistance\)\|\|0\)\+dist/);
 assert.match(src.wolf,/if\(step>0\)\{ w\.x-=step; w\.pendingKnockbackDistance-=step; \}/);
-assert.match(src.wolf,/WOLF_KNOCKBACK_SLIDE_SPEED=180/);
-assert.match(src.wolf,/enemy\?\.isBoss\?10:\(enemy\?\.isElite\?18:34\)/);
+assert.match(src.wolf,/WOLF_KNOCKBACK_SLIDE_SPEED=360/);
+assert.match(src.wolf,/enemy\?\.isBoss\?32:\(enemy\?\.isElite\?42:48\)/);
 assert.match(src.behavior,/knockbackDistance:12/);
 
 // D. archer single hit and frontline retargeting
@@ -48,4 +48,4 @@ assert.match(src.behavior,/knockbackDistance:12/);
 // E/F. boss/radius/recycle cleanup invariants
 { const wolf=target('spiritWolf',240), behind=target('spiritWolf',180); const s=sceneWith([wolf,behind]); const boss={...enemy(360,155),isBoss:true,isKnockbackActive:true,attackIntervalMs:1000,nextAttackAt:0}; assert.equal(s.combatSystem.chooseEnemyAttackTarget(boss,275),wolf,'boss counter chooses front wolf'); wolf.x=170; boss.lockedAttackTarget=wolf; assert.equal(s.combatSystem.chooseEnemyAttackTarget(boss,275).type,'player','boss can switch to player when player is front'); wolf.x=240; assert.equal(s.combatSystem.chooseEnemyAttackTarget(boss,275),wolf,'boss does not permanently lock player'); const hits=s.combatSystem.damageTargetsInRadius(200,100,80,3,{enemy:boss,source:'midBossSlam',attackType:'ground',singleTarget:false}); assert.ok(hits.some(h=>h.target===behind),'radius damage still hits behind wolf'); boss.lockedAttackTarget=wolf; s.combatSystem.killEnemy(boss); assert.equal(boss.lockedAttackTarget,null,'death clears locked target'); const recycler=new EnemyBehaviorManager(s); const e=enemy(); e.lockedAttackTarget=wolf; s.targeting.getEnemyRightRespawnX=()=>900; recycler.recycleEnemy(e); assert.equal(e.lockedAttackTarget,null,'recycle clears locked target'); }
 
-console.log('v0.10.75 frontline target priority and wolf knockback validation passed.');
+console.log('v0.10.76 frontline target priority and wolf knockback validation passed.');
