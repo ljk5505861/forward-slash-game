@@ -43,7 +43,8 @@
     "validate:01064-afterimage-rework": "node scripts/validate-01064-afterimage-rework.mjs",
     "validate:01066-myriad-detail-selection": "node scripts/validate-01066-myriad-detail-selection.mjs",
     "validate:01067-myriad-detail-touch": "node scripts/validate-01067-myriad-detail-touch.mjs",
-    "validate:01070-player-image": "node scripts/validate-01070-player-image.mjs"
+    "validate:01070-player-image": "node scripts/validate-01070-player-image.mjs",
+    "validate:01071-spirit-wolves": "node scripts/validate-01071-spirit-wolves.mjs"
   },
   "dependencies": {
     "phaser": "latest",
