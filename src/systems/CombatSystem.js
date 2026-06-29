@@ -9,7 +9,7 @@ import { destroyEnemyStatusIndicators } from '../ui/EnemyStatusIndicators.js';
 import { TUNING } from '../config/tuning.js';
 import { getEffectiveAttack, getEffectiveDefense, getEffectiveDamageReduction, sumRuntimeBonuses } from '../config/balance.js';
 
-const BEHAVIOR_ATTACKERS = new Set(['charger', 'bomber', 'healer', 'midBoss', 'berserkerBoss']);
+const BEHAVIOR_ATTACKERS = new Set(['charger', 'archer', 'bomber', 'healer', 'midBoss', 'berserkerBoss']);
 const NON_LIFESTEAL_SOURCES = new Set(['burn','poison','burn_burst','reflect','shield_break','afterimage']);
 const NON_DIRECT_PLAYER_DAMAGE_TYPES = new Set(['dot','ground','environment','burn','poison','bomb']);
 const sumBonuses = sumRuntimeBonuses;

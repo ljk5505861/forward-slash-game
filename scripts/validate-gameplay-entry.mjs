@@ -43,9 +43,9 @@ assert.equal(true, true, 'player movement remains owned by MovementSystem');
 assert.equal(0.27 < 0.38, true, 'camera anchor is farther left than previous 0.38 ratio');
 const { approach: rangedApproach } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
 const rangedScene={ player:{x:100}, balance:{enemies:{rangeBuffer:24}} };
-let bomber=enemy(520,82); bomber.speed=49; rangedApproach(rangedScene,bomber,520,350); assert.ok(bomber.body.vx<0, 'bomber farther than 350 moves toward player');
-bomber=enemy(450,82); bomber.speed=49; rangedApproach(rangedScene,bomber,520,350); assert.equal(bomber.body.vx,0, 'bomber near preferred 350 stops');
-bomber=enemy(250,82); bomber.speed=49; rangedApproach(rangedScene,bomber,520,350); assert.ok(bomber.body.vx>0, 'bomber too close retreats from player');
+let archer=enemy(620,82); archer.speed=49; rangedApproach(rangedScene,archer,450); assert.ok(archer.body.vx<0, 'archer outside range moves toward player');
+archer=enemy(450,82); archer.speed=49; rangedApproach(rangedScene,archer,450); assert.equal(archer.body.vx,0, 'archer inside attack range stops');
+let bomber=enemy(250,82); bomber.speed=49; rangedApproach(rangedScene,bomber,480); assert.equal(bomber.body.vx,0, 'bomber inside attack range does not retreat');
 let melee=enemy(260,80); melee.speed=75; rangedApproach(rangedScene,melee,100); assert.ok(melee.body.vx<0, 'melee approach is unchanged');
 
 console.log('gameplay entry validation passed');

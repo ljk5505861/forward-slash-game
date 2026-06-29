@@ -27,7 +27,7 @@ function makeSystemWithSkill(level=1){ return addSkillToScene(makeScene(),level)
 function makeRealSystemWithSkill(level=1){ return addSkillToScene(makeRealScene(),level); }
 function update(sys,s,time){ s.setTime(time); sys.update(time); }
 
-assert.equal(GAME_VERSION,'0.10.72');
+assert.equal(GAME_VERSION,'0.10.73');
 assert.equal(Object.keys(SKILLS).length,24);
 assert.ok(SKILLS.spirit_wolves);
 assert.equal(SKILLS.spirit_wolves.requiredSkillId,undefined);
@@ -62,6 +62,16 @@ assert.deepEqual(basePlayerStats(realPlayer),{attack:realPlayer.baseAttack,maxHp
 {
   const {s,sys,state}=makeRealSystemWithSkill(1); s.playerData.baseAttack=100; s.playerData.attack=999; s.playerData.physicalDamageBonuses.last_stand=9; update(sys,s,0); s.calls.artifacts=0; const w=state().wolves[0]; const armored=enemy(w.x+40,w.y,500); armored.defense=5; s.enemies.push(armored); let hitEvent=null, attackEvent=0; const off=s.eventBus.on(CombatEvents.ENEMY_HIT,p=>{ if(p.skillId===SPIRIT_WOLVES_ID) hitEvent=p; }); const offAttack=s.eventBus.on(CombatEvents.PLAYER_ATTACK_RESOLVED,()=>attackEvent+=1); update(sys,s,900); off(); offAttack(); assert.equal(armored.hp,485,'real CombatSystem applies enemy defense exactly once'); assert.equal(hitEvent?.damage,15); assert.equal(hitEvent?.tags?.includes('physical'),false,'summon attack bypasses player physical bonus pipeline'); assert.equal(hitEvent?.canTriggerArtifacts,false); assert.equal(hitEvent?.allowLifeSteal,false); assert.equal(hitEvent?.critResolved,true); assert.equal(hitEvent?.crit,false); assert.equal(hitEvent?.summon,true); assert.equal(s.calls.artifacts,0); assert.equal(s.calls.directHits,0); assert.equal(attackEvent,0,'summon attack does not emit player attack effects');
 }
+
+{
+  const {s,sys,state}=makeSystemWithSkill(1); update(sys,s,0); const w=state().wolves[0]; w.defense=0; const startX=w.x, startHp=w.hp, startUntil=w.knockbackUntil; w.takeDamage(3,{enemy:{x:w.x+20,isElite:false,behavior:'archer'},source:'archerArrow',attackType:'projectile',dodgeable:true,knockbackDistance:12}); assert.equal(w.hp,startHp-3,'archer arrow damages wolf once'); assert.equal(w.x,startX-12,'archer arrow applies exact 12px wolf knockback'); assert.ok(w.knockbackUntil>startUntil,'archer arrow sets wolf knockback recovery'); const afterFirst=w.x; w.takeDamage(3,{enemy:{x:w.x+20,isElite:false,behavior:'archer'},source:'archerArrow',attackType:'projectile',dodgeable:true,knockbackDistance:12}); assert.equal(w.x,afterFirst-12,'second archer arrow stacks another 12px knockback'); assert.equal(w.x,startX-24,'two archer arrows total 24px knockback');
+}
+{
+  const {s,sys,state}=makeSystemWithSkill(1); update(sys,s,0); const w=state().wolves[0]; w.defense=0; let x=w.x; w.takeDamage(1,{enemy:{x:w.x+20,isElite:false},attackType:'melee'}); assert.equal(w.x,x-34,'normal enemy default wolf knockback stays 34px'); x=w.x; w.takeDamage(1,{enemy:{x:w.x+20,isElite:true},attackType:'melee'}); assert.equal(w.x,x-18,'elite default wolf knockback stays 18px'); x=w.x; w.takeDamage(1,{enemy:{x:w.x+20,isBoss:true},attackType:'melee'}); assert.equal(w.x,x-10,'boss default wolf knockback stays 10px');
+}
+{
+  const {s,sys,state}=makeSystemWithSkill(1); update(sys,s,0); const w=state().wolves[0]; w.defense=0; let x=w.x; w.takeDamage(1,{enemy:{x:w.x+20,isElite:false},attackType:'projectile',knockbackDistance:0}); assert.equal(w.x,x,'custom 0px wolf knockback does not move'); x=w.x; w.takeDamage(1,{enemy:{x:w.x+20,isElite:false},attackType:'projectile',knockbackDistance:-10}); assert.equal(w.x,x,'negative custom wolf knockback clamps to 0 and does not push forward'); x=w.x; w.takeDamage(1,{enemy:{x:w.x+20,isElite:false},attackType:'projectile',knockbackDistance:'bad'}); assert.equal(w.x,x-34,'non-numeric custom wolf knockback falls back to normal default');
+}
 {
   const {s,sys,state}=makeSystemWithSkill(1); update(sys,s,0); const w=state().wolves[0]; const target=enemy(w.x+180,w.y,500); s.enemies.push(target); const before=w.x; w.takeDamage(1,{enemy:{x:w.x+20,isElite:false},attackType:'melee'}); const knocked=w.x; assert.ok(knocked<before,'enemy hit decreases wolf world x'); update(sys,s,259); assert.equal(w.x,knocked,'wolf stays in knockback recovery until timer ends'); update(sys,s,261); assert.ok(w.x>knocked,'wolf resumes pursuit after knockback recovery');
 }
@@ -94,4 +104,4 @@ assert.deepEqual(basePlayerStats(realPlayer),{attack:realPlayer.baseAttack,maxHp
 }
 assert.equal(/SNAP|LEASH|initialized/.test(fs.readFileSync('src/skills/handlers/SpiritWolvesSkill.js','utf8')),false,'obsolete SNAP/LEASH/initialized logic removed');
 assert.equal(inheritRatioForLevel(1),.20); assert.equal(inheritRatioForLevel(9),.30);
-console.log('v0.10.72 spirit wolves validation passed.');
+console.log('v0.10.73 spirit wolves validation passed.');

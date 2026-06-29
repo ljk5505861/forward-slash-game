@@ -15,7 +15,7 @@ global.HTMLCanvasElement=class {};
 const { approach, entryMove } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
 
 for(const [id,cfg] of Object.entries(ENEMIES)){
-  assert.equal(cfg.speed,cfg.kind==='boss'?272:(['bomber','healer'].includes(cfg.behavior)?360:216),`${id} speed`);
+  assert.equal(cfg.speed,cfg.kind==='boss'?272:(['archer','bomber','healer'].includes(cfg.behavior)?360:216),`${id} speed`);
   assert.equal('entrySpeed' in cfg,false,`${id} has no entrySpeed`);
   assert.equal('combatSpeed' in cfg,false,`${id} has no combatSpeed`);
 }

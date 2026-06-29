@@ -9,7 +9,7 @@ import CombatSystem from '../src/systems/CombatSystem.js';
 import createEnemy from '../src/entities/createEnemy.js';
 import createPlayer from '../src/entities/createPlayer.js';
 
-const RANGED = new Set(['bomber', 'healer']);
+const RANGED = new Set(['archer', 'bomber', 'healer']);
 const noop = () => {};
 const makeNode = (x = 0, y = 0, w = 10, h = 10) => ({
   x, y, width: w, height: h, active: true, isDefeated: false,
@@ -29,7 +29,7 @@ const oldEnemies = { grunt:{width:74,height:118,bodyWidth:64,bodyHeight:108,atta
 Object.values(ENEMIES).forEach(cfg => assert.equal(cfg.speed, cfg.kind === 'boss' ? 272 : (RANGED.has(cfg.behavior) ? 360 : 216), `${cfg.id} base speed`));
 for (const [id, old] of Object.entries(oldEnemies)) { const cfg=ENEMIES[id]; ['width','height','bodyWidth','bodyHeight'].forEach(k=>assert.equal(cfg[k], Math.round(old[k]*0.7), `${id} ${k} scaled`)); }
 ['grunt','elite','armored_guard','charger','berserker_boss','mid_boss','boss'].forEach(id => assert.equal(ENEMIES[id].attackRange, Math.round(oldEnemies[id].attackRange*0.7), `${id} melee range scaled`));
-assert.equal(ENEMIES.bomber.attackRange, 480); assert.equal(ENEMIES.healer.attackRange, 480); assert.equal(ENEMIES.charger.chargeTriggerRange, 260); assert.equal(ENEMIES.berserker_boss.chargeSpeed, oldEnemies.berserker_boss.chargeSpeed, 'berserker boss charge speed unchanged');
+assert.equal(ENEMIES.archer.attackRange, 450); assert.equal(ENEMIES.archer.attackIntervalMs, 2000); assert.equal(ENEMIES.bomber.attackRange, 480); assert.equal(ENEMIES.healer.attackRange, 480); assert.equal(ENEMIES.charger.chargeTriggerRange, 260); assert.equal(ENEMIES.berserker_boss.chargeSpeed, oldEnemies.berserker_boss.chargeSpeed, 'berserker boss charge speed unchanged');
 global.window={cordova:undefined, navigator:{userAgent:''}, addEventListener(){}, removeEventListener(){}}; global.document={documentElement:{style:{}}, createElement(){return {getContext(){return new Proxy({},{get(_,k){ if(k==='getImageData') return ()=>({data:[0,0,0,0]}); return ()=>{}; }});}, style:{}};}, addEventListener(){}, removeEventListener(){}}; Object.defineProperty(globalThis,'navigator',{value:global.window.navigator, configurable:true}); global.Image=class { set src(v){ setTimeout(()=>this.onload?.(),0); } }; global.HTMLCanvasElement=class {};
 const { default: EnemyBehaviorManager, approach, entryMove } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
 const speedScene = makeScene(); const speedEnemy = createEnemy(speedScene, ENEMIES.grunt, 760, BALANCE.groundTopY); assert.equal(speedEnemy.speed, 216); assert.equal('entrySpeed' in speedEnemy, false); assert.equal('combatSpeed' in speedEnemy, false); entryMove(speedScene, speedEnemy); const entryV=speedEnemy.body.vx; approach(speedScene, speedEnemy, speedEnemy.attackRange); assert.equal(Math.abs(entryV), 216); assert.equal(Math.abs(speedEnemy.body.vx), 216, 'entry and active approach use same base speed');
@@ -40,8 +40,8 @@ const idsOf = items => items.map(item => item.id);
 const assertNoRanged = (ids, label) => assert.deepEqual(ids.filter(id => RANGED.has(id)), [], label);
 
 FLOW_GROUPS.slice(0,3).forEach(group => group.waves.forEach((count, i) => assertNoRanged(idsOf(new StageSystem(makeScene()).makeWaveIds(group.ids[i], count, group.rangedCounts?.[i] ?? 0)), `group ${group.group} wave ${i+1} has no ranged`)));
-const later = new StageSystem(makeScene()).makeWaveIds(['elite','grunt','bomber','healer'],8,2);
-assert.equal(later.length, 8); assert.equal(later.filter(x=>x.id==='elite').length,1); assert.equal(later.filter(x=>x.id==='healer').length,1); assert(later.some(x=>x.id==='bomber'), 'later stages still allow bomber');
+const later = new StageSystem(makeScene()).makeWaveIds(['elite','grunt','archer','bomber','healer'],8,4);
+assert.equal(later.length, 8); assert.equal(later.filter(x=>x.id==='elite').length,1); assert.equal(later.filter(x=>x.id==='healer').length,1); assert.equal(later.filter(x=>x.id==='bomber').length,1, 'later stages still allow at most one bomber'); assert.equal(later.filter(x=>x.id==='archer').length,2, 'remaining ranged slots use archers');
 
 const rushScene = makeScene(); const rush = new StageSystem(rushScene); rush.startRush('boss1'); const oldRandom = Math.random; Math.random = () => 0.999; rush.updateRush(100); Math.random = oldRandom;
 assert.equal(rush.waveQueue.length, 10, 'boss1 rush is exactly 10 and random-proof'); assertNoRanged(idsOf(rush.waveQueue), 'boss1 rush has no ranged');
