@@ -2,6 +2,7 @@ import { SKILLS } from '../../config/skills.js';
 import { TAGS } from '../../config/tags.js';
 import { CombatEvents, RunStates } from '../../core/CombatEvents.js';
 import { StatusEffects } from '../../systems/StatusEffectSystem.js';
+import { SPIRIT_WOLVES_ID, inheritRatioForLevel } from './SpiritWolvesSkill.js';
 
 const SOURCE='myriad_afterimage';
 const NORMAL_ATTACK_ID='normal_attack';
@@ -9,7 +10,7 @@ const COPY_RATIOS=[0.15,0.18,0.21,0.24,0.27,0.30,0.34,0.38,0.45];
 const ECHO_DELAYS=[240,230,220,205,190,175,165,155,140];
 const COPY_ADAPTERS=Object.freeze({
   [NORMAL_ATTACK_ID]:'normalAttack',
-  fireball:'active',fire_seed:'active',burn_burst:'active',poison_cloud:'active',poison_chain:'active',spinning_blade:'attackResolved',
+  fireball:'active',fire_seed:'active',burn_burst:'active',poison_cloud:'active',poison_chain:'active',spirit_wolves:'active',spinning_blade:'attackResolved',
   traceless:'heal',bloodthirst:'heal',guardian_shield:'shield',thorn_armor:'damage',sword_wave:'damage',sword_sheath:'damage',sword_tomb:'damage',parasitic_gu:'damage'
 });
 const levels=()=>COPY_RATIOS.map((copyRatio,index)=>({
@@ -99,7 +100,30 @@ function copyBurnBurst(system,state,afterimage,trigger,scale,full){
 function copyPoisonChain(system,state,afterimage,trigger,scale,full){
   const scene=system.scene,data=trigger.data||{},ctx=trigger.ctx||{},originX=afterimage.view?.x??scene.player.x; const target=scene.targeting.valid(trigger.target)?trigger.target:nearestFrom(scene,originX); if(!target) return; dealActiveDamage(system,target,data.damage||0,ctx,scale,'poison_chain',trigger.tags,'myriadPoisonChain'); if(!full) return; addPoison(system,target,{...data,poisonDamage:system.getData('poison_cloud')?.poisonDamage||1,poisonMs:2600,poisonIntervalMs:700,maxStacks:15},ctx,scale,`myriad_poison_chain_${afterimage.id}_${trigger.castId}`,1); if(!target.isBoss){ const until=scene.getGameplayTime()+(data.prisonMs||2000); target.poisonChainPrisonUntil=Math.max(target.poisonChainPrisonUntil||0,until); target.nextAttackAt=Math.max(target.nextAttackAt||0,until); target.body?.setVelocityX?.(0); schedule(state,scene,data.prisonMs||2000,()=>{ if(target.poisonChainPrisonUntil<=scene.getGameplayTime()) target.poisonChainPrisonUntil=0; }); } const chained=scene.targeting.all().filter(enemy=>enemy!==target&&scene.targeting.valid(enemy)&&Math.hypot(enemy.x-target.x,enemy.y-target.y)<=(data.extendRadius||180)).sort((a,b)=>Math.hypot(a.x-target.x,a.y-target.y)-Math.hypot(b.x-target.x,b.y-target.y))[0]; if(chained){ dealActiveDamage(system,chained,(data.damage||0)*0.5,ctx,scale,'poison_chain',trigger.tags,'myriadPoisonChainLink'); addPoison(system,chained,{...data,poisonDamage:system.getData('poison_cloud')?.poisonDamage||1,poisonMs:2600,poisonIntervalMs:700,maxStacks:15},ctx,scale,`myriad_poison_chain_link_${afterimage.id}_${trigger.castId}`,1); }
 }
-function copyActive(system,state,afterimage,trigger,scale,full){ if(trigger.skillId==='fireball') return copyFireball(system,state,afterimage,trigger,scale,full); if(trigger.skillId==='poison_cloud') return copyPoisonNeedle(system,state,afterimage,trigger,scale,full); if(trigger.skillId==='fire_seed') return copyFireSeed(system,state,afterimage,trigger,scale,full); if(trigger.skillId==='burn_burst') return copyBurnBurst(system,state,afterimage,trigger,scale,full); if(trigger.skillId==='poison_chain') return copyPoisonChain(system,state,afterimage,trigger,scale,full); }
+const wolfShadowMeta=(amount,kind)=>({ source:'skill',skillId:SOURCE,originalSkillId:SPIRIT_WOLVES_ID,damageKind:kind,tags:[TAGS.SUMMON,'shadow',TAGS.BUILD_AFTERIMAGE,TAGS.MELEE],fromMyriadAfterimage:true,afterimage:true,canTriggerArtifacts:false,allowLifeSteal:false,noKnockback:true,critResolved:true,crit:false,professionApplied:true,professionMultiplier:1,baseAmountBeforeProfession:Math.max(1,Math.round(amount)) });
+function clearWolfShadow(state,shadow){ if(!shadow||shadow.destroyed) return; shadow.destroyed=true; state.wolfShadows?.delete?.(shadow); shadow.view?.destroy?.(); shadow.timer?.remove?.(false); shadow.tween?.remove?.(); }
+function copySpiritWolves(system,state,afterimage,trigger,scale,full){
+  const scene=system.scene,level=system.getLevel(SPIRIT_WOLVES_ID)||trigger.level||1,origin={x:afterimage.view?.x??scene.player.x,y:afterimage.view?.y??scene.player.y};
+  const attack=Math.max(1,Math.round((scene.playerData.baseAttack||scene.playerData.attack||1)*inheritRatioForLevel(level))), amount=Math.max(1,Math.round(attack*scale));
+  const target=scene.targeting.all().filter(enemy=>scene.targeting.valid(enemy)&&enemy.x>=origin.x-20).sort((a,b)=>Math.hypot(a.x-origin.x,a.y-origin.y)-Math.hypot(b.x-origin.x,b.y-origin.y))[0]||null;
+  const view=scene.add?.circle?.(origin.x,origin.y,18,0xffffff,.34)?.setStrokeStyle?.(3,0x9fd7ff,.55)?.setDepth?.(147);
+  const shadow={view,destroyed:false,timer:null,tween:null}; state.wolfShadows.add(shadow);
+  const finish=()=>clearWolfShadow(state,shadow);
+  if(!target){ shadow.tween=scene.tweens?.add?.({targets:view,x:origin.x+180,alpha:0,duration:260,onComplete:finish}); shadow.timer=schedule(state,scene,300,finish); return true; }
+  const hit=()=>{
+    if(shadow.destroyed) return;
+    if(scene.targeting.valid(target)){
+      scene.combatSystem.damageEnemy(target,amount,wolfShadowMeta(amount,'myriadSpiritWolfBite'));
+      if(full&&level>=3){ const splash=Math.max(1,Math.round(amount*.35)); scene.targeting.all().filter(enemy=>enemy!==target&&scene.targeting.valid(enemy)&&Math.hypot(enemy.x-target.x,enemy.y-target.y)<=90).forEach(enemy=>scene.combatSystem.damageEnemy(enemy,splash,wolfShadowMeta(splash,'myriadSpiritWolfSplash'))); }
+      if(full&&level>=6){ const burst=Math.max(1,Math.round(attack*.8*scale)); scene.targeting.all().filter(enemy=>scene.targeting.valid(enemy)&&Math.hypot(enemy.x-target.x,enemy.y-target.y)<=120).forEach(enemy=>scene.combatSystem.damageEnemy(enemy,burst,wolfShadowMeta(burst,'myriadSpiritWolfBurst'))); }
+    }
+    finish();
+  };
+  shadow.tween=scene.tweens?.add?.({targets:view,x:target.x,y:target.y,duration:180,onComplete:hit});
+  shadow.timer=schedule(state,scene,220,hit);
+  return true;
+}
+function copyActive(system,state,afterimage,trigger,scale,full){ if(trigger.skillId==='fireball') return copyFireball(system,state,afterimage,trigger,scale,full); if(trigger.skillId==='poison_cloud') return copyPoisonNeedle(system,state,afterimage,trigger,scale,full); if(trigger.skillId==='fire_seed') return copyFireSeed(system,state,afterimage,trigger,scale,full); if(trigger.skillId==='burn_burst') return copyBurnBurst(system,state,afterimage,trigger,scale,full); if(trigger.skillId==='poison_chain') return copyPoisonChain(system,state,afterimage,trigger,scale,full); if(trigger.skillId===SPIRIT_WOLVES_ID) return copySpiritWolves(system,state,afterimage,trigger,scale,full); }
 function copyNormalAttack(system,state,afterimage,trigger,scale){
   const scene=system.scene,event=trigger.event||{},originX=afterimage.view?.x??scene.player.x;
   const target=scene.targeting.valid(event.enemy)?event.enemy:nearestFrom(scene,originX);
@@ -179,9 +203,10 @@ export function openMyriadAfterimageSelection(scene,onChanged=null,onCancel=onCh
 
 export const MyriadAfterimageSkill={
   bind(system){
-    const scene=system.scene,state={timers:new Set(),seen:new Set(),innateAfterimageId:null};
+    const scene=system.scene,state={timers:new Set(),seen:new Set(),wolfShadows:new Set(),innateAfterimageId:null};
     restoreChoiceState(system);
     const clearTimers=()=>{ state.timers.forEach(timer=>timer.remove?.(false)); state.timers.clear(); };
+    const clearWolfShadows=()=>{ [...state.wolfShadows].forEach(shadow=>clearWolfShadow(state,shadow)); state.wolfShadows.clear(); };
     const ensureInnate=()=>ensureInnateAfterimage(system,state);
     system.passiveUpdaters.push(ensureInnate);
     ensureInnate();
@@ -199,7 +224,7 @@ export const MyriadAfterimageSkill={
     const offShield=scene.eventBus.on(CombatEvents.SHIELD_GAINED,event=>{ if(!String(event?.sourceId||'').startsWith('guardian_shield')||event?.effect?.fromMyriadAfterimage) return; dispatchEcho(system,state,{skillId:'guardian_shield',event,target:null,tags:SKILLS.guardian_shield?.tags||[],castId:scene.getGameplayTime()}); });
     return ()=>{
       offUpgrade?.(); offStarting?.(); offCast?.(); offAttackResolved?.(); offEnemyHit?.(); offHealed?.(); offShield?.();
-      clearTimers(); state.seen.clear();
+      clearTimers(); clearWolfShadows(); state.seen.clear();
       system.passiveUpdaters=system.passiveUpdaters.filter(fn=>fn!==ensureInnate);
       scene.afterimages?.getAll?.().filter(afterimage=>afterimage.ownerSkillId===SOURCE).forEach(afterimage=>scene.afterimages.removeAfterimage(afterimage.id,'skillRemoved'));
       Reflect.deleteProperty(scene.playerData,'myriadAfterimageSkillId');

@@ -96,8 +96,8 @@ const configs = {
       9:'攻速提高至42%，闪避率提高至25%'
     })
   },
-  spirit_wolves:{id:'spirit_wolves',name:'召唤灵狼',rarity:'EPIC',tags:[TAGS.SUMMON,'physical',TAGS.MELEE],maxLevel:9,cooldownMs:8000,targetType:'self',color:0x9fd7ff,short:'狼',handler:'spirit_wolves',description:'独立召唤两只可被攻击和击退的灵狼，全部死亡后才重新冷却。召唤伤害不触发玩家吸血、普攻附带效果、暴击、法宝或普攻事件。',levels:[
-    {inheritRatio:.20,cooldownMs:8000,desc:'首次获得先冷却8秒，随后同时召唤2只灵狼；每只继承玩家基础攻击、基础最大生命、基础防御20%，两只全部死亡后才进入冷却。'},
+  spirit_wolves:{id:'spirit_wolves',name:'召唤灵狼',rarity:'COMMON',tags:[TAGS.SUMMON,'physical',TAGS.MELEE],maxLevel:9,cooldownMs:8000,targetType:'self',color:0x9fd7ff,short:'狼',handler:'spirit_wolves',description:'独立召唤两只可被攻击和击退的灵狼，全部死亡后才重新冷却。召唤伤害不触发玩家吸血、普攻附带效果、暴击、法宝或普攻事件。',levels:[
+    {inheritRatio:.20,cooldownMs:8000,desc:'首次正式释放立即同时召唤2只灵狼；每只继承玩家基础攻击、基础最大生命、基础防御20%，两只全部死亡后才进入8秒冷却。'},
     {inheritRatio:.21,cooldownMs:8000,desc:'灵狼基础属性继承提高到21%，仍可被敌人攻击和击退。'},
     {inheritRatio:.22,cooldownMs:8000,splashRadius:90,splashScale:.35,milestoneText:'群狼撕咬',desc:'继承提高到22%；灵狼普通攻击对主目标造成完整伤害，并对90范围内其他敌人造成35%溅射，主目标不重复受伤。'},
     {inheritRatio:.23,cooldownMs:8000,splashRadius:90,splashScale:.35,desc:'灵狼基础属性继承提高到23%，全部死亡后才进入下一轮冷却。'},
