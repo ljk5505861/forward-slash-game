@@ -47,7 +47,9 @@
     "validate:01071-spirit-wolves": "node scripts/validate-01071-spirit-wolves.mjs && node scripts/validate-01071-spirit-wolves-resources.mjs && node scripts/validate-01071-spirit-wolves-myriad.mjs",
     "validate:01073-archer-enemy": "node scripts/validate-01073-archer-enemy.mjs",
     "validate:01074-ios-canvas-text-lifecycle": "node scripts/validate-01074-ios-canvas-text-lifecycle.mjs",
-    "validate:01074-playtest-fixes": "node scripts/validate-01074-playtest-fixes.mjs"
+    "validate:01074-playtest-fixes": "node scripts/validate-01074-playtest-fixes.mjs && npm run validate:01075-wolf-knockback-target-lock",
+    "validate:01075-wolf-knockback-target-lock": "node scripts/validate-01075-wolf-knockback-target-lock.mjs",
+    "validate:01075-playtest-fixes": "npm run validate:01074-ios-canvas-text-lifecycle && npm run validate:01063-safe-restart && npm run validate:01071-spirit-wolves && npm run validate:01073-archer-enemy && npm run validate:01075-wolf-knockback-target-lock"
   },
   "dependencies": {
     "phaser": "4.1.0",
