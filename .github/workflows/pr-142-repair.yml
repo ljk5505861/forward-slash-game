@@ -27,7 +27,7 @@ jobs:
       - name: Update stale version assertions and add image regression
         shell: bash
         run: |
-          grep -rlZ "0.10.69" scripts --include='*.mjs' | xargs -0 -r sed -i 's/0\.10\.69/0.10.70/g'
+          grep -rlZ "0.10.69" scripts --include='*.mjs' | xargs -0 -r sed -i 's/0\.10\.69/0.10.70/g' || true
 
           cat > scripts/validate-01070-player-image.mjs <<'EOF'
           import assert from 'node:assert/strict';
