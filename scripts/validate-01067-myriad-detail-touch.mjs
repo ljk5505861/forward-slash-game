@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { GAME_VERSION } from '../src/config/version.js';
 
-assert.equal(GAME_VERSION,'0.10.69');
+assert.equal(GAME_VERSION,'0.10.70');
 globalThis.window??={};
 const canvasContext={fillRect(){},drawImage(){},getImageData(){return {data:new Uint8ClampedArray([0,0,0,255])};},putImageData(){},createImageData(){return {data:new Uint8ClampedArray(4)};},clearRect(){}};
 globalThis.document??={documentElement:{style:{}},createElement:()=>({getContext:()=>canvasContext,style:{}})};
-globalThis.navigator??={userAgent:'iPhone Safari'};
+globalThis.navigator??={userAgent:'iPhone Safari',appVersion:'OS 18_0'};
 globalThis.HTMLCanvasElement??=class {};
 globalThis.Image??=class { set src(_value){ setTimeout(()=>this.onload?.(),0); } };
 
@@ -110,4 +110,4 @@ bar.showDetail(0);
 assert.equal(firstBg.destroyed,true,'closing detail destroys old button nodes');
 assert.ok(bar.detail.copyButton.bg.handlers.pointerdown,'reopened detail has exactly one active button handler');
 
-console.log('v0.10.69 myriad detail touch validation passed.');
+console.log('v0.10.70 myriad detail touch validation passed.');

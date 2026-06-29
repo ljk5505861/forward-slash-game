@@ -42,7 +42,8 @@
     "validate:01063-safe-restart": "node scripts/validate-01063-safe-restart.mjs",
     "validate:01064-afterimage-rework": "node scripts/validate-01064-afterimage-rework.mjs",
     "validate:01066-myriad-detail-selection": "node scripts/validate-01066-myriad-detail-selection.mjs",
-    "validate:01067-myriad-detail-touch": "node scripts/validate-01067-myriad-detail-touch.mjs"
+    "validate:01067-myriad-detail-touch": "node scripts/validate-01067-myriad-detail-touch.mjs",
+    "validate:01070-player-image": "node scripts/validate-01070-player-image.mjs"
   },
   "dependencies": {
     "phaser": "latest",

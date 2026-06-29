@@ -1,6 +1,6 @@
 const PLAYER_TEXTURE_KEY = 'player-idle';
-const PLAYER_FRAME_KEY = 'trimmed-v01069';
-const PLAYER_FRAME = { x: 0, y: 0, width: 254, height: 352 };
+const PLAYER_FRAME_KEY = 'trimmed-v01070';
+const PLAYER_FRAME = { x: 0, y: 0, width: 127, height: 176 };
 const PLAYER_VISUAL_HEIGHT_SCALE = 1.55;
 const PLAYER_TEXTURE_URL = new URL('../player_idle.png', import.meta.url).href;
 
