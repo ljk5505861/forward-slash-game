@@ -23,7 +23,7 @@ export const SKILLS = {
     {inheritRatio:.24,cooldownMs:8000,splashRadius:90,splashScale:.35,desc:'灵狼基础属性继承提高到24%，召唤伤害仍不触发玩家本体连锁。'},
     {inheritRatio:.25,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,milestoneText:'亡命爆裂',desc:'继承提高到25%；灵狼生命归零自然死亡时产生120范围爆炸，造成自身攻击力80%伤害，清理/重启/移除不触发。'},
     {inheritRatio:.26,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到26%，被击退后会继续追踪敌人。'},
-    {inheritRatio:.28,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到28%，距离玩家过远会安全回到附近。'},
+    {inheritRatio:.28,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到28%；即使被击退到玩家身后，也会依靠自身速度重新向前推进。'},
     {inheritRatio:.30,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,scaleBonus:.15,milestoneText:'狼王血脉',desc:'每只灵狼继承30%玩家基础攻击、基础最大生命、基础防御，并获得约15%体型强化；仍只召唤2只。'}]},
   time_loan:{id:'time_loan',name:'时间借贷',rarity:'MYTHIC',tags:['time',TAGS.ACTIVE_SKILL],maxLevel:3,cooldownMs:10000,targetType:'self',color:0xff4b4b,short:'时',handler:'time_loan',description:'刷新其他技能冷却并让其他技能额外释放。',levels:[{extraCasts:1,windowMs:1200,desc:'刷新所有其他技能冷却，并让其他技能额外释放1轮。'},{extraCasts:1,windowMs:2200,desc:'时间爆发窗口延长，其他技能更稳定地释放额外1轮。',changes:['爆发窗口：1.2秒 → 2.2秒']},{extraCasts:2,windowMs:2200,desc:'时间爆发内其他技能额外释放2轮。',changes:['额外释放轮数：1 → 2']}]},
 };

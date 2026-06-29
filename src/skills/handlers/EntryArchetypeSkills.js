@@ -104,7 +104,7 @@ const configs = {
     {inheritRatio:.24,cooldownMs:8000,splashRadius:90,splashScale:.35,desc:'灵狼基础属性继承提高到24%，召唤伤害仍不触发玩家本体连锁。'},
     {inheritRatio:.25,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,milestoneText:'亡命爆裂',desc:'继承提高到25%；灵狼生命归零自然死亡时产生120范围爆炸，造成自身攻击力80%伤害，清理/重启/移除不触发。'},
     {inheritRatio:.26,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到26%，被击退后会继续追踪敌人。'},
-    {inheritRatio:.28,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到28%，距离玩家过远会安全回到附近。'},
+    {inheritRatio:.28,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到28%；即使被击退到玩家身后，也会依靠自身速度重新向前推进。'},
     {inheritRatio:.30,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,scaleBonus:.15,milestoneText:'狼王血脉',desc:'每只灵狼继承30%玩家基础攻击、基础最大生命、基础防御，并获得约15%体型强化；仍只召唤2只。'}]}
 };
 
