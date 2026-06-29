@@ -5,7 +5,7 @@ assert.equal(GAME_VERSION,'0.10.70');
 globalThis.window??={};
 const canvasContext={fillRect(){},drawImage(){},getImageData(){return {data:new Uint8ClampedArray([0,0,0,255])};},putImageData(){},createImageData(){return {data:new Uint8ClampedArray(4)};},clearRect(){}};
 globalThis.document??={documentElement:{style:{}},createElement:()=>({getContext:()=>canvasContext,style:{}})};
-globalThis.navigator??={userAgent:'iPhone Safari'};
+globalThis.navigator??={userAgent:'iPhone Safari',appVersion:'OS 18_0'};
 globalThis.HTMLCanvasElement??=class {};
 globalThis.Image??=class { set src(_value){ setTimeout(()=>this.onload?.(),0); } };
 
