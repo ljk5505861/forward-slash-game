@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - codex-ablumn
+  pull_request:
+    branches:
+      - main
 
 jobs:
   validate:
