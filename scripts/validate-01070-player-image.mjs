@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { GAME_VERSION } from '../src/config/version.js';
 
-assert.equal(GAME_VERSION, '0.10.70');
+assert.equal(GAME_VERSION, '0.10.71');
 
 const png = readFileSync(new URL('../src/player_idle.png', import.meta.url));
 assert.deepEqual(
@@ -20,4 +20,4 @@ if (colorType === 3) {
   assert.ok(png.includes(Buffer.from('tRNS')), 'indexed player image must contain a transparency chunk');
 }
 
-console.log('v0.10.70 player image validation passed.');
+console.log('v0.10.71 player image validation passed.');
