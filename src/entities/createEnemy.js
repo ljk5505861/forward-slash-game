@@ -41,6 +41,8 @@ export default function createEnemy(scene, config, x, groundTopY) {
     baseAttackIntervalMs:config.attackIntervalMs,
     attackRange:config.attackRange,
     nextAttackAt:0,
+    lockedAttackTarget:null,
+    forcePlayerTargetUntilHit:false,
     enraged:false,
     burnTick:null,
     poisonChainPrisonUntil:0,
