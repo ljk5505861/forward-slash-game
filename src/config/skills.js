@@ -25,6 +25,17 @@ export const SKILLS = {
     {inheritRatio:.26,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到26%，被击退后会继续追踪敌人。'},
     {inheritRatio:.28,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到28%；即使被击退到玩家身后，也会依靠自身速度重新向前推进。'},
     {inheritRatio:.30,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,scaleBonus:.15,milestoneText:'狼王血脉',desc:'每只灵狼继承30%玩家基础攻击、基础最大生命、基础防御，并获得约15%体型强化；仍只召唤2只。'}]},
+  spirit_bird:{id:'spirit_bird',name:'灵鸟',rarity:'COMMON',tags:[TAGS.SUMMON],maxLevel:9,cooldownMs:8000,targetType:'self',color:0xf8fafc,short:'鸟',handler:'spirit_bird',description:'召唤一只常驻治疗灵鸟。灵鸟每隔数秒治疗生命比例最低的玩家或召唤物，可以受到敌人攻击，死亡8秒后重新召唤。',milestones:{3:'治疗强化——灵鸟治疗量提高30%。',6:'快速治疗——治疗间隔从3秒缩短为2秒。',9:'群体治疗——每次治疗同时恢复玩家和所有存活召唤物的生命。'},levels:[
+    {hpRatio:.10,defenseRatio:.10,healRatio:.020,healMultiplier:1,healIntervalMs:3000,desc:'继承玩家基础最大生命10%、基础防御10%；每3秒治疗玩家当前最大生命2.00%，治疗生命比例最低的玩家或召唤物。'},
+    {hpRatio:.11,defenseRatio:.11,healRatio:.022,healMultiplier:1,healIntervalMs:3000,desc:'继承玩家基础最大生命11%、基础防御11%；每3秒治疗玩家当前最大生命2.20%。'},
+    {hpRatio:.12,defenseRatio:.12,healRatio:.024,healMultiplier:1.3,healIntervalMs:3000,milestoneText:'治疗强化',desc:'继承玩家基础最大生命12%、基础防御12%；治疗强化生效，每3秒治疗玩家当前最大生命3.12%。'},
+    {hpRatio:.13,defenseRatio:.13,healRatio:.027,healMultiplier:1.3,healIntervalMs:3000,desc:'继承玩家基础最大生命13%、基础防御13%；治疗强化生效，每3秒治疗玩家当前最大生命3.51%。'},
+    {hpRatio:.14,defenseRatio:.14,healRatio:.030,healMultiplier:1.3,healIntervalMs:3000,desc:'继承玩家基础最大生命14%、基础防御14%；治疗强化生效，每3秒治疗玩家当前最大生命3.90%。'},
+    {hpRatio:.15,defenseRatio:.15,healRatio:.033,healMultiplier:1.3,healIntervalMs:2000,milestoneText:'快速治疗',desc:'继承玩家基础最大生命15%、基础防御15%；治疗强化生效，快速治疗使间隔缩短为2秒，治疗玩家当前最大生命4.29%。'},
+    {hpRatio:.16,defenseRatio:.16,healRatio:.036,healMultiplier:1.3,healIntervalMs:2000,desc:'继承玩家基础最大生命16%、基础防御16%；治疗强化和快速治疗生效，每2秒治疗玩家当前最大生命4.68%。'},
+    {hpRatio:.18,defenseRatio:.18,healRatio:.038,healMultiplier:1.3,healIntervalMs:2000,desc:'继承玩家基础最大生命18%、基础防御18%；治疗强化和快速治疗生效，每2秒治疗玩家当前最大生命4.94%。'},
+    {hpRatio:.20,defenseRatio:.20,healRatio:.040,healMultiplier:1.3,healIntervalMs:2000,groupHeal:true,milestoneText:'群体治疗',desc:'继承玩家基础最大生命20%、基础防御20%；每2秒群体治疗玩家当前最大生命5.20%，同时恢复玩家和所有存活召唤物，不包括灵鸟自己。'}]},
+
   time_loan:{id:'time_loan',name:'时间借贷',rarity:'MYTHIC',tags:['time',TAGS.ACTIVE_SKILL],maxLevel:3,cooldownMs:10000,targetType:'self',color:0xff4b4b,short:'时',handler:'time_loan',description:'刷新其他技能冷却并让其他技能额外释放。',levels:[{extraCasts:1,windowMs:1200,desc:'刷新所有其他技能冷却，并让其他技能额外释放1轮。'},{extraCasts:1,windowMs:2200,desc:'时间爆发窗口延长，其他技能更稳定地释放额外1轮。',changes:['爆发窗口：1.2秒 → 2.2秒']},{extraCasts:2,windowMs:2200,desc:'时间爆发内其他技能额外释放2轮。',changes:['额外释放轮数：1 → 2']}]},
 };
 

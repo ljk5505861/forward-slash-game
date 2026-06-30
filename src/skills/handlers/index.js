@@ -12,6 +12,7 @@ import { configurePoisonSummonAdvancedSkills, PoisonKingSkill } from './PoisonSu
 import { configurePoisonChainActiveSkill, ParasiticGuHostVisualSkill, PoisonChainActiveSkill } from './PoisonSummonInteractionFixes.js';
 import { configureTemporaryStartingPool } from './TemporaryStartingPool.js';
 import { SpiritWolvesSkill } from './SpiritWolvesSkill.js';
+import { SpiritBirdSkill } from './SpiritBirdSkill.js';
 
 configureEntryArchetypeSkills();
 configureFlameCoreSkills();
@@ -26,4 +27,4 @@ configurePoisonSummonAdvancedSkills();
 configurePoisonChainActiveSkill();
 configureTemporaryStartingPool();
 
-export const SKILL_HANDLERS={entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,fire_seed:FireSeedSkill,burn_burst:BurnBurstSkill,solar_flame:SolarFlameSkill,sword_sheath:SwordSheathSkill,sword_tomb:SwordTombSkill,giant_force:GiantForceSkill,spinning_blade:SpinningBladeSkill,bloodthirst:BloodthirstSkill,last_stand:LastStandSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,phantom_step:PhantomStepSkill,traceless:TracelessSkill,instant_step:InstantStepSkill,myriad_afterimage:MyriadAfterimageSkill,parasitic_gu:ParasiticGuHostVisualSkill,poison_chain:PoisonChainActiveSkill,poison_king:PoisonKingSkill,spirit_wolves:SpiritWolvesSkill};
+export const SKILL_HANDLERS={entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,fire_seed:FireSeedSkill,burn_burst:BurnBurstSkill,solar_flame:SolarFlameSkill,sword_sheath:SwordSheathSkill,sword_tomb:SwordTombSkill,giant_force:GiantForceSkill,spinning_blade:SpinningBladeSkill,bloodthirst:BloodthirstSkill,last_stand:LastStandSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,phantom_step:PhantomStepSkill,traceless:TracelessSkill,instant_step:InstantStepSkill,myriad_afterimage:MyriadAfterimageSkill,parasitic_gu:ParasiticGuHostVisualSkill,poison_chain:PoisonChainActiveSkill,poison_king:PoisonKingSkill,spirit_wolves:SpiritWolvesSkill,spirit_bird:SpiritBirdSkill};
