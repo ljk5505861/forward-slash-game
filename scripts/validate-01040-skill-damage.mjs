@@ -8,11 +8,11 @@ const nums=(id,key)=>SKILLS[id]?.levels?.map(level=>level[key]);
 const eq=(actual,expected,label)=>assert.deepEqual(actual,expected,label);
 const src=file=>readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
 const hasHandler=handler=>new RegExp(`${handler}:`).test(src('src/skills/handlers/index.js'));
-const archetypes={fire:['fireball','fire_seed','burn_burst','solar_flame'],sword:['sword_wave','sword_sheath','sword_tomb'],strength:['giant_force','spinning_blade','bloodthirst','last_stand'],defense:['healing','thorn_armor','guardian_shield'],afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],summon:['spirit_wolves','spirit_bird']};
+const archetypes={fire:['fireball','fire_seed','burn_burst','solar_flame'],sword:['sword_wave','sword_sheath','sword_tomb'],strength:['giant_force','spinning_blade','bloodthirst','last_stand'],defense:['healing','thorn_armor','guardian_shield'],afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],summon:['spirit_wolves','spirit_bird'],weapon:['lightning_enchant']};
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.10.81','game version for v0.10.60 skill regression');
-eq(allSkillIds.length,25,'all current 25 skills listed');
-eq(new Set(allSkillIds).size,25,'all current 25 skills unique');
+assert.equal(GAME_VERSION,'0.10.82','game version for v0.10.60 skill regression');
+eq(allSkillIds.length,26,'all current 26 skills listed');
+eq(new Set(allSkillIds).size,26,'all current 26 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
 allSkillIds.forEach(id=>assert.ok(SKILLS[id],`missing skill ${id}`));
 
@@ -58,6 +58,10 @@ assert.ok(SKILLS.shadow_fist.levels.every(level=>level.dodgeChance>0&&level.atta
 assert.ok(SKILLS.phantom_step.levels.every(level=>level.maxAfterimages>=2&&level.durationMs===6000&&level.damageRatio>0),'phantom_step afterimage duration/damage configured');
 assert.ok(SKILLS.traceless.levels.every(level=>level.dodgeChance>0&&level.dodgeHeal>0),'traceless dodge/heal configured');
 assert.ok(SKILLS.myriad_afterimage.levels.every(level=>level.copyRatio>0),'myriad_afterimage copy ratios configured');
+eq(nums('lightning_enchant','damageRatio'),[0.12,0.14,0.18,0.20,0.22,0.24,0.27,0.30,0.34],'lightning_enchant.damageRatio');
+eq(nums('lightning_enchant','chainCount'),[0,0,0,0,0,1,1,1,2],'lightning_enchant.chainCount');
+eq(nums('lightning_enchant','chainRatio'),[0,0,0,0,0,0.5,0.5,0.5,0.65],'lightning_enchant.chainRatio');
+eq(nums('lightning_enchant','chainRadius'),[0,0,0,0,0,130,130,130,150],'lightning_enchant.chainRadius');
 
 eq(nums('poison_cloud','damage'),[26,32,52,62,75,91,109,130,156],'poison_cloud.damage');
 eq(nums('poison_cloud','poisonDamage'),[6,6,10,10,13,13,16,18,21],'poison_cloud.poisonDamage');

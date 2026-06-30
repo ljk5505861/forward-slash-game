@@ -20,6 +20,7 @@ export const TAGS = Object.freeze({
   BUILD_STRENGTH: 'buildStrength',
   BUILD_DEFENSE: 'buildDefense',
   BUILD_AFTERIMAGE: 'buildAfterimage',
+  BUILD_WEAPON: 'buildWeapon',
 });
 
 export const LEGACY_TAG_ALIASES = Object.freeze({
@@ -35,6 +36,7 @@ export const BUILD_TAGS = Object.freeze([
   TAGS.BUILD_STRENGTH,
   TAGS.BUILD_DEFENSE,
   TAGS.BUILD_AFTERIMAGE,
+  TAGS.BUILD_WEAPON,
 ]);
 
 export const CORE_TAGS = Object.freeze(Object.values(TAGS));
