@@ -16,7 +16,7 @@ function scene(){ let now=0,id=1; const timers=[],tweens=[],damage=[],enemies=[]
 function make(level=1,myriadLevel=1){const s=scene(),sys=new SkillSystem(s); s.skillSystem=sys; sys.addOrLevel(SPIRIT_WOLVES_ID); while(sys.getLevel(SPIRIT_WOLVES_ID)<level) sys.addOrLevel(SPIRIT_WOLVES_ID); sys.addOrLevel('myriad_afterimage'); while(sys.getLevel('myriad_afterimage')<myriadLevel) sys.addOrLevel('myriad_afterimage'); s.eventBus.emit(CombatEvents.UPGRADE_CHOSEN,{skillId:'myriad_afterimage',level:1}); return {s,sys,state:()=>sys.passiveState.myriadAfterimage};}
 function triggerWolfCopy(s,sys){ s.eventBus.emit(CombatEvents.SKILL_CAST_COMPLETED,{skillId:SPIRIT_WOLVES_ID,skill:SKILLS.spirit_wolves,level:sys.getLevel(SPIRIT_WOLVES_ID),data:sys.getData(SPIRIT_WOLVES_ID),ctx:{castId:`manual_${s.damage.length}_${s.getGameplayTime()}_${Math.random()}`},targets:[]}); }
 function finishCopies(s){ s.runTimers(); s.runTweens(); s.runTimers(); }
-assert.equal(GAME_VERSION,'0.10.78');
+assert.equal(GAME_VERSION,'0.10.79');
 assert.equal(MyriadAfterimageSkill.copyAdapters[SPIRIT_WOLVES_ID],'active');
 assert.equal(isEligibleMyriadCopySkill(SKILLS.spirit_wolves),true);
 {
@@ -34,4 +34,4 @@ assert.equal(isEligibleMyriadCopySkill(SKILLS.spirit_wolves),true);
 {
  const {s,sys,state}=make(); s.playerData.myriadAfterimageSkillId=SPIRIT_WOLVES_ID; s.enemies.push(enemy(300,100)); sys.update(0); const listenerCountBefore=s.eventBus.count(); triggerWolfCopy(s,sys); s.runTimerBatch(); assert.ok(state().wolfShadows.size>0,'wolf shadow is in flight before shutdown'); const visuals=[...state().wolfShadows].map(sh=>sh.view); const before=s.damage.length; s.events.emit('shutdown'); assert.equal(visuals.every(v=>v.active===false),true,'shutdown destroys wolf-shadow visuals'); assert.equal(sys.passiveState.myriadAfterimage,undefined,'shutdown clears myriad state'); assert.equal(sys.passiveUpdaters.length,sys.passiveUpdaters.filter(fn=>fn.name!=='ensureInnate').length,'myriad updater removed'); assert.equal(s.afterimages.getAll().filter(a=>a.ownerSkillId==='myriad_afterimage').length,0,'innate afterimage removed'); assert.ok(s.eventBus.count()<=listenerCountBefore-7,'myriad eventBus listeners removed'); assert.equal(s.events.count(),0,'shutdown listener removed'); finishCopies(s); assert.equal(s.damage.length,before,'shutdown prevents pending tween/timer damage'); const off=sys.boundPassives.get('myriad_afterimage'); off?.(); s.events.emit('shutdown'); assert.equal(s.damage.length,before,'cleanup is idempotent after shutdown and manual off');
 }
-console.log('v0.10.78 spirit wolves myriad validation passed.');
+console.log('v0.10.79 spirit wolves myriad validation passed.');
