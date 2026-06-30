@@ -626,6 +626,7 @@ export default class StatusEffectSystem {
   absorbShield(damage,context={}){
     const p=this.scene.playerData;
     let remaining=damage;
+    const brokenEffects=[];
     const shields=this.getEffects(p,StatusEffects.SHIELD)
       .sort((a,b)=>(a.persistent?Number.POSITIVE_INFINITY:a.expiresAt)-(b.persistent?Number.POSITIVE_INFINITY:b.expiresAt));
     for(const effect of shields){
@@ -662,6 +663,7 @@ export default class StatusEffectSystem {
           sourceId:effect.sourceId,
           ...context
         });
+        brokenEffects.push(effect);
         this.removeEffect(effect,'broken');
       }
     }
@@ -673,7 +675,8 @@ export default class StatusEffectSystem {
     this.syncPlayerDerived();
     return {
       absorbed:damage-remaining,
-      remainingDamage:remaining
+      remainingDamage:remaining,
+      brokenEffects
     };
   }
 

@@ -138,6 +138,7 @@ export default class CombatSystem {
       totalShieldBefore,
       totalShieldAfter,
       shieldDepleted,
+      brokenShieldEffects:shieldResult.brokenEffects||[],
       directAttack,
       ...meta
     });
