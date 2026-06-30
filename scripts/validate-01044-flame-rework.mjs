@@ -9,7 +9,7 @@ import SkillSystem from '../src/systems/SkillSystem.js';
 import StatusEffectSystem, { StatusEffects } from '../src/systems/StatusEffectSystem.js';
 import { TAGS } from '../src/config/tags.js';
 
-assert.equal(GAME_VERSION,'0.10.76');
+assert.equal(GAME_VERSION,'0.10.77');
 const flameIds=Object.values(SKILLS).filter(s=>s.tags?.includes(TAGS.BUILD_FIRE)).map(s=>s.id).sort();
 assert.deepEqual(flameIds,['burn_burst','fire_seed','fireball','solar_flame'].sort(),'fire build exposes exactly four formal skills');
 for (const removed of ['flame_spray','wildfire','meteor','eternal_flame_heart']) assert.equal(SKILLS[removed],undefined,`${removed} removed from skill pool`);
