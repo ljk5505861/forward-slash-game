@@ -69,7 +69,7 @@ function makeSystem(scene){
 }
 const runUpdaters=system=>system.passiveUpdaters.slice().forEach(fn=>fn());
 
-assert.equal(GAME_VERSION,'0.10.78');
+assert.equal(GAME_VERSION,'0.10.79');
 assert.equal(SKILLS.shadow_assault,undefined);
 assert.equal(SKILLS.swift_shadow,undefined);
 for(const id of ['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage']){
@@ -154,4 +154,4 @@ assert.deepEqual(SKILLS.myriad_afterimage.levels.map(level=>level.copyRatio),[.1
   assert.ok(positions.every(card=>card.x-74>=0&&card.x+74<=720)); assert.ok(positions.some(card=>card.y>300));
 }
 
-console.log('v0.10.78 afterimage behavior validation passed.');
+console.log('v0.10.79 afterimage behavior validation passed.');

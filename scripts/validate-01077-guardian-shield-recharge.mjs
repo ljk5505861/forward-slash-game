@@ -19,7 +19,7 @@ const normal=s=>g(s).filter(e=>e.guardianShieldKind==='normal');
 const regen=s=>g(s).filter(e=>e.guardianShieldKind==='regen');
 const addLevels=(s,n)=>{for(let i=0;i<n;i++) s.skillSystem.addOrLevel('guardian_shield'); run(s);};
 
-assert.equal(GAME_VERSION,'0.10.78');
+assert.equal(GAME_VERSION,'0.10.79');
 assert.deepEqual(SKILLS.guardian_shield.levels.map(l=>l.rechargeMs),[5000,4800,4600,4400,4200,4000,3800,3600,3400]);
 assert(SKILLS.guardian_shield.levels.every(l=>l.intervalMs===undefined));
 assert.deepEqual(SKILLS.guardian_shield.levels.map(l=>l.generatedShieldMultiplier),[1,1,1.3,1.3,1.3,1.3,1.3,1.3,1.3]);
@@ -42,4 +42,4 @@ assert(!/guardian_shield[\s\S]*COMBAT_STARTED/.test(source));
 { const s=scene(); addLevels(s,1); update(s,2000); s.skillSystem.addOrLevel('guardian_shield'); run(s); update(s,4799); assert.equal(g(s).length,0); update(s,4800); assert.equal(g(s).length,1); const first=g(s)[0]; s.skillSystem.addOrLevel('guardian_shield'); run(s); assert.equal(g(s)[0].id,first.id); assert.equal(g(s)[0].remainingValue,first.remainingValue); }
 { const s=scene(); addLevels(s,1); s.statusEffects.add(StatusEffects.SHIELD,s.playerData,{durationMs:99999,value:80,remainingValue:80,sourceId:'other'}); update(s,5000); assert.equal(g(s).length,0); update(s,9999); assert.equal(g(s).length,0); s.statusEffects.getEffects(s.playerData,StatusEffects.SHIELD).forEach(e=>s.statusEffects.removeEffect(e)); update(s,10000); assert.equal(g(s).length,1); assert(s.playerData.shield<=s.playerData.maxShield); }
 { const s=scene(); addLevels(s,9); update(s,3400); const before=s.skillSystem.passiveUpdaters.length; s.playerData.skills=[]; s.skillSystem.removeSkillRuntime('guardian_shield'); assert.equal(g(s).length,0); assert.equal(s.playerData.maxShield,50); assert.equal(s.skillSystem.passiveUpdaters.length,before-1); s.skillSystem.removeSkillRuntime('guardian_shield'); update(s,999999); assert.equal(g(s).length,0); }
-console.log('v0.10.78 guardian shield recharge validation passed.');
+console.log('v0.10.79 guardian shield recharge validation passed.');
