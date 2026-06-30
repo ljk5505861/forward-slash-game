@@ -60,12 +60,14 @@
     "validate:01079-spirit-bird-interval-jitter": "node scripts/validate-01079-spirit-bird-interval-jitter.mjs",
     "validate:01079-playtest-fixes": "npm run validate:01079-spirit-bird-interval-jitter && npm run validate:01078-playtest-fixes",
     "validate:01080-spirit-bird-chase-balance": "node scripts/validate-01080-spirit-bird-chase-balance.mjs",
-    "validate:01080-playtest-fixes": "npm run validate:01080-spirit-bird-chase-balance && npm run validate:01079-playtest-fixes"
+    "validate:01080-playtest-fixes": "npm run validate:01080-spirit-bird-chase-balance && npm run validate:01079-playtest-fixes",
+    "validate:01081-guardian-shield-skillbar": "node scripts/validate-01081-guardian-shield-skillbar.mjs",
+    "validate:01081-playtest-fixes": "npm run validate:01081-guardian-shield-skillbar && npm run validate:01080-playtest-fixes"
   },
   "dependencies": {
     "phaser": "4.1.0",
     "vite": "latest"
   },
   "devDependencies": {},
-  "version": "0.10.80"
+  "version": "0.10.81"
 }
