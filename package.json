@@ -53,11 +53,15 @@
     "validate:01076-wolf-pressure-balance": "node scripts/validate-01076-wolf-pressure-balance.mjs",
     "validate:01076-playtest-fixes": "npm run validate:01076-wolf-pressure-balance && npm run validate:01075-wolf-knockback-target-lock && npm run validate:01071-spirit-wolves && npm run validate:01073-archer-enemy && npm run validate:01043-boss-knockback && npm run validate:01074-ios-canvas-text-lifecycle && npm run validate:01063-safe-restart",
     "validate:01077-guardian-shield-recharge": "node scripts/validate-01077-guardian-shield-recharge.mjs",
-    "validate:01077-playtest-fixes": "npm run validate:01077-guardian-shield-recharge && npm run validate:01062-defense-rework && npm run validate:01064-afterimage-rework && npm run validate:01066-myriad-detail-selection && npm run validate:01063-safe-restart && npm run validate:01076-playtest-fixes"
+    "validate:01077-playtest-fixes": "npm run validate:01077-guardian-shield-recharge && npm run validate:01062-defense-rework && npm run validate:01064-afterimage-rework && npm run validate:01066-myriad-detail-selection && npm run validate:01063-safe-restart && npm run validate:01076-playtest-fixes",
+    "validate:01078-spirit-bird-healer": "node scripts/validate-01078-spirit-bird-healer.mjs",
+    "validate:01078-playtest-fixes": "npm run validate:01078-spirit-bird-healer && npm run validate:01077-playtest-fixes",
+    "validate:01071-spirit-wolves-myriad": "node scripts/validate-01071-spirit-wolves-myriad.mjs"
   },
   "dependencies": {
     "phaser": "4.1.0",
     "vite": "latest"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "version": "0.10.78"
 }

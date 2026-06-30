@@ -486,6 +486,11 @@ export const PoisonKingSkill={
     };
     const runtime={
       get:()=>king,
+      getHealingTarget:()=>{
+        const current=king;
+        if(!current||current.dead||current.hp<=0) return null;
+        return { type:'poison_king', get x(){return current.view?.x??0;}, get y(){return current.view?.y??0;}, get hp(){return current.hp;}, get maxHp(){return current.maxHp;}, isAlive:()=>king===current&&!current.dead&&current.hp>0, heal:amount=>{ if(king!==current||current.dead||current.hp<=0) return 0; const actual=healEntity(current,Math.round(amount)||0,current.maxHp); updateHpBar(current); if(actual>0) s.floatText?.(current.view.x,current.view.y-48,`+${actual}`,'#7dff8a'); return actual; } };
+      },
       getAttackTarget:()=>{
         const current=king;
         if(!current||current.dead||current.hp<=0) return null;
