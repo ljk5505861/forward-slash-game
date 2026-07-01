@@ -14,7 +14,7 @@ const burnTextBlock=indicators.slice(
   indicators.indexOf('const poisonText')
 );
 
-assert.equal(GAME_VERSION,'0.10.82','game version is 0.10.82');
+assert.equal(GAME_VERSION,'0.10.83','game version is 0.10.83');
 assert.match(sword,/rotation:0/,'sword sheath anchor rotation is 0');
 assert.doesNotMatch(sword,/-0\.45\s*\*\s*dir/,'sheath no longer tilts by direction');
 const sheathBlock=sword.slice(sword.indexOf('export const SwordSheathSkill'),sword.indexOf('export const SwordTombSkill'));
