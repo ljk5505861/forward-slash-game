@@ -3,6 +3,24 @@ import { BlackHoleSkill, GravityCrushSkill, mostDense } from './GravityFlowSkill
 const time=s=>s.getGameplayTime?.()??s.time?.now??s.now??0;
 const destroy=(sys,n)=>{ sys.scene.tweens?.killTweensOf?.(n); sys.scene.gravityRuntime?.visuals?.delete?.(n); n?.destroy?.(); };
 
+function removeUpdater(sys){
+  const updater=sys.passiveState.gravityFollowupFixUpdater;
+  if(!updater) return;
+  sys.passiveUpdaters=sys.passiveUpdaters.filter(fn=>fn!==updater);
+  delete sys.passiveState.gravityFollowupFixUpdater;
+}
+
+function wrapShutdown(sys){
+  const s=sys.scene,rt=s.gravityRuntime;
+  if(!rt?.shutdownHandler||rt.gravityFixShutdownWrapped) return;
+  const original=rt.shutdownHandler;
+  s.events?.off?.('shutdown',original);
+  const combined=()=>{ original(); removeUpdater(sys); };
+  rt.shutdownHandler=combined;
+  rt.gravityFixShutdownWrapped=true;
+  s.events?.once?.('shutdown',combined);
+}
+
 function showWarning(sys,task,center){
   const s=sys.scene,rt=s.gravityRuntime;
   const warning=s.add?.circle?.(center.x,center.y,task.data.radius,0x7c3aed,.18)?.setStrokeStyle?.(3,0xc084fc,.75)?.setDepth?.(18);
@@ -37,6 +55,7 @@ function ensureUpdater(sys){
     });
   };
   if(!sys.passiveUpdaters.includes(state.gravityFollowupFixUpdater)) sys.passiveUpdaters.push(state.gravityFollowupFixUpdater);
+  wrapShutdown(sys);
 }
 
 export const GravityCrushFixedSkill={
@@ -71,7 +90,7 @@ export const BlackHoleFixedSkill={
   bind(sys){
     const off=BlackHoleSkill.bind(sys);
     ensureUpdater(sys);
-    return off;
+    return ()=>{ off?.(); };
   },
   shiftTimers(sys,d,pausedAt){
     BlackHoleSkill.shiftTimers?.(sys,d,pausedAt);
