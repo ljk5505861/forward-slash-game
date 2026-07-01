@@ -19,7 +19,7 @@ const detailSource = readFileSync(new URL('../src/ui/skillDetailContent.js', imp
 assert(!detailSource.includes('guardTriggerMaxHpRatio'));
 assert(!detailSource.includes('criticalHpRatio'));
 
-function visual(type) { return { type, destroyed:false, x:0, y:0, alpha:1, scale:1, setDepth(){return this;}, setScrollFactor(){return this;}, setStrokeStyle(){return this;}, setOrigin(){return this;}, setPosition(x,y){this.x=x;this.y=y;return this;}, setAlpha(a){this.alpha=a;return this;}, setRotation(r){this.rotation=r;return this;}, setScale(s){this.scale=s;return this;}, destroy(){this.destroyed=true;return this;} }; }
+function visual(type) { return { type, destroyed:false, x:0, y:0, alpha:1, scale:1, setDepth(){return this;}, setScrollFactor(){return this;}, setStrokeStyle(width,color,alpha){this.strokeStyle={width,color,alpha};return this;}, setOrigin(){return this;}, setPosition(x,y){this.x=x;this.y=y;return this;}, setAlpha(a){this.alpha=a;return this;}, setRotation(r){this.rotation=r;return this;}, setScale(s){this.scale=s;return this;}, destroy(){this.destroyed=true;return this;} }; }
 function events(){ const m=new Map(); return { once(n,cb){m.set(n,cb);}, off(n,cb){ if(m.get(n)===cb)m.delete(n);}, emit(n){m.get(n)?.();}, count(n){return m.has(n)?1:0;} }; }
 function enemy(id,x,y,o={}){ return { id,x,y,width:o.width??40,displayWidth:o.displayWidth??o.width??40,hp:o.hp??1000,maxHp:o.hp??1000,active:o.active??true,inside:o.inside??true,isDefeated:false,isElite:!!o.isElite,isBoss:!!o.isBoss,charging:!!o.charging,casting:!!o.casting,jumping:!!o.jumping,attackState:o.attackState,body:{width:o.width??40} }; }
 function scene(){ const created=[]; const floats=[]; const s={ now:0,enemies:[],player:{x:300,y:600},playerData:{hp:100,maxHp:100,damageReductionBonuses:{},skills:[]},events:events(),created,floats,hits:[],knockbacks:[],getGameplayTime(){return this.now;},targeting:{valid:t=>!!t&&t.active!==false&&!t.isDefeated&&t.hp>0,all(){return s.enemies.filter(this.valid);},isEnemyFullyInsideViewport:t=>t.inside!==false},add:{circle(x=0,y=0){const o=visual('circle').setPosition(x,y);created.push(o);return o;},line(){const o=visual('line');created.push(o);return o;},rectangle(x=0,y=0){const o=visual('rectangle').setPosition(x,y);created.push(o);return o;}},combatSystem:{damageEnemy(t,d,meta){const resolved=Math.round(d);t.hp-=resolved;if(t.hp<=0)t.isDefeated=true;s.hits.push({target:t,damage:resolved,meta,time:s.now});return true;},applyKnockback(t,meta){s.knockbacks.push({target:t,meta,time:s.now});return true;}},floatText(x,y,text,color){floats.push({x,y,text,color,time:s.now});} }; return s; }
@@ -43,7 +43,7 @@ function tick(sys,ms=0){ sys.scene.now+=ms; [...sys.passiveUpdaters].forEach(fn=
   assert.match(s.floats.at(-1).text,/^简并护体 -3$/);
   assert(rt.charges[0].readyAt>s.now);
   assert.equal(SKILL_HANDLERS.white_dwarf.beforePlayerHpDamage(sys,{directAttack:true,hpDamage:50}), null, 'same hit window has no second charge');
-  tick(sys,4000); const rem=rt.charges[0].readyAt-s.now; tick(sys,0); assert.equal(rt.charges[0].readyAt-s.now, rem, 'paused/no-time tick does not recharge');
+  tick(sys,4000); const rem=rt.charges[0].readyAt-s.now; const pausedAt=s.now; s.now+=5000; SKILL_HANDLERS.white_dwarf.shiftTimers(sys,5000,pausedAt); tick(sys,0); assert.equal(rt.charges[0].readyAt-s.now, rem, 'real pause shift preserves remaining guard recharge');
   tick(sys,4500); assert.equal(rt.getSkillBarState().text,'护体 1/1');
   result=SKILL_HANDLERS.white_dwarf.beforePlayerHpDamage(sys,{directAttack:true,hpDamage:1});
   assert.equal(result.hpDamage,0, 'tiny damage may round to zero while consuming charge');
@@ -93,6 +93,113 @@ function tick(sys,ms=0){ sys.scene.now+=ms; [...sys.passiveUpdaters].forEach(fn=
   const r=SKILL_HANDLERS.white_dwarf.beforePlayerHpDamage(sys,{directAttack:true,hpDamage:20});
   assert.equal(r.hpDamage,2); assert.equal(r.emergency,true); assert.equal(s.whiteDwarfRuntime.charges.filter(c=>c.readyAt<=s.now).length,1); assert(s.floats.some(f=>f.text==='临界稳定'));
   s.whiteDwarfRuntime.charges[0].readyAt=s.now; s.playerData.hp=5; const death=SKILL_HANDLERS.white_dwarf.beforePlayerHpDamage(sys,{directAttack:true,hpDamage:100}); assert(death.hpDamage>5, 'critical stability is not death immunity');
+}
+
+
+// Pause shifting, persistent flashes, guard rings, and Lv9 next-recharge skillbar.
+{
+  const s=scene(); const levels={white_dwarf:1}; const sys=system(s,levels);
+  SKILL_HANDLERS.white_dwarf.bind(sys);
+  const rt=s.whiteDwarfRuntime;
+  const beforeCreated=s.created.length;
+  SKILL_HANDLERS.white_dwarf.beforePlayerHpDamage(sys,{directAttack:true,hpDamage:10});
+  const ringsAfterGuard=s.created.filter(o=>o.strokeStyle).length;
+  assert.equal(ringsAfterGuard,1,'Lv1 guard creates a defense ripple');
+  const consumeCoreScale=rt.visuals[0].core.scale;
+  SKILL_HANDLERS.white_dwarf.syncAttachedVisuals(sys);
+  assert.equal(rt.visuals[0].core.scale, consumeCoreScale, 'syncAttachedVisuals preserves consume flash state');
+  tick(sys,221);
+  assert.equal(rt.visuals[0].core.scale,.86,'consume flash falls back to charging scale');
+  const transient=rt.transients[0];
+  const visualRemaining=transient.expiresAt-s.now;
+  const rechargeRemaining=rt.charges[0].readyAt-s.now;
+  const angleBeforePause=rt.angle;
+  const lastBeforePause=rt.last;
+  const pausedAt=s.now;
+  s.now+=5000;
+  SKILL_HANDLERS.white_dwarf.shiftTimers(sys,5000,pausedAt);
+  tick(sys,0);
+  assert.equal(rt.charges[0].readyAt-s.now,rechargeRemaining,'shiftTimers freezes guard recharge across real time jump');
+  assert.equal(transient.expiresAt-s.now,visualRemaining,'shiftTimers freezes guard ripple expiration');
+  assert.equal(transient.object.destroyed,false,'pause does not destroy ripple early');
+  assert(Math.abs(rt.angle-angleBeforePause)<1e-9,'first update after shifted pause does not advance orbit by pause duration');
+  assert.equal(rt.last,lastBeforePause+5000,'runtime.last is shifted by paused duration');
+  tick(sys,visualRemaining-1);
+  assert.equal(transient.object.destroyed,false,'ripple survives until remaining gameplay time elapses');
+  tick(sys,1);
+  assert.equal(transient.object.destroyed,true,'ripple expires after remaining gameplay time');
+  tick(sys,rt.charges[0].readyAt-s.now);
+  const readyFlashUntil=rt.charges[0].flashUntil;
+  assert(readyFlashUntil>s.now,'recharge completion starts ready flash');
+  const readyScale=rt.visuals[0].core.scale;
+  tick(sys,0);
+  assert.equal(rt.charges[0].flashUntil,readyFlashUntil,'same ready event only flashes once');
+  assert.equal(rt.visuals[0].core.scale,readyScale,'repeat update keeps same ready flash state');
+  const createdAfterStable=s.created.length;
+  tick(sys,16); tick(sys,16); tick(sys,16);
+  assert.equal(s.created.length,createdAfterStable,'steady updates do not create extra visuals');
+  tick(sys,181);
+  assert(rt.visuals[0].core.scale < readyScale,'ready flash returns to normal ready pulse');
+  assert(s.created.length>=beforeCreated+1);
+}
+{
+  const s=scene(); const levels={white_dwarf:6}; const sys=system(s,levels);
+  s.enemies=[enemy('burst-target',310,600,{hp:1000})];
+  SKILL_HANDLERS.white_dwarf.bind(sys);
+  SKILL_HANDLERS.white_dwarf.beforePlayerHpDamage(sys,{directAttack:true,hpDamage:20});
+  assert.equal(s.created.filter(o=>o.strokeStyle).length,1,'Lv6 guard creates exactly one defense ripple');
+  assert(s.hits.some(h=>h.meta.tags.includes('area')),'Lv6 still performs mass recoil damage');
+}
+{
+  const s=scene(); const levels={white_dwarf:9}; const sys=system(s,levels);
+  SKILL_HANDLERS.white_dwarf.bind(sys);
+  const rt=s.whiteDwarfRuntime;
+  rt.charges[0].readyAt=s.now+2000;
+  rt.charges[1].readyAt=s.now+5000;
+  assert.equal(rt.getSkillBarState().text,'护体 0/2 · 2s');
+  tick(sys,2000);
+  assert.equal(rt.getSkillBarState().text,'护体 1/2 · 3s');
+  tick(sys,3000);
+  assert.equal(rt.getSkillBarState().text,'护体 2/2');
+}
+{
+  const s=scene(); const levels={white_dwarf:3}; const sys=system(s,levels);
+  SKILL_HANDLERS.white_dwarf.bind(sys);
+  SKILL_HANDLERS.white_dwarf.beforePlayerHpDamage(sys,{directAttack:true,hpDamage:20});
+  const rt=s.whiteDwarfRuntime;
+  const guardRemaining=rt.guardUntil-s.now;
+  const pausedAt=s.now;
+  s.now+=5000;
+  SKILL_HANDLERS.white_dwarf.shiftTimers(sys,5000,pausedAt);
+  tick(sys,0);
+  assert.equal(rt.guardUntil-s.now,guardRemaining,'shiftTimers freezes Lv3 shell duration');
+  assert.equal(s.playerData.damageReductionBonuses.white_dwarf_guard,.12);
+  tick(sys,guardRemaining-1);
+  assert.equal(s.playerData.damageReductionBonuses.white_dwarf_guard,.12);
+  tick(sys,1);
+  assert.equal(s.playerData.damageReductionBonuses.white_dwarf_guard,undefined,'Lv3 shell expires after remaining gameplay time');
+}
+{
+  const s=scene(); const levels={white_dwarf:1}; const sys=system(s,levels);
+  SKILL_HANDLERS.white_dwarf.bind(sys); tick(sys,0);
+  const rt=s.whiteDwarfRuntime; const data=SKILLS.white_dwarf.levels[0];
+  const target=enemy('cooldown-target',rt.visuals[0].x,rt.visuals[0].y,{hp:1000});
+  s.enemies=[target]; tick(sys,0);
+  assert.equal(s.hits.filter(h=>h.target===target).length,1);
+  const contactRemaining=rt.contactReadyAtByEnemy.get(target)-s.now;
+  const pausedAt=s.now;
+  s.now+=5000;
+  SKILL_HANDLERS.white_dwarf.shiftTimers(sys,5000,pausedAt);
+  tick(sys,0);
+  assert.equal(rt.contactReadyAtByEnemy.get(target)-s.now,contactRemaining,'shiftTimers freezes contact cooldown');
+  target.x=rt.visuals[0].x; target.y=rt.visuals[0].y;
+  tick(sys,0);
+  assert.equal(s.hits.filter(h=>h.target===target).length,1,'paused contact cooldown cannot hit immediately');
+  tick(sys,contactRemaining);
+  target.x=rt.visuals[0].x; target.y=rt.visuals[0].y;
+  tick(sys,0);
+  assert.equal(s.hits.filter(h=>h.target===target).length,2,'contact can hit after remaining gameplay cooldown');
+  assert.equal(data.contactCooldownMs,1200);
 }
 
 console.log('validate-01089-white-dwarf-feedback passed');

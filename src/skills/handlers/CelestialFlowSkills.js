@@ -377,8 +377,9 @@ function ensureWhiteDwarfRuntime(system) {
       const time = now(scene);
       const ready = this.charges.filter(charge => charge.readyAt <= time).length;
       const total = this.charges.length;
-      const remaining = this.charges.length ? Math.max(0, ...this.charges.map(charge => charge.readyAt - time)) : 0;
-      return { text: ready === total ? `护体 ${ready}/${total}` : `护体 ${ready}/${total} · ${Math.ceil(remaining / 1000)}s` };
+      const cooling = this.charges.filter(charge => charge.readyAt > time);
+      const nextRemaining = cooling.length ? Math.min(...cooling.map(charge => charge.readyAt - time)) : 0;
+      return { text: ready === total ? `护体 ${ready}/${total}` : `护体 ${ready}/${total} · ${Math.ceil(nextRemaining / 1000)}s` };
     }
   };
   runtime.updater = () => updateWhiteDwarf(system);
@@ -400,7 +401,9 @@ function syncWhiteDwarfReduction(system) {
 }
 
 function ensureWhiteDwarfCharges(runtime, data, time) {
-  while (runtime.charges.length < data.guardCharges) runtime.charges.push({ readyAt: time, wasReady: true });
+  while (runtime.charges.length < data.guardCharges) {
+    runtime.charges.push({ readyAt: time, wasReady: true, flashUntil: 0, flashType: null });
+  }
   runtime.charges.length = data.guardCharges;
 }
 
@@ -428,15 +431,21 @@ function positionWhiteDwarfs(system, data, runtime, time) {
     const angle = runtime.angle + index * TWO_PI / Math.max(1, runtime.visuals.length);
     const x = scene.player.x + Math.cos(angle) * data.orbitRadius;
     const y = scene.player.y + Math.sin(angle) * data.orbitRadius;
-    const ready = runtime.charges[index]?.readyAt <= time;
-    const pulse = ready ? 1 + Math.sin(time / 260 + index) * .045 : .92;
+    const charge = runtime.charges[index] || {};
+    const ready = charge.readyAt <= time;
+    const flashing = time < (charge.flashUntil || 0);
+    const readyPulse = 1 + Math.sin(time / 260 + index) * .045;
+    const coreScale = flashing ? (charge.flashType === 'consume' ? 1.35 : 1.22) : (ready ? readyPulse : .86);
+    const glowScale = flashing ? (charge.flashType === 'consume' ? 1.45 : 1.32) : (ready ? readyPulse : .8);
+    const coreAlpha = flashing ? 1 : (ready ? .95 : .36);
+    const glowAlpha = flashing ? .42 : (ready ? .24 + Math.sin(time / 260 + index) * .05 : .06);
     visual.x = x; visual.y = y;
     visual.core?.setPosition?.(x, y);
     visual.glow?.setPosition?.(x, y);
-    visual.core?.setAlpha?.(ready ? .95 : .36);
-    visual.glow?.setAlpha?.(ready ? .24 + Math.sin(time / 260 + index) * .05 : .06);
-    setVisualScale(visual.core, ready ? pulse : .86);
-    setVisualScale(visual.glow, ready ? pulse : .8);
+    visual.core?.setAlpha?.(coreAlpha);
+    visual.glow?.setAlpha?.(glowAlpha);
+    setVisualScale(visual.core, coreScale);
+    setVisualScale(visual.glow, glowScale);
   });
 }
 
@@ -480,12 +489,6 @@ function showGuardBurst(system, data, runtime, time) {
   if (ring) runtime.transients.push({ object: ring, expiresAt: time + data.guardBurstVisualMs });
 }
 
-function flashWhiteDwarfVisual(runtime, index) {
-  const visual = runtime.visuals[index];
-  setVisualScale(visual?.core, 1.35);
-  setVisualScale(visual?.glow, 1.45);
-}
-
 function cleanupWhiteDwarfContactMap(scene, runtime, time) {
   if (time - (runtime.lastContactCleanupAt || 0) < 1000) return;
   runtime.lastContactCleanupAt = time;
@@ -526,7 +529,6 @@ function whiteDwarfContactEnemy(system, data, runtime, time) {
 
 function burstFromWhiteDwarf(system, data, runtime, time) {
   const scene = system.scene;
-  showGuardBurst(system, data, runtime, time);
   for (const enemy of visibleEnemies(scene)) {
     if (Math.hypot(enemy.x - scene.player.x, enemy.y - scene.player.y) > data.burstRadius) continue;
     scene.combatSystem?.damageEnemy?.(enemy, data.burstDamage, {
@@ -557,17 +559,18 @@ function updateWhiteDwarf(system) {
     delete scene.playerData.damageReductionBonuses.white_dwarf_guard;
     runtime.guardUntil = 0;
   }
-  const readyFlashIndexes = [];
-  runtime.charges.forEach((charge, index) => {
+  runtime.charges.forEach(charge => {
     const ready = charge.readyAt <= time;
-    if (ready && charge.wasReady === false) readyFlashIndexes.push(index);
+    if (ready && charge.wasReady === false) {
+      charge.flashUntil = time + 180;
+      charge.flashType = 'ready';
+    }
     charge.wasReady = ready;
   });
   const elapsed = Math.max(0, time - runtime.last);
   runtime.last = time;
   runtime.angle += elapsed / Math.max(1, data.orbitPeriodMs) * TWO_PI;
   positionWhiteDwarfs(system, data, runtime, time);
-  readyFlashIndexes.forEach(index => flashWhiteDwarfVisual(runtime, index));
   whiteDwarfContactEnemy(system, data, runtime, time);
 }
 
@@ -591,6 +594,23 @@ export const WhiteDwarfSkill = {
     const runtime = system.scene.whiteDwarfRuntime;
     if (!level || !runtime?.active) return;
     positionWhiteDwarfs(system, levelData(system, 'white_dwarf', level), runtime, now(system.scene));
+  },
+  shiftTimers(system, pausedDuration, pausedAt) {
+    const runtime = system.scene.whiteDwarfRuntime;
+    if (!runtime || !pausedDuration) return;
+    runtime.charges?.forEach?.(charge => {
+      if (charge.readyAt > pausedAt) charge.readyAt += pausedDuration;
+      if (charge.flashUntil > pausedAt) charge.flashUntil += pausedDuration;
+    });
+    if (runtime.guardUntil > pausedAt) runtime.guardUntil += pausedDuration;
+    runtime.contactReadyAtByEnemy?.forEach?.((readyAt, enemy) => {
+      if (readyAt > pausedAt) runtime.contactReadyAtByEnemy.set(enemy, readyAt + pausedDuration);
+    });
+    runtime.transients?.forEach?.(entry => {
+      if (entry.expiresAt > pausedAt) entry.expiresAt += pausedDuration;
+    });
+    if (runtime.active === true && Number.isFinite(runtime.last)) runtime.last += pausedDuration;
+    if (runtime.lastContactCleanupAt > 0) runtime.lastContactCleanupAt += pausedDuration;
   },
   destroyRuntime(system) {
     const scene = system.scene;
@@ -628,6 +648,8 @@ export const WhiteDwarfSkill = {
     }
     runtime.charges[chargeIndex].readyAt = time + data.guardRechargeMs;
     runtime.charges[chargeIndex].wasReady = false;
+    runtime.charges[chargeIndex].flashUntil = time + 220;
+    runtime.charges[chargeIndex].flashType = 'consume';
     const hpDamage = Math.max(0, Math.round(payload.hpDamage * (1 - reduction)));
     const blockedDamage = Math.max(0, payload.hpDamage - hpDamage);
     if (data.postGuardDamageReduction) {
@@ -635,9 +657,9 @@ export const WhiteDwarfSkill = {
       scene.playerData.damageReductionBonuses.white_dwarf_guard = data.postGuardDamageReduction;
       runtime.guardUntil = Math.max(runtime.guardUntil, time + data.postGuardDurationMs);
     }
+    showGuardBurst(system, data, runtime, time);
     if (data.burstDamage) burstFromWhiteDwarf(system, data, runtime, time);
     positionWhiteDwarfs(system, data, runtime, time);
-    flashWhiteDwarfVisual(runtime, chargeIndex);
     scene.floatText?.(scene.player.x, scene.player.y - 28, `${data.guardFloatText} -${blockedDamage}`, 0xe0f2fe);
     return { hpDamage, blockedDamage, emergency };
   }
