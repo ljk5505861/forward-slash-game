@@ -8,11 +8,11 @@ const nums=(id,key)=>SKILLS[id]?.levels?.map(level=>level[key]);
 const eq=(actual,expected,label)=>assert.deepEqual(actual,expected,label);
 const src=file=>readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
 const hasHandler=handler=>new RegExp(`${handler}:`).test(src('src/skills/handlers/index.js'));
-const archetypes={fire:['fireball','fire_seed','burn_burst','solar_flame'],sword:['sword_wave','sword_sheath','sword_tomb'],strength:['giant_force','spinning_blade','bloodthirst','last_stand'],defense:['healing','thorn_armor','guardian_shield'],afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],summon:['spirit_wolves','spirit_bird'],weapon:['lightning_enchant']};
+const archetypes={fire:['fireball','fire_seed','burn_burst','solar_flame'],sword:['sword_wave','sword_sheath','sword_tomb'],strength:['giant_force','spinning_blade','bloodthirst','last_stand'],defense:['healing','thorn_armor','guardian_shield'],afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],summon:['spirit_wolves','spirit_bird'],weapon:['lightning_enchant','lightning_mark']};
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.10.83','game version for v0.10.60 skill regression');
-eq(allSkillIds.length,26,'all current 26 skills listed');
-eq(new Set(allSkillIds).size,26,'all current 26 skills unique');
+assert.equal(GAME_VERSION,'0.10.84','game version for v0.10.60 skill regression');
+eq(allSkillIds.length,27,'all current 27 skills listed');
+eq(new Set(allSkillIds).size,27,'all current 27 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
 allSkillIds.forEach(id=>assert.ok(SKILLS[id],`missing skill ${id}`));
 
@@ -62,6 +62,10 @@ eq(nums('lightning_enchant','damageRatio'),[0.12,0.14,0.18,0.20,0.22,0.24,0.27,0
 eq(nums('lightning_enchant','chainCount'),[0,0,0,0,0,1,1,1,2],'lightning_enchant.chainCount');
 eq(nums('lightning_enchant','chainRatio'),[0,0,0,0,0,0.5,0.5,0.5,0.65],'lightning_enchant.chainRatio');
 eq(nums('lightning_enchant','chainRadius'),[0,0,0,0,0,130,130,130,150],'lightning_enchant.chainRadius');
+eq(nums('lightning_mark','stackThreshold'),[5,5,4,4,4,4,4,4,3],'lightning_mark.stackThreshold');
+eq(nums('lightning_mark','explosionRatio'),[0.25,0.28,0.32,0.36,0.40,0.45,0.50,0.56,0.65],'lightning_mark.explosionRatio');
+eq(nums('lightning_mark','explosionRadius'),[90,96,108,114,120,132,140,148,160],'lightning_mark.explosionRadius');
+eq(nums('lightning_mark','spreadMarks'),[0,0,0,0,0,1,1,1,2],'lightning_mark.spreadMarks');
 
 eq(nums('poison_cloud','damage'),[26,32,52,62,75,91,109,130,156],'poison_cloud.damage');
 eq(nums('poison_cloud','poisonDamage'),[6,6,10,10,13,13,16,18,21],'poison_cloud.poisonDamage');
