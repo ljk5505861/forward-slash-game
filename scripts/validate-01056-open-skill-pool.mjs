@@ -19,7 +19,7 @@ const seededRandom=seed=>()=>{
   return seed/4294967296;
 };
 
-assert.equal(GAME_VERSION,'0.10.84');
+assert.equal(GAME_VERSION,'0.10.85');
 assert.equal(SKILLS.poison_king.rarity,'MYTHIC');
 assert.equal(SKILLS.poison_king.ultimateSkill,true);
 
@@ -36,6 +36,10 @@ assert.equal(
 );
 assert.equal(SKILLS.lightning_mark.requiredSkillId,undefined,'lightning_mark has no prerequisite');
 assert.equal(system.isSkillUnlocked(SKILLS.lightning_mark),true,'lightning_mark is unlocked without lightning_enchant');
+assert.equal(SKILLS.lightning_tribulation.requiredSkillId,undefined,'lightning_tribulation has no prerequisite');
+assert.equal(SKILLS.lightning_tribulation.rarity,'MYTHIC','lightning tribulation is mythic');
+assert.equal(SKILLS.lightning_tribulation.ultimateSkill,true,'lightning tribulation is an ultimate/mythic starting skill');
+assert.equal(system.isSkillUnlocked(SKILLS.lightning_tribulation),true,'lightning tribulation is unlocked independently');
 
 const source=fs.readFileSync(
   new URL('../src/systems/UpgradeSystem.js',import.meta.url),
@@ -111,8 +115,10 @@ try{
     'the first two slots can roll every non-mythic skill regardless of old prerequisites'
   );
   assert(mythicSeen.has('poison_king'),'poison king can appear in the fixed mythic slot');
+  assert(mythicSeen.has('lightning_tribulation'),'lightning tribulation can appear in the fixed mythic slot');
   assert(regularSeen.has('poison_chain'),'poison chain can appear without parasitic gu');
   assert(regularSeen.has('lightning_mark'),'lightning mark can appear in a regular non-mythic starting slot');
+  assert(!regularSeen.has('lightning_tribulation'),'lightning tribulation cannot appear in regular non-mythic starting slots');
   assert(regularSeen.has('parasitic_gu'),'parasitic gu can appear without poison needle');
 
   const counts=[...thirdCounts.values()];
