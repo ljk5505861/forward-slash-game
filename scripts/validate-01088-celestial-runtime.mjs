@@ -25,6 +25,7 @@ function visual(type) {
     setPosition(x, y) { this.x = x; this.y = y; return this; },
     setAlpha(alpha) { this.alpha = alpha; return this; },
     setRotation(rotation) { this.rotation = rotation; return this; },
+    setScale(scale) { this.scale = scale; return this; },
     destroy() { this.destroyed = true; return this; }
   };
 }
@@ -218,8 +219,10 @@ function tick(system, elapsedMs = 0) {
   assert.equal(runtime.visuals[0].x, firstX + 100, 'post-update sync removes player-follow lag');
   assert.equal(SKILL_HANDLERS.white_dwarf.beforePlayerHpDamage(system, { directAttack: false, hpDamage: 80 }), null);
   assert.equal(runtime.charges[0].readyAt, 0, 'indirect damage does not consume a charge');
-  assert.equal(SKILL_HANDLERS.white_dwarf.beforePlayerHpDamage(system, { directAttack: true, hpDamage: 5 }), null);
-  assert.equal(runtime.charges[0].readyAt, 0, 'small direct hits below threshold do not consume a charge');
+  const smallGuarded = SKILL_HANDLERS.white_dwarf.beforePlayerHpDamage(system, { directAttack: true, hpDamage: 5 });
+  assert.equal(smallGuarded.hpDamage, 2, 'small direct hits now consume a charge and reduce hp damage');
+  assert.equal(smallGuarded.blockedDamage, 3);
+  runtime.charges[0].readyAt = scene.now;
   const guarded = SKILL_HANDLERS.white_dwarf.beforePlayerHpDamage(system, { directAttack: true, hpDamage: 20 });
   assert.equal(guarded.hpDamage, 9);
   assert(runtime.charges[0].readyAt > scene.now);
@@ -265,4 +268,4 @@ function tick(system, elapsedMs = 0) {
   assert.equal(burstRing.destroyed, true, 'guard burst visual is destroyed after its configured duration');
 }
 
-console.log('v0.10.88 celestial runtime validation passed');
+console.log('v0.10.89 celestial runtime validation passed');

@@ -12,7 +12,7 @@ const { SKILLS } = await import('../src/config/skills.js');
 const { configureEntryArchetypeSkills } = await import('../src/skills/handlers/EntryArchetypeSkills.js');
 const { SpiritWolvesSkill, SPIRIT_WOLVES_ID, inheritRatioForLevel, hpInheritRatioForLevel } = await import('../src/skills/handlers/SpiritWolvesSkill.js');
 configureEntryArchetypeSkills();
-assert.equal(GAME_VERSION,'0.10.88');
+assert.equal(GAME_VERSION,'0.10.89');
 assert.equal(FRONTLINE_SWITCH_THRESHOLD,18);
 const wolfSrc=fs.readFileSync('src/skills/handlers/SpiritWolvesSkill.js','utf8');
 const combatSrc=fs.readFileSync('src/systems/CombatSystem.js','utf8');
@@ -59,4 +59,4 @@ assert.equal(ENEMIES.archer.attackRange,450); assert.equal(ENEMIES.bomber.attack
 function target(type,x){ return {type,x,y:100,hp:50,maxHp:50,active:true,isDefeated:false,isAlive(){return this.hp>0},takeDamage(n){this.hp-=n;}}; }
 function body(){ return {vx:0,velocity:{x:0},setVelocityX(v){this.vx=v;this.velocity.x=v;}}; }
 { const wolf=target('spiritWolf',300), player=target('player',200); const s={player,playerData:{hp:100,maxHp:100,dodgeChance:0},enemies:[],balance:{enemies:{rangeBuffer:0}},isGameplayPaused:()=>false,floatText(){},finishRun(){},hud:{update(){},setStatus(){}},eventBus:{emit(){}},targeting:{valid:e=>!!e?.active&&!e.isDefeated,isEnemyFullyInsideViewport:()=>true,shouldRecycleEnemyLeft:()=>false},statusEffects:{clearTarget(){},getEffects:()=>[],absorbShield:d=>({absorbed:0,remainingDamage:d})},skillSystem:{passiveState:{spiritWolves:{wolves:[wolf]}},beforePlayerDamage:()=>null,beforePlayerHpDamage:()=>null}}; s.combatSystem=new CombatSystem(s); const e={x:386,y:100,active:true,isDefeated:false,hp:20,maxHp:20,damage:5,attackRange:86,attackIntervalMs:100,nextAttackAt:0,speed:40,body:body(),behavior:'grunt'}; s.enemies=[e]; const m=new EnemyBehaviorManager(s); m.updateEnemyApproach(e); assert.equal(e.body.vx,0); s.combatSystem.updateEnemyAttack(e,0); assert.equal(wolf.hp,45); wolf.x-=48; m.updateEnemyApproach(e); assert.notEqual(e.body.vx,0); assert.notEqual(e.body.vx,-48); e.x=330; m.updateEnemyApproach(e); assert.equal(e.body.vx,0); wolf.x=210; e.lockedAttackTarget=wolf; assert.equal(s.combatSystem.getOrLockEnemyTarget(e),wolf); wolf.x=181; assert.equal(s.combatSystem.getOrLockEnemyTarget(e).type,'player'); wolf.x=219; assert.equal(s.combatSystem.getOrLockEnemyTarget(e),wolf); }
-console.log('v0.10.88 wolf pressure balance validation passed.');
+console.log('v0.10.89 wolf pressure balance validation passed.');
