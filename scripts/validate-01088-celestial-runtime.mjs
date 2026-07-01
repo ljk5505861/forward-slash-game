@@ -161,13 +161,13 @@ function tick(system, elapsedMs = 0) {
   const inside = enemy('inside', originX + 300, originY, { hp: 10000 });
   scene.enemies = [inside];
   SKILL_HANDLERS.neutron_star.bind(system);
-  tick(system, 0);
-  tick(system, 300);
+  tick(system, 0);       // pulse 1
+  tick(system, 300);     // pulse 2 and warning preparation
   const outside = enemy('outside', originX, originY + 300, { hp: 10000 });
   scene.enemies.push(outside);
-  tick(system, 460);
+  tick(system, 460);     // start sweep
   const hitsBeforeSweep = scene.hits.length;
-  tick(system, 620);
+  tick(system, 620);     // low-FPS jump directly to sweep end
   const sweepHits = scene.hits.slice(hitsBeforeSweep);
   assert.deepEqual(sweepHits.map(hit => hit.target.id), ['inside'], 'sweep end does not grant catch-all damage outside its angular path');
   assert.equal(sweepHits[0].damage, SKILLS.neutron_star.levels[0].sweepDamage);
