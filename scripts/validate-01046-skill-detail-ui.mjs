@@ -28,9 +28,8 @@ for(const ev of ['pointerdown','pointermove','pointerup','pointerupoutside','poi
 
 const keys=Object.keys(SKILLS);
 assert.equal(keys.length,29);
-assert.deepEqual(validateSkillDetailContent().filter(x=>!x.startsWith('spirit_slime:')),[]);
+assert.deepEqual(validateSkillDetailContent(),[]);
 for(const id of keys){
-  if(id==='spirit_slime') continue;
   const cfg=SKILLS[id];
   for(let level=1;level<=cfg.maxLevel;level+=1){
     const detail=detailAt(id,level);
@@ -47,6 +46,26 @@ for(const id of keys){
     } else assert.deepEqual(detail.nextLevelPreview,['已达到最高等级'],`${id} max level preview`);
   }
 }
+
+const slimeLv1=detailAt('spirit_slime',1).currentEffects.join('|');
+for(const text of [
+  '玩家伴生属性加成：5%',
+  '泥弹伤害比例：20%',
+  '泥弹攻击间隔：1.5秒',
+  '附身数量上限：1只',
+  '召唤物输出/治疗强化：30%',
+  '召唤物最大生命强化：40%',
+  '召唤物伤害减免：15%',
+  '召唤物行动速度强化：10%',
+  '召唤物受到治疗强化：20%'
+]) assert.ok(slimeLv1.includes(text),text);
+const slimeLv2Preview=detailAt('spirit_slime',2).nextLevelPreview.join('|');
+assert.ok(slimeLv2Preview.includes('附身数量上限：1只 → 2只'));
+const slimeLv8Preview=detailAt('spirit_slime',8).nextLevelPreview.join('|');
+assert.ok(slimeLv8Preview.includes('附身数量上限：2只 → 全部'));
+const slimeLv9=detailAt('spirit_slime',9).currentEffects.join('|');
+assert.ok(slimeLv9.includes('附身数量上限：全部'));
+assert.ok(!slimeLv9.includes('999只'));
 
 const giant=detailAt('giant_force',1).currentEffects.join('|');
 assert.ok(giant.includes('基础力量+4'));
@@ -126,4 +145,4 @@ assert.match(swordState,/const LV6 = \{ critChance:0\.15, critMultiplierBonus:0\
 assert.match(swordState,/const LV9 = \{ finalDamage:1\.5, bodySize:1\.3, glowSize:1\.3 \}/);
 assert.match(flame,/\[8,0\.0,1,900,0,0\]/);
 assert.match(flame,/burnDamage:5,burnMs:3400,burnIntervalMs:600/);
-console.log('validate-01046-skill-detail-ui passed on v0.10.60');
+console.log('validate-01046-skill-detail-ui passed on v0.10.86');
