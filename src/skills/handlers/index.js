@@ -8,7 +8,8 @@ import { configureAfterimageCoreSkills, PhantomStepSkill, TracelessSkill } from 
 import { configureAfterimageAdvancedSkills, InstantStepSkill } from './AfterimageAdvancedSkills.js';
 import { configureAfterimageUltimateSkills, MyriadAfterimageSkill } from './AfterimageUltimateSkills.js';
 import { configurePoisonSummonCoreSkills } from './PoisonSummonCoreSkills.js';
-import { configurePoisonSummonAdvancedSkills, PoisonKingSkill } from './PoisonSummonAdvancedSkills.js';
+import { configurePoisonSummonAdvancedSkills } from './PoisonSummonAdvancedSkills.js';
+import { PoisonKingSkillWithSpiritSlime } from './PoisonKingSpiritSlimeCompat.js';
 import { configurePoisonChainActiveSkill, ParasiticGuHostVisualSkill, PoisonChainActiveSkill } from './PoisonSummonInteractionFixes.js';
 import { configureTemporaryStartingPool } from './TemporaryStartingPool.js';
 import { SpiritWolvesSkill } from './SpiritWolvesSkill.js';
@@ -30,4 +31,4 @@ configurePoisonChainActiveSkill();
 configureWeaponCoreSkills();
 configureTemporaryStartingPool();
 
-export const SKILL_HANDLERS={entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,fire_seed:FireSeedSkill,burn_burst:BurnBurstSkill,solar_flame:SolarFlameSkill,sword_sheath:SwordSheathSkill,sword_tomb:SwordTombSkill,giant_force:GiantForceSkill,spinning_blade:SpinningBladeSkill,bloodthirst:BloodthirstSkill,last_stand:LastStandSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,phantom_step:PhantomStepSkill,traceless:TracelessSkill,instant_step:InstantStepSkill,myriad_afterimage:MyriadAfterimageSkill,parasitic_gu:ParasiticGuHostVisualSkill,poison_chain:PoisonChainActiveSkill,poison_king:PoisonKingSkill,spirit_wolves:SpiritWolvesSkill,spirit_bird:SpiritBirdSkill,spirit_slime:SpiritSlimeSkill,lightning_enchant:LightningEnchantSkill,lightning_mark:LightningMarkSkill,lightning_tribulation:LightningTribulationSkill};
+export const SKILL_HANDLERS={entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,fire_seed:FireSeedSkill,burn_burst:BurnBurstSkill,solar_flame:SolarFlameSkill,sword_sheath:SwordSheathSkill,sword_tomb:SwordTombSkill,giant_force:GiantForceSkill,spinning_blade:SpinningBladeSkill,bloodthirst:BloodthirstSkill,last_stand:LastStandSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,phantom_step:PhantomStepSkill,traceless:TracelessSkill,instant_step:InstantStepSkill,myriad_afterimage:MyriadAfterimageSkill,parasitic_gu:ParasiticGuHostVisualSkill,poison_chain:PoisonChainActiveSkill,poison_king:PoisonKingSkillWithSpiritSlime,spirit_wolves:SpiritWolvesSkill,spirit_bird:SpiritBirdSkill,spirit_slime:SpiritSlimeSkill,lightning_enchant:LightningEnchantSkill,lightning_mark:LightningMarkSkill,lightning_tribulation:LightningTribulationSkill};
