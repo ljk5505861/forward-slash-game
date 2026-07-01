@@ -21,10 +21,12 @@ const gravityFix=fs.readFileSync('src/skills/handlers/GravityFlowFollowupFixes.j
 assert.match(gravityFix,/warningAt=castAt\+index\*\(data\.followupDelayMs\|\|0\)/,'follow-up warnings use their own scheduled warning time');
 assert.match(gravityFix,/task\.centerAt=\(\)=>task\.lockedCenter/,'strike impact stays on its displayed warning location');
 assert.match(gravityFix,/groundTopY\?\?620\)-260/,'black hole collapse visual uses hovering height');
+assert.doesNotMatch(gravityFix,/warningAt\+=d/,'staged warning time must not be shifted twice');
 const gravityControl=fs.readFileSync('src/systems/EnemyGravityControl.js','utf8');
 assert.match(gravityControl,/pullImmuneStates=new Set\(\['windup','charge'/,'charger windup is pull immune');
 const handlerRegistry=fs.readFileSync('src/skills/handlers/index.js','utf8');
 assert.match(handlerRegistry,/gravity_crush:GravityCrushFixedSkill/,'fixed gravity crush handler is registered');
 assert.match(handlerRegistry,/black_hole:BlackHoleFixedSkill/,'fixed black hole handler is registered');
 assert.deepEqual(validateSkillDetailContent(), []); for(const id of Object.keys(expected)) for(const level of [1,3,6,8,9]){ const d=getSkillDetailData(id,{skill:{id,level}}); const text=[...(d.currentEffects||[]),...(d.nextLevelPreview||[])].join(' '); assert.match(text,/\d/); }
+await import('./validate-01087-gravity-followup-pause.mjs');
 console.log('v0.10.87 gravity flow config validation passed');
