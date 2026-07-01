@@ -538,8 +538,11 @@ export const PoisonKingSkill={
       const eye=s.add.circle(17,-5,4,0xf2ffd2,1);
       view.add([body,eye]);
       king={
+        type:'poison_king',
+        skillId:'poison_king',
         view,
         hp:data.hp,
+        baseMaxHp:data.hp,
         maxHp:data.hp,
         growth:0,
         stage:0,
@@ -560,7 +563,7 @@ export const PoisonKingSkill={
       while(king.growth>=data.growthStage&&king.stage<data.maxStage){
         king.growth-=data.growthStage;
         king.stage+=1;
-        king.maxHp+=POISON_ADVANCED_TUNING.king.hpPerStage;
+        king.baseMaxHp=(king.baseMaxHp||king.maxHp)+POISON_ADVANCED_TUNING.king.hpPerStage; king.maxHp=king.baseMaxHp;
         king.hp=Math.min(
           king.maxHp,
           king.hp
@@ -584,10 +587,7 @@ export const PoisonKingSkill={
     const bite=(target,data)=>{
       const level=system.getLevel('poison_king');
       const poisoned=s.statusEffects.has(target,StatusEffects.POISON);
-      const damage=Math.round(
-        data.biteDamage
-          +king.stage*POISON_ADVANCED_TUNING.king.damagePerStage
-      );
+      const slimeMod=s.spiritSlimeRuntime?.getModifier?.(king)||{}; const damage=Math.round((data.biteDamage+king.stage*POISON_ADVANCED_TUNING.king.damagePerStage)*(1+(slimeMod.powerBonus||0)));
       const before=target.hp||0;
       s.combatSystem.damageEnemy(target,damage,{
         source:'skill',
@@ -605,8 +605,7 @@ export const PoisonKingSkill={
           target,
           data.poisonStacks,
           3600,
-          data.poisonDamage
-            +king.stage*POISON_ADVANCED_TUNING.king.poisonPerStage,
+          Math.round((data.poisonDamage+king.stage*POISON_ADVANCED_TUNING.king.poisonPerStage)*(1+(slimeMod.powerBonus||0))),
           'poison_king_bite',
           {poisonKingApplied:true}
         );
@@ -645,7 +644,7 @@ export const PoisonKingSkill={
         .forEach(enemy=>{
           s.combatSystem.damageEnemy(
             enemy,
-            POISON_ADVANCED_TUNING.king.domainDamage,
+            Math.round(POISON_ADVANCED_TUNING.king.domainDamage*(1+((s.spiritSlimeRuntime?.getModifier?.(king)||{}).powerBonus||0))),
             {
               source:'skill',
               skillId:'poison_king',
@@ -667,7 +666,7 @@ export const PoisonKingSkill={
               enemy,
               1,
               2800,
-              data.poisonDamage,
+              Math.round(data.poisonDamage*(1+((s.spiritSlimeRuntime?.getModifier?.(king)||{}).powerBonus||0))),
               'poison_king_domain',
               {poisonDomain:true}
             );

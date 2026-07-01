@@ -70,12 +70,14 @@
     "validate:01084-lightning-mark": "node scripts/validate-01084-lightning-mark.mjs",
     "validate:01084-playtest-fixes": "npm run validate:01084-lightning-mark && npm run validate:01083-playtest-fixes",
     "validate:01085-lightning-tribulation": "node scripts/validate-01085-lightning-tribulation.mjs",
-    "validate:01085-playtest-fixes": "npm run validate:01085-lightning-tribulation && npm run validate:01084-playtest-fixes"
+    "validate:01085-playtest-fixes": "npm run validate:01085-lightning-tribulation && npm run validate:01084-playtest-fixes",
+    "validate:01086-spirit-slime": "node scripts/validate-01086-spirit-slime.mjs",
+    "validate:01086-playtest-fixes": "npm run validate:01086-spirit-slime && npm run validate:01085-playtest-fixes"
   },
   "dependencies": {
     "phaser": "4.1.0",
     "vite": "latest"
   },
   "devDependencies": {},
-  "version": "0.10.85"
+  "version": "0.10.86"
 }

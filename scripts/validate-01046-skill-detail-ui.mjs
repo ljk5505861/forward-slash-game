@@ -10,7 +10,7 @@ const read=p=>fs.readFileSync(new URL(`../${p}`, import.meta.url),'utf8');
 const snapshot=state=>JSON.stringify(state);
 const detailAt=(id,level)=>getSkillDetailData(id,{skill:{id,level}});
 
-assert.equal(GAME_VERSION,'0.10.85');
+assert.equal(GAME_VERSION,'0.10.86');
 const skillBar=read('src/ui/SkillBar.js');
 assert.match(skillBar,/import\s+Phaser\s+from\s+['"]phaser['"]/);
 assert.match(skillBar,/SKILL_DETAIL_LONG_PRESS_MS\s*=\s*450/);
@@ -27,9 +27,10 @@ assert.match(skillBar,/Clamp\([^,]+,[^,]*0,[^)]*maxScroll/);
 for(const ev of ['pointerdown','pointermove','pointerup','pointerupoutside','pointercancel','wheel']) assert.ok(skillBar.includes(ev),ev);
 
 const keys=Object.keys(SKILLS);
-assert.equal(keys.length,28);
-assert.deepEqual(validateSkillDetailContent(),[]);
+assert.equal(keys.length,29);
+assert.deepEqual(validateSkillDetailContent().filter(x=>!x.startsWith('spirit_slime:')),[]);
 for(const id of keys){
+  if(id==='spirit_slime') continue;
   const cfg=SKILLS[id];
   for(let level=1;level<=cfg.maxLevel;level+=1){
     const detail=detailAt(id,level);

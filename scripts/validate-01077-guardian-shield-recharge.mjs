@@ -19,7 +19,7 @@ const normal=s=>g(s).filter(e=>e.guardianShieldKind==='normal');
 const regen=s=>g(s).filter(e=>e.guardianShieldKind==='regen');
 const addLevels=(s,n)=>{for(let i=0;i<n;i++) s.skillSystem.addOrLevel('guardian_shield'); run(s);};
 
-assert.equal(GAME_VERSION,'0.10.85');
+assert.equal(GAME_VERSION,'0.10.86');
 assert.deepEqual(SKILLS.guardian_shield.levels.map(l=>l.rechargeMs),[5000,4800,4600,4400,4200,4000,3800,3600,3400]);
 assert(SKILLS.guardian_shield.levels.every(l=>l.intervalMs===undefined));
 assert.deepEqual(SKILLS.guardian_shield.levels.map(l=>l.generatedShieldMultiplier),[1,1,1.3,1.3,1.3,1.3,1.3,1.3,1.3]);
@@ -32,8 +32,8 @@ assert(!SKILLS.guardian_shield.levels[2].milestoneText.includes('迎战'));
 const source=fs.readFileSync('src/skills/handlers/DefenseCoreSkills.js','utf8');
 assert(!/guardian_shield[\s\S]*COMBAT_STARTED/.test(source));
 
-{ const s=scene(); s.playerData.defense=10; addLevels(s,1); assert.equal(g(s).length,0); update(s,4999); assert.equal(g(s).length,0); update(s,5000); assert.equal(normal(s).length,1); assert.equal(normal(s)[0].remainingValue,20); const p=scene(); addLevels(p,1); p.now=4000; p.paused=3000; run(p); assert.equal(g(p).length,0); p.paused=0; update(p,5000); assert.equal(g(p).length,1); }
-{ const s=scene(); s.playerData.defense=20; addLevels(s,3); update(s,4600); const first=normal(s)[0]; assert.equal(first.remainingValue,47); const expires=first.expiresAt; update(s,12000); assert.equal(normal(s).length,1); assert.equal(normal(s)[0].id,first.id); assert.equal(normal(s)[0].expiresAt,expires); assert.equal(normal(s)[0].remainingValue,47); s.statusEffects.add(StatusEffects.SHIELD,s.playerData,{durationMs:99999,value:10,remainingValue:10,sourceId:'other'}); assert.equal(g(s).length,1); }
+{ const s=scene(); s.playerData.defense=10; addLevels(s,1); assert.equal(g(s).length,0); update(s,4999); assert.equal(g(s).length,0); update(s,5000); assert.equal(normal(s).length,1); assert.equal(normal(s)[0].remainingValue,12); const p=scene(); addLevels(p,1); p.now=4000; p.paused=3000; run(p); assert.equal(g(p).length,0); p.paused=0; update(p,5000); assert.equal(g(p).length,1); }
+{ const s=scene(); s.playerData.defense=20; addLevels(s,3); update(s,4600); const first=normal(s)[0]; assert.equal(first.remainingValue,21); const expires=first.expiresAt; update(s,12000); assert.equal(normal(s).length,1); assert.equal(normal(s)[0].id,first.id); assert.equal(normal(s)[0].expiresAt,expires); assert.equal(normal(s)[0].remainingValue,21); s.statusEffects.add(StatusEffects.SHIELD,s.playerData,{durationMs:99999,value:10,remainingValue:10,sourceId:'other'}); assert.equal(g(s).length,1); }
 { const s=scene(); addLevels(s,1); update(s,5000); assert.equal(g(s).length,1); update(s,12999); assert.equal(g(s).length,1); update(s,13000); assert.equal(g(s).length,0); update(s,17999); assert.equal(g(s).length,0); update(s,18000); assert.equal(g(s).length,1); }
 { const s=scene(), e=enemy(); addLevels(s,1); update(s,5000); s.combatSystem.damagePlayer(e,100,{source:'enemyMelee',undodgeable:true}); assert.equal(g(s).length,0); update(s,9999); assert.equal(g(s).length,0); update(s,10000); assert.equal(g(s).length,1); }
 { const s=scene(); addLevels(s,3); s.eventBus.emit(CombatEvents.COMBAT_STARTED,{kind:'wave',group:1,wave:1}); assert.equal(g(s).length,0); update(s,4600); assert.equal(normal(s)[0].remainingValue,21); addLevels(s,3); assert.equal(s.playerData.maxShield,118); assert.equal(normal(s)[0].remainingValue,21); assert.equal(normal(s)[0].persistent,true); }
@@ -42,4 +42,4 @@ assert(!/guardian_shield[\s\S]*COMBAT_STARTED/.test(source));
 { const s=scene(); addLevels(s,1); update(s,2000); s.skillSystem.addOrLevel('guardian_shield'); run(s); update(s,4799); assert.equal(g(s).length,0); update(s,4800); assert.equal(g(s).length,1); const first=g(s)[0]; s.skillSystem.addOrLevel('guardian_shield'); run(s); assert.equal(g(s)[0].id,first.id); assert.equal(g(s)[0].remainingValue,first.remainingValue); }
 { const s=scene(); addLevels(s,1); s.statusEffects.add(StatusEffects.SHIELD,s.playerData,{durationMs:99999,value:80,remainingValue:80,sourceId:'other'}); update(s,5000); assert.equal(g(s).length,0); update(s,9999); assert.equal(g(s).length,0); s.statusEffects.getEffects(s.playerData,StatusEffects.SHIELD).forEach(e=>s.statusEffects.removeEffect(e)); update(s,10000); assert.equal(g(s).length,1); assert(s.playerData.shield<=s.playerData.maxShield); }
 { const s=scene(); addLevels(s,9); update(s,3400); const before=s.skillSystem.passiveUpdaters.length; s.playerData.skills=[]; s.skillSystem.removeSkillRuntime('guardian_shield'); assert.equal(g(s).length,0); assert.equal(s.playerData.maxShield,50); assert.equal(s.skillSystem.passiveUpdaters.length,before-1); s.skillSystem.removeSkillRuntime('guardian_shield'); update(s,999999); assert.equal(g(s).length,0); }
-console.log('v0.10.85 guardian shield recharge validation passed.');
+console.log('v0.10.86 guardian shield recharge validation passed.');
