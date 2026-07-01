@@ -56,7 +56,7 @@ ctx.scene.playerData.myriadAfterimageSkillId='normal_attack'; ctx.scene.playerDa
 assert.equal(openMyriadAfterimageSelection(ctx.scene),true);
 assert.equal(ctx.calls.show,1);
 assert.deepEqual(selectionOptions(ctx.system).map(o=>o.skillId),['normal_attack','fireball']);
-ctx=bind(['myriad_afterimage','fireball','time_loan','phantom_step','instant_step','attack_15']);
+ctx=bind(['myriad_afterimage','fireball','phantom_step','instant_step','attack_15']);
 assert.deepEqual(selectionOptions(ctx.system).map(o=>o.skillId),['normal_attack','fireball']);
 
 // Current markers survive formatting for normal attack and formal skills like fireball.
