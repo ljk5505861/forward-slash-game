@@ -489,7 +489,7 @@ export const PoisonKingSkill={
       getHealingTarget:()=>{
         const current=king;
         if(!current||current.dead||current.hp<=0) return null;
-        return { type:'poison_king', get x(){return current.view?.x??0;}, get y(){return current.view?.y??0;}, get hp(){return current.hp;}, get maxHp(){return current.maxHp;}, isAlive:()=>king===current&&!current.dead&&current.hp>0, heal:amount=>{ if(king!==current||current.dead||current.hp<=0) return 0; const actual=healEntity(current,Math.round(amount)||0,current.maxHp); updateHpBar(current); if(actual>0) s.floatText?.(current.view.x,current.view.y-48,`+${actual}`,'#7dff8a'); return actual; } };
+        return { type:'poison_king', get x(){return current.view?.x??0;}, get y(){return current.view?.y??0;}, get hp(){return current.hp;}, get maxHp(){return current.maxHp;}, isAlive:()=>king===current&&!current.dead&&current.hp>0, heal:amount=>{ if(king!==current||current.dead||current.hp<=0) return 0; const mod=s.spiritSlimeRuntime?.getModifier?.(current)||{}; const actual=healEntity(current,Math.round((amount||0)*(1+(mod.healingReceivedBonus||0))),current.maxHp); updateHpBar(current); if(actual>0) s.floatText?.(current.view.x,current.view.y-48,`+${actual}`,'#7dff8a'); return actual; } };
       },
       getAttackTarget:()=>{
         const current=king;
@@ -505,7 +505,7 @@ export const PoisonKingSkill={
             const before=current.hp;
             current.hp=Math.max(
               0,
-              current.hp-Math.max(0,Math.round(amount)||0)
+              current.hp-(Math.max(0,Math.round(amount)||0)===0?0:Math.max(1,Math.round(Math.max(0,Math.round(amount)||0)*(1-((s.spiritSlimeRuntime?.getModifier?.(current)||{}).damageReduction||0)))))
             );
             const actual=before-current.hp;
             if(actual>0) showDamageText(current,actual);
@@ -519,7 +519,7 @@ export const PoisonKingSkill={
         const current=king;
         if(!current||current.dead) return 0;
         const before=current.hp;
-        current.hp=Math.max(0,current.hp-Math.max(0,amount||0));
+        { const raw=Math.max(0,Math.round(amount)||0), mod=s.spiritSlimeRuntime?.getModifier?.(current)||{}; current.hp=Math.max(0,current.hp-(raw===0?0:Math.max(1,Math.round(raw*(1-(mod.damageReduction||0)))))); }
         const actual=before-current.hp;
         if(actual>0) showDamageText(current,actual);
         updateHpBar(current);
@@ -563,15 +563,7 @@ export const PoisonKingSkill={
       while(king.growth>=data.growthStage&&king.stage<data.maxStage){
         king.growth-=data.growthStage;
         king.stage+=1;
-        king.baseMaxHp=(king.baseMaxHp||king.maxHp)+POISON_ADVANCED_TUNING.king.hpPerStage; king.maxHp=king.baseMaxHp;
-        king.hp=Math.min(
-          king.maxHp,
-          king.hp
-            +POISON_ADVANCED_TUNING.king.hpPerStage
-            +(system.getLevel('poison_king')>=3
-              ?POISON_ADVANCED_TUNING.king.stageHealL3
-              :0)
-        );
+        { const oldMax=Math.max(1,king.maxHp||1), ratio=Math.max(0,Math.min(1,king.hp/oldMax)); king.baseMaxHp=(king.baseMaxHp||king.maxHp)+POISON_ADVANCED_TUNING.king.hpPerStage; const mod=s.spiritSlimeRuntime?.getModifier?.(king)||{}; king.maxHp=Math.max(1,Math.round(king.baseMaxHp*(1+(mod.maxHpBonus||0)))); const grownHp=Math.round(king.maxHp*ratio)+POISON_ADVANCED_TUNING.king.hpPerStage+(system.getLevel('poison_king')>=3?POISON_ADVANCED_TUNING.king.stageHealL3:0); king.hp=Math.min(king.maxHp,grownHp); }
         king.view.setScale(
           1+king.stage*POISON_ADVANCED_TUNING.king.scalePerStage
         );
@@ -611,15 +603,7 @@ export const PoisonKingSkill={
         );
       }
       if(level>=6&&poisoned){
-        healEntity(
-          king,
-          Math.min(
-            actual*POISON_ADVANCED_TUNING.king.biteHealRatioL6,
-            king.maxHp
-              *POISON_ADVANCED_TUNING.king.biteHealCapMaxHpRatio
-          ),
-          king.maxHp
-        );
+        { const mod=s.spiritSlimeRuntime?.getModifier?.(king)||{}; healEntity(king,Math.min(actual*POISON_ADVANCED_TUNING.king.biteHealRatioL6,king.maxHp*POISON_ADVANCED_TUNING.king.biteHealCapMaxHpRatio)*(1+(mod.healingReceivedBonus||0)),king.maxHp); }
       }
     };
     const domain=data=>{
@@ -686,6 +670,7 @@ export const PoisonKingSkill={
         die(king);
         return;
       }
+      const mod=s.spiritSlimeRuntime?.getModifier?.(king)||{}; if(king&&king.baseMaxHp){ const oldMax=Math.max(1,king.maxHp||1), ratio=Math.max(0,Math.min(1,king.hp/oldMax)); const nextMax=Math.max(1,Math.round(king.baseMaxHp*(1+(mod.maxHpBonus||0)))); if(nextMax!==king.maxHp){ king.maxHp=nextMax; king.hp=king.hp>0?Math.max(1,Math.min(king.maxHp,Math.round(king.maxHp*ratio))):0; updateHpBar(king); } }
       const target=choose();
       king.target=target;
       const goal=target
@@ -700,7 +685,7 @@ export const PoisonKingSkill={
       king.view.x+=(goal.x-king.view.x)*0.1;
       king.view.y+=(goal.y-king.view.y)*0.1;
       if(target&&now>=king.nextBiteAt){
-        king.nextBiteAt=now+data.biteIntervalMs;
+        king.nextBiteAt=now+Math.max(1,Math.round(data.biteIntervalMs/(1+((s.spiritSlimeRuntime?.getModifier?.(king)||{}).actionSpeedBonus||0))));
         bite(target,data);
       }
       if(now>=king.nextDomainAt){

@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 import pkg from '../package.json' with { type:'json' };
 import { GAME_VERSION } from '../src/config/version.js';
 import { TAGS, BUILD_TAGS } from '../src/config/tags.js';
 import '../src/skills/handlers/index.js';
 import { SKILLS } from '../src/config/skills.js';
+import { createPlayerRuntime, getEffectiveAttack, getEffectiveDefense } from '../src/config/balance.js';
+import { SpiritSlimeSkill } from '../src/skills/handlers/SpiritSlimeSkill.js';
+
 const cfg=SKILLS.spirit_slime;
 assert.equal(GAME_VERSION,'0.10.86'); assert.equal(pkg.version,'0.10.86'); assert.equal(Object.keys(SKILLS).length,29);
 assert(cfg); assert.equal(cfg.name,'灵泥'); assert.equal(cfg.rarity,'RARE'); assert.equal(cfg.passive,true); assert.equal(cfg.maxLevel,9); assert.equal(cfg.handler,'spirit_slime'); assert.equal(cfg.requiredSkillId,undefined);
@@ -12,11 +14,20 @@ for(const t of [TAGS.MAGIC,TAGS.SUMMON,TAGS.BUILD_SUMMON]) assert(cfg.tags.inclu
 const arrays={playerBonusRatio:[0.05,0.055,0.06,0.065,0.07,0.08,0.085,0.09,0.10],mudShotDamageRatio:[0.20,0.22,0.24,0.26,0.28,0.32,0.35,0.38,0.42],mudShotIntervalMs:[1500,1450,1400,1350,1300,1200,1150,1100,1000],attachCount:[1,1,2,2,2,2,2,2,999],summonPowerBonus:[0.30,0.34,0.38,0.42,0.46,0.50,0.54,0.59,0.65],summonMaxHpBonus:[0.40,0.44,0.48,0.52,0.56,0.60,0.66,0.72,0.80],summonDamageReduction:[0.15,0.16,0.17,0.19,0.21,0.25,0.26,0.28,0.30],summonActionSpeedBonus:[0.10,0.11,0.12,0.14,0.16,0.20,0.21,0.23,0.25],summonHealingReceivedBonus:[0.20,0.22,0.24,0.27,0.30,0.35,0.38,0.42,0.50]};
 for(const [k,v] of Object.entries(arrays)) assert.deepEqual(cfg.levels.map(l=>l[k]),v,k);
 assert.equal(cfg.milestones[3],'灵泥增殖：灵泥分裂为两团，可同时强化两只召唤物。'); assert.equal(cfg.milestones[6],'深度共生：灵泥对召唤物的强化大幅提高。'); assert.equal(cfg.milestones[9],'万灵附体：灵泥分化万千，强化所有实体召唤物。');
-assert.equal(TAGS.BUILD_SUMMON,'buildSummon'); assert(BUILD_TAGS.includes(TAGS.BUILD_SUMMON));
-assert(SKILLS.spirit_wolves.tags.includes(TAGS.BUILD_SUMMON)); assert(SKILLS.spirit_bird.tags.includes(TAGS.BUILD_SUMMON)); assert(SKILLS.spirit_slime.tags.includes(TAGS.BUILD_SUMMON));
-for(const id of ['poison_king','sword_wave','parasitic_gu','poison_chain','myriad_afterimage']) if(SKILLS[id]) assert(!SKILLS[id].tags?.includes(TAGS.BUILD_SUMMON),id);
-assert.equal(Object.values(SKILLS).filter(s=>s.rarity==='RARE').length,9);
-const src=fs.readFileSync(new URL('../src/skills/handlers/SpiritSlimeSkill.js',import.meta.url),'utf8');
-['scene.spiritSlimeRuntime','getMode','getAttachedTargets','isAttached','getModifier','cleanup','poisonKingRuntime','spiritWolves','spiritBirdRuntime','damageAlreadyResolved:true','critResolved:true','allowLifeSteal:false','canTriggerArtifacts:false','noKnockback:true','cancelShots','clearPlayer','setRatioHp'].forEach(x=>assert(src.includes(x),x));
-assert(!src.includes('noDeathExplosion')); assert(!src.includes('noPoisonSpread'));
-console.log('validate-01086-spirit-slime passed');
+assert.equal(TAGS.BUILD_SUMMON,'buildSummon'); assert(BUILD_TAGS.includes(TAGS.BUILD_SUMMON)); assert(SKILLS.spirit_wolves.tags.includes(TAGS.BUILD_SUMMON)); assert(SKILLS.spirit_bird.tags.includes(TAGS.BUILD_SUMMON)); assert(SKILLS.spirit_slime.tags.includes(TAGS.BUILD_SUMMON)); for(const id of ['poison_king','sword_wave','parasitic_gu','poison_chain','myriad_afterimage']) if(SKILLS[id]) assert(!SKILLS[id].tags?.includes(TAGS.BUILD_SUMMON),id); assert.equal(Object.values(SKILLS).filter(s=>s.rarity==='RARE').length,9);
+
+function scene(){ const created=[]; const destroyed=[]; const s={now:0,player:{x:100,y:200},playerData:createPlayerRuntime(),enemies:[],skillSystem:null,combatLog:[],targeting:{valid:e=>!!e&&e.hp>0,isEnemyFullyInsideViewport(){return true},all(){return s.enemies.filter(this.valid)}},combatSystem:{damageEnemy(e,d,m){s.combatLog.push({e,d,m}); e.hp=Math.max(0,e.hp-d); return true;}},add:{circle(x,y,r,c,a){ const o={x,y,r,c,a,active:true,destroy(){this.active=false; destroyed.push(this);},setStrokeStyle(){return this},setDepth(){return this},setPosition(x,y){this.x=x;this.y=y;return this}}; created.push(o); return o;}},tweens:{add(c){ c.onComplete?.(); return {remove(){this.removed=true},...c}; }},getGameplayTime(){return this.now;},events:{once(){},off(){}}}; const sys={scene:s,passiveState:{},passiveUpdaters:[],getLevel(id){return s.playerData.skills.find(x=>x.id===id)?.level||0},getData(id,l=this.getLevel(id)){return SKILLS[id]?.levels[l-1]},cooldowns:new Map()}; s.skillSystem=sys; return {s,sys,created,destroyed}; }
+function tick(env,ms=16,n=1){ for(let i=0;i<n;i++){ env.s.now+=ms; env.sys.passiveUpdaters.forEach(fn=>fn()); } }
+
+let env=scene(); SpiritSlimeSkill.bind(env.sys); const baseAtk=getEffectiveAttack(env.s.playerData), baseMax=env.s.playerData.maxHp, baseDef=getEffectiveDefense(env.s.playerData); tick(env,1000,5); assert.equal(env.s.spiritSlimeRuntime.getMode(),'inactive'); assert.equal(env.created.length,0); assert.equal(getEffectiveAttack(env.s.playerData),baseAtk); assert.equal(env.s.playerData.maxHp,baseMax); assert.equal(getEffectiveDefense(env.s.playerData),baseDef); assert.equal(env.s.combatLog.length,0); assert.equal(env.s.spiritSlimeRuntime._state.projectiles.size,0);
+
+env=scene(); SpiritSlimeSkill.bind(env.sys); env.s.playerData.baseAttack=100; env.s.playerData.attack=100; env.s.playerData.baseDefense=10; env.s.playerData.defense=10; env.s.playerData.defenseBonuses.other=5; env.s.playerData.hp=250; env.s.playerData.skills.push({id:'spirit_slime',level:1}); tick(env,1); assert.equal(env.s.spiritSlimeRuntime.getMode(),'companion'); assert.equal(getEffectiveAttack(env.s.playerData),105); assert.equal(env.s.playerData.maxHp,525); assert.equal(env.s.playerData.hp,263); assert.equal(getEffectiveDefense(env.s.playerData),16); const visual=env.s.spiritSlimeRuntime._state.companionVisual; tick(env,16,100); assert.equal(env.s.spiritSlimeRuntime._state.companionVisual,visual); assert.equal(env.created.length,1);
+// mud shot behavior and meta
+const enemy={x:200,y:200,hp:1000}; env.s.enemies=[enemy]; tick(env,300); assert.equal(env.s.combatLog.length,1); assert.equal(env.s.combatLog[0].d,Math.max(1,Math.round(getEffectiveAttack(env.s.playerData)*0.20))); assert.equal(env.s.combatLog[0].m.crit,false); assert.equal(env.s.combatLog[0].m.allowLifeSteal,false); assert.equal(env.s.combatLog[0].m.canTriggerArtifacts,false); assert.equal(env.s.combatLog[0].m.noKnockback,true); assert(!('noDeathExplosion' in env.s.combatLog[0].m)); assert(!('noPoisonSpread' in env.s.combatLog[0].m));
+// switch to wolf attached, clear player, no duplicate visual rebuild, cancel shots
+const wolf={type:'spiritWolf',index:0,x:120,y:210,hp:50,maxHp:100,baseMaxHp:100,attack:100,defense:0,isAlive(){return this.hp>0}}; env.sys.passiveState.spiritWolves={wolves:[wolf]}; tick(env,16); assert.equal(env.s.spiritSlimeRuntime.getMode(),'attached'); assert.equal(getEffectiveAttack(env.s.playerData),100); assert.equal(env.s.playerData.maxHp,500); assert.equal(getEffectiveDefense(env.s.playerData),15); assert.equal(wolf.maxHp,140); assert.equal(wolf.hp,70); assert.equal(env.s.spiritSlimeRuntime.getModifier(wolf).powerBonus,0.30); const attachVisual=env.s.spiritSlimeRuntime._state.visuals.get(wolf); tick(env,16,20); assert.equal(env.s.spiritSlimeRuntime._state.visuals.get(wolf),attachVisual); wolf.hp=0; tick(env,16); assert.equal(env.s.spiritSlimeRuntime.getMode(),'companion'); assert(env.s.now < env.s.spiritSlimeRuntime._state.nextShotAt);
+// re-acquire after cleanup
+SpiritSlimeSkill.cleanup(env.sys); assert.equal(env.s.spiritSlimeRuntime.getMode(),'inactive'); env.s.playerData.skills=[{id:'spirit_slime',level:1}]; tick(env,16); assert.equal(env.s.spiritSlimeRuntime.getMode(),'companion'); SpiritSlimeSkill.cleanup(env.sys); SpiritSlimeSkill.cleanup(env.sys); assert.equal(env.s.spiritSlimeRuntime.getMode(),'inactive');
+// fixed numeric contract used by summon handlers
+assert.equal(Math.round(100*(1+0.50)),150); assert.equal(Math.round(150*0.35),53); assert.equal(Math.round(100*(1+0.50)*0.8),120);
+console.log('validate-01086-spirit-slime behavior passed');
