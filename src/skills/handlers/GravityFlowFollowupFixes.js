@@ -91,11 +91,5 @@ export const BlackHoleFixedSkill={
     const off=BlackHoleSkill.bind(sys);
     ensureUpdater(sys);
     return ()=>{ off?.(); };
-  },
-  shiftTimers(sys,d,pausedAt){
-    BlackHoleSkill.shiftTimers?.(sys,d,pausedAt);
-    sys.scene.gravityRuntime?.pendingStrikes?.forEach(task=>{
-      if(task.gravityStagedWarning&&Number.isFinite(task.warningAt)&&task.warningAt>pausedAt) task.warningAt+=d;
-    });
   }
 };
