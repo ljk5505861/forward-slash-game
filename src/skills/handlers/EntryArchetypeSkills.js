@@ -96,7 +96,7 @@ const configs = {
       9:'攻速提高至42%，闪避率提高至25%'
     })
   },
-  spirit_wolves:{id:'spirit_wolves',name:'召唤灵狼',rarity:'COMMON',tags:[TAGS.SUMMON,'physical',TAGS.MELEE],maxLevel:9,cooldownMs:8000,targetType:'self',color:0x9fd7ff,short:'狼',handler:'spirit_wolves',description:'独立召唤两只可被攻击和击退的灵狼，全部死亡后才重新冷却。召唤伤害不触发玩家吸血、普攻附带效果、暴击、法宝或普攻事件。',levels:[
+  spirit_wolves:{id:'spirit_wolves',name:'召唤灵狼',rarity:'COMMON',tags:[TAGS.SUMMON,'physical',TAGS.MELEE,TAGS.BUILD_SUMMON],maxLevel:9,cooldownMs:8000,targetType:'self',color:0x9fd7ff,short:'狼',handler:'spirit_wolves',description:'独立召唤两只可被攻击和击退的灵狼，全部死亡后才重新冷却。召唤伤害不触发玩家吸血、普攻附带效果、暴击、法宝或普攻事件。',levels:[
     {inheritRatio:.20,hpInheritRatio:.15,cooldownMs:8000,desc:'首次正式释放立即同时召唤2只灵狼；每只继承玩家基础攻击和基础防御20%、基础最大生命15%，两只全部死亡后才进入8秒冷却。'},
     {inheritRatio:.21,hpInheritRatio:.16,cooldownMs:8000,desc:'灵狼基础攻击和基础防御继承提高到21%、基础最大生命继承提高到16%，仍可被敌人攻击和击退。'},
     {inheritRatio:.22,hpInheritRatio:.17,cooldownMs:8000,splashRadius:90,splashScale:.35,milestoneText:'群狼撕咬',desc:'灵狼基础攻击和基础防御继承提高到22%、基础最大生命继承提高到17%；灵狼普通攻击对主目标造成完整伤害，并对90范围内其他敌人造成35%溅射，主目标不重复受伤。'},
@@ -106,7 +106,18 @@ const configs = {
     {inheritRatio:.26,hpInheritRatio:.21,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础攻击和基础防御继承提高到26%、基础最大生命继承提高到21%，被击退后会继续追踪敌人。'},
     {inheritRatio:.28,hpInheritRatio:.23,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础攻击和基础防御继承提高到28%、基础最大生命继承提高到23%；即使被击退到玩家身后，也会依靠自身速度重新向前推进。'},
     {inheritRatio:.30,hpInheritRatio:.25,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,scaleBonus:.15,milestoneText:'狼王血脉',desc:'每只灵狼继承30%玩家基础攻击和基础防御、25%基础最大生命，并获得约15%体型强化；仍只召唤2只。'}]},
-  spirit_bird:{id:'spirit_bird',name:'灵鸟',rarity:'COMMON',tags:[TAGS.SUMMON],maxLevel:9,cooldownMs:8000,targetType:'self',color:0xf8fafc,short:'鸟',handler:'spirit_bird',description:'召唤一只常驻治疗灵鸟。灵鸟每隔数秒治疗生命比例最低的玩家或召唤物，可以受到敌人攻击，死亡8秒后重新召唤。',milestones:{3:'治疗强化——灵鸟治疗量提高30%。',6:'快速治疗——治疗间隔明显缩短至4.8秒，之后继续随等级缩短。',9:'群体治疗——每4.2秒同时恢复玩家和所有存活召唤物的生命，不包括灵鸟自己。'},levels:[
+
+  spirit_slime:{id:'spirit_slime',name:'灵泥',rarity:'RARE',tags:[TAGS.MAGIC,TAGS.SUMMON,TAGS.BUILD_SUMMON],maxLevel:9,cooldownMs:999999,targetType:'passive',color:0x78e6b0,short:'泥',handler:'spirit_slime',passive:true,description:'召唤一团共生灵泥。没有其他实体召唤物时附着玩家并自动攻击，给予玩家少量强化；存在实体召唤物时停止攻击，转而附身并大幅强化召唤物。',milestones:{3:'灵泥增殖：灵泥分裂为两团，可同时强化两只召唤物。',6:'深度共生：灵泥对召唤物的强化大幅提高。',9:'万灵附体：灵泥分化万千，强化所有实体召唤物。'},levels:[
+    {playerBonusRatio:0.05,mudShotDamageRatio:0.20,mudShotIntervalMs:1500,attachCount:1,summonPowerBonus:0.30,summonMaxHpBonus:0.40,summonDamageReduction:0.15,summonActionSpeedBonus:0.10,summonHealingReceivedBonus:0.20,desc:'灵泥伴生玩家，或附身1只实体召唤物。'},
+    {playerBonusRatio:0.055,mudShotDamageRatio:0.22,mudShotIntervalMs:1450,attachCount:1,summonPowerBonus:0.34,summonMaxHpBonus:0.44,summonDamageReduction:0.16,summonActionSpeedBonus:0.11,summonHealingReceivedBonus:0.22,desc:'灵泥强化小幅提高。'},
+    {playerBonusRatio:0.06,mudShotDamageRatio:0.24,mudShotIntervalMs:1400,attachCount:2,summonPowerBonus:0.38,summonMaxHpBonus:0.48,summonDamageReduction:0.17,summonActionSpeedBonus:0.12,summonHealingReceivedBonus:0.24,milestoneText:'灵泥增殖：灵泥分裂为两团，可同时强化两只召唤物。',desc:'灵泥可同时附身2只召唤物。'},
+    {playerBonusRatio:0.065,mudShotDamageRatio:0.26,mudShotIntervalMs:1350,attachCount:2,summonPowerBonus:0.42,summonMaxHpBonus:0.52,summonDamageReduction:0.19,summonActionSpeedBonus:0.14,summonHealingReceivedBonus:0.27,desc:'附身强化继续提高。'},
+    {playerBonusRatio:0.07,mudShotDamageRatio:0.28,mudShotIntervalMs:1300,attachCount:2,summonPowerBonus:0.46,summonMaxHpBonus:0.56,summonDamageReduction:0.21,summonActionSpeedBonus:0.16,summonHealingReceivedBonus:0.30,desc:'灵泥共生更稳定。'},
+    {playerBonusRatio:0.08,mudShotDamageRatio:0.32,mudShotIntervalMs:1200,attachCount:2,summonPowerBonus:0.50,summonMaxHpBonus:0.60,summonDamageReduction:0.25,summonActionSpeedBonus:0.20,summonHealingReceivedBonus:0.35,milestoneText:'深度共生：灵泥对召唤物的强化大幅提高。',desc:'召唤物强化大幅提高。'},
+    {playerBonusRatio:0.085,mudShotDamageRatio:0.35,mudShotIntervalMs:1150,attachCount:2,summonPowerBonus:0.54,summonMaxHpBonus:0.66,summonDamageReduction:0.26,summonActionSpeedBonus:0.21,summonHealingReceivedBonus:0.38,desc:'灵泥强化继续成长。'},
+    {playerBonusRatio:0.09,mudShotDamageRatio:0.38,mudShotIntervalMs:1100,attachCount:2,summonPowerBonus:0.59,summonMaxHpBonus:0.72,summonDamageReduction:0.28,summonActionSpeedBonus:0.23,summonHealingReceivedBonus:0.42,desc:'灵泥接近万灵共生。'},
+    {playerBonusRatio:0.10,mudShotDamageRatio:0.42,mudShotIntervalMs:1000,attachCount:999,summonPowerBonus:0.65,summonMaxHpBonus:0.80,summonDamageReduction:0.30,summonActionSpeedBonus:0.25,summonHealingReceivedBonus:0.50,milestoneText:'万灵附体：灵泥分化万千，强化所有实体召唤物。',desc:'所有存活实体召唤物全部获得强化。'}]},
+  spirit_bird:{id:'spirit_bird',name:'灵鸟',rarity:'COMMON',tags:[TAGS.SUMMON,TAGS.BUILD_SUMMON],maxLevel:9,cooldownMs:8000,targetType:'self',color:0xf8fafc,short:'鸟',handler:'spirit_bird',description:'召唤一只常驻治疗灵鸟。灵鸟每隔数秒治疗生命比例最低的玩家或召唤物，可以受到敌人攻击，死亡8秒后重新召唤。',milestones:{3:'治疗强化——灵鸟治疗量提高30%。',6:'快速治疗——治疗间隔明显缩短至4.8秒，之后继续随等级缩短。',9:'群体治疗——每4.2秒同时恢复玩家和所有存活召唤物的生命，不包括灵鸟自己。'},levels:[
     {hpRatio:.10,defenseRatio:.10,healRatio:.018,healMultiplier:1,healIntervalMs:6000,desc:'继承玩家基础最大生命10%、基础防御10%；每6.0秒治疗玩家当前最大生命1.80%，治疗生命比例最低的玩家或召唤物。'},
     {hpRatio:.11,defenseRatio:.11,healRatio:.020,healMultiplier:1,healIntervalMs:5800,desc:'继承玩家基础最大生命11%、基础防御11%；每5.8秒治疗玩家当前最大生命2.00%。'},
     {hpRatio:.12,defenseRatio:.12,healRatio:.022,healMultiplier:1.3,healIntervalMs:5600,milestoneText:'治疗强化',desc:'继承玩家基础最大生命12%、基础防御12%；治疗强化生效，每5.6秒治疗玩家当前最大生命2.86%。'},

@@ -25,6 +25,7 @@ export const SKILLS = {
     {inheritRatio:.26,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到26%，被击退后会继续追踪敌人。'},
     {inheritRatio:.28,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,desc:'灵狼基础属性继承提高到28%；即使被击退到玩家身后，也会依靠自身速度重新向前推进。'},
     {inheritRatio:.30,cooldownMs:8000,splashRadius:90,splashScale:.35,deathBurstRadius:120,deathBurstScale:.8,scaleBonus:.15,milestoneText:'狼王血脉',desc:'每只灵狼继承30%玩家基础攻击、基础最大生命、基础防御，并获得约15%体型强化；仍只召唤2只。'}]},
+
   spirit_bird:{id:'spirit_bird',name:'灵鸟',rarity:'COMMON',tags:[TAGS.SUMMON],maxLevel:9,cooldownMs:8000,targetType:'self',color:0xf8fafc,short:'鸟',handler:'spirit_bird',description:'召唤一只常驻治疗灵鸟。灵鸟每隔数秒治疗生命比例最低的玩家或召唤物，可以受到敌人攻击，死亡8秒后重新召唤。',milestones:{3:'治疗强化——灵鸟治疗量提高30%。',6:'快速治疗——治疗间隔明显缩短至4.8秒，之后继续随等级缩短。',9:'群体治疗——每4.2秒同时恢复玩家和所有存活召唤物的生命，不包括灵鸟自己。'},levels:[
     {hpRatio:.10,defenseRatio:.10,healRatio:.018,healMultiplier:1,healIntervalMs:6000,desc:'继承玩家基础最大生命10%、基础防御10%；每6.0秒治疗玩家当前最大生命1.80%，治疗生命比例最低的玩家或召唤物。'},
     {hpRatio:.11,defenseRatio:.11,healRatio:.020,healMultiplier:1,healIntervalMs:5800,desc:'继承玩家基础最大生命11%、基础防御11%；每5.8秒治疗玩家当前最大生命2.00%。'},

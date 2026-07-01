@@ -19,7 +19,7 @@ const seededRandom=seed=>()=>{
   return seed/4294967296;
 };
 
-assert.equal(GAME_VERSION,'0.10.85');
+assert.equal(GAME_VERSION,'0.10.86');
 assert.equal(SKILLS.poison_king.rarity,'MYTHIC');
 assert.equal(SKILLS.poison_king.ultimateSkill,true);
 
@@ -40,6 +40,9 @@ assert.equal(SKILLS.lightning_tribulation.requiredSkillId,undefined,'lightning_t
 assert.equal(SKILLS.lightning_tribulation.rarity,'MYTHIC','lightning tribulation is mythic');
 assert.equal(SKILLS.lightning_tribulation.ultimateSkill,true,'lightning tribulation is an ultimate/mythic starting skill');
 assert.equal(system.isSkillUnlocked(SKILLS.lightning_tribulation),true,'lightning tribulation is unlocked independently');
+assert.equal(SKILLS.spirit_slime.rarity,'RARE','spirit slime is rare');
+assert.equal(SKILLS.spirit_slime.requiredSkillId,undefined,'spirit slime has no prerequisite');
+assert.equal(system.isSkillUnlocked(SKILLS.spirit_slime),true,'spirit slime is unlocked independently');
 
 const source=fs.readFileSync(
   new URL('../src/systems/UpgradeSystem.js',import.meta.url),
@@ -120,6 +123,8 @@ try{
   assert(regularSeen.has('lightning_mark'),'lightning mark can appear in a regular non-mythic starting slot');
   assert(!regularSeen.has('lightning_tribulation'),'lightning tribulation cannot appear in regular non-mythic starting slots');
   assert(regularSeen.has('parasitic_gu'),'parasitic gu can appear without poison needle');
+  assert(regularSeen.has('spirit_slime'),'spirit slime can appear in first two non-mythic slots');
+  assert(!mythicSeen.has('spirit_slime'),'spirit slime cannot appear in fixed third mythic slot');
 
   const counts=[...thirdCounts.values()];
   assert(
