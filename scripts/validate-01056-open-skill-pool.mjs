@@ -19,7 +19,7 @@ const seededRandom=seed=>()=>{
   return seed/4294967296;
 };
 
-assert.equal(GAME_VERSION,'0.10.83');
+assert.equal(GAME_VERSION,'0.10.84');
 assert.equal(SKILLS.poison_king.rarity,'MYTHIC');
 assert.equal(SKILLS.poison_king.ultimateSkill,true);
 
@@ -34,6 +34,8 @@ assert.equal(
   true,
   'requiredSkillId metadata no longer blocks rewards'
 );
+assert.equal(SKILLS.lightning_mark.requiredSkillId,undefined,'lightning_mark has no prerequisite');
+assert.equal(system.isSkillUnlocked(SKILLS.lightning_mark),true,'lightning_mark is unlocked without lightning_enchant');
 
 const source=fs.readFileSync(
   new URL('../src/systems/UpgradeSystem.js',import.meta.url),
@@ -110,6 +112,7 @@ try{
   );
   assert(mythicSeen.has('poison_king'),'poison king can appear in the fixed mythic slot');
   assert(regularSeen.has('poison_chain'),'poison chain can appear without parasitic gu');
+  assert(regularSeen.has('lightning_mark'),'lightning mark can appear in a regular non-mythic starting slot');
   assert(regularSeen.has('parasitic_gu'),'parasitic gu can appear without poison needle');
 
   const counts=[...thirdCounts.values()];
