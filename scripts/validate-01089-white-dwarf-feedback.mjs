@@ -4,7 +4,7 @@ import { SKILL_HANDLERS } from '../src/skills/handlers/index.js';
 import { SKILLS } from '../src/config/skills.js';
 import { GAME_VERSION } from '../src/config/version.js';
 
-assert.equal(GAME_VERSION, '0.10.89');
+assert.equal(GAME_VERSION, '0.10.90');
 assert.equal(SKILLS.white_dwarf.levels.length, 9);
 assert.equal(SKILLS.white_dwarf.description, '白矮星永久围绕玩家旋转，提供常驻减伤；护体准备完成后抵挡下一次造成生命伤害的直接攻击，并在接触敌人时造成伤害和推离。');
 assert.equal(SKILLS.white_dwarf.levels.some(l => 'guardTriggerMaxHpRatio' in l || 'criticalHpRatio' in l), false);
