@@ -7,9 +7,9 @@ import { TAGS } from '../src/config/tags.js';
 import { CombatEvents } from '../src/core/CombatEvents.js';
 import SkillSystem from '../src/systems/SkillSystem.js';
 
-assert.equal(GAME_VERSION,'0.10.86');
-assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version,'0.10.86');
-assert.equal(Object.keys(SKILLS).length,29);
+assert.equal(GAME_VERSION,'0.10.87');
+assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version,'0.10.87');
+assert.equal(Object.keys(SKILLS).length,33);
 const cfg=SKILLS.lightning_tribulation;
 assert(cfg); assert.equal(cfg.name,'雷劫兵主'); assert.equal(cfg.rarity,'MYTHIC'); assert.equal(cfg.ultimateSkill,true); assert.equal(cfg.passive,true); assert.equal(cfg.maxLevel,9); assert.equal(cfg.handler,'lightning_tribulation'); assert.equal(cfg.requiredSkillId,undefined);
 [TAGS.MAGIC,TAGS.LIGHTNING,TAGS.NORMAL_ATTACK,TAGS.BUILD_WEAPON,'mythicSkill'].forEach(t=>assert(cfg.tags.includes(t),`missing tag ${t}`));
@@ -38,5 +38,5 @@ for(let lv=1;lv<=9;lv++){ const {s}=make(lv); attack(s,{baseDamage:101}); const 
 { const dead=enemy('dead',0,0,0); dead.isDefeated=true; const {s}=make(1,[dead]); attack(s,{enemy:dead,targets:[dead]}); assert.equal(s.combatSystem.hits.length,0); }
 { const {s,sys}=make(9); const before=s.eventBus.count(CombatEvents.PLAYER_ATTACK_RESOLVED); assert(before>=1); sys.removeSkillRuntime('lightning_tribulation'); assert.equal(s.eventBus.count(CombatEvents.PLAYER_ATTACK_RESOLVED),before-1); assert.doesNotThrow(()=>sys.removeSkillRuntime('lightning_tribulation')); attack(s); assert.equal(s.combatSystem.hits.length,0); sys.addOrLevel('lightning_tribulation'); assert.equal(s.eventBus.count(CombatEvents.PLAYER_ATTACK_RESOLVED),before); attack(s); assert.equal(s.combatSystem.hits.length,3); sys.reset(); assert.equal(s.eventBus.count(CombatEvents.PLAYER_ATTACK_RESOLVED),0); }
 { const source=fs.readFileSync('src/skills/handlers/WeaponCoreSkills.js','utf8'); assert.match(source,/PLAYER_ATTACK_RESOLVED/); assert.doesNotMatch(source,/fromLightningTribulation[^]*emit\(CombatEvents\.PLAYER_HIT/); assert.doesNotMatch(source,/requiredSkillId\s*:/); assert.doesNotMatch(source,/noDeathExplosion\s*:/); assert.doesNotMatch(source,/noPoisonSpread\s*:/); ['noSwordTrigger','noHeavenSplit','noInstantStep'].forEach(x=>assert(source.includes(x))); }
-{ const mythics=Object.values(SKILLS).filter(s=>s.rarity==='MYTHIC'||s.ultimateSkill); assert.equal(mythics.length,5); assert(mythics.some(s=>s.id==='lightning_tribulation')); assert.equal(Object.values(SKILLS).filter(s=>s.tags?.includes(TAGS.BUILD_WEAPON)).length,3); ['lightning_enchant','lightning_mark','lightning_tribulation'].forEach(id=>assert(SKILLS[id])); }
+{ const mythics=Object.values(SKILLS).filter(s=>s.rarity==='MYTHIC'||s.ultimateSkill); assert.equal(mythics.length,6); assert(mythics.some(s=>s.id==='lightning_tribulation')); assert.equal(Object.values(SKILLS).filter(s=>s.tags?.includes(TAGS.BUILD_WEAPON)).length,3); ['lightning_enchant','lightning_mark','lightning_tribulation'].forEach(id=>assert(SKILLS[id])); }
 console.log('validate-01085-lightning-tribulation: ok');

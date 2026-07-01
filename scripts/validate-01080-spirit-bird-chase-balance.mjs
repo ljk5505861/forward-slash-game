@@ -15,8 +15,8 @@ function tick(s,ms,{post=true}={}){ s.now+=ms; s.skillSystem.update(s.now); if(p
 function addLevels(s,n){ for(let i=0;i<n;i++) s.skillSystem.addOrLevel('spirit_bird'); s.skillSystem.update(s.now); return s.spiritBirdRuntime.get(); }
 const close=(actual,expected,epsilon=1e-9)=>Math.abs(actual-expected)<=epsilon;
 
-assert.equal(GAME_VERSION,'0.10.86');
-assert.equal(pkg.version,'0.10.86');
+assert.equal(GAME_VERSION,'0.10.87');
+assert.equal(pkg.version,'0.10.87');
 assert.deepEqual(SPIRIT_BIRD_HEAL_RATIOS,[0.018,0.020,0.022,0.025,0.028,0.031,0.034,0.036,0.038]);
 assert.deepEqual(SPIRIT_BIRD_HEAL_MULTIPLIERS,[1,1,1.3,1.3,1.3,1.3,1.3,1.3,1.3]);
 assert.deepEqual(SPIRIT_BIRD_INTERVALS,[6000,5800,5600,5400,5200,4800,4600,4400,4200]);
@@ -80,4 +80,4 @@ s=scene(); bird=addLevels(s,9); const wolf={type:'spiritWolf',x:1,y:1,hp:50,maxH
 
 s=scene(); bird=addLevels(s,1); const y=bird.y, vy=bird.visualY, viewY=bird.view.y; for(let i=0;i<20;i++){ s.player.y += i%2 ? -0.5 : 0.5; tick(s,16); assert.equal(bird.y,y); assert.equal(bird.visualY,vy); assert.equal(bird.view.y,viewY); assert.equal(bird.view.x,bird.x); assert.equal(bird.hpBar.x,bird.x-20); }
 const bx=bird.x; bird.takeDamage(20); assert.equal(bird.x,bx); assert(bird.hp<bird.maxHp); bird.takeDamage(999); assert.equal(s.spiritBirdRuntime?.get?.()??null,null); tick(s,8000); assert(s.spiritBirdRuntime.get()); s.skillSystem.removeSkillRuntime('spirit_bird'); assert.equal(s.events.count('postupdate'),1); s.skillSystem.removeSkillRuntime('spirit_bird'); assert.equal(s.events.count('postupdate'),1);
-console.log('v0.10.86 spirit bird chase balance validation passed.');
+console.log('v0.10.87 spirit bird chase balance validation passed.');

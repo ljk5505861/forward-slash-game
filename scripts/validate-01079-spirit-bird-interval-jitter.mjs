@@ -13,7 +13,7 @@ function scene(){ const lines=[]; const s={now:0,lines,player:{x:220,y:850.25,gr
 function tick(s,ms){ s.now+=ms; s.skillSystem.update(s.now); s.events.emit('postupdate'); }
 function addLevels(s,n){ for(let i=0;i<n;i++) s.skillSystem.addOrLevel('spirit_bird'); s.skillSystem.update(s.now); return s.spiritBirdRuntime.get(); }
 
-assert.equal(GAME_VERSION,'0.10.86');
+assert.equal(GAME_VERSION,'0.10.87');
 assert.deepEqual(SPIRIT_BIRD_INTERVALS,[6000,5800,5600,5400,5200,4800,4600,4400,4200]);
 assert.deepEqual(SKILLS.spirit_bird.levels.map(l=>l.healIntervalMs),SPIRIT_BIRD_INTERVALS);
 for(let i=1;i<SPIRIT_BIRD_INTERVALS.length;i++) assert(SPIRIT_BIRD_INTERVALS[i]<SPIRIT_BIRD_INTERVALS[i-1],'intervals strictly decrease');
@@ -41,4 +41,4 @@ const beforeX=bird.x; bird.takeDamage(20); assert.equal(bird.x,beforeX); assert(
 assert.equal(bird.attackVisualY,bird.visualY);
 const source=fs.readFileSync(new URL('../src/enemies/behaviors/EnemyBehaviorManager.js', import.meta.url),'utf8'); assert.match(source,/toY=target\.attackVisualY \?\? \(target\.y-\(target\.height\|\|60\)\*0\.25\)/);
 s.skillSystem.removeSkillRuntime('spirit_bird'); s.playerData.skills=[]; s.playerData.hp=400; tick(s,20000); assert.equal(s.spiritBirdRuntime?.get?.()??null,null); assert.equal(s.playerData.hp,400);
-console.log('v0.10.86 spirit bird interval and jitter validation passed.');
+console.log('v0.10.87 spirit bird interval and jitter validation passed.');
