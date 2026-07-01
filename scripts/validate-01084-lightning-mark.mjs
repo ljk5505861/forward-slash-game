@@ -15,9 +15,9 @@ const enemy=(x=0,y=0,hp=100)=>({x,y,hp,isDefeated:false});
 const hit=(s,e,actual=10,tags=[TAGS.NORMAL_ATTACK])=>s.eventBus.emit(CombatEvents.PLAYER_HIT,{source:'attack',enemy:e,actualDamage:actual,damage:999,tags});
 const st=e=>e[Object.getOwnPropertySymbols(e).find(sym=>String(sym).includes('lightningMarkState'))];
 
-assert.equal(GAME_VERSION,'0.10.84');
-assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version,'0.10.84');
-assert.equal(Object.keys(SKILLS).length,27);
+assert.equal(GAME_VERSION,'0.10.85');
+assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version,'0.10.85');
+assert.equal(Object.keys(SKILLS).length,28);
 const cfg=SKILLS.lightning_mark;
 assert.equal(cfg.name,'雷印'); assert.equal(cfg.rarity,'RARE'); assert.equal(cfg.passive,true); assert.equal(cfg.maxLevel,9); assert.equal(cfg.handler,'lightning_mark'); assert.equal(cfg.requiredSkillId,undefined);
 for (const tag of [TAGS.MAGIC,TAGS.LIGHTNING,TAGS.NORMAL_ATTACK,TAGS.BUILD_WEAPON]) assert(cfg.tags.includes(tag));
@@ -55,4 +55,4 @@ s=scene(); a=enemy(10,20,1000); const near=enemy(20,20,1000); s.enemies=[near]; 
 
 const hitListeners=s.eventBus.count(CombatEvents.PLAYER_HIT), killListeners=s.eventBus.count(CombatEvents.ENEMY_KILLED); assert(hitListeners>=1); assert(killListeners>=1); s.skillSystem.removeSkillRuntime('lightning_mark'); assert.equal(s.eventBus.count(CombatEvents.PLAYER_HIT),hitListeners-1); assert.equal(s.eventBus.count(CombatEvents.ENEMY_KILLED),killListeners-1); assert.doesNotThrow(()=>s.skillSystem.removeSkillRuntime('lightning_mark'));
 assert(Object.values(SKILLS).filter(x=>x.rarity==='RARE').length>=8); assert(Object.values(SKILLS).filter(x=>x.rarity==='MYTHIC'||x.ultimateSkill).length>0); assert(SKILLS.lightning_enchant&&SKILLS.lightning_mark);
-console.log('v0.10.84 lightning mark validation passed.');
+console.log('v0.10.85 lightning mark validation passed.');
