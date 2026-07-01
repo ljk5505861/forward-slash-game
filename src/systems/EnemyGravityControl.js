@@ -1,6 +1,7 @@
 const alive=e=>e?.active!==false&&!e?.isDefeated;
 const bossScale=e=>e?.isBoss?0.4:1;
 const sourceMap=e=>e&&(e.gravitySources ||= new Map());
+const pullImmuneStates=new Set(['windup','charge','slamWind','skillActive','recovery','cool']);
 export function applyEnemyGravity(enemy, source){ if(!enemy||!source?.sourceId) return; sourceMap(enemy).set(source.sourceId,{...source}); }
 export function removeEnemyGravitySource(enemy, sourceId){ enemy?.gravitySources?.delete?.(sourceId); }
 export function removeEnemyGravitySourcesByPrefix(enemy, prefix){ if(!enemy?.gravitySources) return; [...enemy.gravitySources.keys()].forEach(id=>{ if(String(id).startsWith(prefix)) enemy.gravitySources.delete(id); }); }
@@ -10,7 +11,8 @@ export function getEnemyAttackDelay(enemy, baseDelayMs=1000, now=0){ const st=ge
 export const isGravitySuppressed=(enemy,now=0)=>getEnemyGravityState(enemy,now).suppressed;
 export const isExternallyGravitySuppressed=(enemy,now=0)=>getEnemyGravityState(enemy,now).externalSuppressed;
 export function clearEnemyGravity(enemy){ if(enemy){ enemy.gravitySources?.clear?.(); enemy.gravitySources=undefined; enemy.gravityPull=undefined; } }
-export function canGravityPull(enemy, scene){ return alive(enemy)&&!enemy.isBoss&&!enemy.isCharging&&!enemy.charging&&!enemy.isCasting&&!enemy.casting&&!enemy.skillActive&&!enemy.isKnockbackActive&&scene?.targeting?.isEnemyFullyInsideViewport?.(enemy)!==false; }
+function behaviorState(scene,enemy){ return scene?.enemyBehaviors?.items?.get?.(enemy)?.state||''; }
+export function canGravityPull(enemy, scene){ return alive(enemy)&&!enemy.isBoss&&!enemy.isCharging&&!enemy.charging&&!enemy.isCasting&&!enemy.casting&&!enemy.skillActive&&!enemy.isKnockbackActive&&!pullImmuneStates.has(behaviorState(scene,enemy))&&scene?.targeting?.isEnemyFullyInsideViewport?.(enemy)!==false; }
 function setPullPosition(enemy,x,y,scene){ const max=scene?.physics?.world?.bounds?.width?scene.physics.world.bounds.width-(enemy.width||40)/2-8:x; const bounded=Math.max((enemy.width||40)/2+8,Math.min(max,x)); enemy.body?.reset?.(bounded,y); enemy.x=bounded; enemy.y=y; enemy.body?.setVelocityX?.(0); }
 export function applyGravityPull(enemy, centerX, distance, durationMs, now, scene){ if(!canGravityPull(enemy,scene)) return false; const dir=Math.sign(centerX-enemy.x); if(!dir) return false; const scaled=distance*(enemy.isElite?0.5:1); const targetX=enemy.x+dir*Math.min(Math.abs(centerX-enemy.x),scaled); const existing=enemy.gravityPull; if(existing&&existing.expiresAt>now&&Math.abs(existing.targetX-enemy.x)>=Math.abs(targetX-enemy.x)) return false; enemy.gravityPull={sourceId:'gravity_orb_pull',startX:enemy.x,startY:enemy.y,targetX,centerX,startedAt:now,expiresAt:now+durationMs,durationMs}; return true; }
 export function updateGravityPull(enemy, now, scene){ const p=enemy?.gravityPull; if(!p) return false; if(!canGravityPull(enemy,scene)){ enemy.gravityPull=undefined; enemy.body?.setVelocityX?.(0); return false; } if(now>=p.expiresAt){ setPullPosition(enemy,p.targetX,p.startY,scene); enemy.gravityPull=undefined; return false; } const t=Math.max(0,Math.min(1,(now-p.startedAt)/Math.max(1,p.durationMs))); setPullPosition(enemy,p.startX+(p.targetX-p.startX)*t,p.startY,scene); return true; }
