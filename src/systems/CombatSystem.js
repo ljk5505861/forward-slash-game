@@ -1,4 +1,4 @@
-const Phaser = globalThis.Phaser || { Math:{ Distance:{ Between:(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1) } } };
+import { getEnemyAttackDelay } from './EnemyGravityControl.js';
 import { CombatEvents } from '../core/CombatEvents.js';
 import { getWeapon } from '../config/weapons.js';
 import { syncEnemyUi } from '../entities/createEnemy.js';
@@ -8,6 +8,7 @@ import { StatusEffects } from './StatusEffectSystem.js';
 import { destroyEnemyStatusIndicators } from '../ui/EnemyStatusIndicators.js';
 import { TUNING } from '../config/tuning.js';
 import { getEffectiveAttack, getEffectiveDefense, getEffectiveDamageReduction, sumRuntimeBonuses } from '../config/balance.js';
+const Phaser = globalThis.Phaser || { Math:{ Distance:{ Between:(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1) } } };
 
 const BEHAVIOR_ATTACKERS = new Set(['charger', 'archer', 'bomber', 'healer', 'midBoss', 'berserkerBoss']);
 const NON_LIFESTEAL_SOURCES = new Set(['burn','poison','burn_burst','reflect','shield_break','afterimage']);
@@ -159,5 +160,5 @@ export default class CombatSystem {
   chooseEnemyAttackTarget(enemy, range=enemy?.attackRange||0, options={}){ const target=this.getOrLockEnemyTarget(enemy,options); if(!target?.isAlive?.()) return null; const distance=Math.hypot((enemy?.x||0)-target.x,(enemy?.y||0)-target.y); return distance<=range?target:null; }
   damageAttackTarget(target, amount, meta={}){ if(!target?.isAlive?.()) return 0; const before=target.hp ?? (target.type==='player'?this.scene.playerData.hp:0); target.takeDamage(amount,{singleTarget:true,...meta,targetType:target.type}); const after=target.hp ?? (target.type==='player'?this.scene.playerData.hp:before); return Math.max(0,before-after); }
   damageTargetsInRadius(x,y,radius,amount,meta={},options={}){ return this.getAttackableTargets(meta.enemy,options).filter(target=>target.isAlive?.()&&Math.hypot(target.x-x,target.y-y)<=radius).map(target=>({ target, damage:this.damageAttackTarget(target,amount,{...meta,singleTarget:false,targetType:target.type}) })); }
-  updateEnemyAttack(enemy,time){ const s=this.scene; if(!s.targeting.valid(enemy)||enemy.isKnockbackActive) return; if(BEHAVIOR_ATTACKERS.has(enemy.behavior)) return; if(enemy.isBoss && !enemy.enraged && enemy.hp <= enemy.maxHp/2){ enemy.enraged=true; enemy.attackIntervalMs=enemy.enragedAttackIntervalMs; s.hud?.setStatus('Boss 半血狂暴：攻击速度提升！'); } const target=this.chooseEnemyAttackTarget(enemy,enemy.attackRange); if(!target) return; if(time < enemy.nextAttackAt) return; enemy.nextAttackAt=time+enemy.attackIntervalMs; this.damageAttackTarget(target, enemy.damage, { enemy, source:'enemyMelee', attackType:'melee', dodgeable:true, singleTarget:true }); }
+  updateEnemyAttack(enemy,time){ const s=this.scene; if(!s.targeting.valid(enemy)||enemy.isKnockbackActive) return; if(BEHAVIOR_ATTACKERS.has(enemy.behavior)) return; if(enemy.isBoss && !enemy.enraged && enemy.hp <= enemy.maxHp/2){ enemy.enraged=true; enemy.attackIntervalMs=enemy.enragedAttackIntervalMs; s.hud?.setStatus('Boss 半血狂暴：攻击速度提升！'); } const target=this.chooseEnemyAttackTarget(enemy,enemy.attackRange); if(!target) return; if(time < enemy.nextAttackAt) return; enemy.nextAttackAt=time+getEnemyAttackDelay(enemy,enemy.attackIntervalMs,time); this.damageAttackTarget(target, enemy.damage, { enemy, source:'enemyMelee', attackType:'melee', dodgeable:true, singleTarget:true }); }
 }
