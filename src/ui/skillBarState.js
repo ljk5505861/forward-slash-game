@@ -1,10 +1,13 @@
+const SPECIAL_RUNTIMES = {
+  guardian_shield: 'guardianShieldRuntime',
+  lightning_enchant: 'lightningEnchantRuntime'
+};
+
 export function getSkillBarStateText(scene, skillData, cfg) {
   const readyAt = scene.skillSystem?.cooldowns.get(skillData.id) || 0;
   const cooldownRemainingMs = Math.max(0, readyAt - scene.getGameplayTime());
-  let specialState = null;
-  if (skillData.id === 'guardian_shield') {
-    specialState = scene.guardianShieldRuntime?.getSkillBarState?.() || null;
-  }
+  const runtimeKey = SPECIAL_RUNTIMES[skillData.id];
+  const specialState = runtimeKey ? (scene[runtimeKey]?.getSkillBarState?.() || null) : null;
   if (specialState && specialState.remainingMs > 0) {
     return `${specialState.label} ${Math.ceil(specialState.remainingMs / 1000)}s`;
   }
