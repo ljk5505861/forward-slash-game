@@ -26,8 +26,10 @@ const W = {
   damageReduction: [.12, .13, .15, .16, .17, .19, .20, .21, .24],
   guardReduction: [.55, .57, .60, .62, .64, .68, .70, .72, .78],
   guardRechargeMs: [8500, 8200, 7800, 7500, 7200, 6800, 6400, 6000, 5200],
-  guardTriggerMaxHpRatio: [.10, .10, .09, .09, .08, .08, .07, .07, .06],
-  criticalHpRatio: [.30, .30, .32, .32, .34, .34, .36, .36, .40],
+  contactDamage: [10, 12, 14, 16, 18, 21, 24, 28, 32],
+  contactCooldownMs: [1200, 1150, 1100, 1050, 1000, 950, 900, 850, 750],
+  contactKnockback: [20, 22, 24, 26, 28, 32, 36, 40, 46],
+  contactPadding: [8, 8, 9, 9, 10, 11, 12, 13, 14],
   postGuardDamageReduction: [0, 0, .12, .13, .14, .16, .17, .18, .20],
   postGuardDurationMs: [0, 0, 1200, 1250, 1300, 1450, 1500, 1550, 1800],
   burstDamage: [0, 0, 0, 0, 0, 85, 100, 116, 140],
@@ -363,6 +365,8 @@ function ensureWhiteDwarfRuntime(system) {
     visuals: [],
     transients: [],
     charges: [],
+    contactReadyAtByEnemy: new Map(),
+    lastContactCleanupAt: 0,
     active: false,
     angle: 0,
     last: now(scene),
@@ -396,28 +400,43 @@ function syncWhiteDwarfReduction(system) {
 }
 
 function ensureWhiteDwarfCharges(runtime, data, time) {
-  while (runtime.charges.length < data.guardCharges) runtime.charges.push({ readyAt: time });
+  while (runtime.charges.length < data.guardCharges) runtime.charges.push({ readyAt: time, wasReady: true });
   runtime.charges.length = data.guardCharges;
 }
 
+function destroyWhiteDwarfVisual(visual) {
+  destroy(visual?.core);
+  destroy(visual?.glow);
+}
+
 function syncWhiteDwarfVisualCount(scene, runtime, data) {
-  while (runtime.visuals.length > data.guardCharges) destroy(runtime.visuals.pop());
+  while (runtime.visuals.length > data.guardCharges) destroyWhiteDwarfVisual(runtime.visuals.pop());
   while (runtime.visuals.length < data.guardCharges) {
-    const star = scene.add?.circle?.(scene.player.x, scene.player.y, data.whiteDwarfVisualRadius, 0xe0f2fe, .9);
-    star?.setDepth?.(12);
-    runtime.visuals.push(star);
+    const glow = scene.add?.circle?.(scene.player.x, scene.player.y, data.whiteDwarfGlowRadius, 0x7dd3fc, .22);
+    glow?.setDepth?.(11);
+    const core = scene.add?.circle?.(scene.player.x, scene.player.y, data.whiteDwarfVisualRadius, 0xe0f2fe, .95);
+    core?.setDepth?.(12);
+    runtime.visuals.push({ core, glow });
   }
 }
+
+function setVisualScale(object, value) { object?.setScale?.(value); object && (object.scale = value); }
 
 function positionWhiteDwarfs(system, data, runtime, time) {
   const scene = system.scene;
   runtime.visuals.forEach((visual, index) => {
     const angle = runtime.angle + index * TWO_PI / Math.max(1, runtime.visuals.length);
-    visual?.setPosition?.(
-      scene.player.x + Math.cos(angle) * data.orbitRadius,
-      scene.player.y + Math.sin(angle) * data.orbitRadius
-    );
-    visual?.setAlpha?.(runtime.charges[index]?.readyAt <= time ? .9 : .35);
+    const x = scene.player.x + Math.cos(angle) * data.orbitRadius;
+    const y = scene.player.y + Math.sin(angle) * data.orbitRadius;
+    const ready = runtime.charges[index]?.readyAt <= time;
+    const pulse = ready ? 1 + Math.sin(time / 260 + index) * .045 : .92;
+    visual.x = x; visual.y = y;
+    visual.core?.setPosition?.(x, y);
+    visual.glow?.setPosition?.(x, y);
+    visual.core?.setAlpha?.(ready ? .95 : .36);
+    visual.glow?.setAlpha?.(ready ? .24 + Math.sin(time / 260 + index) * .05 : .06);
+    setVisualScale(visual.core, ready ? pulse : .86);
+    setVisualScale(visual.glow, ready ? pulse : .8);
   });
 }
 
@@ -434,13 +453,14 @@ function activateWhiteDwarf(system, runtime, data, time) {
 }
 
 function deactivateWhiteDwarf(system, runtime) {
-  runtime.visuals.forEach(destroy);
+  runtime.visuals.forEach(destroyWhiteDwarfVisual);
   runtime.visuals = [];
   runtime.transients.forEach(entry => destroy(entry.object));
   runtime.transients = [];
   runtime.charges = [];
   runtime.active = false;
   runtime.guardUntil = 0;
+  runtime.contactReadyAtByEnemy?.clear?.();
   syncWhiteDwarfReduction(system);
 }
 
@@ -458,6 +478,50 @@ function showGuardBurst(system, data, runtime, time) {
   ring?.setStrokeStyle?.(4, 0xe0f2fe, .9);
   ring?.setDepth?.(13);
   if (ring) runtime.transients.push({ object: ring, expiresAt: time + data.guardBurstVisualMs });
+}
+
+function flashWhiteDwarfVisual(runtime, index) {
+  const visual = runtime.visuals[index];
+  setVisualScale(visual?.core, 1.35);
+  setVisualScale(visual?.glow, 1.45);
+}
+
+function cleanupWhiteDwarfContactMap(scene, runtime, time) {
+  if (time - (runtime.lastContactCleanupAt || 0) < 1000) return;
+  runtime.lastContactCleanupAt = time;
+  for (const enemy of runtime.contactReadyAtByEnemy.keys()) {
+    if (!isAlive(enemy) || enemy.scene === null || enemy.active === false) runtime.contactReadyAtByEnemy.delete(enemy);
+  }
+}
+
+function whiteDwarfContactEnemy(system, data, runtime, time) {
+  const scene = system.scene;
+  cleanupWhiteDwarfContactMap(scene, runtime, time);
+  const hitThisFrame = new Set();
+  for (const visual of runtime.visuals) {
+    const sx = visual.x ?? visual.core?.x;
+    const sy = visual.y ?? visual.core?.y;
+    if (!Number.isFinite(sx) || !Number.isFinite(sy)) continue;
+    for (const enemy of visibleEnemies(scene)) {
+      if (hitThisFrame.has(enemy)) continue;
+      if ((runtime.contactReadyAtByEnemy.get(enemy) || 0) > time) continue;
+      const enemyWidth = enemy.displayWidth ?? enemy.width ?? enemy.body?.width ?? 0;
+      const contactDistance = data.whiteDwarfVisualRadius + enemyWidth / 2 + data.contactPadding;
+      if (Math.hypot(enemy.x - sx, enemy.y - sy) > contactDistance) continue;
+      const damaged = scene.combatSystem?.damageEnemy?.(enemy, data.contactDamage, {
+        source: 'skill',
+        skillId: 'white_dwarf',
+        tags: [TAGS.MAGIC, TAGS.CELESTIAL, TAGS.BUILD_CELESTIAL],
+        allowLifeSteal: false,
+        noKnockback: true
+      });
+      if (damaged === false) continue;
+      runtime.contactReadyAtByEnemy.set(enemy, time + data.contactCooldownMs);
+      hitThisFrame.add(enemy);
+      if (enemy.isBoss || !data.contactKnockback || isProtectedFromBurstKnockback(enemy)) continue;
+      scene.combatSystem?.applyKnockback?.(enemy, { source: 'skill', knockback: data.contactKnockback });
+    }
+  }
 }
 
 function burstFromWhiteDwarf(system, data, runtime, time) {
@@ -493,10 +557,18 @@ function updateWhiteDwarf(system) {
     delete scene.playerData.damageReductionBonuses.white_dwarf_guard;
     runtime.guardUntil = 0;
   }
+  const readyFlashIndexes = [];
+  runtime.charges.forEach((charge, index) => {
+    const ready = charge.readyAt <= time;
+    if (ready && charge.wasReady === false) readyFlashIndexes.push(index);
+    charge.wasReady = ready;
+  });
   const elapsed = Math.max(0, time - runtime.last);
   runtime.last = time;
   runtime.angle += elapsed / Math.max(1, data.orbitPeriodMs) * TWO_PI;
   positionWhiteDwarfs(system, data, runtime, time);
+  readyFlashIndexes.forEach(index => flashWhiteDwarfVisual(runtime, index));
+  whiteDwarfContactEnemy(system, data, runtime, time);
 }
 
 export const WhiteDwarfSkill = {
@@ -524,8 +596,9 @@ export const WhiteDwarfSkill = {
     const scene = system.scene;
     const runtime = scene.whiteDwarfRuntime;
     if (runtime) {
-      runtime.visuals.forEach(destroy);
+      runtime.visuals.forEach(destroyWhiteDwarfVisual);
       runtime.transients.forEach(entry => destroy(entry.object));
+      runtime.contactReadyAtByEnemy?.clear?.();
       system.passiveUpdaters = system.passiveUpdaters.filter(updater => updater !== runtime.updater);
       if (runtime.shutdown) scene.events?.off?.('shutdown', runtime.shutdown);
     }
@@ -547,15 +620,16 @@ export const WhiteDwarfSkill = {
     const currentHp = scene.playerData.hp ?? maxHp;
     const projectedRatio = (currentHp - payload.hpDamage) / maxHp;
     let reduction = data.guardReduction;
-    let shouldTrigger = payload.hpDamage >= maxHp * data.guardTriggerMaxHpRatio || currentHp / maxHp <= data.criticalHpRatio;
+    let emergency = false;
     if (data.emergencyProjectedHpRatio && projectedRatio <= data.emergencyProjectedHpRatio) {
-      shouldTrigger = true;
       reduction = data.emergencyGuardReduction;
+      emergency = true;
       scene.floatText?.(scene.player.x, scene.player.y - 40, data.emergencyFloatText, 0xe0f2fe);
     }
-    if (!shouldTrigger) return null;
     runtime.charges[chargeIndex].readyAt = time + data.guardRechargeMs;
-    const hpDamage = Math.max(1, Math.round(payload.hpDamage * (1 - reduction)));
+    runtime.charges[chargeIndex].wasReady = false;
+    const hpDamage = Math.max(0, Math.round(payload.hpDamage * (1 - reduction)));
+    const blockedDamage = Math.max(0, payload.hpDamage - hpDamage);
     if (data.postGuardDamageReduction) {
       scene.playerData.damageReductionBonuses ??= {};
       scene.playerData.damageReductionBonuses.white_dwarf_guard = data.postGuardDamageReduction;
@@ -563,8 +637,9 @@ export const WhiteDwarfSkill = {
     }
     if (data.burstDamage) burstFromWhiteDwarf(system, data, runtime, time);
     positionWhiteDwarfs(system, data, runtime, time);
-    scene.floatText?.(scene.player.x, scene.player.y - 28, data.guardFloatText, 0xe0f2fe);
-    return { hpDamage };
+    flashWhiteDwarfVisual(runtime, chargeIndex);
+    scene.floatText?.(scene.player.x, scene.player.y - 28, `${data.guardFloatText} -${blockedDamage}`, 0xe0f2fe);
+    return { hpDamage, blockedDamage, emergency };
   }
 };
 
@@ -587,7 +662,7 @@ export function configureCelestialFlowSkills() {
     guardFloatText: '简并护体',
     emergencyFloatText: '临界稳定',
     ...Object.fromEntries(Object.keys(W).map(key => [key, W[key][index]])),
-    desc: `常驻减伤${Math.round(W.damageReduction[index] * 100)}%，护体减伤${Math.round(W.guardReduction[index] * 100)}%，恢复${(W.guardRechargeMs[index] / 1000).toFixed(1)}秒。`,
+    desc: `常驻减伤${Math.round(W.damageReduction[index] * 100)}%，护体减伤${Math.round(W.guardReduction[index] * 100)}%，恢复${(W.guardRechargeMs[index] / 1000).toFixed(1)}秒；接触伤害${W.contactDamage[index]}，同敌冷却${(W.contactCooldownMs[index] / 1000).toFixed(2)}秒，推离${W.contactKnockback[index]}。`,
     milestoneText: index === 2 ? '简并星壳' : index === 5 ? '质量反冲' : index === 8 ? '双星稳定' : undefined
   }));
   SKILLS.neutron_star = {
@@ -624,7 +699,7 @@ export function configureCelestialFlowSkills() {
     short: '矮',
     color: 0xe0f2fe,
     tags: [TAGS.MAGIC, TAGS.CELESTIAL, TAGS.BUILD_CELESTIAL, TAGS.SHIELD, 'mythicSkill'],
-    description: '白矮星永久围绕玩家旋转，提供常驻减伤，并消耗护体次数压缩高额直接伤害。',
+    description: '白矮星永久围绕玩家旋转，提供常驻减伤；护体准备完成后抵挡下一次造成生命伤害的直接攻击，并在接触敌人时造成伤害和推离。',
     milestones: {
       3: '简并星壳：护体触发后，短时间内获得额外伤害减免。',
       6: '质量反冲：护体触发时，对玩家周围敌人造成范围魔法伤害并推离普通敌人。',
