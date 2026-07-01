@@ -5,7 +5,7 @@ import '../src/skills/handlers/index.js';
 import { formatSkillSelectionOption } from '../src/ui/selectionFormatters.js';
 import { MyriadAfterimageSkill, MYRIAD_NORMAL_ATTACK_ID, getMyriadAfterimageDetailState, selectionOptions, openMyriadAfterimageSelection } from '../src/skills/handlers/AfterimageUltimateSkills.js';
 
-assert.equal(GAME_VERSION,'0.10.87');
+assert.equal(GAME_VERSION,'0.10.88');
 globalThis.window??={};
 const canvasContext={fillRect(){},drawImage(){},getImageData(){return {data:new Uint8ClampedArray([0,0,0,255])};},putImageData(){},createImageData(){return {data:new Uint8ClampedArray(4)};},clearRect(){}};
 globalThis.document??={documentElement:{style:{}},createElement:()=>({getContext:()=>canvasContext,style:{}})};
@@ -56,7 +56,7 @@ ctx.scene.playerData.myriadAfterimageSkillId='normal_attack'; ctx.scene.playerDa
 assert.equal(openMyriadAfterimageSelection(ctx.scene),true);
 assert.equal(ctx.calls.show,1);
 assert.deepEqual(selectionOptions(ctx.system).map(o=>o.skillId),['normal_attack','fireball']);
-ctx=bind(['myriad_afterimage','fireball','time_loan','phantom_step','instant_step','attack_15']);
+ctx=bind(['myriad_afterimage','fireball','phantom_step','instant_step','attack_15']);
 assert.deepEqual(selectionOptions(ctx.system).map(o=>o.skillId),['normal_attack','fireball']);
 
 // Current markers survive formatting for normal attack and formal skills like fireball.
@@ -99,4 +99,4 @@ assert.equal(ctx.scene.afterimages.getAll().some(a=>a.ownerSkillId==='myriad_aft
 // Existing copy adapters remain available.
 for (const id of ['normal_attack','fireball','poison_cloud','spinning_blade','traceless','guardian_shield','thorn_armor']) assert.ok(MyriadAfterimageSkill.copyAdapters[id], `${id} copy adapter remains`);
 
-console.log('v0.10.87 myriad detail selection validation passed.');
+console.log('v0.10.88 myriad detail selection validation passed.');

@@ -8,11 +8,11 @@ const nums=(id,key)=>SKILLS[id]?.levels?.map(level=>level[key]);
 const eq=(actual,expected,label)=>assert.deepEqual(actual,expected,label);
 const src=file=>readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
 const hasHandler=handler=>new RegExp(`${handler}:`).test(src('src/skills/handlers/index.js'));
-const archetypes={fire:['fireball','fire_seed','burn_burst','solar_flame'],sword:['sword_wave','sword_sheath','sword_tomb'],strength:['giant_force','spinning_blade','bloodthirst','last_stand'],defense:['healing','thorn_armor','guardian_shield'],afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],summon:['spirit_wolves','spirit_bird','spirit_slime'],weapon:['lightning_enchant','lightning_mark','lightning_tribulation'],gravity:['gravity_crush','gravity_field','gravity_orb','black_hole']};
+const archetypes={fire:['fireball','fire_seed','burn_burst','solar_flame'],sword:['sword_wave','sword_sheath','sword_tomb'],strength:['giant_force','spinning_blade','bloodthirst','last_stand'],defense:['healing','thorn_armor','guardian_shield'],afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],summon:['spirit_wolves','spirit_bird','spirit_slime'],weapon:['lightning_enchant','lightning_mark','lightning_tribulation'],gravity:['gravity_crush','gravity_field','gravity_orb','black_hole'],celestial:['neutron_star','white_dwarf']};
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.10.87','game version for v0.10.60 skill regression');
-eq(allSkillIds.length,33,'all current 33 skills listed');
-eq(new Set(allSkillIds).size,33,'all current 33 skills unique');
+assert.equal(GAME_VERSION,'0.10.88','game version for v0.10.88 skill regression');
+eq(allSkillIds.length,35,'all current 35 skills listed');
+eq(new Set(allSkillIds).size,35,'all current 35 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
 allSkillIds.forEach(id=>assert.ok(SKILLS[id],`missing skill ${id}`));
 
@@ -83,8 +83,13 @@ eq(nums('poison_chain','checkMs'),[1200,1100,760,730,700,680,650,620,600],'poiso
 eq(nums('poison_king','biteDamage'),[28,31,34,37,40,58,63,68,74],'poison_king.biteDamage');
 eq(nums('poison_king','growthRatio'),[0.22,0.24,0.34,0.34,0.34,0.34,0.36,0.38,0.4],'poison_king.growthRatio');
 
+eq(nums('neutron_star','singlePulseDamage'),[72,80,90,101,113,128,144,162,184],'neutron_star.singlePulseDamage');
+eq(nums('neutron_star','sweepDamage'),[54,60,68,77,87,99,113,129,148],'neutron_star.sweepDamage');
+eq(nums('white_dwarf','damageReduction'),[.12,.13,.15,.16,.17,.19,.20,.21,.24],'white_dwarf.damageReduction');
+eq(nums('white_dwarf','guardCharges'),[1,1,1,1,1,1,1,1,2],'white_dwarf.guardCharges');
+
 const poisonAdvanced=src('src/skills/handlers/PoisonSummonAdvancedSkills.js');
 assert.match(src('src/skills/handlers/FlameCoreSkills.js'),/StatusEffects\.BURN/,'fire handlers still use burn status');
 assert.match(poisonAdvanced,/'poison_chain_transfer'/,'poison chain uses stable source id');
 ['split_sword','rotating_sword','execution_sword','myriad_swords','heaven_splitting_sword'].forEach(id=>assert.equal(hasHandler(id),false,`${id} old handler not registered`));
-console.log('v0.10.87 skill damage regression validation passed.');
+console.log('v0.10.88 skill damage regression validation passed.');

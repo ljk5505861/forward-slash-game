@@ -1,6 +1,7 @@
 const SPECIAL_RUNTIMES = {
   guardian_shield: 'guardianShieldRuntime',
-  lightning_enchant: 'lightningEnchantRuntime'
+  lightning_enchant: 'lightningEnchantRuntime',
+  white_dwarf: 'whiteDwarfRuntime'
 };
 
 export function getSkillBarStateText(scene, skillData, cfg) {
@@ -8,6 +9,7 @@ export function getSkillBarStateText(scene, skillData, cfg) {
   const cooldownRemainingMs = Math.max(0, readyAt - scene.getGameplayTime());
   const runtimeKey = SPECIAL_RUNTIMES[skillData.id];
   const specialState = runtimeKey ? (scene[runtimeKey]?.getSkillBarState?.() || null) : null;
+  if (specialState && typeof specialState.text === 'string') return specialState.text;
   if (specialState && specialState.remainingMs > 0) {
     return `${specialState.label} ${Math.ceil(specialState.remainingMs / 1000)}s`;
   }

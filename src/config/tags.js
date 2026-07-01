@@ -16,6 +16,7 @@ export const TAGS = Object.freeze({
   HEALING: 'healing',
   MELEE: 'melee',
   PROJECTILE: 'projectile',
+  MYTHIC_SKILL: 'mythicSkill',
   BUILD_FIRE: 'buildFire',
   BUILD_SWORD: 'buildSword',
   BUILD_POISON_SUMMON: 'buildPoisonSummon',
@@ -25,6 +26,7 @@ export const TAGS = Object.freeze({
   BUILD_AFTERIMAGE: 'buildAfterimage',
   BUILD_WEAPON: 'buildWeapon',
   BUILD_GRAVITY: 'buildGravity',
+  BUILD_CELESTIAL: 'buildCelestial',
 });
 
 export const LEGACY_TAG_ALIASES = Object.freeze({
@@ -43,6 +45,7 @@ export const BUILD_TAGS = Object.freeze([
   TAGS.BUILD_AFTERIMAGE,
   TAGS.BUILD_WEAPON,
   TAGS.BUILD_GRAVITY,
+  TAGS.BUILD_CELESTIAL,
 ]);
 
 export const CORE_TAGS = Object.freeze(Object.values(TAGS));
