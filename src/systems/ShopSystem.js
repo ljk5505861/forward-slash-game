@@ -1,4 +1,4 @@
-const Phaser = globalThis.Phaser || { Utils:{ Array:{ Shuffle:arr=>arr.slice() } } };
+import Phaser from 'phaser';
 import { SHOP_ITEMS } from '../config/shopItems.js';
 import { CombatEvents } from '../core/CombatEvents.js';
 
