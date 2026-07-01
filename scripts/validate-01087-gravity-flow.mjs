@@ -17,5 +17,14 @@ for (const id of Object.keys(expected)){ const s=SKILLS[id]; assert(s,`missing $
 for (const id of ['gravity_crush','gravity_field','gravity_orb']) assert(SKILLS[id].tags.includes(TAGS.ACTIVE_SKILL)); assert(SKILLS.gravity_orb.tags.includes(TAGS.PROJECTILE)); assert(SKILLS.black_hole.tags.includes(TAGS.CELESTIAL)); assert(SKILLS.black_hole.tags.includes('mythicSkill')); assert.equal(SKILLS.black_hole.passive,true); assert.equal(SKILLS.black_hole.ultimateSkill,true); assert.equal(typeof SKILL_HANDLERS.black_hole.shiftTimers,'function');
 assert.match(fs.readFileSync('src/systems/ShopSystem.js','utf8'),/^import Phaser from 'phaser';/,'shop keeps real Phaser shuffle');
 assert.match(fs.readFileSync('src/enemies/behaviors/EnemyBehaviorManager.js','utf8'),/^import Phaser from 'phaser';/,'enemy behavior keeps real Phaser helpers');
+const gravityFix=fs.readFileSync('src/skills/handlers/GravityFlowFollowupFixes.js','utf8');
+assert.match(gravityFix,/warningAt=castAt\+index\*\(data\.followupDelayMs\|\|0\)/,'follow-up warnings use their own scheduled warning time');
+assert.match(gravityFix,/task\.centerAt=\(\)=>task\.lockedCenter/,'strike impact stays on its displayed warning location');
+assert.match(gravityFix,/groundTopY\?\?620\)-260/,'black hole collapse visual uses hovering height');
+const gravityControl=fs.readFileSync('src/systems/EnemyGravityControl.js','utf8');
+assert.match(gravityControl,/pullImmuneStates=new Set\(\['windup','charge'/,'charger windup is pull immune');
+const handlerRegistry=fs.readFileSync('src/skills/handlers/index.js','utf8');
+assert.match(handlerRegistry,/gravity_crush:GravityCrushFixedSkill/,'fixed gravity crush handler is registered');
+assert.match(handlerRegistry,/black_hole:BlackHoleFixedSkill/,'fixed black hole handler is registered');
 assert.deepEqual(validateSkillDetailContent(), []); for(const id of Object.keys(expected)) for(const level of [1,3,6,8,9]){ const d=getSkillDetailData(id,{skill:{id,level}}); const text=[...(d.currentEffects||[]),...(d.nextLevelPreview||[])].join(' '); assert.match(text,/\d/); }
 console.log('v0.10.87 gravity flow config validation passed');
