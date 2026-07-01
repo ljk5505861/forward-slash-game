@@ -56,4 +56,4 @@ assert.equal(third.gravityWarningStarted,false);
 update(180);
 assert.equal(third.gravityWarningStarted,true,'third warning must preserve its original relative delay');
 
-console.log('v0.10.87 staged gravity warning pause validation passed');
+console.log('v0.10.88 staged gravity warning pause validation passed');
