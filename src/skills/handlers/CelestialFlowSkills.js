@@ -12,14 +12,16 @@ const N = {
   singlePulseDamage: [72, 80, 90, 101, 113, 128, 144, 162, 184],
   sweepDamage: [54, 60, 68, 77, 87, 99, 113, 129, 148],
   cycleIntervalMs: [7200, 7000, 6800, 6600, 6400, 6100, 5900, 5700, 5400],
-  pulseGapMs: [300, 290, 280, 270, 260, 240, 230, 220, 200],
-  sweepChargeMs: [460, 440, 420, 400, 380, 350, 330, 310, 280],
-  sweepDurationMs: [620, 610, 600, 590, 580, 550, 530, 510, 480],
-  sweepHalfAngleDeg: [18, 18, 22, 22, 22, 28, 29, 30, 36],
+  initialPulseDelayMs: [280, 280, 270, 270, 260, 260, 250, 250, 240],
+  pulseTargetRetryMs: [120, 120, 120, 120, 120, 120, 120, 120, 120],
+  pulseGapMs: [460, 450, 440, 430, 420, 410, 400, 390, 380],
+  singlePulseVisualMs: [260, 260, 250, 250, 240, 240, 230, 230, 220],
+  postSecondPulseDelayMs: [300, 300, 290, 290, 280, 280, 270, 260, 250],
+  sweepWarningMs: [380, 370, 360, 350, 340, 330, 320, 310, 300],
+  sweepDurationMs: [700, 690, 680, 670, 660, 650, 640, 630, 620],
   sameTargetSecondPulseBonus: [0, 0, .45, .45, .45, .45, .45, .45, .45],
   pulseMarkedSweepBonus: [0, 0, 0, 0, 0, .30, .30, .30, .30],
   sweepDefenseIgnore: [0, 0, 0, 0, 0, 0, 0, 0, .35],
-  fullViewportSweep: [false, false, false, false, false, false, false, false, true]
 };
 
 const W = {
@@ -152,11 +154,76 @@ function createScreenBeam(scene, runtime, origin, angle, width, alpha) {
   return trackVisual(runtime, beam);
 }
 
+function worldToScreen(scene, x, y) {
+  const camera = scene.cameras?.main;
+  return {
+    x: x - (camera?.worldView?.x ?? 0),
+    y: y - (camera?.worldView?.y ?? 0)
+  };
+}
+
+function screenToWorld(scene, point) {
+  const camera = scene.cameras?.main;
+  return {
+    x: (camera?.worldView?.x ?? 0) + point.x,
+    y: (camera?.worldView?.y ?? 0) + point.y
+  };
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+export function getNeutronSweepPath(scene) {
+  const originScreen = neutronStarScreenPosition(scene);
+  const camera = scene.cameras?.main;
+  const playerScreenX = scene.player && camera?.worldView
+    ? scene.player.x - camera.worldView.x
+    : DESIGN_WIDTH * BALANCE.camera.playerScreenAnchorX;
+  const playerScreenY = scene.player && camera?.worldView
+    ? scene.player.y - camera.worldView.y
+    : DESIGN_HEIGHT * .52;
+  const sweepTargetY = clamp(playerScreenY - 45, originScreen.y + 70, DESIGN_HEIGHT - 100);
+  const startTargetScreen = { x: DESIGN_WIDTH + 24, y: sweepTargetY };
+  const endTargetScreen = {
+    x: clamp(playerScreenX + 120, 0, DESIGN_WIDTH + 24),
+    y: sweepTargetY
+  };
+  const startAngle = Math.atan2(startTargetScreen.y - originScreen.y, startTargetScreen.x - originScreen.x);
+  let endAngle = Math.atan2(endTargetScreen.y - originScreen.y, endTargetScreen.x - originScreen.x);
+  while (endAngle < startAngle) endAngle += TWO_PI;
+  while (endAngle - startAngle > Math.PI) endAngle -= TWO_PI;
+  if (endAngle < startAngle) endAngle += TWO_PI;
+  return {
+    originScreen,
+    originWorld: screenToWorld(scene, originScreen),
+    startTargetScreen,
+    endTargetScreen,
+    startAngle,
+    endAngle
+  };
+}
+
 function createPulseVisual(scene, runtime, origin, target, data, time) {
-  const line = scene.add?.line?.(0, 0, origin.x, origin.y, target.x, target.y, 0xe0f2fe, .75);
-  line?.setOrigin?.(0, 0);
-  line?.setDepth?.(20);
-  trackTransient(runtime, line, time + data.singlePulseVisualMs);
+  const expiresAt = time + data.singlePulseVisualMs;
+  runtime.pulseFlashUntil = expiresAt;
+  const outer = scene.add?.line?.(0, 0, origin.x, origin.y, target.x, target.y, 0x7dd3fc, .5);
+  outer?.setOrigin?.(0, 0);
+  outer?.setDepth?.(21);
+  outer?.setLineWidth?.(12, 12);
+  trackTransient(runtime, outer, expiresAt);
+  const inner = scene.add?.line?.(0, 0, origin.x, origin.y, target.x, target.y, 0xe0f2fe, .9);
+  inner?.setOrigin?.(0, 0);
+  inner?.setDepth?.(22);
+  inner?.setLineWidth?.(5, 5);
+  trackTransient(runtime, inner, expiresAt);
+  const impact = scene.add?.circle?.(target.x, target.y, 16, 0xe0f2fe, .65);
+  impact?.setDepth?.(23);
+  trackTransient(runtime, impact, expiresAt);
+  const ring = scene.add?.circle?.(target.x, target.y, 24, 0x7dd3fc, .18);
+  ring?.setDepth?.(23);
+  ring?.setStrokeStyle?.(4, 0xe0f2fe, .75);
+  trackTransient(runtime, ring, expiresAt);
 }
 
 function ensureNeutronRuntime(system) {
@@ -172,6 +239,7 @@ function ensureNeutronRuntime(system) {
     firstTarget: null,
     sweepPlan: null,
     sweep: null,
+    pulseFlashUntil: 0,
     updater: null,
     shutdown: null
   };
@@ -189,7 +257,9 @@ function resetNeutronCycle(runtime, time) {
   runtime.pulseHits.clear();
   runtime.sweepPlan = null;
   runtime.sweep = null;
+  runtime.pulseFlashUntil = 0;
 }
+
 
 function deactivateNeutronStar(runtime, time) {
   cleanupVisuals(runtime);
@@ -206,19 +276,10 @@ function activateNeutronStar(runtime, time) {
 }
 
 function prepareSweep(scene, runtime, data, time) {
-  const targets = visibleEnemies(scene);
-  const origin = neutronStarWorldOrigin(scene);
-  const centerAngle = targets.length
-    ? Math.atan2(
-      targets.reduce((sum, enemy) => sum + enemy.y, 0) / targets.length - origin.y,
-      targets.reduce((sum, enemy) => sum + enemy.x, 0) / targets.length - origin.x
-    )
-    : 0;
-  const halfAngle = data.fullViewportSweep ? Math.PI : data.sweepHalfAngleDeg * Math.PI / 180;
-  const startAngle = centerAngle - halfAngle;
-  const endAngle = centerAngle + halfAngle;
-  const warning = createScreenBeam(scene, runtime, origin, centerAngle, data.sweepBeamWidthPx * 3, data.sweepWarningAlpha);
-  runtime.sweepPlan = { origin, centerAngle, startAngle, endAngle, warning, preparedAt: time };
+  const path = getNeutronSweepPath(scene);
+  const warningStart = createScreenBeam(scene, runtime, { screen: path.originScreen }, path.startAngle, data.sweepBeamWidthPx * 2.4, data.sweepWarningAlpha);
+  const warningEnd = createScreenBeam(scene, runtime, { screen: path.originScreen }, path.endAngle, data.sweepBeamWidthPx * 2.4, data.sweepWarningAlpha * .8);
+  runtime.sweepPlan = { ...path, warningStart, warningEnd, preparedAt: time, startAt: time, endAt: time + data.sweepWarningMs };
 }
 
 function startSweep(scene, runtime, data, time) {
@@ -226,15 +287,18 @@ function startSweep(scene, runtime, data, time) {
     prepareSweep(scene, runtime, data, time);
     return runtime.sweepPlan;
   })();
-  destroyTracked(runtime, plan.warning);
-  const beam = createScreenBeam(scene, runtime, plan.origin, plan.startAngle, data.sweepBeamWidthPx, .78);
+  destroyTracked(runtime, plan.warningStart);
+  destroyTracked(runtime, plan.warningEnd);
+  const beam = createScreenBeam(scene, runtime, { screen: plan.originScreen }, plan.startAngle, data.sweepBeamWidthPx, .78);
   runtime.sweep = {
     startAt: time,
     endAt: time + data.sweepDurationMs,
     startAngle: plan.startAngle,
     endAngle: plan.endAngle,
     lastAngle: plan.startAngle,
-    origin: plan.origin,
+    origin: plan.originWorld,
+    originScreen: plan.originScreen,
+    endTargetScreen: plan.endTargetScreen,
     hit: new Set(),
     beam
   };
@@ -243,11 +307,13 @@ function startSweep(scene, runtime, data, time) {
   runtime.nextAt = time;
 }
 
-function beamTouchesEnemy(enemy, sweep, fromAngle, toAngle, data) {
+function beamTouchesEnemy(enemy, sweep, fromAngle, toAngle, data, scene) {
+  const screen = worldToScreen(scene, enemy.x, enemy.y);
+  const enemyHalfWidth = Math.max(12, (enemy.displayWidth || enemy.width || 40) * .5);
+  if (screen.x < sweep.endTargetScreen.x - enemyHalfWidth || screen.x > DESIGN_WIDTH + enemyHalfWidth) return false;
   const dx = enemy.x - sweep.origin.x;
   const dy = enemy.y - sweep.origin.y;
   const distance = Math.max(1, Math.hypot(dx, dy));
-  const enemyHalfWidth = Math.max(12, (enemy.displayWidth || enemy.width || 40) * .5);
   const angularTolerance = Math.atan2(enemyHalfWidth + data.sweepBeamWidthPx * .5, distance);
   const targetAngle = unwrapFromStart(Math.atan2(dy, dx), sweep.startAngle);
   return targetAngle + angularTolerance >= fromAngle && targetAngle - angularTolerance <= toAngle;
@@ -262,10 +328,11 @@ function updateSweep(system, runtime, data, time) {
   const fromAngle = Math.min(sweep.lastAngle, currentAngle);
   const toAngle = Math.max(sweep.lastAngle, currentAngle);
   for (const enemy of visibleEnemies(system.scene)) {
-    if (sweep.hit.has(enemy) || !beamTouchesEnemy(enemy, sweep, fromAngle, toAngle, data)) continue;
+    if (sweep.hit.has(enemy) || !beamTouchesEnemy(enemy, sweep, fromAngle, toAngle, data, system.scene)) continue;
     const bonus = runtime.pulseHits.has(enemy) ? 1 + data.pulseMarkedSweepBonus : 1;
-    damageWithNeutronStar(system, enemy, data.sweepDamage * bonus, { defenseIgnore: data.sweepDefenseIgnore });
-    sweep.hit.add(enemy);
+    if (damageWithNeutronStar(system, enemy, data.sweepDamage * bonus, { defenseIgnore: data.sweepDefenseIgnore })) {
+      sweep.hit.add(enemy);
+    }
   }
   sweep.lastAngle = currentAngle;
   if (time < sweep.endAt) return;
@@ -302,35 +369,53 @@ function updateNeutronStar(system) {
   const position = neutronStarScreenPosition(scene);
   runtime.body?.setPosition?.(position.x, position.y);
   runtime.ring?.setPosition?.(position.x, position.y);
+  const flashing = runtime.pulseFlashUntil && time < runtime.pulseFlashUntil;
+  runtime.body?.setScale?.(flashing ? 1.25 : 1);
+  runtime.body?.setAlpha?.(flashing ? 1 : .95);
+  runtime.ring?.setScale?.(flashing ? 1.18 : 1);
+  runtime.ring?.setAlpha?.(flashing ? .55 : .25);
   if (time < runtime.nextAt) return;
   if (runtime.phase === 'idle') {
     runtime.phase = 'pulse1';
     runtime.pulseHits.clear();
+    runtime.firstTarget = null;
+    runtime.nextAt = time + data.initialPulseDelayMs;
+    return;
   }
   if (runtime.phase === 'pulse1' || runtime.phase === 'pulse2') {
     const secondPulse = runtime.phase === 'pulse2';
     const target = secondPulse ? pickPulseTarget(scene, runtime.firstTarget) : pickPulseTarget(scene, null);
-    if (target) {
-      const sameTarget = secondPulse && target === runtime.firstTarget;
-      const multiplier = sameTarget ? 1 + data.sameTargetSecondPulseBonus : 1;
-      damageWithNeutronStar(system, target, data.singlePulseDamage * multiplier, { defenseIgnore: 0 });
-      runtime.pulseHits.add(target);
-      if (!secondPulse) runtime.firstTarget = target;
-      const origin = neutronStarWorldOrigin(scene);
-      runtime.lastAttackOrigin = origin;
-      createPulseVisual(scene, runtime, origin, target, data, time);
+    if (!target) {
+      runtime.nextAt = time + data.pulseTargetRetryMs;
+      return;
     }
+    const sameTarget = secondPulse && target === runtime.firstTarget;
+    const multiplier = sameTarget ? 1 + data.sameTargetSecondPulseBonus : 1;
+    const origin = neutronStarWorldOrigin(scene);
+    if (!damageWithNeutronStar(system, target, data.singlePulseDamage * multiplier, { defenseIgnore: 0 })) {
+      runtime.nextAt = time + data.pulseTargetRetryMs;
+      return;
+    }
+    runtime.pulseHits.add(target);
+    if (!secondPulse) runtime.firstTarget = target;
+    runtime.lastAttackOrigin = origin;
+    createPulseVisual(scene, runtime, origin, target, data, time);
     if (secondPulse) {
-      prepareSweep(scene, runtime, data, time);
-      runtime.phase = 'charge';
-      runtime.nextAt = time + data.sweepChargeMs;
+      runtime.phase = 'postSecondPulse';
+      runtime.nextAt = time + data.singlePulseVisualMs + data.postSecondPulseDelayMs;
     } else {
       runtime.phase = 'pulse2';
       runtime.nextAt = time + data.pulseGapMs;
     }
     return;
   }
-  if (runtime.phase === 'charge') {
+  if (runtime.phase === 'postSecondPulse') {
+    prepareSweep(scene, runtime, data, time);
+    runtime.phase = 'warning';
+    runtime.nextAt = time + data.sweepWarningMs;
+    return;
+  }
+  if (runtime.phase === 'warning') {
     startSweep(scene, runtime, data, time);
     return;
   }
@@ -346,6 +431,23 @@ export const NeutronStarSkill = {
   },
   onAcquire(system) {
     activateNeutronStar(ensureNeutronRuntime(system), now(system.scene));
+  },
+  shiftTimers(system, pausedDuration, pausedAt = 0) {
+    const runtime = system.scene.neutronStarRuntime;
+    if (!runtime) return;
+    const shift = value => (value > pausedAt ? value + pausedDuration : value);
+    runtime.nextAt = shift(runtime.nextAt || 0);
+    runtime.pulseFlashUntil = shift(runtime.pulseFlashUntil || 0);
+    runtime.transients?.forEach(entry => { entry.expiresAt = shift(entry.expiresAt || 0); });
+    if (runtime.sweepPlan) {
+      runtime.sweepPlan.startAt = shift(runtime.sweepPlan.startAt || 0);
+      runtime.sweepPlan.endAt = shift(runtime.sweepPlan.endAt || 0);
+      runtime.sweepPlan.preparedAt = shift(runtime.sweepPlan.preparedAt || 0);
+    }
+    if (runtime.sweep) {
+      runtime.sweep.startAt = shift(runtime.sweep.startAt || 0);
+      runtime.sweep.endAt = shift(runtime.sweep.endAt || 0);
+    }
   },
   destroyRuntime(system) {
     const scene = system.scene;
@@ -668,7 +770,6 @@ export const WhiteDwarfSkill = {
 export function configureCelestialFlowSkills() {
   const neutronLevels = Array.from({ length: 9 }, (_, index) => ({
     singlePulseCount: 2,
-    singlePulseVisualMs: 140,
     sweepWarningAlpha: .20,
     sweepBeamWidthPx: 18,
     sweepHitLimitPerEnemy: 1,
@@ -700,11 +801,11 @@ export function configureCelestialFlowSkills() {
     short: '星',
     color: 0x7dd3fc,
     tags: [TAGS.MAGIC, TAGS.CELESTIAL, TAGS.BUILD_CELESTIAL, 'mythicSkill'],
-    description: '获得后永久悬浮于太阳与黑洞之间，周期释放两次单体脉冲，随后释放一次横扫脉冲。',
+    description: '中子星永久悬浮于太阳与黑洞之间，每轮先连续释放两次单体脉冲，再从战场最右侧向角色前方释放一次横扫脉冲。',
     milestones: {
       3: '脉冲聚焦：两次单体脉冲命中同一目标时，第二次脉冲伤害提高45%。',
       6: '脉冲共振：横扫脉冲对本轮已被单体脉冲命中的敌人额外造成30%伤害。',
-      9: '全域星脉：横扫覆盖当前全部可视敌人，并无视35%防御。'
+      9: '全域星脉：横扫覆盖当前可视的前方战场，并无视35%防御。'
     },
     levels: neutronLevels
   };

@@ -138,7 +138,9 @@ function tick(system, elapsedMs = 0) {
   scene.enemies = [enemy('acquire-target', 620, 375)];
   tick(system, 0);
   assert.equal(scene.neutronStarRuntime.active, true);
-  assert.equal(scene.hits.length, 1, 'in-run neutron acquisition starts its first pulse');
+  assert.equal(scene.hits.length, 0, 'in-run neutron acquisition waits before its first pulse');
+  tick(system, SKILLS.neutron_star.levels[0].initialPulseDelayMs);
+  assert.equal(scene.hits.length, 1, 'initial neutron delay then starts its first pulse');
 
   levels.white_dwarf = 1;
   SKILL_HANDLERS.white_dwarf.onAcquire(system);
@@ -157,18 +159,18 @@ function tick(system, elapsedMs = 0) {
   const scene = createScene();
   const levels = { neutron_star: 1 };
   const system = createSystem(scene, levels);
-  const originX = 100 + 234;
-  const originY = 620 - 245;
-  const inside = enemy('inside', originX + 300, originY, { hp: 10000 });
+  const inside = enemy('inside', 100 + 710, 555, { hp: 10000 });
   scene.enemies = [inside];
   SKILL_HANDLERS.neutron_star.bind(system);
-  tick(system, 0);       // pulse 1
-  tick(system, 300);     // pulse 2 and warning preparation
-  const outside = enemy('outside', originX, originY + 300, { hp: 10000 });
+  tick(system, 0);       // arm pulse 1
+  tick(system, SKILLS.neutron_star.levels[0].initialPulseDelayMs); // pulse 1
+  tick(system, SKILLS.neutron_star.levels[0].pulseGapMs);     // pulse 2
+  const outside = enemy('outside', 100 + 210, 555, { hp: 10000 });
   scene.enemies.push(outside);
-  tick(system, 460);     // start sweep
+  tick(system, SKILLS.neutron_star.levels[0].singlePulseVisualMs + SKILLS.neutron_star.levels[0].postSecondPulseDelayMs);     // warning
+  tick(system, SKILLS.neutron_star.levels[0].sweepWarningMs);     // start sweep
   const hitsBeforeSweep = scene.hits.length;
-  tick(system, 620);     // low-FPS jump directly to sweep end
+  tick(system, SKILLS.neutron_star.levels[0].sweepDurationMs);     // low-FPS jump directly to sweep end
   const sweepHits = scene.hits.slice(hitsBeforeSweep);
   assert.deepEqual(sweepHits.map(hit => hit.target.id), ['inside'], 'sweep end does not grant catch-all damage outside its angular path');
   assert.equal(sweepHits[0].damage, SKILLS.neutron_star.levels[0].sweepDamage);
@@ -182,25 +184,25 @@ function tick(system, elapsedMs = 0) {
   const scene = createScene();
   const levels = { neutron_star: 9 };
   const system = createSystem(scene, levels);
-  const originX = 100 + 234;
-  const originY = 620 - 245;
   const targets = [
-    enemy('east', originX + 250, originY),
-    enemy('south', originX, originY + 250),
-    enemy('west', originX - 250, originY),
-    enemy('north', originX, originY - 250),
-    enemy('offscreen', originX + 100, originY + 100, { inside: false })
+    enemy('east', 100 + 710, 555),
+    enemy('middle', 100 + 500, 555),
+    enemy('front', 100 + 320, 555),
+    enemy('behind', 100 + 210, 555),
+    enemy('offscreen', 100 + 650, 555, { inside: false })
   ];
   scene.enemies = targets;
   SKILL_HANDLERS.neutron_star.bind(system);
   tick(system, 0);
-  tick(system, 200);
-  tick(system, 280);
+  tick(system, SKILLS.neutron_star.levels[8].initialPulseDelayMs);
+  tick(system, SKILLS.neutron_star.levels[8].pulseGapMs);
+  tick(system, SKILLS.neutron_star.levels[8].singlePulseVisualMs + SKILLS.neutron_star.levels[8].postSecondPulseDelayMs);
+  tick(system, SKILLS.neutron_star.levels[8].sweepWarningMs);
   const before = scene.hits.length;
-  tick(system, 480);
+  tick(system, SKILLS.neutron_star.levels[8].sweepDurationMs);
   const sweepHits = scene.hits.slice(before);
-  assert.deepEqual(new Set(sweepHits.map(hit => hit.target.id)), new Set(['east', 'south', 'west', 'north']));
-  assert.equal(sweepHits.length, 4, 'full sweep has a per-enemy one-hit cap');
+  assert.deepEqual(new Set(sweepHits.map(hit => hit.target.id)), new Set(['east','middle','front']));
+  assert.equal(sweepHits.length, 3, 'fixed right-to-front sweep has a per-enemy one-hit cap');
   assert(!sweepHits.some(hit => hit.target.id === 'offscreen'));
   assert(sweepHits.every(hit => hit.meta.defenseIgnore === .35));
 }
@@ -268,4 +270,4 @@ function tick(system, elapsedMs = 0) {
   assert.equal(burstRing.destroyed, true, 'guard burst visual is destroyed after its configured duration');
 }
 
-console.log('v0.10.89 celestial runtime validation passed');
+console.log('v0.10.90 celestial runtime validation passed');
