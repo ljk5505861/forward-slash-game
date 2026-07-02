@@ -5,8 +5,8 @@ import { SKILLS } from '../src/config/skills.js';
 import { GAME_VERSION } from '../src/config/version.js';
 import { getSkillBarStateText } from '../src/ui/skillBarState.js';
 
-assert.equal(GAME_VERSION, '0.10.98');
-assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version, '0.10.98');
+assert.equal(GAME_VERSION, '0.10.99');
+assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version, '0.10.99');
 assert.equal(SKILLS.neutron_star.levels.length, 9);
 assert.equal(Object.keys(SKILLS).length, 38);
 assert.deepEqual(SKILLS.neutron_star.levels.map(x => x.roundCooldownMs), [7200,7000,6800,6600,6400,6100,5900,5700,5400]);
@@ -91,4 +91,4 @@ function bar(s){ return getSkillBarStateText(s, { id:'neutron_star', level:1 }, 
   SKILL_HANDLERS.neutron_star.destroyRuntime(sys); assert(s.created.every(o=>o.destroyed)); SKILL_HANDLERS.neutron_star.bind(sys); tick(sys,0); assert.equal(s.neutronStarRuntime.phase,'cooldown'); assert.equal(s.neutronStarRuntime.pulseHits.size,0);
 }
 
-console.log('v0.10.98 neutron star round cooldown validation passed');
+console.log('v0.10.99 neutron star round cooldown validation passed');
