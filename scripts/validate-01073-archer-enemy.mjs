@@ -12,7 +12,7 @@ global.HTMLCanvasElement=class {};
 const { default: EnemyBehaviorManager, entryMove } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
 const { default: CombatSystem } = await import('../src/systems/CombatSystem.js');
 
-assert.equal(GAME_VERSION,'0.10.94');
+assert.equal(GAME_VERSION,'0.10.95');
 assert(ENEMIES.archer, 'archer config exists');
 assert.equal(ENEMIES.archer.behavior,'archer');
 assert.equal(ENEMIES.archer.attackRange,450);
@@ -75,4 +75,4 @@ assert.equal(stage.makeWaveIds(['grunt','bomber'],8,5).filter(x=>x.id==='bomber'
 assert(!StageSystem.prototype.updateRush.toString().includes("'archer'"),'boss rush code does not spawn archers');
 assert(!StageSystem.prototype.updateRush.toString().includes("'bomber','healer'"),'boss rush code does not spawn bomber/healer pair');
 
-console.log('[validate:01073-archer-enemy] PASS archer config, behavior cleanup, no-retreat ranged movement, and v0.10.94 wave rules');
+console.log('[validate:01073-archer-enemy] PASS archer config, behavior cleanup, no-retreat ranged movement, and v0.10.95 wave rules');

@@ -7,8 +7,8 @@ import { TAGS } from '../src/config/tags.js';
 import { CombatEvents } from '../src/core/CombatEvents.js';
 import SkillSystem from '../src/systems/SkillSystem.js';
 
-assert.equal(GAME_VERSION,'0.10.94');
-assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version,'0.10.94');
+assert.equal(GAME_VERSION,'0.10.95');
+assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version,'0.10.95');
 assert.equal(Object.keys(SKILLS).length,35);
 const cfg=SKILLS.lightning_tribulation;
 assert(cfg); assert.equal(cfg.name,'雷劫兵主'); assert.equal(cfg.rarity,'MYTHIC'); assert.equal(cfg.ultimateSkill,true); assert.equal(cfg.passive,true); assert.equal(cfg.maxLevel,9); assert.equal(cfg.handler,'lightning_tribulation'); assert.equal(cfg.requiredSkillId,undefined);
