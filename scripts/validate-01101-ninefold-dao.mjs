@@ -5,6 +5,7 @@ import { TAGS, BUILD_TAGS } from '../src/config/tags.js';
 import { GAME_VERSION } from '../src/config/version.js';
 import pkg from '../package.json' with { type:'json' };
 import SkillSystem from '../src/systems/SkillSystem.js';
+import Hud from '../src/ui/Hud.js';
 import { getSkillBarStateText } from '../src/ui/skillBarState.js';
 import { getSkillDetailData } from '../src/ui/skillDetailContent.js';
 import { getRarity } from '../src/config/rarities.js';
@@ -12,6 +13,7 @@ import { NINEFOLD_DAO_ID, CULTIVATION_BASE_RATES, CULTIVATION_REALMS, CULTIVATIO
 
 const { SKILL_HANDLERS } = await import('../src/skills/handlers/index.js');
 const totalCapacity = () => CULTIVATION_THRESHOLDS.reduce((sum, value) => sum + value, 0);
+const advanceFrames = (context, totalMs, frames=40) => { const step=totalMs/frames; for(let i=0;i<frames;i+=1) context.advance(step); };
 
 function visualNode(kind, payload, log) {
   return {
@@ -25,20 +27,21 @@ function visualNode(kind, payload, log) {
   };
 }
 function createVisualHarness(){
-  const log={texts:[],circles:[],destroyed:[],timers:[],tweens:[]};
+  const log={texts:[],circles:[],rectangles:[],destroyed:[],timers:[],tweens:[]};
   return { log,
     add:{
       text(x,y,text,style){ const node=visualNode('text',{x,y,text,style},log); log.texts.push(node); return node; },
-      circle(x,y,radius,color,alpha){ const node=visualNode('circle',{x,y,radius,color,alpha},log); log.circles.push(node); return node; }
+      circle(x,y,radius,color,alpha){ const node=visualNode('circle',{x,y,radius,color,alpha},log); log.circles.push(node); return node; },
+      rectangle(x,y,width,height,color,alpha){ const node=visualNode('rectangle',{x,y,width,height,color,alpha},log); log.rectangles.push(node); return node; }
     },
     time:{ delayedCall(delay, callback){ const timer={delay, callback, removed:false, remove(){ this.removed=true; }, fire(){ if(!this.removed) callback(); }}; log.timers.push(timer); return timer; } },
     tweens:{ add(config){ const tween={config, stopped:false, removed:false, stop(){ this.stopped=true; }, remove(){ this.removed=true; }, complete(){ config.onComplete?.(); }}; log.tweens.push(tween); return tween; } }
   };
 }
 function scene({visual=false, paused=false}={}){
-  let t=0; const harness=visual?createVisualHarness():{log:{texts:[],circles:[],destroyed:[],timers:[],tweens:[]},add:null,time:null,tweens:null};
+  let t=0; const harness=visual?createVisualHarness():{log:{texts:[],circles:[],rectangles:[],destroyed:[],timers:[],tweens:[]},add:null,time:null,tweens:null};
   const s={
-    playerData:{skills:[],hp:100,maxHp:100,mana:20,maxMana:20,damageReductionBonuses:{},level:1,gold:0,cooldownReduction:0,skillDamageMultiplier:1},
+    playerData:{skills:[],hp:100,maxHp:100,mana:20,maxMana:20,stamina:100,maxStamina:100,damageReductionBonuses:{},level:1,gold:0,cooldownReduction:0,skillDamageMultiplier:1},
     player:{x:360,y:500}, enemies:[], getGameplayTime:()=>t, isGameplayPaused:()=>paused,
     setPaused(value){ paused=value; }, hud:{update(){}}, skillBar:{update(){}}, eventBus:{emit(){},on(){return ()=>{};}},
     events:{on(){},once(){},off(){}}, syncAttachedVisuals(){}, add:harness.add, time:harness.time, tweens:harness.tweens,
@@ -68,9 +71,18 @@ const beforeComplete=getCultivationSnapshot(c.s); c.advance(90000); const afterC
 c=scene(); add(c.sys,1); const st=c.sys.passiveState.ninefoldDao; st.realmIndex=7; st.breakthroughCount=7; st.progress=CULTIVATION_THRESHOLDS[7]-100; r=grantCultivation(c.s,100000); assert.equal(r.actualAmount,100); assert.equal(r.applied,true); assert.deepEqual(r.breakthroughs,['渡劫']); assert.equal(getCultivationSnapshot(c.s).realm,'渡劫');
 c=scene({visual:true}); add(c.sys,1); r=grantCultivation(c.s,totalCapacity()); assert.deepEqual(r.breakthroughs,['筑基','金丹','元婴','化神','炼虚','合体','大乘','渡劫']); let vst=c.sys.passiveState.ninefoldDao; assert.deepEqual(vst.visualHistory,['筑基','金丹','元婴','化神','炼虚','合体','大乘','渡劫']); assert.equal(vst.currentVisuals.filter(v=>v.kind==='text'&&!v.destroyed).length,1); assert.equal(vst.visualQueue.length,7); c.log.tweens.at(-1).complete(); assert.equal(vst.currentVisuals.length,0); assert(c.log.timers.at(-1).delay>=180 && c.log.timers.at(-1).delay<=250); c.log.timers.at(-1).fire(); assert.equal(vst.currentVisuals.filter(v=>v.kind==='text'&&!v.destroyed)[0].text,'突破·金丹'); assert.equal(vst.currentVisuals.filter(v=>v.kind==='text'&&!v.destroyed).length,1); SKILL_HANDLERS[NINEFOLD_DAO_ID].cleanup(c.sys); assert.equal(vst.visualQueue.length,0); assert.equal(vst.visualTimers.every(t=>t.removed),true); assert.equal(vst.currentVisuals.length,0); assert.equal(vst.visuals.length,0); assert.equal(vst.visualTween,null); assert.equal(vst.visualTimer,null);
 c=makeSkillSystemScene(); c.s.skillSystem.addOrLevel(NINEFOLD_DAO_ID); c.setTime(1000); c.s.skillSystem.update(1000); const p1=getCultivationSnapshot(c.s).progress; c.s.setPaused(true); c.setTime(3000); c.s.skillSystem.update(3000); assert.equal(getCultivationSnapshot(c.s).progress,p1); c.s.setPaused(false); c.s.playerData.hp=0; c.setTime(5000); c.s.skillSystem.update(5000); assert.equal(getCultivationSnapshot(c.s).progress,p1);
+c=makeSkillSystemScene(); c.s.skillSystem.addOrLevel(NINEFOLD_DAO_ID); c.setTime(1000); c.s.skillSystem.update(1000); const pauseProgress=getCultivationSnapshot(c.s).progress; const pauseCycle=getCultivationSnapshot(c.s).cycleProgressMs; const pausedAt=c.time(); c.s.setPaused(true); c.setTime(pausedAt+10000); c.s.skillSystem.shiftTimers(10000,pausedAt); c.s.setPaused(false); c.s.skillSystem.update(c.time()); assert.equal(getCultivationSnapshot(c.s).progress,pauseProgress); assert.equal(getCultivationSnapshot(c.s).cycleProgressMs,pauseCycle); c.setTime(c.time()+1000); c.s.skillSystem.update(c.time()); assert(Math.abs(getCultivationSnapshot(c.s).progress-(pauseProgress+1))<.001);
+c=makeSkillSystemScene({paused:true}); c.s.skillSystem.addOrLevel(NINEFOLD_DAO_ID); c.setTime(10000); c.s.skillSystem.shiftTimers(10000,0); c.s.setPaused(false); c.s.skillSystem.update(10000); assert.equal(getCultivationSnapshot(c.s).progress,0); assert.equal(getCultivationSnapshot(c.s).cycleProgressMs,0); assert.equal(c.s.skillSystem.passiveState.ninefoldDao.manaRegenProgressMs,0);
+c=makeSkillSystemScene(); c.s.skillSystem.addOrLevel(NINEFOLD_DAO_ID); c.s.setPaused(true); c.setTime(5000); c.s.skillSystem.addOrLevel(NINEFOLD_DAO_ID); c.s.skillSystem.shiftTimers(5000,0); c.s.setPaused(false); c.s.skillSystem.update(5000); assert.equal(c.s.skillSystem.getLevel(NINEFOLD_DAO_ID),2); assert.equal(getCultivationSnapshot(c.s).progress,0);
+c=scene(); add(c.sys,3); c.sys.passiveState.ninefoldDao.cycleProgressMs=29500; SKILL_HANDLERS[NINEFOLD_DAO_ID].shiftTimers(c.sys,1000,0); c.setTime(1000); c.sys.passiveUpdaters.forEach(fn=>fn()); assert.equal(c.sys.passiveState.ninefoldDao.cycleProgressMs,29500); c.advance(500); assert.equal(c.sys.passiveState.ninefoldDao.cycleProgressMs,0); assert(Math.abs(getCultivationSnapshot(c.s).progress-16.8)<.001);
 c=scene(); add(c.sys,1); c.s.playerData.maxHp+=8; c.s.playerData.maxMana+=5; SKILL_HANDLERS[NINEFOLD_DAO_ID].update(c.sys); assert.equal(c.s.playerData.maxHp,113); assert.equal(c.s.playerData.maxMana,45);
 c=scene(); add(c.sys,1); assert.equal(c.sys.passiveUpdaters.length,1); c.advance(1000); const first=getCultivationSnapshot(c.s).progress; SKILL_HANDLERS[NINEFOLD_DAO_ID].cleanup(c.sys); add(c.sys,1); assert.equal(c.sys.passiveUpdaters.length,1); c.advance(1000); assert(Math.abs(getCultivationSnapshot(c.s).progress-first)<.001);
 c=scene(); add(c.sys,1); grantCultivation(c.s,totalCapacity()); const beforeDetail=JSON.stringify(getCultivationSnapshot(c.s)); const detail=getSkillDetailData(NINEFOLD_DAO_ID,{scene:c.s,skill:{id:NINEFOLD_DAO_ID,level:9}}); assert(detail.currentEffects.includes('当前实际自动修为/秒：0')); assert.equal(JSON.stringify(getCultivationSnapshot(c.s)),beforeDetail);
+c=scene(); add(c.sys,1); c.s.playerData.hp=1; grantCultivation(c.s,100); assert.equal(Number.isInteger(c.s.playerData.hp),true);
+c=scene(); add(c.sys,1); c.s.playerData.mana=0; advanceFrames(c,1000); assert.equal(c.s.playerData.mana,0.5); assert.equal(c.s.playerData.mana,Number(c.s.playerData.mana.toFixed(3)));
+c=scene(); add(c.sys,1); grantCultivation(c.s,3100); c.s.playerData.mana=0; advanceFrames(c,1000); assert.equal(c.s.playerData.mana,3.5); assert.equal(c.s.playerData.mana,Number(c.s.playerData.mana.toFixed(3)));
+c=scene(); add(c.sys,1); grantCultivation(c.s,totalCapacity()); c.s.playerData.mana=0; advanceFrames(c,1000); assert.equal(c.s.playerData.mana,30); SKILL_HANDLERS[NINEFOLD_DAO_ID].cleanup(c.sys); const manaAfterCleanup=c.s.playerData.mana; c.advance(1000); assert.equal(c.s.playerData.mana,manaAfterCleanup);
+c=scene({visual:true}); c.s.playerData.hp=39.0000000004; c.s.playerData.maxHp=100; c.s.playerData.mana=93.50833333333334; c.s.playerData.maxMana=120; const hud=new Hud(c.s); c.s.hud=hud; hud.update(); assert.equal(hud.hpText.text,'39/100'); assert.equal(hud.mpText.text,'93.5/120'); hud.destroy();
 c=scene(); add(c.sys,1); grantCultivation(c.s,101); assert.equal(getCultivationSnapshot(c.s).realm,'筑基'); assert.equal(Math.floor(getCultivationSnapshot(c.s).progress),1); assert.equal(c.s.playerData.level,1); SKILL_HANDLERS[NINEFOLD_DAO_ID].cleanup(c.sys); assert.equal(c.s.playerData.maxHp,100); assert.equal(c.s.playerData.maxMana,20); assert.equal(c.s.playerData.damageReductionBonuses[NINEFOLD_DAO_ID],undefined); assert.equal(getCultivationSnapshot(c.s).active,false); add(c.sys,1); assert.equal(getCultivationSnapshot(c.s).realm,'炼气');
 assert.deepEqual(CULTIVATION_REALMS,['炼气','筑基','金丹','元婴','化神','炼虚','合体','大乘','渡劫']); assert.deepEqual(CULTIVATION_THRESHOLDS,[100,500,2500,15000,100000,1000000,20000000,500000000]);
 console.log('v0.11.1 ninefold dao validation passed');
