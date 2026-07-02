@@ -1,0 +1,36 @@
+name: v0.11.0 Regression Debug
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --silent
+      - name: Capture regression output
+        shell: bash
+        run: |
+          set +e
+          npm run validate:01100-playtest-fixes > v01100.log 2>&1
+          printf '%s\n' "$?" > v01100.status
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v01100-regression-log
+          path: |
+            v01100.log
+            v01100.status
