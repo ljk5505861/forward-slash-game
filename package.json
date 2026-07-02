@@ -99,12 +99,14 @@
     "validate:01098-superhero-flow": "node scripts/validate-01098-superhero-flow.mjs && node scripts/validate-01098-superhero-runtime.mjs && npm run validate:01040-skill-damage",
     "validate:01098-playtest-fixes": "npm run validate:01098-superhero-flow && npm run validate:01097-playtest-fixes",
     "validate:01099-superhero-visual-follow": "node scripts/validate-01099-superhero-visual-follow.mjs",
-    "validate:01099-playtest-fixes": "npm run validate:01099-superhero-visual-follow && npm run validate:01098-playtest-fixes"
+    "validate:01099-playtest-fixes": "npm run validate:01099-superhero-visual-follow && npm run validate:01098-playtest-fixes",
+    "validate:01100-superhero-kinetic": "node scripts/validate-01100-version.mjs && node scripts/validate-01100-superhero-kinetic.mjs",
+    "validate:01100-playtest-fixes": "npm run validate:01100-superhero-kinetic && npm run validate:01099-playtest-fixes"
   },
   "dependencies": {
     "phaser": "4.1.0",
     "vite": "latest"
   },
   "devDependencies": {},
-  "version": "0.10.99"
+  "version": "0.11.0"
 }

@@ -20,6 +20,7 @@ import { configureGravityFlowSkills, GravityReversalSkill, GravityOrbSkill } fro
 import { GravityCrushFixedSkill, BlackHoleFixedSkill } from './GravityFlowFollowupFixes.js';
 import { configureCelestialFlowSkills, NeutronStarSkill, WhiteDwarfSkill } from './CelestialFlowSkills.js';
 import { configureSuperheroFlowSkills, SuperSpeedSkill, LaserEyesSkill, FreezingBreathSkill } from './SuperheroFlowSkills.js';
+import { configureSuperheroKineticRuntime } from './SuperheroKineticRuntime.js';
 
 configureEntryArchetypeSkills();
 configureFlameCoreSkills();
@@ -37,6 +38,7 @@ configureTemporaryStartingPool();
 configureGravityFlowSkills();
 configureCelestialFlowSkills();
 configureSuperheroFlowSkills();
+configureSuperheroKineticRuntime({ SuperSpeedSkill, LaserEyesSkill, FreezingBreathSkill });
 
 const baseSuperSpeedShiftTimers = SuperSpeedSkill.shiftTimers;
 SuperSpeedSkill.shiftTimers = (system, duration, pausedAt) => {
