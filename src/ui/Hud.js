@@ -5,6 +5,7 @@ const DESIGN_WIDTH=720;
 const DEPTH=2000;
 const BAR_W=210, BAR_H=16;
 const clamp01=value=>Math.max(0,Math.min(1,value));
+const formatResource=value=>{ const rounded=Math.round((Number(value)||0)*10)/10; return Number.isInteger(rounded)?String(rounded):rounded.toFixed(1); };
 
 export default class Hud {
   constructor(scene){
@@ -42,9 +43,9 @@ export default class Hud {
     const p=this.scene.playerData;
     this.setBar(this.hpFill,BAR_W,p.hp,p.maxHp);
     this.levelText.setText(`Lv.${p.level||1}`);
-    this.hpText.setText(`${p.hp}/${p.maxHp}`);
+    this.hpText.setText(`${formatResource(p.hp)}/${formatResource(p.maxHp)}`);
     this.setBar(this.mpFill,BAR_W,p.mana??0,p.maxMana??0);
-    this.mpText.setText(`${p.mana??0}/${p.maxMana??0}`);
+    this.mpText.setText(`${formatResource(p.mana??0)}/${formatResource(p.maxMana??0)}`);
     this.setBar(this.stFill,BAR_W,p.stamina??0,p.maxStamina??0);
     const cult=getCultivationSnapshot(this.scene);
     [this.cultPanel,this.cultBg,this.cultFill,this.cultText].forEach(n=>n?.setVisible?.(!!cult.active));
