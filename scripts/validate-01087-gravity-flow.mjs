@@ -27,6 +27,11 @@ assert.match(gravityControl,/pullImmuneStates=new Set\(\['windup','charge'/,'cha
 const handlerRegistry=fs.readFileSync('src/skills/handlers/index.js','utf8');
 assert.match(handlerRegistry,/gravity_crush:GravityCrushFixedSkill/,'fixed gravity crush handler is registered');
 assert.match(handlerRegistry,/black_hole:BlackHoleFixedSkill/,'fixed black hole handler is registered');
+
+function assertBlackHoleDetail(level, required){ const d=getSkillDetailData('black_hole',{skill:{id:'black_hole',level}}); const text=[...(d.currentEffects||[]),...(d.nextLevelPreview||[])].join(' '); for(const part of ['外围吸引速度','核心吸引速度','中心吸引停止距离','坍塌蓄力时间','坍塌吸引距离','精英吸引','Boss',...required]) assert(text.includes(part),`black hole level ${level} detail missing ${part}`); }
+for(const level of [1,3,6,9]) assertBlackHoleDetail(level,[]);
+assertBlackHoleDetail(1,['外围吸引速度：70像素/秒','核心吸引速度：130像素/秒','坍塌蓄力时间：0.6秒','坍塌吸引距离：140','精英吸引比例：50%','Boss位置吸引：免疫']);
+assertBlackHoleDetail(9,['外围吸引速度：150像素/秒','核心吸引速度：280像素/秒','坍塌蓄力时间：0.48秒','坍塌吸引距离：280','终极坍塌蓄力时间：0.7秒','终极坍塌吸引倍率：1.35倍','终极坍塌频率']);
 assert.deepEqual(validateSkillDetailContent(), []); for(const id of Object.keys(expected)) for(const level of [1,3,6,8,9]){ const d=getSkillDetailData(id,{skill:{id,level}}); const text=[...(d.currentEffects||[]),...(d.nextLevelPreview||[])].join(' '); assert.match(text,/\d/); }
 await import('./validate-01087-gravity-followup-pause.mjs');
 console.log('v0.10.94 gravity flow config validation passed');
