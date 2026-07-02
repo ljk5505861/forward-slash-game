@@ -17,6 +17,7 @@ const nowOf = scene => scene.getGameplayTime?.() ?? 0;
 const validEnemy = (scene, enemy) => !!enemy && scene.targeting?.valid?.(enemy) !== false && !enemy.isDefeated && (enemy.hp ?? 1) > 0;
 const distance = (a, b) => PhaserRef.Math.Distance.Between(a.x, a.y, b.x, b.y);
 const eyePoint = scene => ({ x: (scene.player?.x ?? 0) + 12, y: (scene.player?.y ?? 0) - 72 });
+const mouthPoint = scene => ({ x: (scene.player?.x ?? 0) + 30, y: (scene.player?.y ?? 0) - 52 });
 const cleanupVisual = visual => { try { visual?.destroy?.(); } catch {} };
 
 const SUPER_SPEED_LEVELS = [
@@ -215,11 +216,31 @@ function lineTargets(scene, start, end, halfWidth) {
   return (scene.targeting?.all?.() || []).filter(enemy => validEnemy(scene, enemy) && segmentDistance({ x: enemy.x, y: enemy.y - (enemy.height || 60) * 0.45 }, start, end) <= halfWidth + enemyRadius(enemy));
 }
 
-function drawBeam(scene, start, end) {
-  const g = scene.add?.graphics?.()?.setDepth?.(150);
-  g?.lineStyle?.(6, 0xff2222, 0.9);
-  g?.lineBetween?.(start.x, start.y, end.x, end.y);
-  return g || null;
+function createBeamVisual(scene) {
+  return scene.add?.graphics?.()?.setDepth?.(150) || null;
+}
+
+function redrawBeam(graphics, start, end) {
+  graphics?.clear?.();
+  graphics?.lineStyle?.(6, 0xff2222, 0.9);
+  graphics?.lineBetween?.(start.x, start.y, end.x, end.y);
+}
+
+function unitFrom(raw, fallback = { x: 1, y: 0 }) {
+  const len = Math.hypot(raw?.x || 0, raw?.y || 0);
+  if (len <= 0.0001) return { ...fallback };
+  return { x: raw.x / len, y: raw.y / len };
+}
+
+function visualDelta(active, scene) {
+  const now = nowOf(scene);
+  if (active.lastVisualAt == null) {
+    active.lastVisualAt = now;
+    return 0;
+  }
+  const delta = Math.max(0, Math.min(80, now - active.lastVisualAt));
+  active.lastVisualAt = now;
+  return delta;
 }
 
 export const LaserEyesSkill = {
@@ -230,23 +251,35 @@ export const LaserEyesSkill = {
     const scene = system.scene;
     const target = scene.targeting.nearestAhead(data.range);
     if (!validEnemy(scene, target)) return { failed: true };
-    const direction = { x: target.x - eyePoint(scene).x, y: target.y - (target.height || 60) * 0.45 - eyePoint(scene).y };
+    const origin = eyePoint(scene);
+    const targetPoint = { x: target.x, y: target.y - (target.height || 60) * 0.45 };
+    const dir = unitFrom({ x: targetPoint.x - origin.x, y: targetPoint.y - origin.y });
+    const beamCount = data.beamCount || 1;
     const active = {
       skillId: cfg.id,
-      cfg,
-      data,
-      level,
-      ctx,
+      cfg, data, level, ctx,
       nextAt: nowOf(scene),
       endAt: nowOf(scene) + data.durationMs,
       focus: 0,
       extended: 0,
-      visuals: [],
+      visuals: Array.from({ length: beamCount }, () => createBeamVisual(scene)).filter(Boolean),
+      beamSegments: [],
       target,
-      lastDirection: direction,
+      visualDir: dir,
+      lastDirection: dir,
+      lastVisualAt: null,
       selfScheduled: true,
-      onEnd() { this.visuals.forEach(cleanupVisual); this.visuals = []; }
+      onEnd() {
+        this.visuals.forEach(cleanupVisual);
+        this.visuals = [];
+        this.beamSegments = [];
+        this.syncVisual = null;
+        this.target = null;
+        this.visualDir = null;
+      }
     };
+    active.syncVisual = () => syncLaserVisual(system, active);
+    active.syncVisual();
     active.tick = () => tickLaser(system, active);
     const offKill = scene.eventBus.on(CombatEvents.ENEMY_KILLED, payload => {
       if (payload?.skillId !== cfg.id) return;
@@ -266,7 +299,7 @@ export const LaserEyesSkill = {
   }
 };
 
-function tickLaser(system, active) {
+function syncLaserVisual(system, active) {
   const scene = system.scene;
   const data = active.data;
   const origin = eyePoint(scene);
@@ -275,45 +308,74 @@ function tickLaser(system, active) {
     if (validEnemy(scene, next)) {
       active.target = next;
       active.focus = Math.max(0, active.focus - (data.retargetFocusLoss || 0));
-    } else {
-      active.ended = true;
-      return;
     }
   }
+  let targetDir = active.visualDir || { x: 1, y: 0 };
   if (validEnemy(scene, active.target)) {
-    active.lastDirection = { x: active.target.x - origin.x, y: active.target.y - (active.target.height || 60) * 0.45 - origin.y };
+    targetDir = unitFrom({ x: active.target.x - origin.x, y: active.target.y - (active.target.height || 60) * 0.45 - origin.y }, targetDir);
+    active.lastDirection = targetDir;
+  } else if (active.lastDirection) {
+    targetDir = active.lastDirection;
   }
-  const len = Math.max(1, Math.hypot(active.lastDirection.x, active.lastDirection.y));
-  const dir = { x: active.lastDirection.x / len, y: active.lastDirection.y / len };
+  const delta = visualDelta(active, scene);
+  if (!active.visualDir || delta <= 0) active.visualDir = { ...targetDir };
+  else {
+    const alpha = 1 - Math.exp(-delta / 45);
+    active.visualDir = unitFrom({ x: active.visualDir.x + (targetDir.x - active.visualDir.x) * alpha, y: active.visualDir.y + (targetDir.y - active.visualDir.y) * alpha }, targetDir);
+  }
+  const dir = active.visualDir;
   const normal = { x: -dir.y, y: dir.x };
-  active.visuals.forEach(cleanupVisual);
-  active.visuals = [];
-  let lockHit = false;
   const beamCount = data.beamCount || 1;
+  while (active.visuals.length < beamCount) {
+    const visual = createBeamVisual(scene);
+    if (!visual) break;
+    active.visuals.push(visual);
+  }
+  active.beamSegments = [];
   for (let i = 0; i < beamCount; i += 1) {
     const offset = (i - (beamCount - 1) / 2) * data.width * 0.35;
     const start = { x: origin.x + normal.x * offset, y: origin.y + normal.y * offset };
     const end = { x: start.x + dir.x * (data.range || 760), y: start.y + dir.y * (data.range || 760) };
-    const visual = drawBeam(scene, start, end);
-    if (visual) active.visuals.push(visual);
-    const targets = lineTargets(scene, start, end, data.width * (beamCount > 1 ? 0.65 : 1) / 2);
+    const halfWidth = data.width * (beamCount > 1 ? 0.65 : 1) / 2;
+    active.beamSegments.push({ start, end, halfWidth });
+    redrawBeam(active.visuals[i], start, end);
+  }
+}
+
+function tickLaser(system, active) {
+  const scene = system.scene;
+  const data = active.data;
+  if (!active.beamSegments?.length) active.syncVisual?.();
+  if (!validEnemy(scene, active.target) && data.retargetOnKill) {
+    active.syncVisual?.();
+    if (!validEnemy(scene, active.target)) {
+      active.ended = true;
+      return;
+    }
+  }
+  let lockHit = false;
+  (active.beamSegments || []).forEach(segment => {
+    const targets = lineTargets(scene, segment.start, segment.end, segment.halfWidth);
     targets.forEach(enemy => {
       const isLock = enemy === active.target;
       lockHit ||= isLock;
       const scale = (data.beamDamageScale || 1) * (isLock ? 1 + Math.min(active.focus, data.maxFocus || 0) * (data.focusPerTick || 0) : 1);
       system.hit(enemy, system.damageValue(data.damage * scale, active.ctx), active.cfg, active.level, active.ctx, system.baseDamageValue(data.damage * scale, active.ctx), [TAGS.MAGIC, TAGS.SPELL, TAGS.SUPERPOWER]);
     });
-  }
+  });
   if (data.maxFocus && lockHit) active.focus = Math.min(data.maxFocus, active.focus + 1);
   active.nextAt = nowOf(scene) + (active.focus >= 5 ? data.overloadIntervalMs : data.intervalMs);
 }
 
-function coneSnapshot(scene, data) {
-  const origin = eyePoint(scene);
-  const target = scene.targeting?.nearestAhead?.(data.range);
-  const raw = target ? { x: target.x - origin.x, y: target.y - origin.y } : { x: 1, y: 0 };
-  const len = Math.max(1, Math.hypot(raw.x, raw.y));
-  return { origin, dir: { x: raw.x / len, y: raw.y / len }, range: data.range, angleRad: data.angleDeg * Math.PI / 180 };
+function coneSnapshot(scene, data, target = null, fallbackDir = { x: 1, y: 0 }) {
+  const origin = mouthPoint(scene);
+  const raw = validEnemy(scene, target) ? { x: target.x - origin.x, y: target.y - (target.height || 60) * 0.35 - origin.y } : fallbackDir;
+  const dir = unitFrom(raw, fallbackDir);
+  return { origin, dir, range: data.range, angleRad: data.angleDeg * Math.PI / 180 };
+}
+
+function cloneSnapshot(snapshot) {
+  return { origin: { ...snapshot.origin }, dir: { ...snapshot.dir }, range: snapshot.range, angleRad: snapshot.angleRad };
 }
 
 function inConeSnapshot(enemy, snapshot) {
@@ -326,14 +388,19 @@ function inConeSnapshot(enemy, snapshot) {
   return Math.acos(Math.max(-1, Math.min(1, dot))) <= snapshot.angleRad / 2;
 }
 
-function drawCone(scene, snapshot, color = 0x8eeaff, alpha = 0.22) {
-  const g = scene.add?.graphics?.()?.setDepth?.(145);
+function redrawCone(g, snapshot, color = 0x8eeaff, alpha = 0.22) {
   if (!g) return null;
+  g.clear?.();
   const base = Math.atan2(snapshot.dir.y, snapshot.dir.x);
   g.fillStyle(color, alpha);
   g.slice(snapshot.origin.x, snapshot.origin.y, snapshot.range, base - snapshot.angleRad / 2, base + snapshot.angleRad / 2, false);
   g.fillPath();
   return g;
+}
+
+function drawCone(scene, snapshot, color = 0x8eeaff, alpha = 0.22) {
+  const g = scene.add?.graphics?.()?.setDepth?.(145);
+  return redrawCone(g, snapshot, color, alpha);
 }
 
 function isLegalColdShatterSource(payload) {
@@ -382,24 +449,36 @@ export const FreezingBreathSkill = {
   },
   cast(system, cfg, data, level, ctx) {
     const scene = system.scene;
-    const snapshot = coneSnapshot(scene, data);
+    const target = scene.targeting.nearestAhead(data.range);
+    const snapshot = coneSnapshot(scene, data, target);
     const active = {
       skillId: cfg.id,
       activeKind: 'breath',
-      cfg, data, level, ctx, snapshot,
+      cfg, data, level, ctx,
+      target,
+      visualDir: snapshot.dir,
+      currentSnapshot: snapshot,
+      lastVisualAt: null,
       nextAt: nowOf(scene),
       endAt: nowOf(scene) + data.durationMs,
-      visual: null,
+      visual: scene.add?.graphics?.()?.setDepth?.(145) || null,
       onEnd(reason) {
+        const finalSnapshot = this.currentSnapshot ? cloneSnapshot(this.currentSnapshot) : null;
         cleanupVisual(this.visual);
         this.visual = null;
-        if (reason === 'complete' && system.getLevel('freezing_breath') >= 9 && (scene.playerData?.hp || 0) > 0 && data.zoneDurationMs) createColdZone(system, cfg, data, level, ctx, snapshot);
+        this.currentSnapshot = null;
+        this.syncVisual = null;
+        this.target = null;
+        this.visualDir = null;
+        if (reason === 'complete' && finalSnapshot && system.getLevel('freezing_breath') >= 9 && (scene.playerData?.hp || 0) > 0 && data.zoneDurationMs) createColdZone(system, cfg, data, level, ctx, finalSnapshot);
       }
     };
+    active.syncVisual = () => syncBreathVisual(system, active);
+    active.syncVisual();
     active.tick = () => {
-      cleanupVisual(active.visual);
-      active.visual = drawCone(scene, snapshot);
-      (scene.targeting.all() || []).filter(enemy => validEnemy(scene, enemy) && inConeSnapshot(enemy, snapshot)).forEach(enemy => {
+      active.syncVisual?.();
+      const current = active.currentSnapshot;
+      (scene.targeting.all() || []).filter(enemy => validEnemy(scene, enemy) && current && inConeSnapshot(enemy, current)).forEach(enemy => {
         const coldState = applyEnemyCold(enemy, { now: nowOf(scene), data, stacks: 1, level, ctx, sourceId: 'freezing_breath' });
         const bonus = enemy.isBoss && coldState.stacks >= (data.maxStacks || 8) ? data.bossBreathDamageBonus || 0 : 0;
         system.hit(enemy, system.damageValue(data.damage * (1 + bonus), ctx), cfg, level, ctx, system.baseDamageValue(data.damage * (1 + bonus), ctx), [TAGS.MAGIC, TAGS.SPELL, TAGS.ICE]);
@@ -448,6 +527,26 @@ export const FreezingBreathSkill = {
   }
 };
 
+function syncBreathVisual(system, active) {
+  const scene = system.scene;
+  const data = active.data;
+  if (!validEnemy(scene, active.target)) {
+    const next = scene.targeting?.nearestAhead?.(data.range);
+    if (validEnemy(scene, next)) active.target = next;
+  }
+  let targetDir = active.visualDir || { x: 1, y: 0 };
+  const origin = mouthPoint(scene);
+  if (validEnemy(scene, active.target)) targetDir = unitFrom({ x: active.target.x - origin.x, y: active.target.y - (active.target.height || 60) * 0.35 - origin.y }, targetDir);
+  const delta = visualDelta(active, scene);
+  if (!active.visualDir || delta <= 0) active.visualDir = { ...targetDir };
+  else {
+    const alpha = 1 - Math.exp(-delta / 45);
+    active.visualDir = unitFrom({ x: active.visualDir.x + (targetDir.x - active.visualDir.x) * alpha, y: active.visualDir.y + (targetDir.y - active.visualDir.y) * alpha }, targetDir);
+  }
+  active.currentSnapshot = coneSnapshot(scene, data, active.target, active.visualDir);
+  redrawCone(active.visual, active.currentSnapshot);
+}
+
 function createColdZone(system, cfg, data, level, ctx, snapshot) {
   const scene = system.scene;
   const visual = drawCone(scene, snapshot, 0x8eeaff, 0.12);
@@ -467,4 +566,4 @@ function createColdZone(system, cfg, data, level, ctx, snapshot) {
   system.active.push(active);
 }
 
-export const __superheroTest = { segmentDistance, lineTargets, inConeSnapshot, isLegalColdShatterSource, getEnemyColdState };
+export const __superheroTest = { segmentDistance, lineTargets, inConeSnapshot, isLegalColdShatterSource, getEnemyColdState, eyePoint, mouthPoint, syncLaserVisual, syncBreathVisual };
