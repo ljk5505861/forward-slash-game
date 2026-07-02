@@ -3,7 +3,7 @@ import { SKILL_HANDLERS } from '../src/skills/handlers/index.js';
 import { SKILLS } from '../src/config/skills.js';
 import { GAME_VERSION } from '../src/config/version.js';
 
-assert.equal(GAME_VERSION, '0.10.90');
+assert.equal(GAME_VERSION, '0.10.91');
 assert.equal(SKILLS.neutron_star.levels.length, 9);
 assert.equal(Object.keys(SKILLS).length, 35);
 assert.deepEqual(SKILLS.neutron_star.levels.map(x => x.singlePulseDamage), [72,80,90,101,113,128,144,162,184]);
@@ -104,4 +104,4 @@ function bind(level=1){ const s=scene(); const sys=system(s,level); SKILL_HANDLE
   SKILL_HANDLERS.neutron_star.bind(sys); tick(sys,0); assert.equal(s.neutronStarRuntime.phase,'pulse1'); assert.equal(s.neutronStarRuntime.pulseHits.size,0); assert.equal(s.neutronStarRuntime.sweep,null);
 }
 
-console.log('v0.10.90 neutron star sequence validation passed');
+console.log('v0.10.91 neutron star sequence validation passed');

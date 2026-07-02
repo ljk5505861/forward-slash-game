@@ -4,13 +4,13 @@ import { SKILL_HANDLERS } from '../src/skills/handlers/index.js';
 import { SKILLS } from '../src/config/skills.js';
 import { GAME_VERSION } from '../src/config/version.js';
 
-assert.equal(GAME_VERSION, '0.10.90');
+assert.equal(GAME_VERSION, '0.10.91');
 assert.equal(SKILLS.white_dwarf.levels.length, 9);
-assert.equal(SKILLS.white_dwarf.description, '白矮星永久围绕玩家旋转，提供常驻减伤；护体准备完成后抵挡下一次造成生命伤害的直接攻击，并在接触敌人时造成伤害和推离。');
+assert.equal(SKILLS.white_dwarf.description, '白矮星永久围绕玩家旋转，提供常驻减伤和护体；触碰敌人时以强重力造成高额魔法伤害，并将敌人瞬间压扁。');
 assert.equal(SKILLS.white_dwarf.levels.some(l => 'guardTriggerMaxHpRatio' in l || 'criticalHpRatio' in l), false);
-assert.deepEqual(SKILLS.white_dwarf.levels.map(l => l.contactDamage), [10,12,14,16,18,21,24,28,32]);
-assert.deepEqual(SKILLS.white_dwarf.levels.map(l => l.contactCooldownMs), [1200,1150,1100,1050,1000,950,900,850,750]);
-assert.deepEqual(SKILLS.white_dwarf.levels.map(l => l.contactKnockback), [20,22,24,26,28,32,36,40,46]);
+assert.deepEqual(SKILLS.white_dwarf.levels.map(l => l.contactDamage), [70,85,100,120,140,165,195,230,280]);
+assert.deepEqual(SKILLS.white_dwarf.levels.map(l => l.contactCooldownMs), [1800,1750,1700,1650,1600,1500,1400,1300,1200]);
+assert.equal(SKILLS.white_dwarf.levels.some(l => 'contactKnockback' in l), false);
 assert.deepEqual(SKILLS.white_dwarf.levels.map(l => l.contactPadding), [8,8,9,9,10,11,12,13,14]);
 assert.equal(Object.values(SKILLS).filter(s => !s.hidden).length, 35);
 assert.equal(['solar_flame','myriad_afterimage','poison_king','lightning_tribulation','black_hole','neutron_star','white_dwarf'].filter(id => SKILLS[id]?.rarity === 'MYTHIC').length, 7);
@@ -63,8 +63,8 @@ function tick(sys,ms=0){ sys.scene.now+=ms; [...sys.passiveUpdaters].forEach(fn=
   assert.equal(s.hits.some(h=>h.target.id==='near-player'), false, 'player center proximity is not contact');
   assert.equal(s.hits.filter(h=>h.target.id==='normal').length, 1, 'star coordinate contact deals damage');
   const hit=s.hits.find(h=>h.target.id==='normal');
-  assert.equal(hit.damage,32); assert.equal(hit.meta.allowLifeSteal,false); assert.equal(hit.meta.noKnockback,true); assert.deepEqual(hit.meta.tags, ['magic','celestial','buildCelestial']);
-  assert.deepEqual(s.knockbacks.map(k=>k.target.id), ['normal']); assert.equal(s.knockbacks[0].meta.knockback,46);
+  assert.equal(hit.damage,280); assert.equal(hit.meta.allowLifeSteal,false); assert.equal(hit.meta.noKnockback,true); assert.deepEqual(hit.meta.tags, ['magic','celestial','buildCelestial']);
+  assert.deepEqual(s.knockbacks.map(k=>k.target.id), []);
   tick(sys,100); assert.equal(s.hits.filter(h=>h.target.id==='normal').length,1,'same enemy cooldown blocks repeats');
   const other=enemy('other',rt.visuals[1].x,rt.visuals[1].y,{hp:1000}); s.enemies.push(other); tick(sys,0); assert.equal(s.hits.filter(h=>h.target.id==='other').length,1,'different enemy has own cooldown');
   s.now += data.contactCooldownMs; tick(sys,0); normal.x=rt.visuals[0].x; normal.y=rt.visuals[0].y; tick(sys,0); assert.equal(s.hits.filter(h=>h.target.id==='normal').length,2,'cooldown expiry allows next hit');
@@ -199,7 +199,7 @@ function tick(sys,ms=0){ sys.scene.now+=ms; [...sys.passiveUpdaters].forEach(fn=
   target.x=rt.visuals[0].x; target.y=rt.visuals[0].y;
   tick(sys,0);
   assert.equal(s.hits.filter(h=>h.target===target).length,2,'contact can hit after remaining gameplay cooldown');
-  assert.equal(data.contactCooldownMs,1200);
+  assert.equal(data.contactCooldownMs,1800);
 }
 
 console.log('validate-01089-white-dwarf-feedback passed');

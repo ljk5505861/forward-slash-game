@@ -1,6 +1,7 @@
 import { SKILLS } from '../../config/skills.js';
 import { TAGS } from '../../config/tags.js';
 import { BALANCE } from '../../config/balance.js';
+import { applyEnemyGravity, removeEnemyGravitySource } from '../../systems/EnemyGravityControl.js';
 
 export const DESIGN_WIDTH = 720;
 export const DESIGN_HEIGHT = 1280;
@@ -28,9 +29,8 @@ const W = {
   damageReduction: [.12, .13, .15, .16, .17, .19, .20, .21, .24],
   guardReduction: [.55, .57, .60, .62, .64, .68, .70, .72, .78],
   guardRechargeMs: [8500, 8200, 7800, 7500, 7200, 6800, 6400, 6000, 5200],
-  contactDamage: [10, 12, 14, 16, 18, 21, 24, 28, 32],
-  contactCooldownMs: [1200, 1150, 1100, 1050, 1000, 950, 900, 850, 750],
-  contactKnockback: [20, 22, 24, 26, 28, 32, 36, 40, 46],
+  contactDamage: [70, 85, 100, 120, 140, 165, 195, 230, 280],
+  contactCooldownMs: [1800, 1750, 1700, 1650, 1600, 1500, 1400, 1300, 1200],
   contactPadding: [8, 8, 9, 9, 10, 11, 12, 13, 14],
   postGuardDamageReduction: [0, 0, .12, .13, .14, .16, .17, .18, .20],
   postGuardDurationMs: [0, 0, 1200, 1250, 1300, 1450, 1500, 1550, 1800],
@@ -468,6 +468,7 @@ function ensureWhiteDwarfRuntime(system) {
     transients: [],
     charges: [],
     contactReadyAtByEnemy: new Map(),
+    crushStates: new Map(),
     lastContactCleanupAt: 0,
     active: false,
     angle: 0,
@@ -535,12 +536,13 @@ function positionWhiteDwarfs(system, data, runtime, time) {
     const y = scene.player.y + Math.sin(angle) * data.orbitRadius;
     const charge = runtime.charges[index] || {};
     const ready = charge.readyAt <= time;
-    const flashing = time < (charge.flashUntil || 0);
+    const flashing = time < Math.max(charge.flashUntil || 0, visual.crushFlashUntil || 0);
     const readyPulse = 1 + Math.sin(time / 260 + index) * .045;
-    const coreScale = flashing ? (charge.flashType === 'consume' ? 1.35 : 1.22) : (ready ? readyPulse : .86);
-    const glowScale = flashing ? (charge.flashType === 'consume' ? 1.45 : 1.32) : (ready ? readyPulse : .8);
+    const crushFlashing = time < (visual.crushFlashUntil || 0);
+    const coreScale = flashing ? (crushFlashing ? 1.42 : (charge.flashType === 'consume' ? 1.35 : 1.22)) : (ready ? readyPulse : .86);
+    const glowScale = flashing ? (crushFlashing ? 1.62 : (charge.flashType === 'consume' ? 1.45 : 1.32)) : (ready ? readyPulse : .8);
     const coreAlpha = flashing ? 1 : (ready ? .95 : .36);
-    const glowAlpha = flashing ? .42 : (ready ? .24 + Math.sin(time / 260 + index) * .05 : .06);
+    const glowAlpha = flashing ? (crushFlashing ? .62 : .42) : (ready ? .24 + Math.sin(time / 260 + index) * .05 : .06);
     visual.x = x; visual.y = y;
     visual.core?.setPosition?.(x, y);
     visual.glow?.setPosition?.(x, y);
@@ -568,6 +570,7 @@ function deactivateWhiteDwarf(system, runtime) {
   runtime.visuals = [];
   runtime.transients.forEach(entry => destroy(entry.object));
   runtime.transients = [];
+  cleanupWhiteDwarfCrush(system, runtime);
   runtime.charges = [];
   runtime.active = false;
   runtime.guardUntil = 0;
@@ -575,8 +578,23 @@ function deactivateWhiteDwarf(system, runtime) {
   syncWhiteDwarfReduction(system);
 }
 
-function expireWhiteDwarfTransients(runtime, time) {
+function updateWhiteDwarfTransientVisuals(runtime, time) {
   runtime.transients = runtime.transients.filter(entry => {
+    if (entry.type === 'crushLine') {
+      const enemy = entry.enemy;
+      if (!enemy || enemy.scene === null || enemy.active === false || enemy.destroyed) {
+        destroy(entry.object);
+        return false;
+      }
+      const startedAt = entry.startedAt ?? time;
+      const duration = Math.max(1, (entry.expiresAt ?? time) - startedAt);
+      const progress = Math.max(0, Math.min(1, (time - startedAt) / duration));
+      const x = enemy.x + (entry.startOffsetX + (entry.endOffsetX - entry.startOffsetX) * progress);
+      const y = enemy.y + (entry.startOffsetY + (entry.endOffsetY - entry.startOffsetY) * progress);
+      entry.object?.setPosition?.(x, y);
+      entry.object?.setAlpha?.(1 - progress);
+      entry.object?.setScale?.(1, Math.max(.35, 1 - progress * .45));
+    }
     if (time < entry.expiresAt && !entry.object?.destroyed) return true;
     destroy(entry.object);
     return false;
@@ -597,6 +615,134 @@ function cleanupWhiteDwarfContactMap(scene, runtime, time) {
   for (const enemy of runtime.contactReadyAtByEnemy.keys()) {
     if (!isAlive(enemy) || enemy.scene === null || enemy.active === false) runtime.contactReadyAtByEnemy.delete(enemy);
   }
+  for (const [enemy, state] of runtime.crushStates || []) {
+    if (!enemy || enemy.scene === null || enemy.active === false || enemy.destroyed) {
+      runtime.crushStates.delete(enemy);
+      continue;
+    }
+    if (!state.lethal && !isAlive(enemy)) state.lethal = true;
+  }
+}
+
+const WHITE_DWARF_CRUSH_SOURCE = 'white_dwarf_gravity_crush';
+
+function enemyCrushProfile(enemy) {
+  if (enemy?.isBoss) return { scaleXMultiplier: 1.05, scaleYMultiplier: .82, crushVisualMs: 120 };
+  if (enemy?.isElite) return { scaleXMultiplier: 1.18, scaleYMultiplier: .55, crushVisualMs: 220, moveSlow: .50, attackSlow: .30, durationMs: 350 };
+  return { scaleXMultiplier: 1.35, scaleYMultiplier: .25, crushVisualMs: 280, moveSlow: .80, attackSlow: .50, durationMs: 500 };
+}
+
+function setEnemyScale(enemy, scaleX, scaleY) {
+  if (!enemy || enemy.destroyed) return;
+  if (typeof enemy.setScale === 'function') enemy.setScale(scaleX, scaleY);
+  else {
+    enemy.scaleX = scaleX;
+    enemy.scaleY = scaleY;
+  }
+}
+
+function updateWhiteDwarfCrushStates(runtime, time) {
+  for (const [enemy, state] of runtime.crushStates || []) {
+    if (!enemy || enemy.scene === null || enemy.active === false || enemy.destroyed) {
+      runtime.crushStates.delete(enemy);
+      continue;
+    }
+    if (state.lethal || !isAlive(enemy)) {
+      setEnemyScale(enemy, state.targetScaleX, state.targetScaleY);
+      state.lethal = true;
+      continue;
+    }
+    if (time >= state.recoverEndsAt) {
+      if (!state.scaleRestored) {
+        setEnemyScale(enemy, state.baseScaleX, state.baseScaleY);
+        state.scaleRestored = true;
+      }
+      if (time < (state.gravityExpiresAt || state.recoverEndsAt)) continue;
+      setEnemyScale(enemy, state.baseScaleX, state.baseScaleY);
+      removeEnemyGravitySource(enemy, WHITE_DWARF_CRUSH_SOURCE);
+      runtime.crushStates.delete(enemy);
+      continue;
+    }
+    if (time <= state.compressEndsAt) {
+      const t = Math.max(0, Math.min(1, (time - state.startedAt) / Math.max(1, state.compressEndsAt - state.startedAt)));
+      setEnemyScale(enemy, state.startScaleX + (state.targetScaleX - state.startScaleX) * t, state.startScaleY + (state.targetScaleY - state.startScaleY) * t);
+    } else if (time <= state.holdEndsAt) {
+      setEnemyScale(enemy, state.targetScaleX, state.targetScaleY);
+    } else {
+      const t = Math.max(0, Math.min(1, (time - state.holdEndsAt) / Math.max(1, state.recoverEndsAt - state.holdEndsAt)));
+      setEnemyScale(enemy, state.targetScaleX + (state.baseScaleX - state.targetScaleX) * t, state.targetScaleY + (state.baseScaleY - state.targetScaleY) * t);
+    }
+  }
+}
+
+function cleanupWhiteDwarfCrush(system, runtime) {
+  for (const [enemy, state] of runtime.crushStates || []) {
+    if (enemy && enemy.scene !== null && enemy.active !== false && !enemy.destroyed) {
+      removeEnemyGravitySource(enemy, WHITE_DWARF_CRUSH_SOURCE);
+      if (!state.lethal && isAlive(enemy)) setEnemyScale(enemy, state.baseScaleX, state.baseScaleY);
+    }
+  }
+  runtime.crushStates?.clear?.();
+}
+
+function showWhiteDwarfCrushVisuals(system, runtime, enemy, time) {
+  const scene = system.scene;
+  const ring = scene.add?.ellipse?.(enemy.x, enemy.y, 76, 20, 0x7dd3fc, .16) || scene.add?.circle?.(enemy.x, enemy.y, 34, 0x7dd3fc, .12);
+  ring?.setStrokeStyle?.(3, 0xe0f2fe, .9);
+  ring?.setDepth?.(14);
+  if (ring) runtime.transients.push({ object: ring, expiresAt: time + 240 });
+  const lineCount = 3;
+  for (let i = 0; i < lineCount; i++) {
+    const dx = (i - 1) * 18;
+    for (const profile of [{ startOffsetY: -42, endOffsetY: -6 }, { startOffsetY: 42, endOffsetY: 6 }]) {
+      const line = scene.add?.rectangle?.(enemy.x + dx, enemy.y + profile.startOffsetY, 3, 24, 0xe0f2fe, .72);
+      line?.setDepth?.(15);
+      if (line) runtime.transients.push({
+        object: line,
+        type: 'crushLine',
+        enemy,
+        startedAt: time,
+        expiresAt: time + 220,
+        startOffsetX: dx,
+        startOffsetY: profile.startOffsetY,
+        endOffsetX: dx,
+        endOffsetY: profile.endOffsetY
+      });
+    }
+  }
+  scene.floatText?.(enemy.x, enemy.y - 30, '重力碾压', 0xe0f2fe);
+}
+
+function applyWhiteDwarfCrush(system, runtime, visual, enemy, time) {
+  const profile = enemyCrushProfile(enemy);
+  const existing = runtime.crushStates.get(enemy);
+  const baseScaleX = existing?.baseScaleX ?? enemy.scaleX ?? enemy.scale ?? 1;
+  const baseScaleY = existing?.baseScaleY ?? enemy.scaleY ?? enemy.scale ?? 1;
+  const startScaleX = Number.isFinite(enemy.scaleX) ? enemy.scaleX : baseScaleX;
+  const startScaleY = Number.isFinite(enemy.scaleY) ? enemy.scaleY : baseScaleY;
+  const compressMs = Math.min(80, Math.round(profile.crushVisualMs * .36));
+  const holdMs = Math.min(80, Math.max(0, Math.round(profile.crushVisualMs * .36)));
+  const lethal = !isAlive(enemy);
+  const state = {
+    enemy,
+    baseScaleX,
+    baseScaleY,
+    startScaleX,
+    startScaleY,
+    startedAt: time,
+    compressEndsAt: time + compressMs,
+    holdEndsAt: time + compressMs + holdMs,
+    recoverEndsAt: time + profile.crushVisualMs,
+    gravityExpiresAt: time + (profile.durationMs || profile.crushVisualMs),
+    targetScaleX: baseScaleX * profile.scaleXMultiplier,
+    targetScaleY: baseScaleY * profile.scaleYMultiplier,
+    lethal
+  };
+  runtime.crushStates.set(enemy, state);
+  setEnemyScale(enemy, lethal ? state.targetScaleX : state.startScaleX, lethal ? state.targetScaleY : state.startScaleY);
+  if (!enemy.isBoss) applyEnemyGravity(enemy, { sourceId: WHITE_DWARF_CRUSH_SOURCE, moveSlow: profile.moveSlow, attackSlow: profile.attackSlow, expiresAt: time + profile.durationMs, external: true });
+  visual.crushFlashUntil = time + 180;
+  showWhiteDwarfCrushVisuals(system, runtime, enemy, time);
 }
 
 function whiteDwarfContactEnemy(system, data, runtime, time) {
@@ -616,15 +762,16 @@ function whiteDwarfContactEnemy(system, data, runtime, time) {
       const damaged = scene.combatSystem?.damageEnemy?.(enemy, data.contactDamage, {
         source: 'skill',
         skillId: 'white_dwarf',
+        damageKind: 'gravityCrush',
         tags: [TAGS.MAGIC, TAGS.CELESTIAL, TAGS.BUILD_CELESTIAL],
         allowLifeSteal: false,
+        canTriggerArtifacts: false,
         noKnockback: true
       });
       if (damaged === false) continue;
       runtime.contactReadyAtByEnemy.set(enemy, time + data.contactCooldownMs);
       hitThisFrame.add(enemy);
-      if (enemy.isBoss || !data.contactKnockback || isProtectedFromBurstKnockback(enemy)) continue;
-      scene.combatSystem?.applyKnockback?.(enemy, { source: 'skill', knockback: data.contactKnockback });
+      applyWhiteDwarfCrush(system, runtime, visual, enemy, time);
     }
   }
 }
@@ -650,7 +797,8 @@ function updateWhiteDwarf(system) {
   const runtime = ensureWhiteDwarfRuntime(system);
   const level = system.getLevel?.('white_dwarf') || 0;
   const time = now(scene);
-  expireWhiteDwarfTransients(runtime, time);
+  updateWhiteDwarfTransientVisuals(runtime, time);
+  updateWhiteDwarfCrushStates(runtime, time);
   if (!level) {
     if (runtime.active || runtime.visuals.length || runtime.charges.length) deactivateWhiteDwarf(system, runtime);
     return;
@@ -709,7 +857,20 @@ export const WhiteDwarfSkill = {
       if (readyAt > pausedAt) runtime.contactReadyAtByEnemy.set(enemy, readyAt + pausedDuration);
     });
     runtime.transients?.forEach?.(entry => {
+      if (Number.isFinite(entry.startedAt)) entry.startedAt += pausedDuration;
       if (entry.expiresAt > pausedAt) entry.expiresAt += pausedDuration;
+    });
+    runtime.crushStates?.forEach?.(state => {
+      for (const key of ['startedAt', 'compressEndsAt', 'holdEndsAt', 'recoverEndsAt', 'gravityExpiresAt']) {
+        if (Number.isFinite(state[key])) state[key] += pausedDuration;
+      }
+      if (state.enemy?.gravitySources?.get?.(WHITE_DWARF_CRUSH_SOURCE)) {
+        const source = state.enemy.gravitySources.get(WHITE_DWARF_CRUSH_SOURCE);
+        source.expiresAt += pausedDuration;
+      }
+    });
+    runtime.visuals?.forEach?.(visual => {
+      if (visual.crushFlashUntil > pausedAt) visual.crushFlashUntil += pausedDuration;
     });
     if (runtime.active === true && Number.isFinite(runtime.last)) runtime.last += pausedDuration;
     if (runtime.lastContactCleanupAt > 0) runtime.lastContactCleanupAt += pausedDuration;
@@ -720,6 +881,7 @@ export const WhiteDwarfSkill = {
     if (runtime) {
       runtime.visuals.forEach(destroyWhiteDwarfVisual);
       runtime.transients.forEach(entry => destroy(entry.object));
+      cleanupWhiteDwarfCrush(system, runtime);
       runtime.contactReadyAtByEnemy?.clear?.();
       system.passiveUpdaters = system.passiveUpdaters.filter(updater => updater !== runtime.updater);
       if (runtime.shutdown) scene.events?.off?.('shutdown', runtime.shutdown);
@@ -785,7 +947,7 @@ export function configureCelestialFlowSkills() {
     guardFloatText: '简并护体',
     emergencyFloatText: '临界稳定',
     ...Object.fromEntries(Object.keys(W).map(key => [key, W[key][index]])),
-    desc: `常驻减伤${Math.round(W.damageReduction[index] * 100)}%，护体减伤${Math.round(W.guardReduction[index] * 100)}%，恢复${(W.guardRechargeMs[index] / 1000).toFixed(1)}秒；接触伤害${W.contactDamage[index]}，同敌冷却${(W.contactCooldownMs[index] / 1000).toFixed(2)}秒，推离${W.contactKnockback[index]}。`,
+    desc: `常驻伤害减免${Math.round(W.damageReduction[index] * 100)}%，护体减伤${Math.round(W.guardReduction[index] * 100)}%，护体恢复时间${(W.guardRechargeMs[index] / 1000).toFixed(1)}秒，护体次数${W.guardCharges[index]}；重力碾压伤害${W.contactDamage[index]}，同一敌人碾压冷却${(W.contactCooldownMs[index] / 1000).toFixed(2)}秒；普通敌人移动减速80%、攻击减速50%，精英敌人减弱效果，Boss仅承受伤害和轻微压缩视觉。`,
     milestoneText: index === 2 ? '简并星壳' : index === 5 ? '质量反冲' : index === 8 ? '双星稳定' : undefined
   }));
   SKILLS.neutron_star = {
@@ -822,7 +984,7 @@ export function configureCelestialFlowSkills() {
     short: '矮',
     color: 0xe0f2fe,
     tags: [TAGS.MAGIC, TAGS.CELESTIAL, TAGS.BUILD_CELESTIAL, TAGS.SHIELD, 'mythicSkill'],
-    description: '白矮星永久围绕玩家旋转，提供常驻减伤；护体准备完成后抵挡下一次造成生命伤害的直接攻击，并在接触敌人时造成伤害和推离。',
+    description: '白矮星永久围绕玩家旋转，提供常驻减伤和护体；触碰敌人时以强重力造成高额魔法伤害，并将敌人瞬间压扁。',
     milestones: {
       3: '简并星壳：护体触发后，短时间内获得额外伤害减免。',
       6: '质量反冲：护体触发时，对玩家周围敌人造成范围魔法伤害并推离普通敌人。',
