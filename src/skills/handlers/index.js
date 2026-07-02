@@ -88,7 +88,9 @@ FreezingBreathSkill.cast = (system, cfg, data, level, ctx) => {
   let completionQueued = false;
   active.onEnd = reason => {
     if (finalized) return;
-    if (reason === 'complete' && data.zoneDurationMs) {
+    const now = system.scene.getGameplayTime?.() ?? 0;
+    const naturalExpiry = now > active.endAt;
+    if (reason === 'complete' && data.zoneDurationMs && naturalExpiry) {
       if (completionQueued) return;
       completionQueued = true;
       const finish = () => {
