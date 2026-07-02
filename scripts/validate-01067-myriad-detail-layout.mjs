@@ -46,4 +46,4 @@ assert.equal(detail.body.y,475,'ordinary skill body starts at the original posit
 assert.equal(detail.bodyText.hitArea.height,Math.max(430,detail.bodyText.height),'ordinary body interaction uses the original visible height');
 assert.equal(detail.maxScroll,Math.max(0,detail.bodyText.height-430),'ordinary skill maxScroll uses the original viewport height');
 
-console.log('v0.10.96 ordinary skill detail layout validation passed.');
+console.log('v0.10.97 ordinary skill detail layout validation passed.');

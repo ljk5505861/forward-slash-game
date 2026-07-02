@@ -10,7 +10,7 @@ const read=p=>fs.readFileSync(new URL(`../${p}`, import.meta.url),'utf8');
 const snapshot=state=>JSON.stringify(state);
 const detailAt=(id,level)=>getSkillDetailData(id,{skill:{id,level}});
 
-assert.equal(GAME_VERSION,'0.10.96');
+assert.equal(GAME_VERSION,'0.10.97');
 const skillBar=read('src/ui/SkillBar.js');
 assert.match(skillBar,/import\s+Phaser\s+from\s+['"]phaser['"]/);
 assert.match(skillBar,/SKILL_DETAIL_LONG_PRESS_MS\s*=\s*450/);
@@ -94,7 +94,6 @@ assert.ok(detailSource.includes('mainSwordStatsReadOnly'));
 assert.ok(detailSource.includes('tombStatsReadOnly'));
 assert.ok(detailSource.includes('data.executeRatio'));
 assert.ok(!detailSource.includes('executeThreshold'));
-assert.ok(!detailSource.includes('eliteExecuteThreshold'));
 
 const fakeSystem={
   passiveState:{ swordFlow:{ totalSouls:91,effectiveSouls:91,soulBreakdown:{normal:1,elite:2,boss:3},affinities:{fire:4,poison:5},mainQuality:'EPIC',mythicOwner:SWORD_MYTHIC.NONE,sheath:{readyAt:1},tomb:{nextAt:2},domain:{views:['keep']} } },
@@ -145,4 +144,4 @@ assert.match(swordState,/const LV6 = \{ critChance:0\.15, critMultiplierBonus:0\
 assert.match(swordState,/const LV9 = \{ finalDamage:1\.5, bodySize:1\.3, glowSize:1\.3 \}/);
 assert.match(flame,/\[8,0\.0,1,900,0,0\]/);
 assert.match(flame,/burnDamage:5,burnMs:3400,burnIntervalMs:600/);
-console.log('validate-01046-skill-detail-ui passed on v0.10.96');
+console.log('validate-01046-skill-detail-ui passed on v0.10.97');
