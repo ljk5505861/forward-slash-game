@@ -270,4 +270,4 @@ function tick(system, elapsedMs = 0) {
   assert.equal(burstRing.destroyed, true, 'guard burst visual is destroyed after its configured duration');
 }
 
-console.log('v0.10.90 celestial runtime validation passed');
+console.log('v0.10.91 celestial runtime validation passed');
