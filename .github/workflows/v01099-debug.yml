@@ -1,0 +1,35 @@
+name: v0.10.99 Regression Debug
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          show-progress: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --silent
+      - name: Run full chain with compact failure output
+        shell: bash
+        run: |
+          set +e
+          npm run validate:01099-playtest-fixes > /tmp/v01099.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            tail -n 100 /tmp/v01099.log
+            exit "$status"
+          fi
+          tail -n 20 /tmp/v01099.log
