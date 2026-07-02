@@ -49,10 +49,6 @@ function ensureUpdater(sys){
       }
       showWarning(sys,task,center);
     });
-    const y=(s.balance?.groundTopY??620)-260;
-    rt.transients?.forEach(v=>{
-      if(v.skillId==='black_hole') v.visuals?.forEach(n=>n?.setPosition?.(n.x,y));
-    });
   };
   if(!sys.passiveUpdaters.includes(state.gravityFollowupFixUpdater)) sys.passiveUpdaters.push(state.gravityFollowupFixUpdater);
   wrapShutdown(sys);

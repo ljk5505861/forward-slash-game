@@ -20,8 +20,9 @@ assert.match(fs.readFileSync('src/systems/ShopSystem.js','utf8'),/^import Phaser
 assert.match(fs.readFileSync('src/enemies/behaviors/EnemyBehaviorManager.js','utf8'),/^import Phaser from 'phaser';/,'enemy behavior keeps real Phaser helpers');
 const gravityFix=fs.readFileSync('src/skills/handlers/GravityFlowFollowupFixes.js','utf8');
 assert.match(gravityFix,/warningAt=castAt\+index\*\(data\.followupDelayMs\|\|0\)/,'follow-up warnings use their own scheduled warning time');
+assert.doesNotMatch(gravityFix,/skillId\s*===?\s*['\"]black_hole['\"]/);
+assert.doesNotMatch(gravityFix,/rt\.transients/);
 assert.match(gravityFix,/task\.centerAt=\(\)=>task\.lockedCenter/,'strike impact stays on its displayed warning location');
-assert.match(gravityFix,/groundTopY\?\?620\)-260/,'black hole transient visual uses hovering height');
 assert.doesNotMatch(gravityFix,/warningAt\+=d/,'staged warning time must not be shifted twice');
 const gravityControl=fs.readFileSync('src/systems/EnemyGravityControl.js','utf8');
 assert.match(gravityControl,/pullImmuneStates=new Set\(\['windup','charge'/,'charger windup is pull immune');
