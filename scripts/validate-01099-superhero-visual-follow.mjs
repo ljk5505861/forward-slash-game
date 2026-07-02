@@ -44,4 +44,4 @@ const angleDistance=(a,b)=>Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
   const s=scene(); own(s,'laser_eyes',1); const lock=enemy({x:520,y:430,hp:1000}); s.enemies=[lock]; const cfg=SKILLS.laser_eyes, data=cfg.levels[0]; s.skillSystem.cast(cfg,data,1,{...s.skillSystem.createCastContext('laser_eyes'),manaCost:0}); const active=s.skillSystem.active[0]; syncAt(s,16); const before={...active.visualDir}; s.paused=true; s.now=5016; s.skillSystem.syncAttachedVisuals(); close(active.visualDir.x,before.x,'paused sync keeps laser direction x'); s.paused=false; s.skillSystem.shiftTimers(5000,16); lock.y=650; syncAt(s,5032); assert(active.lastVisualAt<=5032,'resume updates visual timestamp without accumulating entire pause');
 }
 
-console.log('v0.11.0 superhero visual follow validation passed');
+console.log('v0.11.1 superhero visual follow validation passed');

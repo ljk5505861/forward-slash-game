@@ -6,7 +6,7 @@ import { GAME_VERSION } from '../src/config/version.js';
 const close = (actual, expected, message, epsilon = 1e-6) => assert(Math.abs(actual - expected) <= epsilon, `${message}: expected ${expected}, got ${actual}`);
 const between = (value, a, b, message) => assert(value > Math.min(a, b) && value < Math.max(a, b), `${message}: ${value} not between ${a} and ${b}`);
 
-assert.equal(GAME_VERSION, '0.11.0');
+assert.equal(GAME_VERSION, '0.11.1');
 assert.deepEqual(SKILLS.white_dwarf.levels.map(l=>l.contactDamage), [70,85,100,120,140,165,195,230,280]);
 assert.deepEqual(SKILLS.white_dwarf.levels.map(l=>l.contactCooldownMs), [1800,1750,1700,1650,1600,1500,1400,1300,1200]);
 assert.equal(SKILLS.white_dwarf.levels.some(l=>'contactKnockback' in l), false);
@@ -14,7 +14,7 @@ assert.equal(SKILLS.white_dwarf.levels[0].contactDamage, 70);
 assert.deepEqual(SKILLS.white_dwarf.levels.map(l=>l.damageReduction), [.12,.13,.15,.16,.17,.19,.20,.21,.24]);
 assert.deepEqual(SKILLS.white_dwarf.levels.map(l=>l.guardReduction), [.55,.57,.60,.62,.64,.68,.70,.72,.78]);
 assert.deepEqual(SKILLS.white_dwarf.levels.map(l=>l.burstKnockback), [0,0,0,0,0,48,54,60,72]);
-assert.equal(Object.values(SKILLS).filter(s => !s.hidden).length, 38);
+assert.equal(Object.values(SKILLS).filter(s => !s.hidden).length, 39);
 
 function visual(type){ return { type,destroyed:false,x:0,y:0,scaleX:1,scaleY:1,scale:1,alpha:1,setDepth(){return this},setStrokeStyle(w,c,a){this.strokeStyle={w,c,a};return this},setPosition(x,y){this.x=x;this.y=y;return this},setAlpha(a){this.alpha=a;return this},setScale(x,y=x){this.scale=x;this.scaleX=x;this.scaleY=y;return this},destroy(){this.destroyed=true;return this} }; }
 function enemy(id,x,y,o={}){ return { id,x,y,width:o.width??40,height:o.height??50,displayWidth:o.displayWidth??o.width??40,displayHeight:o.displayHeight??o.height??50,scaleX:o.scaleX??1,scaleY:o.scaleY??1,hp:o.hp??1000,maxHp:o.hp??1000,active:true,isDefeated:false,isElite:!!o.isElite,isBoss:!!o.isBoss,body:{x:x-20,y:y-25,width:o.width??40,height:o.height??50},setScale(x,y=x){this.scaleX=x;this.scaleY=y;return this} }; }
