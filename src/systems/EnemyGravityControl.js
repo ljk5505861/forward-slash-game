@@ -1,3 +1,4 @@
+import { getEnemyColdMoveSpeed, getEnemyColdAttackDelay } from './EnemyColdControl.js';
 const alive=e=>e?.active!==false&&!e?.isDefeated;
 const bossScale=e=>e?.isBoss?0.4:1;
 const sourceMap=e=>e&&(e.gravitySources ||= new Map());
@@ -6,8 +7,8 @@ export function applyEnemyGravity(enemy, source){ if(!enemy||!source?.sourceId) 
 export function removeEnemyGravitySource(enemy, sourceId){ enemy?.gravitySources?.delete?.(sourceId); }
 export function removeEnemyGravitySourcesByPrefix(enemy, prefix){ if(!enemy?.gravitySources) return; [...enemy.gravitySources.keys()].forEach(id=>{ if(String(id).startsWith(prefix)) enemy.gravitySources.delete(id); }); }
 export function getEnemyGravityState(enemy, now=0){ const state={moveSlow:0,attackSlow:0,suppressed:false,externalSuppressed:false}; if(!enemy?.gravitySources) return state; for(const [id,src] of [...enemy.gravitySources.entries()]){ if(src.expiresAt!==Infinity&&src.expiresAt<=now){ enemy.gravitySources.delete(id); continue; } const scale=bossScale(enemy); state.moveSlow=Math.max(state.moveSlow,Math.max(0,src.moveSlow||0)*scale); state.attackSlow=Math.max(state.attackSlow,Math.max(0,src.attackSlow||0)*scale); state.suppressed=true; if(src.external) state.externalSuppressed=true; } return state; }
-export function getEnemyMoveSpeed(enemy, baseSpeed=0, now=0){ const st=getEnemyGravityState(enemy,now); return Math.max(0,Number(baseSpeed||0)*(1-Math.min(0.95,st.moveSlow))); }
-export function getEnemyAttackDelay(enemy, baseDelayMs=1000, now=0){ const st=getEnemyGravityState(enemy,now); const slow=Math.min(0.95,Math.max(0,st.attackSlow)); return Math.max(120,Number(baseDelayMs||1000)/(1-slow)); }
+export function getEnemyMoveSpeed(enemy, baseSpeed=0, now=0){ const st=getEnemyGravityState(enemy,now); const afterGravity=Math.max(0,Number(baseSpeed||0)*(1-Math.min(0.95,st.moveSlow))); return getEnemyColdMoveSpeed(enemy, afterGravity, now); }
+export function getEnemyAttackDelay(enemy, baseDelayMs=1000, now=0){ const st=getEnemyGravityState(enemy,now); const slow=Math.min(0.95,Math.max(0,st.attackSlow)); const afterGravity=Math.max(120,Number(baseDelayMs||1000)/(1-slow)); return getEnemyColdAttackDelay(enemy, afterGravity, now); }
 export const isGravitySuppressed=(enemy,now=0)=>getEnemyGravityState(enemy,now).suppressed;
 export const isExternallyGravitySuppressed=(enemy,now=0)=>getEnemyGravityState(enemy,now).externalSuppressed;
 export const isGravityReversalControlled=enemy=>!!enemy?.gravityReversalState;
