@@ -6,7 +6,7 @@ import { GAME_VERSION } from '../src/config/version.js';
 const close = (actual, expected, message, epsilon = 1e-6) => assert(Math.abs(actual - expected) <= epsilon, `${message}: expected ${expected}, got ${actual}`);
 const between = (value, a, b, message) => assert(value > Math.min(a, b) && value < Math.max(a, b), `${message}: ${value} not between ${a} and ${b}`);
 
-assert.equal(GAME_VERSION, '0.10.91');
+assert.equal(GAME_VERSION, '0.10.92');
 assert.deepEqual(SKILLS.white_dwarf.levels.map(l=>l.contactDamage), [70,85,100,120,140,165,195,230,280]);
 assert.deepEqual(SKILLS.white_dwarf.levels.map(l=>l.contactCooldownMs), [1800,1750,1700,1650,1600,1500,1400,1300,1200]);
 assert.equal(SKILLS.white_dwarf.levels.some(l=>'contactKnockback' in l), false);
