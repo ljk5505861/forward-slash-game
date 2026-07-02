@@ -1,0 +1,62 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-validation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gravity-reversal-regression:
+    name: Gravity reversal regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout pull request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check patch whitespace
+        run: git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate gravity reversal
+        run: npm run validate:01097-gravity-reversal
+
+      - name: Validate full playtest regression chain
+        run: npm run validate:01097-playtest-fixes
+
+      - name: Validate gravity runtime directly
+        run: node scripts/validate-01087-gravity-flow-runtime.mjs
+
+      - name: Validate gravity flow
+        run: npm run validate:01087-gravity-flow
+
+      - name: Validate black hole gravity rework
+        run: npm run validate:01094-black-hole-gravity-rework
+
+      - name: Validate black hole no-collapse behavior
+        run: npm run validate:01095-black-hole-no-collapse
+
+      - name: Validate gravity crush column
+        run: npm run validate:01096-gravity-crush-column
+
+      - name: Build production bundle
+        run: npm run build

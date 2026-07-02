@@ -9,7 +9,7 @@ import CombatSystem from '../src/systems/CombatSystem.js';
 import { CombatEvents } from '../src/core/CombatEvents.js';
 const src=f=>readFileSync(new URL(`../${f}`,import.meta.url),'utf8');
 const pkg=JSON.parse(src('package.json'));
-assert.equal(GAME_VERSION,'0.10.96'); assert.equal(pkg.version,'0.10.96'); assert.equal(Object.keys(SKILLS).length,35);
+assert.equal(GAME_VERSION,'0.10.97'); assert.equal(pkg.version,'0.10.97'); assert.equal(Object.keys(SKILLS).length,35);
 const cfg=SKILLS.lightning_enchant; assert(cfg); assert.equal(cfg.rarity,'FINE'); assert.equal(cfg.passive,true); assert.equal(cfg.maxLevel,9); assert.equal(cfg.handler,'lightning_enchant'); assert.equal(cfg.targetType,'passive'); assert.equal(cfg.ultimateSkill,undefined); assert.equal(cfg.requiredSkillId,undefined);
 for(const t of [TAGS.MAGIC,TAGS.LIGHTNING,TAGS.NORMAL_ATTACK,TAGS.BUILD_WEAPON]) assert(cfg.tags.includes(t));
 for(const t of ['physical',TAGS.ACTIVE_SKILL,TAGS.SPELL,TAGS.SUMMON]) assert(!cfg.tags.includes(t)); assert(BUILD_TAGS.includes(TAGS.BUILD_WEAPON));
@@ -53,4 +53,4 @@ assertLv9ChainCandidate(250,100,22,'Lv9 distance 150 boundary chains');
 }
 
 assert.match(weaponSrc,/player\?\.x\|\|0\)\+36/); assert.doesNotMatch(weaponSrc,/Math\.round\([^)]*player\.x/); assert.match(weaponSrc,/fromLightningEnchant:true/); assert.match(weaponSrc,/canTriggerArtifacts:false/); assert.match(weaponSrc,/allowLifeSteal:false/); assert.match(weaponSrc,/noKnockback:true/);
-console.log('v0.10.96 lightning enchant validation passed.');
+console.log('v0.10.97 lightning enchant validation passed.');
