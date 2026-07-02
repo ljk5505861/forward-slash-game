@@ -278,8 +278,7 @@ function activateNeutronStar(runtime, time) {
 function prepareSweep(scene, runtime, data, time) {
   const path = getNeutronSweepPath(scene);
   const warningStart = createScreenBeam(scene, runtime, { screen: path.originScreen }, path.startAngle, data.sweepBeamWidthPx * 2.4, data.sweepWarningAlpha);
-  const warningEnd = createScreenBeam(scene, runtime, { screen: path.originScreen }, path.endAngle, data.sweepBeamWidthPx * 2.4, data.sweepWarningAlpha * .8);
-  runtime.sweepPlan = { ...path, warningStart, warningEnd, preparedAt: time, startAt: time, endAt: time + data.sweepWarningMs };
+  runtime.sweepPlan = { ...path, warningStart, preparedAt: time, startAt: time, endAt: time + data.sweepWarningMs };
 }
 
 function startSweep(scene, runtime, data, time) {
@@ -288,7 +287,6 @@ function startSweep(scene, runtime, data, time) {
     return runtime.sweepPlan;
   })();
   destroyTracked(runtime, plan.warningStart);
-  destroyTracked(runtime, plan.warningEnd);
   const beam = createScreenBeam(scene, runtime, { screen: plan.originScreen }, plan.startAngle, data.sweepBeamWidthPx, .78);
   runtime.sweep = {
     startAt: time,

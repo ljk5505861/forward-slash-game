@@ -24,6 +24,7 @@ function system(s, level=1){ return { scene:s, passiveUpdaters:[], getLevel(id){
 function tick(sys, ms=0){ sys.scene.now += ms; [...sys.passiveUpdaters].forEach(fn=>fn()); }
 function bind(level=1){ const s=scene(); const sys=system(s,level); SKILL_HANDLERS.neutron_star.bind(sys); return {s,sys,data:SKILLS.neutron_star.levels[level-1]}; }
 function activeRectangles(s){ return s.created.filter(o => o.type === 'rectangle' && !o.destroyed); }
+function close(actual, expected, message, epsilon=1e-9){ assert(Math.abs(actual - expected) <= epsilon, `${message}: expected ${expected}, got ${actual}`); }
 
 // Sequence and no-target retry.
 {
@@ -47,14 +48,13 @@ function activeRectangles(s){ return s.created.filter(o => o.type === 'rectangle
   assert(s.neutronStarRuntime.pulseFlashUntil > s.now,'flash persists after pulse frame');
   tick(sys,data.singlePulseVisualMs-1);
   assert.equal(s.neutronStarRuntime.sweepPlan,null);
-  const beforeWarningRects = activeRectangles(s).length;
   tick(sys,1+data.postSecondPulseDelayMs);
   assert.equal(s.neutronStarRuntime.phase,'warning');
   assert(s.neutronStarRuntime.sweepPlan,'warning appears after post-pulse pause');
   assert(s.neutronStarRuntime.sweepPlan.warningStart && !s.neutronStarRuntime.sweepPlan.warningStart.destroyed, 'warningStart exists during warning');
-  assert.equal('warningEnd' in s.neutronStarRuntime.sweepPlan, false, 'warningEnd field is removed from sweepPlan');
-  assert.equal(activeRectangles(s).length - beforeWarningRects, 1, 'warning stage only creates one start beam');
-  assert(Math.abs(s.neutronStarRuntime.sweepPlan.warningStart.rotation - s.neutronStarRuntime.sweepPlan.startAngle) < 1e-9, 'warning beam points to sweep start');
+  assert.equal('warningEnd' in s.neutronStarRuntime.sweepPlan, false, 'sweepPlan does not retain a warningEnd field');
+  close(s.neutronStarRuntime.sweepPlan.warningStart.rotation, s.neutronStarRuntime.sweepPlan.startAngle, 'warning beam points to sweep start');
+  assert(Math.abs(s.neutronStarRuntime.sweepPlan.warningStart.rotation - s.neutronStarRuntime.sweepPlan.endAngle) > 0.001, 'warning beam is not endpoint direction');
   tick(sys,data.sweepWarningMs);
   assert.equal(s.neutronStarRuntime.phase,'sweep');
   assert(s.hits.length >= 2,'two successful single pulses happened before sweep');
@@ -74,6 +74,54 @@ function activeRectangles(s){ return s.created.filter(o => o.type === 'rectangle
   const {s,sys,data}=bind(3); const only=enemy('only',500,555,{hp:10000});
   s.enemies=[only]; tick(sys,0); tick(sys,data.initialPulseDelayMs); tick(sys,data.pulseGapMs);
   assert.equal(s.hits[1].damage, Math.round(data.singlePulseDamage * 1.45));
+}
+
+// Warning beam lifecycle: one start warning, one moving sweep, no endpoint residue.
+{
+  const {s,sys,data}=bind(1);
+  s.enemies=[enemy('a',500,555,{hp:5000}), enemy('b',450,555,{hp:4900})];
+  tick(sys,0);
+  tick(sys,data.initialPulseDelayMs);
+  tick(sys,data.pulseGapMs);
+  assert.equal(s.neutronStarRuntime.sweepPlan,null,'second pulse success does not immediately create warning');
+  tick(sys,data.singlePulseVisualMs - 1);
+  assert.equal(s.neutronStarRuntime.sweepPlan,null,'second pulse visual ending has not created warning');
+  const beforeWarningRects = activeRectangles(s).length;
+  tick(sys,1 + data.postSecondPulseDelayMs);
+  const plan = s.neutronStarRuntime.sweepPlan;
+  assert(plan,'warning plan exists');
+  assert(plan.warningStart && !plan.warningStart.destroyed,'warningStart is active');
+  assert.equal('warningEnd' in plan, false, 'warningEnd field is removed, not merely undefined');
+  assert.equal(activeRectangles(s).length - beforeWarningRects, 1, 'warning stage creates exactly one rectangle beam');
+  close(plan.warningStart.rotation, plan.startAngle, 'only warning beam uses start angle');
+  assert(Math.abs(plan.warningStart.rotation - plan.endAngle) > 0.001, 'only warning beam is not locked to end angle');
+  const pausedAt=s.now;
+  s.now += 500;
+  SKILL_HANDLERS.neutron_star.shiftTimers(sys,500,pausedAt);
+  tick(sys,0);
+  assert(!plan.warningStart.destroyed,'pause does not destroy warningStart early');
+  assert.equal(activeRectangles(s).length, beforeWarningRects + 1, 'pause does not create a second warning beam');
+  tick(sys,data.sweepWarningMs - 1);
+  assert(s.neutronStarRuntime.sweepPlan,'shifted warning time has not been skipped');
+  tick(sys,1);
+  assert.equal(plan.warningStart.destroyed,true,'warningStart is destroyed when sweep starts');
+  assert.equal(s.neutronStarRuntime.sweepPlan,null,'sweepPlan cleared at formal sweep start');
+  const sweep=s.neutronStarRuntime.sweep;
+  assert(sweep?.beam && !sweep.beam.destroyed,'formal sweep beam exists');
+  assert.equal(activeRectangles(s).length - beforeWarningRects, 1, 'formal sweep has exactly one active rectangle beam');
+  close(sweep.beam.rotation, sweep.startAngle, 'formal sweep first frame starts at startAngle');
+  tick(sys,Math.floor(data.sweepDurationMs/2));
+  assert(sweep.beam.rotation > sweep.startAngle && sweep.beam.rotation < sweep.endAngle, 'mid-sweep angle is between start and end');
+  assert.equal(activeRectangles(s).filter(o => Math.abs(o.rotation - sweep.endAngle) < 1e-9).length, 0, 'no fixed endpoint beam exists mid-sweep');
+  tick(sys,data.sweepDurationMs);
+  close(sweep.lastAngle, sweep.endAngle, 'completed sweep reaches endAngle', 0.001);
+  assert.equal(sweep.beam.destroyed,true,'formal sweep beam destroyed after completion');
+  assert.equal(s.neutronStarRuntime.sweep,null,'runtime sweep cleared after completion');
+  assert.equal(activeRectangles(s).length, beforeWarningRects, 'no warning or formal sweep rectangles remain');
+  SKILL_HANDLERS.neutron_star.destroyRuntime(sys);
+  assert(s.created.every(o=>o.destroyed),'scene cleanup destroys all neutron visuals');
+  SKILL_HANDLERS.neutron_star.bind(sys); tick(sys,0);
+  assert.equal(s.neutronStarRuntime.sweepPlan,null,'reacquire starts fresh without old warning object');
 }
 
 // Sweep path, hit area, low FPS crossing, Lv6/Lv9 bonuses.
@@ -110,4 +158,4 @@ function activeRectangles(s){ return s.created.filter(o => o.type === 'rectangle
   SKILL_HANDLERS.neutron_star.bind(sys); tick(sys,0); assert.equal(s.neutronStarRuntime.phase,'pulse1'); assert.equal(s.neutronStarRuntime.pulseHits.size,0); assert.equal(s.neutronStarRuntime.sweep,null);
 }
 
-console.log('v0.10.92 neutron star sequence validation passed');
+console.log('v0.10.92 neutron star warning beam validation passed');

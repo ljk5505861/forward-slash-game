@@ -1,2 +1,2 @@
-export const GAME_VERSION = '0.10.91';
+export const GAME_VERSION = '0.10.92';
 export const GAME_VERSION_LABEL = `v${GAME_VERSION}`;
