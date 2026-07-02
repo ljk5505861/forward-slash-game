@@ -84,12 +84,14 @@
     "validate:01091-white-dwarf-gravity-crush": "node scripts/validate-01091-white-dwarf-gravity-crush.mjs",
     "validate:01091-playtest-fixes": "npm run validate:01091-white-dwarf-gravity-crush && npm run validate:01090-playtest-fixes",
     "validate:01092-neutron-star-warning-beam": "node scripts/validate-01092-neutron-star-warning-beam.mjs",
-    "validate:01092-playtest-fixes": "npm run validate:01092-neutron-star-warning-beam && npm run validate:01091-playtest-fixes"
+    "validate:01092-playtest-fixes": "npm run validate:01092-neutron-star-warning-beam && npm run validate:01091-playtest-fixes",
+    "validate:01093-neutron-star-round-cooldown": "node scripts/validate-01093-neutron-star-round-cooldown.mjs",
+    "validate:01093-playtest-fixes": "npm run validate:01093-neutron-star-round-cooldown && npm run validate:01092-playtest-fixes"
   },
   "dependencies": {
     "phaser": "4.1.0",
     "vite": "latest"
   },
   "devDependencies": {},
-  "version": "0.10.92"
+  "version": "0.10.93"
 }

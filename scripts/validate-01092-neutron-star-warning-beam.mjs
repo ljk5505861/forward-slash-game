@@ -3,7 +3,7 @@ import { SKILL_HANDLERS } from '../src/skills/handlers/index.js';
 import { SKILLS } from '../src/config/skills.js';
 import { GAME_VERSION } from '../src/config/version.js';
 
-assert.equal(GAME_VERSION, '0.10.92');
+assert.equal(GAME_VERSION, '0.10.93');
 assert.equal(SKILLS.neutron_star.levels.length, 9);
 assert.equal(Object.keys(SKILLS).length, 35);
 assert.deepEqual(SKILLS.neutron_star.levels.map(x => x.singlePulseDamage), [72,80,90,101,113,128,144,162,184]);
@@ -29,15 +29,17 @@ function close(actual, expected, message, epsilon=1e-9){ assert(Math.abs(actual 
 // Sequence and no-target retry.
 {
   const {s,sys,data}=bind(1);
-  tick(sys,0);
+  tick(sys,data.roundCooldownMs);
   assert.equal(s.hits.length,0,'acquisition only creates body; no first-frame attack');
-  assert.equal(s.neutronStarRuntime.phase,'pulse1');
+  assert.equal(s.neutronStarRuntime.phase,'ready');
   tick(sys,data.initialPulseDelayMs);
-  assert.equal(s.hits.length,0,'no target keeps pulse1 pending');
-  assert.equal(s.neutronStarRuntime.phase,'pulse1');
+  assert.equal(s.hits.length,0,'no target keeps completed cooldown ready');
+  assert.equal(s.neutronStarRuntime.phase,'ready');
   const high=enemy('high',500,555,{hp:5000}); const near=enemy('near',220,555,{hp:3000});
   s.enemies=[near, high];
   tick(sys,data.pulseTargetRetryMs);
+  assert.equal(s.neutronStarRuntime.phase,'pulse1');
+  tick(sys,data.initialPulseDelayMs);
   assert.equal(s.hits.at(-1).target.id,'high','first pulse chooses highest hp');
   assert.equal(s.neutronStarRuntime.phase,'pulse2');
   s.enemies=[high];
@@ -64,7 +66,7 @@ function close(actual, expected, message, epsilon=1e-9){ assert(Math.abs(actual 
 {
   const {s,sys,data}=bind(3);
   const a=enemy('a',500,555,{hp:5000}); const b=enemy('b',450,555,{hp:4900}); const off=enemy('off',650,555,{hp:9999,inside:false});
-  s.enemies=[a,b,off]; tick(sys,0); tick(sys,data.initialPulseDelayMs);
+  s.enemies=[a,b,off]; tick(sys,data.roundCooldownMs); tick(sys,data.initialPulseDelayMs);
   assert.equal(s.hits.at(-1).target.id,'a');
   tick(sys,data.pulseGapMs);
   assert.equal(s.hits.at(-1).target.id,'b','second pulse prefers a different legal enemy');
@@ -72,7 +74,7 @@ function close(actual, expected, message, epsilon=1e-9){ assert(Math.abs(actual 
 }
 {
   const {s,sys,data}=bind(3); const only=enemy('only',500,555,{hp:10000});
-  s.enemies=[only]; tick(sys,0); tick(sys,data.initialPulseDelayMs); tick(sys,data.pulseGapMs);
+  s.enemies=[only]; tick(sys,data.roundCooldownMs); tick(sys,data.initialPulseDelayMs); tick(sys,data.pulseGapMs);
   assert.equal(s.hits[1].damage, Math.round(data.singlePulseDamage * 1.45));
 }
 
@@ -80,7 +82,7 @@ function close(actual, expected, message, epsilon=1e-9){ assert(Math.abs(actual 
 {
   const {s,sys,data}=bind(1);
   s.enemies=[enemy('a',500,555,{hp:5000}), enemy('b',450,555,{hp:4900})];
-  tick(sys,0);
+  tick(sys,data.roundCooldownMs);
   tick(sys,data.initialPulseDelayMs);
   tick(sys,data.pulseGapMs);
   assert.equal(s.neutronStarRuntime.sweepPlan,null,'second pulse success does not immediately create warning');
@@ -128,7 +130,7 @@ function close(actual, expected, message, epsilon=1e-9){ assert(Math.abs(actual 
 {
   const {s,sys,data}=bind(6);
   const right=enemy('right',710,555); const mid=enemy('mid',500,555); const front=enemy('front',320,555); const back=enemy('back',210,555); const out=enemy('out',760,555,{inside:false});
-  s.enemies=[right,mid,front,back,out]; tick(sys,0); tick(sys,data.initialPulseDelayMs); tick(sys,data.pulseGapMs); tick(sys,data.singlePulseVisualMs+data.postSecondPulseDelayMs); tick(sys,data.sweepWarningMs);
+  s.enemies=[right,mid,front,back,out]; tick(sys,data.roundCooldownMs); tick(sys,data.initialPulseDelayMs); tick(sys,data.pulseGapMs); tick(sys,data.singlePulseVisualMs+data.postSecondPulseDelayMs); tick(sys,data.sweepWarningMs);
   const sweep=s.neutronStarRuntime.sweep;
   assert(Math.abs(sweep.startAngle - sweep.beam.rotation) < 1e-9,'first sweep frame points to right edge');
   const before=s.hits.length;
@@ -143,7 +145,7 @@ function close(actual, expected, message, epsilon=1e-9){ assert(Math.abs(actual 
 }
 {
   const {s,sys,data}=bind(9); s.enemies=[enemy('right',710,555),enemy('mid',500,555),enemy('front',320,555),enemy('back',210,555)];
-  tick(sys,0); tick(sys,data.initialPulseDelayMs); tick(sys,data.pulseGapMs); tick(sys,data.singlePulseVisualMs+data.postSecondPulseDelayMs); tick(sys,data.sweepWarningMs);
+  tick(sys,data.roundCooldownMs); tick(sys,data.initialPulseDelayMs); tick(sys,data.pulseGapMs); tick(sys,data.singlePulseVisualMs+data.postSecondPulseDelayMs); tick(sys,data.sweepWarningMs);
   const before=s.hits.length; tick(sys,data.sweepDurationMs); const hits=s.hits.slice(before);
   assert.deepEqual(new Set(hits.map(h=>h.target.id)), new Set(['right','mid','front']));
   assert(hits.every(h=>h.meta.defenseIgnore === .35),'Lv9 sweep keeps 35% defense ignore');
@@ -151,11 +153,11 @@ function close(actual, expected, message, epsilon=1e-9){ assert(Math.abs(actual 
 
 // Pause shifting and cleanup/reacquire.
 {
-  const {s,sys,data}=bind(1); s.enemies=[enemy('p',500,555)]; tick(sys,0);
+  const {s,sys,data}=bind(1); s.enemies=[enemy('p',500,555)]; tick(sys,data.roundCooldownMs);
   const before=s.neutronStarRuntime.nextAt; SKILL_HANDLERS.neutron_star.shiftTimers(sys,1000,s.now); assert.equal(s.neutronStarRuntime.nextAt,before+1000);
   tick(sys,data.initialPulseDelayMs+1000); const expires=s.neutronStarRuntime.transients[0].expiresAt; SKILL_HANDLERS.neutron_star.shiftTimers(sys,1000,s.now); assert.equal(s.neutronStarRuntime.transients[0].expiresAt,expires+1000);
   SKILL_HANDLERS.neutron_star.destroyRuntime(sys); assert.equal(s.neutronStarRuntime,null); assert(s.created.every(o=>o.destroyed),'replacement/cleanup destroys body, ring, pulse visuals, warning, and sweep objects');
-  SKILL_HANDLERS.neutron_star.bind(sys); tick(sys,0); assert.equal(s.neutronStarRuntime.phase,'pulse1'); assert.equal(s.neutronStarRuntime.pulseHits.size,0); assert.equal(s.neutronStarRuntime.sweep,null);
+  SKILL_HANDLERS.neutron_star.bind(sys); tick(sys,0); assert.equal(s.neutronStarRuntime.phase,'cooldown'); assert.equal(s.neutronStarRuntime.pulseHits.size,0); assert.equal(s.neutronStarRuntime.sweep,null);
 }
 
-console.log('v0.10.92 neutron star warning beam validation passed');
+console.log('v0.10.93 neutron star warning beam validation passed');
