@@ -1,4 +1,4 @@
-import { BlackHoleSkill, GravityCrushSkill, mostDense } from './GravityFlowSkills.js';
+import { BlackHoleSkill, GravityCrushSkill, createGravityCrushColumn, mostDenseHorizontal } from './GravityFlowSkills.js';
 
 const time=s=>s.getGameplayTime?.()??s.time?.now??s.now??0;
 const destroy=(sys,n)=>{ sys.scene.tweens?.killTweensOf?.(n); sys.scene.gravityRuntime?.visuals?.delete?.(n); n?.destroy?.(); };
@@ -22,14 +22,8 @@ function wrapShutdown(sys){
 }
 
 function showWarning(sys,task,center){
-  const s=sys.scene,rt=s.gravityRuntime;
-  const warning=s.add?.circle?.(center.x,center.y,task.data.radius,0x7c3aed,.18)?.setStrokeStyle?.(3,0xc084fc,.75)?.setDepth?.(18);
-  const pillar=s.add?.rectangle?.(center.x,center.y-220,28,220,0x2e1065,0)?.setDepth?.(19);
-  [warning,pillar].filter(Boolean).forEach(n=>rt?.visuals?.add?.(n));
-  task.visuals=[warning,pillar].filter(Boolean);
-  task.lockedCenter={x:center.x,y:center.y};
-  task.centerAt=()=>task.lockedCenter;
-  task.executeAt=time(s)+task.data.warningMs;
+  createGravityCrushColumn(sys,task,center);
+  task.executeAt=time(sys.scene)+task.data.warningMs;
   task.gravityWarningStarted=true;
 }
 
@@ -41,7 +35,7 @@ function ensureUpdater(sys){
     const t=time(s);
     rt.pendingStrikes?.forEach(task=>{
       if(!task.gravityStagedWarning||task.gravityWarningStarted||t<task.warningAt) return;
-      const center=mostDense(s,task.data.radius);
+      const center=mostDenseHorizontal(s,task.data.radius);
       if(!center){
         task.visuals?.forEach(n=>destroy(sys,n));
         rt.pendingStrikes.delete(task);
@@ -62,11 +56,6 @@ export const GravityCrushFixedSkill={
     const result=GravityCrushSkill.cast(sys,cfg,data,level,ctx);
     const tasks=[...(sys.scene.gravityRuntime?.pendingStrikes||[])].filter(x=>!previous.has(x)).sort((a,b)=>a.executeAt-b.executeAt);
     tasks.forEach((task,index)=>{
-      const initial=task.visuals?.[0];
-      if(initial){
-        task.lockedCenter={x:initial.x,y:initial.y};
-        task.centerAt=()=>task.lockedCenter;
-      }
       if(index===0) return;
       task.visuals?.forEach(n=>destroy(sys,n));
       task.visuals=[];
