@@ -24,8 +24,8 @@ const addLevels=(s,n)=>{for(let i=0;i<n;i++) s.skillSystem.addOrLevel('guardian_
 const slotText=(s,id='guardian_shield',level=s.skillSystem.getLevel(id)||1)=>{ const cfg=SKILLS[id], rarity=getRarity(cfg.rarity); return `${rarity.name} ${cfg.name}\nLv.${level}　${getSkillBarStateText(s,{id,level},cfg)}`; };
 const state=s=>s.guardianShieldRuntime?.getSkillBarState?.()||null;
 
-assert.equal(GAME_VERSION,'0.10.99');
-assert.equal(pkg.version,'0.10.99');
+assert.equal(GAME_VERSION,'0.11.0');
+assert.equal(pkg.version,'0.11.0');
 assert.deepEqual(SKILLS.guardian_shield.levels.map(l=>l.rechargeMs),[5000,4800,4600,4400,4200,4000,3800,3600,3400]);
 assert.deepEqual(SKILLS.guardian_shield.levels.map(l=>l.durationMs),[8000,8000,8000,8000,8000,null,null,null,null]);
 assert.equal(SKILLS.guardian_shield.levels[8].regenRatio,0.4);
@@ -46,4 +46,4 @@ assert(!source.includes('cooldowns.set(\'guardian_shield\''));
 { const s=scene(); addLevels(s,1); const runtime=s.guardianShieldRuntime; assert(runtime); const updaters=s.skillSystem.passiveUpdaters.length, damagedListeners=s.eventBus.count(CombatEvents.PLAYER_DAMAGED), removedListeners=s.eventBus.count(CombatEvents.STATUS_REMOVED); s.playerData.skills=[]; s.skillSystem.removeSkillRuntime('guardian_shield'); assert.equal(s.guardianShieldRuntime,null); assert.equal(state(s),null); s.skillSystem.removeSkillRuntime('guardian_shield'); assert.equal(s.skillSystem.passiveUpdaters.length,updaters-1); assert.equal(s.eventBus.count(CombatEvents.PLAYER_DAMAGED),damagedListeners-1); assert.equal(s.eventBus.count(CombatEvents.STATUS_REMOVED),removedListeners-1); addLevels(s,1); assert(s.guardianShieldRuntime); assert.notEqual(s.guardianShieldRuntime,runtime); assert.equal(s.skillSystem.passiveUpdaters.length,updaters); assert.equal(s.eventBus.count(CombatEvents.PLAYER_DAMAGED),damagedListeners); assert.equal(s.eventBus.count(CombatEvents.STATUS_REMOVED),removedListeners); const old=s.guardianShieldRuntime; s.skillSystem.reset(); assert.equal(s.guardianShieldRuntime,null); assert.equal(s.eventBus.count(CombatEvents.PLAYER_DAMAGED),0); assert.equal(s.eventBus.count(CombatEvents.STATUS_REMOVED),0); assert.equal(s.skillSystem.passiveUpdaters.length,0); addLevels(s,1); assert(s.guardianShieldRuntime); assert.notEqual(s.guardianShieldRuntime,old); assert.equal(s.eventBus.count(CombatEvents.PLAYER_DAMAGED),1); assert.equal(s.eventBus.count(CombatEvents.STATUS_REMOVED),1); assert.equal(s.skillSystem.passiveUpdaters.length,1); }
 { const s=scene(); addLevels(s,1); assert(!s.skillSystem.cooldowns.has('guardian_shield')); s.skillSystem.cooldowns.set('fireball',10000); s.skillSystem.reduceActiveCooldowns(9000); assert(!s.skillSystem.cooldowns.has('guardian_shield')); update(s,5000); assert.equal(normal(s).length,1); }
 { const s=scene(); addLevels(s,1); s.statusEffects.add(StatusEffects.SHIELD,s.playerData,{durationMs:99999,value:80,remainingValue:80,sourceId:'other'}); update(s,5000); assert.equal(guardians(s).length,0); assert.deepEqual(state(s),{phase:'recharge',label:'充能',remainingMs:5000}); assert.equal(slotText(s),'稀有 守护盾\nLv.1　充能 5s'); assert(!s.skillSystem.cooldowns.has('guardian_shield')); }
-console.log('v0.10.99 guardian shield skillbar validation passed.');
+console.log('v0.11.0 guardian shield skillbar validation passed.');

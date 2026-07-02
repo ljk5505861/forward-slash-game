@@ -4,7 +4,7 @@ import { TAGS, BUILD_TAGS } from '../src/config/tags.js';
 import { SKILL_HANDLERS } from '../src/skills/handlers/index.js';
 import { SKILLS } from '../src/config/skills.js';
 import pkg from '../package.json' with { type:'json' };
-assert.equal(GAME_VERSION,'0.10.99'); assert.equal(pkg.version,'0.10.99'); assert.equal(Object.keys(SKILLS).length,38);
+assert.equal(GAME_VERSION,'0.11.0'); assert.equal(pkg.version,'0.11.0'); assert.equal(Object.keys(SKILLS).length,38);
 assert.equal(Object.values(SKILLS).filter(s=>s.rarity==='MYTHIC').length,8);
 for (const id of ['solar_flame','myriad_afterimage','poison_king','lightning_tribulation','black_hole','neutron_star','white_dwarf']) assert.equal(SKILLS[id].rarity,'MYTHIC');
 assert.equal(TAGS.BUILD_CELESTIAL,'buildCelestial'); assert(BUILD_TAGS.includes(TAGS.BUILD_CELESTIAL));
@@ -22,4 +22,4 @@ assert(SKILLS.solar_flame.tags.includes(TAGS.FIRE)); assert(SKILLS.solar_flame.t
 assert(SKILLS.black_hole.tags.includes(TAGS.GRAVITY)); assert(SKILLS.black_hole.tags.includes(TAGS.BUILD_GRAVITY));
 assert.equal((720*.15+720/2)/2,234);
 assert.match(SKILLS.neutron_star.description,/两次单体脉冲/); assert.match(SKILLS.white_dwarf.description,/护体/);
-console.log('v0.10.99 celestial flow config validation passed');
+console.log('v0.11.0 celestial flow config validation passed');
