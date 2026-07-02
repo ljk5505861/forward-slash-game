@@ -6,6 +6,7 @@ import { CombatEvents } from '../src/core/CombatEvents.js';
 import { TAGS } from '../src/config/tags.js';
 import { getEnemyMoveSpeed, getEnemyAttackDelay } from '../src/systems/EnemyGravityControl.js';
 import { getEnemyColdState, isEnemyFrozen } from '../src/systems/EnemyColdControl.js';
+import EnemyBehaviorManager from '../src/enemies/behaviors/EnemyBehaviorManager.js';
 const close=(actual,expected,msg)=>assert(Math.abs(actual-expected)<1e-9,msg||`${actual} ~= ${expected}`);
 
 class Bus { constructor(){ this.handlers=new Map(); } on(type,fn){ const arr=this.handlers.get(type)||[]; arr.push(fn); this.handlers.set(type,arr); return ()=>this.handlers.set(type,(this.handlers.get(type)||[]).filter(x=>x!==fn)); } emit(type,payload){ (this.handlers.get(type)||[]).slice().forEach(fn=>fn(payload)); } }
@@ -28,6 +29,9 @@ function updateActiveAt(s,t){ s.now=t; s.skillSystem.updateActive(t); }
 {
   const s=scene(); own(s,'super_speed',9); update(s,0); s.player.x=100; update(s,1000); update(s,1100); const before=s.skillSystem.passiveState.superSpeed.graceUntil; for(let i=0;i<6;i++) s.eventBus.emit(CombatEvents.ENEMY_KILLED,{enemy:enemy()}); assert.equal(s.skillSystem.passiveState.superSpeed.graceUntil,before+2000,'Lv9 kill extension capped at 2s'); s.skillSystem.shiftTimers(5000,1100); assert.equal(s.skillSystem.passiveState.superSpeed.graceUntil,before+7000,'pause shifts grace timer');
 }
+{
+  const s=scene(); own(s,'super_speed',3); update(s,0); s.player.x=60; update(s,600); const state=s.skillSystem.passiveState.superSpeed; assert.equal(state.movingMs,600); s.skillSystem.shiftTimers(5000,600); s.player.x=61; update(s,5616); assert.equal(state.highSpeed,false,'pause duration is not counted as real movement'); assert.equal(state.movingMs,616,'only post-resume movement time is accumulated');
+}
 
 // Laser line collision and scheduling.
 {
@@ -43,6 +47,9 @@ function updateActiveAt(s,t){ s.now=t; s.skillSystem.updateActive(t); }
 // Cold actual movement/attack/freeze/shatter/zone.
 {
   const s=scene(); own(s,'freezing_breath',1); const e=enemy({x:260,y:500,speed:100,attackIntervalMs:1000}); s.enemies=[e]; const cfg=SKILLS.freezing_breath, data=cfg.levels[0]; s.skillSystem.cast(cfg,data,1,{...s.skillSystem.createCastContext('freezing_breath'),manaCost:0}); for(let t of [0,250,500,750,1000]) updateActiveAt(s,t); assert(getEnemyMoveSpeed(e,100,1000)<100,'cold reduces real move speed'); assert(getEnemyAttackDelay(e,1000,1000)>1000,'cold increases real attack delay'); assert(isEnemyFrozen(e,1000),'normal freezes at 5 stacks'); assert.equal(getEnemyMoveSpeed(e,100,1000),0,'frozen move speed is zero'); assert.equal(getEnemyAttackDelay(e,1000,1000),Infinity,'frozen attack delay pauses attacks'); assert(!isEnemyFrozen(e,2301),'normal unfreezes after 1.2s');
+}
+{
+  const s=scene(); own(s,'freezing_breath',1); const e=enemy({x:260,y:500,speed:100,attackIntervalMs:1000}); s.enemies=[e]; const cfg=SKILLS.freezing_breath, data=cfg.levels[0]; s.skillSystem.cast(cfg,data,1,{...s.skillSystem.createCastContext('freezing_breath'),manaCost:0}); for(let t of [0,250,500,750,1000]) updateActiveAt(s,t); const source=e.coldSources.get('freezing_breath'); const before={expiresAt:source.expiresAt,frozenUntil:source.frozenUntil,refreezeGuardUntil:source.refreezeGuardUntil}; s.skillSystem.shiftTimers(5000,1000); new EnemyBehaviorManager(s).shiftTimers(5000,1000); const after=e.coldSources.get('freezing_breath'); assert.equal(after.expiresAt,before.expiresAt+5000,'cold expiry shifts once in the real resume chain'); assert.equal(after.frozenUntil,before.frozenUntil+5000,'freeze timer shifts once in the real resume chain'); assert.equal(after.refreezeGuardUntil,before.refreezeGuardUntil+5000,'refreeze guard shifts once in the real resume chain');
 }
 {
   const s=scene(); own(s,'freezing_breath',3); const elite=enemy({x:260,y:500,isElite:true,hp:500}); const boss=enemy({x:280,y:500,isBoss:true,hp:1000}); s.enemies=[elite,boss]; const cfg=SKILLS.freezing_breath, data=cfg.levels[2]; s.skillSystem.cast(cfg,data,3,{...s.skillSystem.createCastContext('freezing_breath'),manaCost:0}); for(let t of [0,250,500,750,1000,1250,1500]) updateActiveAt(s,t); assert(isEnemyFrozen(elite,1500),'elite freezes with elite threshold'); assert(!isEnemyFrozen(elite,2201),'elite freeze is shorter'); assert(!isEnemyFrozen(boss,1500),'boss never freezes'); assert(getEnemyMoveSpeed(boss,100,1500)<100,'boss still slowed');
