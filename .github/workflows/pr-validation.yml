@@ -37,15 +37,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate synchronized package lock
-        run: npm install --package-lock-only --ignore-scripts
-
-      - name: Upload synchronized package lock
-        uses: actions/upload-artifact@v4
-        with:
-          name: v01100-package-lock
-          path: package-lock.json
-
       - name: Validate superhero kinetic enhancement
         run: npm run validate:01100-superhero-kinetic
 
