@@ -197,4 +197,4 @@ function enterHighSpeed(scene) { update(scene, 0); scene.player.x += 120; update
   assert.equal(scene.skillSystem.passiveState.superSpeed, undefined);
 }
 
-console.log('v0.11.00 superhero kinetic enhancement validation passed');
+console.log('v0.11.10 superhero kinetic enhancement validation passed');

@@ -1,4 +1,5 @@
 import { GAME_VERSION_LABEL } from '../config/version.js';
+import { getCultivationSnapshot } from '../skills/handlers/CultivationCoreSkill.js';
 
 const DESIGN_WIDTH=720;
 const DEPTH=2000;
@@ -22,13 +23,17 @@ export default class Hud {
     this.mpText=scene.add.text(183,69,'',{fontFamily:'Arial',fontSize:'12px',color:'#e0f2fe',stroke:'#000',strokeThickness:3}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+3);
     this.stBg=scene.add.rectangle(78,80,BAR_W,8,0x1f1807,0.8).setOrigin(0,0).setScrollFactor(0).setDepth(DEPTH+1);
     this.stFill=scene.add.rectangle(78,80,BAR_W,8,0xffd166,0.85).setOrigin(0,0).setScrollFactor(0).setDepth(DEPTH+2);
+    this.cultPanel=scene.add.rectangle(20,132,268,46,0x1b0707,0.62).setOrigin(0,0).setScrollFactor(0).setDepth(DEPTH);
+    this.cultBg=scene.add.rectangle(34,160,240,8,0x2a1008,0.95).setOrigin(0,0).setScrollFactor(0).setDepth(DEPTH+1);
+    this.cultFill=scene.add.rectangle(34,160,240,8,0xd83a1e,1).setOrigin(0,0).setScrollFactor(0).setDepth(DEPTH+2);
+    this.cultText=scene.add.text(34,138,'',{fontFamily:'Arial',fontSize:'18px',color:'#ffd166',stroke:'#000',strokeThickness:3}).setScrollFactor(0).setDepth(DEPTH+3);
     this.rightPanel=scene.add.rectangle(DESIGN_WIDTH-22,82,288,46,0x07101f,0.58).setOrigin(1,0).setScrollFactor(0).setDepth(DEPTH);
     this.gold=scene.add.text(DESIGN_WIDTH-292,92,'🪙 0',{fontFamily:'Arial',fontSize:'22px',color:'#ffd166',stroke:'#000',strokeThickness:4}).setScrollFactor(0).setDepth(DEPTH+2);
     this.stage=scene.add.text(DESIGN_WIDTH-182,92,'',{fontFamily:'Arial',fontSize:'20px',color:'#e9efff',stroke:'#000',strokeThickness:4}).setScrollFactor(0).setDepth(DEPTH+2);
     this.settings=scene.add.text(DESIGN_WIDTH-48,88,'⚙',{fontFamily:'Arial',fontSize:'28px',color:'#ffffff',stroke:'#000',strokeThickness:4}).setScrollFactor(0).setDepth(DEPTH+2);
     this.version=scene.add.text(DESIGN_WIDTH/2,76,GAME_VERSION_LABEL,{fontFamily:'Arial',fontSize:'18px',color:'#cbd6ee',stroke:'#000',strokeThickness:3}).setOrigin(0.5,0).setScrollFactor(0).setDepth(DEPTH);
     this.boss=scene.add.text(DESIGN_WIDTH/2,104,'',{fontFamily:'Arial',fontSize:'22px',color:'#ffd1ff',stroke:'#000',strokeThickness:4}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+1);
-    this.nodes=[this.leftPanel,this.heart,this.levelText,this.hpBg,this.hpFill,this.hpText,this.mpBg,this.mpFill,this.mpText,this.stBg,this.stFill,this.rightPanel,this.gold,this.stage,this.settings,this.version,this.boss];
+    this.nodes=[this.leftPanel,this.heart,this.levelText,this.hpBg,this.hpFill,this.hpText,this.mpBg,this.mpFill,this.mpText,this.stBg,this.stFill,this.cultPanel,this.cultBg,this.cultFill,this.cultText,this.rightPanel,this.gold,this.stage,this.settings,this.version,this.boss];
   }
   setStatus(m){ this.statusMessage=m||''; }
   setStage(n){ this.stageName=n||''; }
@@ -41,6 +46,9 @@ export default class Hud {
     this.setBar(this.mpFill,BAR_W,p.mana??0,p.maxMana??0);
     this.mpText.setText(`${p.mana??0}/${p.maxMana??0}`);
     this.setBar(this.stFill,BAR_W,p.stamina??0,p.maxStamina??0);
+    const cult=getCultivationSnapshot(this.scene);
+    [this.cultPanel,this.cultBg,this.cultFill,this.cultText].forEach(n=>n?.setVisible?.(!!cult.active));
+    if(cult.active){ if(cult.isComplete){ this.cultText.setText('渡劫·大道圆满'); this.cultFill.setDisplaySize(240,this.cultFill.height); } else { this.cultText.setText(`${cult.realm}　${Math.floor(cult.progress)} / ${cult.nextThreshold}`); this.cultFill.setDisplaySize(Math.round(240*Math.max(0,Math.min(1,cult.progress/(cult.nextThreshold||1)))),this.cultFill.height); } }
     this.gold.setText(`🪙 ${p.gold??0}`);
     const prof=[p.professionId||'未转职',p.advancedProfessionId||'未进阶'].join('/'); this.stage.setText(this.stageName ? `${this.stageName.replace(/^阶段\d+：?/,'')} ${prof}` : `训练场 ${prof}`);
     const boss=this.scene.enemies.find(e=>e.isBoss&&!e.isDefeated);

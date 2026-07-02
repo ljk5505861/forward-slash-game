@@ -1,5 +1,6 @@
 import '../skills/handlers/index.js';
 import { SKILLS } from '../config/skills.js';
+import { NINEFOLD_DAO_ID, CULTIVATION_REALMS, CULTIVATION_THRESHOLDS, CULTIVATION_REALM_STATS, getCultivationSnapshot, getCultivationSpellModifiers } from '../skills/handlers/CultivationCoreSkill.js';
 import { SOUL_THRESHOLDS, SWORD_MYTHIC, getSwordFlowReadSnapshot, mainSwordStatsReadOnly, tombStatsReadOnly } from '../skills/handlers/SwordFlowState.js';
 
 const QUALITY_NAMES={COMMON:'普通',RARE:'稀有',EPIC:'史诗',MYTHIC:'神话'};
@@ -64,10 +65,41 @@ function milestones(cfg,level){
   });
 }
 
+
+function cultivationDetail(cfg,level,context={}){
+  const snap=getCultivationSnapshot(context.scene||context.scene?.skillSystem);
+  const active=snap.active; const idx=active?snap.realmIndex:0; const st=CULTIVATION_REALM_STATS[idx]; const spell=active?getCultivationSpellModifiers(context.scene):CULTIVATION_REALM_STATS[idx].spell;
+  const nextStats=idx<8?CULTIVATION_REALM_STATS[idx+1]:null;
+  const lines=[
+    `当前境界：${active?snap.realm:'炼气'}`,
+    `当前修为：${Math.floor(active?snap.progress:0)}`,
+    `下一境界所需修为：${active&&snap.isComplete?'大道圆满':(snap.nextThreshold??CULTIVATION_THRESHOLDS[0])}`,
+    `当前实际自动修为/秒：${numberText(active?snap.autoRate:(cfg.levels[level-1]?.autoRate||0))}`,
+    `距离下一次周天：${level>=3?numberText(Math.max(0,(30000-(active?snap.cycleProgressMs:0))/1000))+'秒':'未解锁'}`,
+    `当前修为获取倍率：${numberText(active?snap.gainMultiplier:(level>=6?1.25:1))}倍`,
+    `已完成突破次数：${active?snap.breakthroughCount:0}`,
+    `当前最大生命加成：${percentText(st.maxHpPct)}`,
+    `当前最大法力加成：+${st.maxMana}`,
+    `当前额外法力恢复：${st.manaRegen}/秒`,
+    `当前通用减伤：${percentText(st.damageReduction)}`,
+    `当前修仙法术伤害倍率：${numberText(spell.damageMultiplier)}倍`,
+    `当前修仙法术范围倍率：${numberText(spell.rangeMultiplier)}倍`,
+    `当前修仙法术冷却倍率：${numberText(spell.cooldownMultiplier)}倍`,
+    `当前修仙法术耗蓝倍率：${numberText(spell.manaCostMultiplier)}倍`,
+    `下一境界：${idx<8?CULTIVATION_REALMS[idx+1]:'无'}`,
+    `下一境界属性：${nextStats?`生命${percentText(nextStats.maxHpPct)}、法力+${nextStats.maxMana}、回蓝${nextStats.manaRegen}/秒、减伤${percentText(nextStats.damageReduction)}`:'大道圆满'}`,
+    `Lv3周天运转：${level>=3?'已解锁':'未解锁'}`,
+    `Lv6大道自然：${level>=6?'已解锁':'未解锁'}`,
+    `Lv9九转归一：${level>=9?'已解锁':'未解锁'}`
+  ];
+  return { name:cfg.name,level,maxLevel:cfg.maxLevel,description:cfg.description,currentEffects:lines,mechanics:['独立修为系统只读详情；查看不会增加修为、触发突破或重置周天。'],milestones:milestones(cfg,level),nextLevelPreview:nextPreview(cfg,level,cfg.levels[level-1]||{},cfg.levels[level]||null),progress:`${level}/${cfg.maxLevel}` };
+}
+
 export function getSkillDetailData(skillId,context={}){
   const cfg=SKILLS[skillId]; if(!cfg) return null;
   const owned=context.scene?.playerData?.skills?.find(s=>s.id===skillId)||context.skill||{level:1};
   const level=Math.max(1,Math.min(cfg.maxLevel||1,owned.level||1));
+  if(skillId===NINEFOLD_DAO_ID) return cultivationDetail(cfg,level,context);
   if(skillId==='sword_wave') return swordDetail(cfg,level,context);
   if(skillId==='sword_tomb') return tombDetail(cfg,level,context);
   const data=cfg.levels?.[level-1]||{};
