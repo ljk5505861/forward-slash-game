@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  v01099-full-pr-validation:
-    name: v0.10.99 full PR validation
+  v01100-full-pr-validation:
+    name: v0.11.0 full PR validation
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -37,11 +37,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate superhero visual follow
-        run: npm run validate:01099-superhero-visual-follow
+      - name: Generate synchronized package lock
+        run: npm install --package-lock-only --ignore-scripts
 
-      - name: Validate full v0.10.99 playtest regression chain
-        run: npm run validate:01099-playtest-fixes
+      - name: Upload synchronized package lock
+        uses: actions/upload-artifact@v4
+        with:
+          name: v01100-package-lock
+          path: package-lock.json
+
+      - name: Validate superhero kinetic enhancement
+        run: npm run validate:01100-superhero-kinetic
+
+      - name: Validate full v0.11.0 playtest regression chain
+        run: npm run validate:01100-playtest-fixes
 
       - name: Validate gravity runtime directly
         run: node scripts/validate-01087-gravity-flow-runtime.mjs
