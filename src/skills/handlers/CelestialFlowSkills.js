@@ -578,8 +578,23 @@ function deactivateWhiteDwarf(system, runtime) {
   syncWhiteDwarfReduction(system);
 }
 
-function expireWhiteDwarfTransients(runtime, time) {
+function updateWhiteDwarfTransientVisuals(runtime, time) {
   runtime.transients = runtime.transients.filter(entry => {
+    if (entry.type === 'crushLine') {
+      const enemy = entry.enemy;
+      if (!enemy || enemy.scene === null || enemy.active === false || enemy.destroyed) {
+        destroy(entry.object);
+        return false;
+      }
+      const startedAt = entry.startedAt ?? time;
+      const duration = Math.max(1, (entry.expiresAt ?? time) - startedAt);
+      const progress = Math.max(0, Math.min(1, (time - startedAt) / duration));
+      const x = enemy.x + (entry.startOffsetX + (entry.endOffsetX - entry.startOffsetX) * progress);
+      const y = enemy.y + (entry.startOffsetY + (entry.endOffsetY - entry.startOffsetY) * progress);
+      entry.object?.setPosition?.(x, y);
+      entry.object?.setAlpha?.(1 - progress);
+      entry.object?.setScale?.(1, Math.max(.35, 1 - progress * .45));
+    }
     if (time < entry.expiresAt && !entry.object?.destroyed) return true;
     destroy(entry.object);
     return false;
@@ -650,7 +665,7 @@ function updateWhiteDwarfCrushStates(runtime, time) {
     }
     if (time <= state.compressEndsAt) {
       const t = Math.max(0, Math.min(1, (time - state.startedAt) / Math.max(1, state.compressEndsAt - state.startedAt)));
-      setEnemyScale(enemy, state.baseScaleX + (state.targetScaleX - state.baseScaleX) * t, state.baseScaleY + (state.targetScaleY - state.baseScaleY) * t);
+      setEnemyScale(enemy, state.startScaleX + (state.targetScaleX - state.startScaleX) * t, state.startScaleY + (state.targetScaleY - state.startScaleY) * t);
     } else if (time <= state.holdEndsAt) {
       setEnemyScale(enemy, state.targetScaleX, state.targetScaleY);
     } else {
@@ -679,10 +694,20 @@ function showWhiteDwarfCrushVisuals(system, runtime, enemy, time) {
   const lineCount = 3;
   for (let i = 0; i < lineCount; i++) {
     const dx = (i - 1) * 18;
-    for (const dir of [-1, 1]) {
-      const line = scene.add?.rectangle?.(enemy.x + dx, enemy.y + dir * 28, 3, 24, 0xe0f2fe, .72);
+    for (const profile of [{ startOffsetY: -42, endOffsetY: -6 }, { startOffsetY: 42, endOffsetY: 6 }]) {
+      const line = scene.add?.rectangle?.(enemy.x + dx, enemy.y + profile.startOffsetY, 3, 24, 0xe0f2fe, .72);
       line?.setDepth?.(15);
-      if (line) runtime.transients.push({ object: line, expiresAt: time + 220 });
+      if (line) runtime.transients.push({
+        object: line,
+        type: 'crushLine',
+        enemy,
+        startedAt: time,
+        expiresAt: time + 220,
+        startOffsetX: dx,
+        startOffsetY: profile.startOffsetY,
+        endOffsetX: dx,
+        endOffsetY: profile.endOffsetY
+      });
     }
   }
   scene.floatText?.(enemy.x, enemy.y - 30, '重力碾压', 0xe0f2fe);
@@ -693,12 +718,17 @@ function applyWhiteDwarfCrush(system, runtime, visual, enemy, time) {
   const existing = runtime.crushStates.get(enemy);
   const baseScaleX = existing?.baseScaleX ?? enemy.scaleX ?? enemy.scale ?? 1;
   const baseScaleY = existing?.baseScaleY ?? enemy.scaleY ?? enemy.scale ?? 1;
+  const startScaleX = Number.isFinite(enemy.scaleX) ? enemy.scaleX : baseScaleX;
+  const startScaleY = Number.isFinite(enemy.scaleY) ? enemy.scaleY : baseScaleY;
   const compressMs = Math.min(80, Math.round(profile.crushVisualMs * .36));
   const holdMs = Math.min(80, Math.max(0, Math.round(profile.crushVisualMs * .36)));
+  const lethal = !isAlive(enemy);
   const state = {
     enemy,
     baseScaleX,
     baseScaleY,
+    startScaleX,
+    startScaleY,
     startedAt: time,
     compressEndsAt: time + compressMs,
     holdEndsAt: time + compressMs + holdMs,
@@ -706,10 +736,10 @@ function applyWhiteDwarfCrush(system, runtime, visual, enemy, time) {
     gravityExpiresAt: time + (profile.durationMs || profile.crushVisualMs),
     targetScaleX: baseScaleX * profile.scaleXMultiplier,
     targetScaleY: baseScaleY * profile.scaleYMultiplier,
-    lethal: !isAlive(enemy)
+    lethal
   };
   runtime.crushStates.set(enemy, state);
-  setEnemyScale(enemy, state.targetScaleX, state.targetScaleY);
+  setEnemyScale(enemy, lethal ? state.targetScaleX : state.startScaleX, lethal ? state.targetScaleY : state.startScaleY);
   if (!enemy.isBoss) applyEnemyGravity(enemy, { sourceId: WHITE_DWARF_CRUSH_SOURCE, moveSlow: profile.moveSlow, attackSlow: profile.attackSlow, expiresAt: time + profile.durationMs, external: true });
   visual.crushFlashUntil = time + 180;
   showWhiteDwarfCrushVisuals(system, runtime, enemy, time);
@@ -767,7 +797,7 @@ function updateWhiteDwarf(system) {
   const runtime = ensureWhiteDwarfRuntime(system);
   const level = system.getLevel?.('white_dwarf') || 0;
   const time = now(scene);
-  expireWhiteDwarfTransients(runtime, time);
+  updateWhiteDwarfTransientVisuals(runtime, time);
   updateWhiteDwarfCrushStates(runtime, time);
   if (!level) {
     if (runtime.active || runtime.visuals.length || runtime.charges.length) deactivateWhiteDwarf(system, runtime);
@@ -827,13 +857,14 @@ export const WhiteDwarfSkill = {
       if (readyAt > pausedAt) runtime.contactReadyAtByEnemy.set(enemy, readyAt + pausedDuration);
     });
     runtime.transients?.forEach?.(entry => {
+      if (Number.isFinite(entry.startedAt)) entry.startedAt += pausedDuration;
       if (entry.expiresAt > pausedAt) entry.expiresAt += pausedDuration;
     });
     runtime.crushStates?.forEach?.(state => {
       for (const key of ['startedAt', 'compressEndsAt', 'holdEndsAt', 'recoverEndsAt', 'gravityExpiresAt']) {
-        if (state[key] > pausedAt) state[key] += pausedDuration;
+        if (Number.isFinite(state[key])) state[key] += pausedDuration;
       }
-      if (state.enemy?.gravitySources?.get?.(WHITE_DWARF_CRUSH_SOURCE)?.expiresAt > pausedAt) {
+      if (state.enemy?.gravitySources?.get?.(WHITE_DWARF_CRUSH_SOURCE)) {
         const source = state.enemy.gravitySources.get(WHITE_DWARF_CRUSH_SOURCE);
         source.expiresAt += pausedDuration;
       }
