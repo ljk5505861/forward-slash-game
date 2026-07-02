@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gravity-reversal-regression:
-    name: Gravity reversal regression
+  v01098-full-pr-validation:
+    name: v0.10.98 full PR validation
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -37,11 +37,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate gravity reversal
-        run: npm run validate:01097-gravity-reversal
+      - name: Validate superhero flow
+        run: npm run validate:01098-superhero-flow
 
-      - name: Validate full playtest regression chain
-        run: npm run validate:01097-playtest-fixes
+      - name: Validate full v0.10.98 playtest regression chain
+        run: npm run validate:01098-playtest-fixes
 
       - name: Validate gravity runtime directly
         run: node scripts/validate-01087-gravity-flow-runtime.mjs

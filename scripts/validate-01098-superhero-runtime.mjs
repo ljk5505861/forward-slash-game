@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import { SKILLS } from '../src/config/skills.js';
+import '../src/skills/handlers/index.js';
+const ss=SKILLS.super_speed.levels;
+assert.deepEqual(ss.map(l=>l.moveSpeedBonus),[.06,.08,.10,.12,.14,.16,.17,.19,.20]);
+assert.deepEqual(ss.map(l=>l.attackSpeedBonus),[.04,.05,.07,.08,.10,.12,.14,.16,.18]);
+assert.equal(ss[0].highSpeedAttackSpeedBonus,0); assert.equal(ss[1].highSpeedAttackSpeedBonus,0); assert.equal(ss[2].chargeMs,1000); assert.equal(ss[2].graceMs,2000); assert.equal(ss[2].highSpeedAttackSpeedBonus,.05); assert.equal(ss[5].graceMs,3000); assert.equal(ss[5].highSpeedAttackSpeedBonus,.08); assert.equal(ss[5].weaponWaitCutRatio,.5); assert.equal(ss[8].highSpeedAttackSpeedBonus,.10); assert.equal(ss[8].killExtendMs,500); assert.equal(ss[8].maxKillExtendMs,2000);
+const le=SKILLS.laser_eyes.levels; assert.equal(le[0].beamCount,1); assert.equal(le[2].focusPerTick,.1); assert.equal(le[2].maxFocus,5); assert.equal(le[5].beamCount,2); assert.equal(le[5].beamDamageScale,.7); assert.equal(le[8].durationMs,1800); assert.equal(le[8].overloadIntervalMs,150); assert.equal(le[8].retargetOnKill,true); assert.equal(le[8].killExtendMs,300); assert.equal(le[8].maxExtendMs,1200); assert.equal(le[8].retargetFocusLoss,2);
+const fb=SKILLS.freezing_breath.levels; assert.equal(fb[0].normalFreezeStacks,5); assert.equal(fb[2].normalFreezeStacks,4); assert.equal(fb[0].eliteFreezeStacks,8); assert.equal(fb[2].eliteFreezeStacks,7); assert.equal(fb[0].normalFreezeMs,1200); assert.equal(fb[0].eliteFreezeMs,600); assert.equal(fb[5].shatterRadius,110); assert.ok(fb[5].shatterDamage>0); assert.equal(fb[8].zoneDurationMs,3000); assert.equal(fb[8].zoneIntervalMs,500); assert.equal(fb[8].deathShatterScale,.5); assert.equal(fb[8].bossBreathDamageBonus,.3);
+console.log('v0.10.98 superhero runtime data validation passed');

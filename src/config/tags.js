@@ -6,6 +6,8 @@ export const TAGS = Object.freeze({
   LIGHTNING: 'lightning',
   GRAVITY: 'gravity',
   CELESTIAL: 'celestial',
+  SUPERPOWER: 'superpower',
+  ICE: 'ice',
   DOT: 'dot',
   CRITICAL: 'critical',
   NORMAL_ATTACK: 'normalAttack',
@@ -27,6 +29,7 @@ export const TAGS = Object.freeze({
   BUILD_WEAPON: 'buildWeapon',
   BUILD_GRAVITY: 'buildGravity',
   BUILD_CELESTIAL: 'buildCelestial',
+  BUILD_SUPERHERO: 'buildSuperhero',
 });
 
 export const LEGACY_TAG_ALIASES = Object.freeze({
@@ -46,6 +49,7 @@ export const BUILD_TAGS = Object.freeze([
   TAGS.BUILD_WEAPON,
   TAGS.BUILD_GRAVITY,
   TAGS.BUILD_CELESTIAL,
+  TAGS.BUILD_SUPERHERO,
 ]);
 
 export const CORE_TAGS = Object.freeze(Object.values(TAGS));
