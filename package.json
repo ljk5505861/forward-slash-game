@@ -86,12 +86,15 @@
     "validate:01092-neutron-star-warning-beam": "node scripts/validate-01092-neutron-star-warning-beam.mjs",
     "validate:01092-playtest-fixes": "npm run validate:01092-neutron-star-warning-beam && npm run validate:01091-playtest-fixes",
     "validate:01093-neutron-star-round-cooldown": "node scripts/validate-01093-neutron-star-round-cooldown.mjs",
-    "validate:01093-playtest-fixes": "npm run validate:01093-neutron-star-round-cooldown && npm run validate:01092-playtest-fixes"
+    "validate:01093-playtest-fixes": "npm run validate:01093-neutron-star-round-cooldown && npm run validate:01092-playtest-fixes",
+    "validate:01094-black-hole-gravity-rework": "node scripts/validate-01094-black-hole-gravity-rework.mjs",
+    "validate:01094-playtest-fixes": "npm run validate:01094-black-hole-gravity-rework && npm run validate:01093-playtest-fixes",
+    "validate:01087-gravity-followup-pause": "node scripts/validate-01087-gravity-followup-pause.mjs"
   },
   "dependencies": {
     "phaser": "4.1.0",
     "vite": "latest"
   },
   "devDependencies": {},
-  "version": "0.10.93"
+  "version": "0.10.94"
 }

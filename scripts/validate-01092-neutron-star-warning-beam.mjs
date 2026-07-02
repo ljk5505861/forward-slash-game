@@ -3,7 +3,7 @@ import { SKILL_HANDLERS } from '../src/skills/handlers/index.js';
 import { SKILLS } from '../src/config/skills.js';
 import { GAME_VERSION } from '../src/config/version.js';
 
-assert.equal(GAME_VERSION, '0.10.93');
+assert.equal(GAME_VERSION, '0.10.94');
 assert.equal(SKILLS.neutron_star.levels.length, 9);
 assert.equal(Object.keys(SKILLS).length, 35);
 assert.deepEqual(SKILLS.neutron_star.levels.map(x => x.singlePulseDamage), [72,80,90,101,113,128,144,162,184]);
@@ -160,4 +160,4 @@ function close(actual, expected, message, epsilon=1e-9){ assert(Math.abs(actual 
   SKILL_HANDLERS.neutron_star.bind(sys); tick(sys,0); assert.equal(s.neutronStarRuntime.phase,'cooldown'); assert.equal(s.neutronStarRuntime.pulseHits.size,0); assert.equal(s.neutronStarRuntime.sweep,null);
 }
 
-console.log('v0.10.93 neutron star warning beam validation passed');
+console.log('v0.10.94 neutron star warning beam validation passed');
