@@ -96,7 +96,7 @@
     "validate:01096-playtest-fixes": "npm run validate:01096-gravity-crush-column && npm run validate:01095-playtest-fixes",
     "validate:01097-gravity-reversal": "node scripts/validate-01097-gravity-reversal.mjs",
     "validate:01097-playtest-fixes": "npm run validate:01097-gravity-reversal && npm run validate:01096-playtest-fixes",
-    "validate:01098-superhero-flow": "node scripts/validate-01098-superhero-flow.mjs && node scripts/validate-01098-superhero-runtime.mjs",
+    "validate:01098-superhero-flow": "node scripts/validate-01098-superhero-flow.mjs && node scripts/validate-01098-superhero-runtime.mjs && npm run validate:01040-skill-damage",
     "validate:01098-playtest-fixes": "npm run validate:01098-superhero-flow && npm run validate:01097-playtest-fixes"
   },
   "dependencies": {

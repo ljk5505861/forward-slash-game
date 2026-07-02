@@ -1,10 +1,57 @@
 import assert from 'node:assert/strict';
-import { SKILLS } from '../src/config/skills.js';
 import '../src/skills/handlers/index.js';
-const ss=SKILLS.super_speed.levels;
-assert.deepEqual(ss.map(l=>l.moveSpeedBonus),[.06,.08,.10,.12,.14,.16,.17,.19,.20]);
-assert.deepEqual(ss.map(l=>l.attackSpeedBonus),[.04,.05,.07,.08,.10,.12,.14,.16,.18]);
-assert.equal(ss[0].highSpeedAttackSpeedBonus,0); assert.equal(ss[1].highSpeedAttackSpeedBonus,0); assert.equal(ss[2].chargeMs,1000); assert.equal(ss[2].graceMs,2000); assert.equal(ss[2].highSpeedAttackSpeedBonus,.05); assert.equal(ss[5].graceMs,3000); assert.equal(ss[5].highSpeedAttackSpeedBonus,.08); assert.equal(ss[5].weaponWaitCutRatio,.5); assert.equal(ss[8].highSpeedAttackSpeedBonus,.10); assert.equal(ss[8].killExtendMs,500); assert.equal(ss[8].maxKillExtendMs,2000);
-const le=SKILLS.laser_eyes.levels; assert.equal(le[0].beamCount,1); assert.equal(le[2].focusPerTick,.1); assert.equal(le[2].maxFocus,5); assert.equal(le[5].beamCount,2); assert.equal(le[5].beamDamageScale,.7); assert.equal(le[8].durationMs,1800); assert.equal(le[8].overloadIntervalMs,150); assert.equal(le[8].retargetOnKill,true); assert.equal(le[8].killExtendMs,300); assert.equal(le[8].maxExtendMs,1200); assert.equal(le[8].retargetFocusLoss,2);
-const fb=SKILLS.freezing_breath.levels; assert.equal(fb[0].normalFreezeStacks,5); assert.equal(fb[2].normalFreezeStacks,4); assert.equal(fb[0].eliteFreezeStacks,8); assert.equal(fb[2].eliteFreezeStacks,7); assert.equal(fb[0].normalFreezeMs,1200); assert.equal(fb[0].eliteFreezeMs,600); assert.equal(fb[5].shatterRadius,110); assert.ok(fb[5].shatterDamage>0); assert.equal(fb[8].zoneDurationMs,3000); assert.equal(fb[8].zoneIntervalMs,500); assert.equal(fb[8].deathShatterScale,.5); assert.equal(fb[8].bossBreathDamageBonus,.3);
-console.log('v0.10.98 superhero runtime data validation passed');
+import { SKILLS } from '../src/config/skills.js';
+import SkillSystem from '../src/systems/SkillSystem.js';
+import { CombatEvents } from '../src/core/CombatEvents.js';
+import { TAGS } from '../src/config/tags.js';
+import { getEnemyMoveSpeed, getEnemyAttackDelay } from '../src/systems/EnemyGravityControl.js';
+import { getEnemyColdState, isEnemyFrozen } from '../src/systems/EnemyColdControl.js';
+const close=(actual,expected,msg)=>assert(Math.abs(actual-expected)<1e-9,msg||`${actual} ~= ${expected}`);
+
+class Bus { constructor(){ this.handlers=new Map(); } on(type,fn){ const arr=this.handlers.get(type)||[]; arr.push(fn); this.handlers.set(type,arr); return ()=>this.handlers.set(type,(this.handlers.get(type)||[]).filter(x=>x!==fn)); } emit(type,payload){ (this.handlers.get(type)||[]).slice().forEach(fn=>fn(payload)); } }
+const node=()=>({active:true,setDepth(){return this},lineStyle(){return this},lineBetween(){return this},fillStyle(){return this},slice(){return this},fillPath(){return this},destroy(){this.destroyed=true},setStrokeStyle(){return this},setFillStyle(){return this},setScale(){return this}});
+function scene(){ const s={now:0,player:{x:0,y:500},playerData:{hp:100,maxHp:100,mana:100,maxMana:100,skills:[],skillDamageMultiplier:1,attackSpeedMultiplier:1,moveSpeedMultiplierBonuses:{},attackSpeedMultiplierBonuses:{},cooldownReduction:0},enemies:[],eventBus:new Bus(),isGameplayPaused(){return false},getGameplayTime(){return this.now},hud:{update(){}},skillBar:{update(){}},events:{on(){},once(){}},add:{graphics:()=>node(),circle:()=>node(),rectangle:()=>node()},tweens:{add(cfg){ cfg.onComplete?.(); return node(); },killTweensOf(){}},targeting:{valid:e=>!!e&&!e.isDefeated&&(e.hp??1)>0,all(){return s.enemies.filter(this.valid)},nearestAhead(range=9999){return this.all().filter(e=>e.x>=s.player.x&&e.x-s.player.x<=range).sort((a,b)=>a.x-b.x)[0]||null},isEnemyFullyInsideViewport(){return true}},professionSystem:{getDamageMultiplier(){return 1},onActiveSkillCast(){},onDirectHit(){}},artifactSystem:{highHpDamageMultiplier(){return 1}},combatSystem:{nextPlayerAttackAt:0,damageLog:[],damageEnemy(e,amount,meta={}){ if(!s.targeting.valid(e)) return false; const before=e.hp; e.hp=Math.max(0,e.hp-Math.max(0,Math.round(amount))); const damage=before-e.hp; if(damage>0){ this.damageLog.push({enemy:e,amount:damage,meta}); s.eventBus.emit(CombatEvents.ENEMY_HIT,{enemy:e,damage,...meta}); } if(e.hp<=0&&!e.isDefeated){ e.isDefeated=true; s.eventBus.emit(CombatEvents.ENEMY_KILLED,{enemy:e,...meta}); } return damage>0; }} }; s.skillSystem=new SkillSystem(s); return s; }
+function enemy(props={}){ return {active:true,x:props.x??300,y:props.y??500,width:props.width??60,height:props.height??90,hp:props.hp??100,maxHp:props.hp??100,speed:props.speed??100,attackIntervalMs:props.attackIntervalMs??1000,nextAttackAt:0,body:{vx:0,setVelocityX(v){this.vx=v},reset(x,y){this.x=x;this.y=y}},...props}; }
+function own(s,id,level){ s.playerData.skills=[{id,level}]; s.skillSystem.ensurePassiveBound(id); }
+function update(s,t){ s.now=t; s.skillSystem.update(t); }
+function updateActiveAt(s,t){ s.now=t; s.skillSystem.updateActive(t); }
+
+// Super speed actual runtime.
+{
+  const s=scene(); own(s,'super_speed',1); update(s,0); assert.equal(s.playerData.moveSpeedMultiplierBonuses.super_speed,.06); assert.equal(s.playerData.attackSpeedMultiplierBonuses.super_speed,.04);
+  s.skillSystem.removeSkillRuntime('super_speed'); own(s,'super_speed',3); update(s,0); s.player.x=50; update(s,900); assert.equal(s.playerData.attackSpeedMultiplierBonuses.super_speed,.07); s.player.x=120; update(s,1100); close(s.playerData.attackSpeedMultiplierBonuses.super_speed,.12); update(s,2500); close(s.playerData.attackSpeedMultiplierBonuses.super_speed,.12); update(s,3201); assert.equal(s.playerData.attackSpeedMultiplierBonuses.super_speed,.07);
+}
+{
+  const s=scene(); own(s,'super_speed',6); update(s,0); s.player.x=200; update(s,1000); s.combatSystem.nextPlayerAttackAt=3000; update(s,1100); assert.equal(s.combatSystem.nextPlayerAttackAt,2050,'Lv6 cuts true nextPlayerAttackAt at stop'); s.player.x=260; update(s,1200); update(s,1300); assert.equal(s.combatSystem.nextPlayerAttackAt,2050,'same high speed state does not cut twice'); update(s,4201); s.player.x=400; update(s,5301); s.combatSystem.nextPlayerAttackAt=7301; update(s,5401); assert.equal(s.combatSystem.nextPlayerAttackAt,6351,'new high speed state can cut again');
+  s.skillSystem.removeSkillRuntime('super_speed'); assert.equal(s.playerData.moveSpeedMultiplierBonuses.super_speed,undefined); assert.equal(s.playerData.attackSpeedMultiplierBonuses.super_speed,undefined); assert.equal(s.skillSystem.passiveState.superSpeed,undefined);
+}
+{
+  const s=scene(); own(s,'super_speed',9); update(s,0); s.player.x=100; update(s,1000); update(s,1100); const before=s.skillSystem.passiveState.superSpeed.graceUntil; for(let i=0;i<6;i++) s.eventBus.emit(CombatEvents.ENEMY_KILLED,{enemy:enemy()}); assert.equal(s.skillSystem.passiveState.superSpeed.graceUntil,before+2000,'Lv9 kill extension capped at 2s'); s.skillSystem.shiftTimers(5000,1100); assert.equal(s.skillSystem.passiveState.superSpeed.graceUntil,before+7000,'pause shifts grace timer');
+}
+
+// Laser line collision and scheduling.
+{
+  const s=scene(); own(s,'laser_eyes',1); const lock=enemy({x:420,y:620,hp:100}); const outside=enemy({x:420,y:360,hp:100}); s.enemies=[lock,outside]; const cfg=SKILLS.laser_eyes, data=cfg.levels[0], ctx=s.skillSystem.createCastContext('laser_eyes'); s.skillSystem.cast(cfg,data,1,ctx); updateActiveAt(s,0); assert(lock.hp<100,'tilted visual beam hits tilted target'); assert.equal(outside.hp,100,'enemy outside tilted beam not hit');
+}
+{
+  const s=scene(); own(s,'laser_eyes',6); const lock=enemy({x:420,y:620,hp:200}); s.enemies=[lock]; const cfg=SKILLS.laser_eyes, data=cfg.levels[5]; s.skillSystem.cast(cfg,data,6,{...s.skillSystem.createCastContext('laser_eyes'),manaCost:0}); updateActiveAt(s,0); assert.equal(s.combatSystem.damageLog.length,2,'dual beams can hit same enemy twice'); assert.deepEqual(s.combatSystem.damageLog.map(x=>x.amount),[15,15]); assert.equal(s.skillSystem.active[0].focus,1,'focus increments once per tick');
+}
+{
+  const s=scene(); own(s,'laser_eyes',9); const lock=enemy({x:420,y:620,hp:1000}); s.enemies=[lock]; const cfg=SKILLS.laser_eyes, data=cfg.levels[8]; s.skillSystem.cast(cfg,data,9,{...s.skillSystem.createCastContext('laser_eyes'),manaCost:0}); const active=s.skillSystem.active[0]; for(let t of [0,200,400,600,800]) updateActiveAt(s,t); assert.equal(active.focus,5); updateActiveAt(s,1000); assert.equal(active.nextAt,1150,'SkillSystem.updateActive respects laser self scheduling at 150ms'); const beforeEnd=active.endAt; s.eventBus.emit(CombatEvents.ENEMY_KILLED,{enemy:lock,skillId:'other'}); assert.equal(active.endAt,beforeEnd,'non-laser kill does not extend duration'); for(let i=0;i<5;i++) s.eventBus.emit(CombatEvents.ENEMY_KILLED,{enemy:lock,skillId:'laser_eyes'}); assert.equal(active.endAt,beforeEnd+1200,'laser kill extension capped at 1.2s'); active.onEnd('cleanup'); assert(active.visuals.length===0);
+}
+
+// Cold actual movement/attack/freeze/shatter/zone.
+{
+  const s=scene(); own(s,'freezing_breath',1); const e=enemy({x:260,y:500,speed:100,attackIntervalMs:1000}); s.enemies=[e]; const cfg=SKILLS.freezing_breath, data=cfg.levels[0]; s.skillSystem.cast(cfg,data,1,{...s.skillSystem.createCastContext('freezing_breath'),manaCost:0}); for(let t of [0,250,500,750,1000]) updateActiveAt(s,t); assert(getEnemyMoveSpeed(e,100,1000)<100,'cold reduces real move speed'); assert(getEnemyAttackDelay(e,1000,1000)>1000,'cold increases real attack delay'); assert(isEnemyFrozen(e,1000),'normal freezes at 5 stacks'); assert.equal(getEnemyMoveSpeed(e,100,1000),0,'frozen move speed is zero'); assert.equal(getEnemyAttackDelay(e,1000,1000),Infinity,'frozen attack delay pauses attacks'); assert(!isEnemyFrozen(e,2301),'normal unfreezes after 1.2s');
+}
+{
+  const s=scene(); own(s,'freezing_breath',3); const elite=enemy({x:260,y:500,isElite:true,hp:500}); const boss=enemy({x:280,y:500,isBoss:true,hp:1000}); s.enemies=[elite,boss]; const cfg=SKILLS.freezing_breath, data=cfg.levels[2]; s.skillSystem.cast(cfg,data,3,{...s.skillSystem.createCastContext('freezing_breath'),manaCost:0}); for(let t of [0,250,500,750,1000,1250,1500]) updateActiveAt(s,t); assert(isEnemyFrozen(elite,1500),'elite freezes with elite threshold'); assert(!isEnemyFrozen(elite,2201),'elite freeze is shorter'); assert(!isEnemyFrozen(boss,1500),'boss never freezes'); assert(getEnemyMoveSpeed(boss,100,1500)<100,'boss still slowed');
+}
+{
+  const s=scene(); own(s,'freezing_breath',6); const frozen=enemy({x:260,y:500,hp:500}); const near=enemy({x:310,y:500,hp:500}); s.enemies=[frozen,near]; const cfg=SKILLS.freezing_breath, data=cfg.levels[5]; s.skillSystem.cast(cfg,data,6,{...s.skillSystem.createCastContext('freezing_breath'),manaCost:0}); for(let t of [0,250,500,750]) updateActiveAt(s,t); assert(isEnemyFrozen(frozen,750)); s.eventBus.emit(CombatEvents.ENEMY_HIT,{enemy:frozen,source:'attack',tags:[TAGS.NORMAL_ATTACK],damage:10}); assert(getEnemyColdState(frozen,800).shatterUsed,'legal normal attack shatters once'); const logAfter=s.combatSystem.damageLog.length; for(const payload of [{source:'reflect'},{source:'skill',skillId:'freezing_breath'},{source:'skill',skillId:'spirit_wolves',tags:[TAGS.SUMMON]},{source:'poison',tags:[TAGS.DOT]},{source:'skill',skillId:'laser_eyes',tags:[TAGS.MAGIC,TAGS.SPELL,TAGS.ACTIVE_SKILL]}]) s.eventBus.emit(CombatEvents.ENEMY_HIT,{enemy:frozen,damage:10,tags:[],...payload}); assert.equal(s.combatSystem.damageLog.length,logAfter,'illegal and second shatters do not recurse/repeat');
+}
+{
+  const s=scene(); own(s,'freezing_breath',9); const e=enemy({x:260,y:500,hp:500}); s.enemies=[e]; const cfg=SKILLS.freezing_breath, data=cfg.levels[8]; s.skillSystem.cast(cfg,data,9,{...s.skillSystem.createCastContext('freezing_breath'),manaCost:0}); const active=s.skillSystem.active[0]; active.onEnd('removed'); assert.equal(s.skillSystem.active.filter(a=>a.activeKind==='coldZone').length,0,'removed does not create zone'); s.skillSystem.active=[]; s.skillSystem.cast(cfg,data,9,{...s.skillSystem.createCastContext('freezing_breath'),manaCost:0}); const breath=s.skillSystem.active[0]; breath.onEnd('complete'); const zone=s.skillSystem.active.find(a=>a.activeKind==='coldZone'); assert(zone,'complete creates zone'); const oldOrigin={...zone.snapshot.origin}; s.player.x+=400; const inOld=enemy({x:oldOrigin.x+120,y:oldOrigin.y+30,hp:100}); const inNew=enemy({x:s.player.x+120,y:s.player.y-42,hp:100}); s.enemies=[inOld,inNew]; zone.tick(); assert(getEnemyColdState(inOld,s.now).stacks>0,'zone applies at original world coordinates'); assert.equal(getEnemyColdState(inNew,s.now).stacks,0,'zone does not follow player'); s.skillSystem.removeSkillRuntime('freezing_breath'); assert.equal(s.skillSystem.active.some(a=>a.skillId==='freezing_breath'),false,'replacement cleanup removes breath and zone'); assert.equal(getEnemyColdState(inOld,s.now).stacks,0,'cleanup clears cold');
+}
+
+console.log('v0.10.98 superhero runtime behavior validation passed');
