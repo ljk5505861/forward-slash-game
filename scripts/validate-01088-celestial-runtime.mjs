@@ -139,8 +139,9 @@ function tick(system, elapsedMs = 0) {
   tick(system, 0);
   assert.equal(scene.neutronStarRuntime.active, true);
   assert.equal(scene.hits.length, 0, 'in-run neutron acquisition waits before its first pulse');
+  tick(system, SKILLS.neutron_star.levels[0].roundCooldownMs);
   tick(system, SKILLS.neutron_star.levels[0].initialPulseDelayMs);
-  assert.equal(scene.hits.length, 1, 'initial neutron delay then starts its first pulse');
+  assert.equal(scene.hits.length, 1, 'round cooldown and initial neutron delay then starts its first pulse');
 
   levels.white_dwarf = 1;
   SKILL_HANDLERS.white_dwarf.onAcquire(system);
@@ -162,7 +163,7 @@ function tick(system, elapsedMs = 0) {
   const inside = enemy('inside', 100 + 710, 555, { hp: 10000 });
   scene.enemies = [inside];
   SKILL_HANDLERS.neutron_star.bind(system);
-  tick(system, 0);       // arm pulse 1
+  tick(system, SKILLS.neutron_star.levels[0].roundCooldownMs);       // arm pulse 1
   tick(system, SKILLS.neutron_star.levels[0].initialPulseDelayMs); // pulse 1
   tick(system, SKILLS.neutron_star.levels[0].pulseGapMs);     // pulse 2
   const outside = enemy('outside', 100 + 210, 555, { hp: 10000 });
@@ -193,7 +194,7 @@ function tick(system, elapsedMs = 0) {
   ];
   scene.enemies = targets;
   SKILL_HANDLERS.neutron_star.bind(system);
-  tick(system, 0);
+  tick(system, SKILLS.neutron_star.levels[8].roundCooldownMs);
   tick(system, SKILLS.neutron_star.levels[8].initialPulseDelayMs);
   tick(system, SKILLS.neutron_star.levels[8].pulseGapMs);
   tick(system, SKILLS.neutron_star.levels[8].singlePulseVisualMs + SKILLS.neutron_star.levels[8].postSecondPulseDelayMs);
@@ -270,4 +271,4 @@ function tick(system, elapsedMs = 0) {
   assert.equal(burstRing.destroyed, true, 'guard burst visual is destroyed after its configured duration');
 }
 
-console.log('v0.10.92 celestial runtime validation passed');
+console.log('v0.10.93 celestial runtime validation passed');

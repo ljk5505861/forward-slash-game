@@ -1,6 +1,7 @@
 const SPECIAL_RUNTIMES = {
   guardian_shield: 'guardianShieldRuntime',
   lightning_enchant: 'lightningEnchantRuntime',
+  neutron_star: 'neutronStarRuntime',
   white_dwarf: 'whiteDwarfRuntime'
 };
 

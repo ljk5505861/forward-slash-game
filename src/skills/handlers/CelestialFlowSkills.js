@@ -12,7 +12,7 @@ const PROTECTED_ENEMY_STATES = new Set(['windup', 'slamWind', 'charge', 'jump', 
 const N = {
   singlePulseDamage: [72, 80, 90, 101, 113, 128, 144, 162, 184],
   sweepDamage: [54, 60, 68, 77, 87, 99, 113, 129, 148],
-  cycleIntervalMs: [7200, 7000, 6800, 6600, 6400, 6100, 5900, 5700, 5400],
+  roundCooldownMs: [7200, 7000, 6800, 6600, 6400, 6100, 5900, 5700, 5400],
   initialPulseDelayMs: [280, 280, 270, 270, 260, 260, 250, 250, 240],
   pulseTargetRetryMs: [120, 120, 120, 120, 120, 120, 120, 120, 120],
   pulseGapMs: [460, 450, 440, 430, 420, 410, 400, 390, 380],
@@ -233,7 +233,7 @@ function ensureNeutronRuntime(system) {
     visuals: new Set(),
     transients: [],
     active: false,
-    phase: 'idle',
+    phase: 'cooldown',
     nextAt: now(scene),
     pulseHits: new Set(),
     firstTarget: null,
@@ -241,7 +241,15 @@ function ensureNeutronRuntime(system) {
     sweep: null,
     pulseFlashUntil: 0,
     updater: null,
-    shutdown: null
+    shutdown: null,
+    getSkillBarState() {
+      const time = now(scene);
+      if (this.phase === 'cooldown') return { label: '冷却', remainingMs: Math.max(1, this.nextAt - time) };
+      if (this.phase === 'ready') return { text: '脉冲就绪' };
+      if (this.phase === 'pulse1' || this.phase === 'pulse2' || this.phase === 'postSecondPulse') return { text: '脉冲释放' };
+      if (this.phase === 'warning' || this.phase === 'sweep') return { text: '横扫释放' };
+      return null;
+    }
   };
   runtime.updater = () => updateNeutronStar(system);
   system.passiveUpdaters.push(runtime.updater);
@@ -250,14 +258,27 @@ function ensureNeutronRuntime(system) {
   return runtime;
 }
 
-function resetNeutronCycle(runtime, time) {
-  runtime.phase = 'idle';
-  runtime.nextAt = time;
+function beginNeutronRoundCooldown(runtime, data, time) {
+  runtime.phase = 'cooldown';
+  runtime.nextAt = time + data.roundCooldownMs;
+  runtime.firstTarget = null;
+  runtime.pulseHits.clear();
+  runtime.sweepPlan = null;
+  runtime.sweep = null;
+}
+
+function resetNeutronCycle(runtime, time, data = null) {
   runtime.firstTarget = null;
   runtime.pulseHits.clear();
   runtime.sweepPlan = null;
   runtime.sweep = null;
   runtime.pulseFlashUntil = 0;
+  if (data) {
+    beginNeutronRoundCooldown(runtime, data, time);
+  } else {
+    runtime.phase = 'cooldown';
+    runtime.nextAt = time;
+  }
 }
 
 
@@ -269,10 +290,10 @@ function deactivateNeutronStar(runtime, time) {
   resetNeutronCycle(runtime, time);
 }
 
-function activateNeutronStar(runtime, time) {
+function activateNeutronStar(runtime, time, data = null) {
   if (runtime.active) return;
   runtime.active = true;
-  resetNeutronCycle(runtime, time);
+  resetNeutronCycle(runtime, time, data);
 }
 
 function prepareSweep(scene, runtime, data, time) {
@@ -336,10 +357,7 @@ function updateSweep(system, runtime, data, time) {
   if (time < sweep.endAt) return;
   destroyTracked(runtime, sweep.beam);
   runtime.sweep = null;
-  runtime.phase = 'idle';
-  runtime.nextAt = time + data.cycleIntervalMs;
-  runtime.firstTarget = null;
-  runtime.pulseHits.clear();
+  beginNeutronRoundCooldown(runtime, data, time);
 }
 
 function updateNeutronStar(system) {
@@ -352,8 +370,8 @@ function updateNeutronStar(system) {
     if (runtime.active || runtime.visuals.size) deactivateNeutronStar(runtime, time);
     return;
   }
-  activateNeutronStar(runtime, time);
   const data = levelData(system, 'neutron_star', level);
+  activateNeutronStar(runtime, time, data);
   if (!runtime.body && scene.add) {
     const position = neutronStarScreenPosition(scene);
     runtime.body = trackVisual(runtime, scene.add.circle?.(position.x, position.y, 16, 0x7dd3fc, .95));
@@ -373,10 +391,17 @@ function updateNeutronStar(system) {
   runtime.ring?.setScale?.(flashing ? 1.18 : 1);
   runtime.ring?.setAlpha?.(flashing ? .55 : .25);
   if (time < runtime.nextAt) return;
-  if (runtime.phase === 'idle') {
+  if (runtime.phase === 'cooldown') {
+    runtime.phase = visibleEnemies(scene).length ? 'pulse1' : 'ready';
+    runtime.nextAt = runtime.phase === 'pulse1' ? time + data.initialPulseDelayMs : time + data.pulseTargetRetryMs;
+    return;
+  }
+  if (runtime.phase === 'ready') {
+    if (!visibleEnemies(scene).length) {
+      runtime.nextAt = time + data.pulseTargetRetryMs;
+      return;
+    }
     runtime.phase = 'pulse1';
-    runtime.pulseHits.clear();
-    runtime.firstTarget = null;
     runtime.nextAt = time + data.initialPulseDelayMs;
     return;
   }
@@ -384,6 +409,7 @@ function updateNeutronStar(system) {
     const secondPulse = runtime.phase === 'pulse2';
     const target = secondPulse ? pickPulseTarget(scene, runtime.firstTarget) : pickPulseTarget(scene, null);
     if (!target) {
+      if (!secondPulse) runtime.phase = 'ready';
       runtime.nextAt = time + data.pulseTargetRetryMs;
       return;
     }
@@ -422,13 +448,15 @@ function updateNeutronStar(system) {
 
 export const NeutronStarSkill = {
   bind(system) {
-    if (system.getLevel?.('neutron_star')) {
-      activateNeutronStar(ensureNeutronRuntime(system), now(system.scene));
+    const level = system.getLevel?.('neutron_star') || 0;
+    if (level) {
+      activateNeutronStar(ensureNeutronRuntime(system), now(system.scene), levelData(system, 'neutron_star', level));
     }
     return () => NeutronStarSkill.destroyRuntime(system);
   },
   onAcquire(system) {
-    activateNeutronStar(ensureNeutronRuntime(system), now(system.scene));
+    const level = system.getLevel?.('neutron_star') || 0;
+    if (level) activateNeutronStar(ensureNeutronRuntime(system), now(system.scene), levelData(system, 'neutron_star', level));
   },
   shiftTimers(system, pausedDuration, pausedAt = 0) {
     const runtime = system.scene.neutronStarRuntime;
@@ -935,7 +963,7 @@ export function configureCelestialFlowSkills() {
     sweepHitLimitPerEnemy: 1,
     maxSinglePulseTargets: 2,
     ...Object.fromEntries(Object.keys(N).map(key => [key, N[key][index]])),
-    desc: `单体脉冲${N.singlePulseDamage[index]}，横扫${N.sweepDamage[index]}，循环${(N.cycleIntervalMs[index] / 1000).toFixed(1)}秒。`,
+    desc: `单体脉冲${N.singlePulseDamage[index]}，单体脉冲次数2，横扫${N.sweepDamage[index]}，每轮冷却${(N.roundCooldownMs[index] / 1000).toFixed(1)}秒；冷却结束后自动释放一轮脉冲，无目标时保持就绪。Lv3同目标第二发加成，Lv6标记横扫增伤，Lv9横扫无视防御。`,
     milestoneText: index === 2 ? '脉冲聚焦' : index === 5 ? '脉冲共振' : index === 8 ? '全域星脉' : undefined
   }));
   const whiteDwarfLevels = Array.from({ length: 9 }, (_, index) => ({
@@ -961,7 +989,7 @@ export function configureCelestialFlowSkills() {
     short: '星',
     color: 0x7dd3fc,
     tags: [TAGS.MAGIC, TAGS.CELESTIAL, TAGS.BUILD_CELESTIAL, 'mythicSkill'],
-    description: '中子星永久悬浮于太阳与黑洞之间，每轮先连续释放两次单体脉冲，再从战场最右侧向角色前方释放一次横扫脉冲。',
+    description: '中子星永久悬浮于战场上方，每次冷却结束后自动释放一轮脉冲：连续进行两次单体脉冲，再从战场最右侧向角色前方释放一次横扫脉冲。',
     milestones: {
       3: '脉冲聚焦：两次单体脉冲命中同一目标时，第二次脉冲伤害提高45%。',
       6: '脉冲共振：横扫脉冲对本轮已被单体脉冲命中的敌人额外造成30%伤害。',
