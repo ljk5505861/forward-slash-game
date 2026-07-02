@@ -12,14 +12,10 @@ jobs:
   runtime:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 1
-          show-progress: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci --silent
-      - run: node scripts/validate-01098-superhero-runtime.mjs
+      - name: Run isolated runtime validation
+        shell: bash
+        run: |
+          git clone --quiet --depth 1 --branch codex-cla3dt https://github.com/ljk5505861/forward-slash-game.git repo
+          cd repo
+          npm ci --silent
+          node scripts/validate-01098-superhero-runtime.mjs
