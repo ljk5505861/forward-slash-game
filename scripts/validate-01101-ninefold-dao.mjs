@@ -57,9 +57,9 @@ function add(sys, level=1){ sys.scene.playerData.skills=[{id:NINEFOLD_DAO_ID,lev
 function slotText(scene, skillData){ const cfg=SKILLS[skillData.id]; const rarity=getRarity(cfg.rarity); return `${rarity.name} ${cfg.name}\nLv.${skillData.level}　${getSkillBarStateText(scene, skillData, cfg)}`; }
 function makeSkillSystemScene({paused=false}={}){ const c=scene({paused}); c.s.skillSystem=new SkillSystem(c.s); return c; }
 
-assert.equal(GAME_VERSION,'0.11.1'); assert.equal(pkg.version,'0.11.1');
-const cfg=SKILLS[NINEFOLD_DAO_ID]; assert(cfg); assert.equal(cfg.rarity,'MYTHIC'); assert.equal(cfg.passive,true); assert.equal(cfg.maxLevel,9); assert.equal(cfg.requiredSkillId,undefined); assert(cfg.tags.includes(TAGS.CULTIVATION)); assert(cfg.tags.includes(TAGS.BUILD_CULTIVATION)); assert(BUILD_TAGS.includes(TAGS.BUILD_CULTIVATION)); assert.equal(Object.values(SKILLS).filter(s=>s?.id&&!s.hidden).length,39);
-['alchemy','great_handprint','soul_destroying_needle','three_pure_ones','mantra_heaven_book'].forEach(id=>assert(!SKILLS[id]));
+assert.equal(GAME_VERSION,'0.11.2'); assert.equal(pkg.version,'0.11.2');
+const cfg=SKILLS[NINEFOLD_DAO_ID]; assert(cfg); assert.equal(cfg.rarity,'MYTHIC'); assert.equal(cfg.passive,true); assert.equal(cfg.maxLevel,9); assert.equal(cfg.requiredSkillId,undefined); assert(cfg.tags.includes(TAGS.CULTIVATION)); assert(cfg.tags.includes(TAGS.BUILD_CULTIVATION)); assert(BUILD_TAGS.includes(TAGS.BUILD_CULTIVATION)); assert.equal(Object.values(SKILLS).filter(s=>s?.id&&!s.hidden).length,40);
+['great_handprint','soul_destroying_needle','three_pure_ones','mantra_heaven_book'].forEach(id=>assert(!SKILLS[id]));
 for(let i=1;i<=9;i++){ const c=scene(); add(c.sys,i); c.advance(1000); assert(Math.abs(getCultivationSnapshot(c.s).progress-CULTIVATION_BASE_RATES[i-1]*(i>=6?1.25:1))<.001); }
 let c=scene(); assert.equal(getCultivationSnapshot(c.s).active,false); assert.deepEqual(getCultivationSpellModifiers(c.s),{damageMultiplier:1,rangeMultiplier:1,cooldownMultiplier:1,manaCostMultiplier:1}); add(c.sys,1); let snap=getCultivationSnapshot(c.s); assert.equal(snap.realm,'炼气'); assert.equal(snap.progress,0); assert.equal(c.s.playerData.maxHp,105); assert.equal(c.s.playerData.maxMana,40);
 assert.equal(getSkillBarStateText(c.s,{id:NINEFOLD_DAO_ID,level:6},cfg),'炼气 0%'); assert.equal(slotText(c.s,{id:NINEFOLD_DAO_ID,level:6}),'神话 九转大道\nLv.6　炼气 0%'); assert.equal((slotText(c.s,{id:NINEFOLD_DAO_ID,level:6}).match(/Lv\./g)||[]).length,1);

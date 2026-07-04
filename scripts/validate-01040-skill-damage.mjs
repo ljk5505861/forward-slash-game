@@ -8,11 +8,11 @@ const nums=(id,key)=>SKILLS[id]?.levels?.map(level=>level[key]);
 const eq=(actual,expected,label)=>assert.deepEqual(actual,expected,label);
 const src=file=>readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
 const hasHandler=handler=>new RegExp(`${handler}:`).test(src('src/skills/handlers/index.js'));
-const archetypes={fire:['fireball','fire_seed','burn_burst','solar_flame'],sword:['sword_wave','sword_sheath','sword_tomb'],strength:['giant_force','spinning_blade','bloodthirst','last_stand'],defense:['healing','thorn_armor','guardian_shield'],afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],summon:['spirit_wolves','spirit_bird','spirit_slime'],weapon:['lightning_enchant','lightning_mark','lightning_tribulation'],gravity:['gravity_crush','gravity_reversal','gravity_orb','black_hole'],celestial:['neutron_star','white_dwarf'],superhero:['super_speed','laser_eyes','freezing_breath'],cultivation:['ninefold_dao']};
+const archetypes={fire:['fireball','fire_seed','burn_burst','solar_flame'],sword:['sword_wave','sword_sheath','sword_tomb'],strength:['giant_force','spinning_blade','bloodthirst','last_stand'],defense:['healing','thorn_armor','guardian_shield'],afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],summon:['spirit_wolves','spirit_bird','spirit_slime'],weapon:['lightning_enchant','lightning_mark','lightning_tribulation'],gravity:['gravity_crush','gravity_reversal','gravity_orb','black_hole'],celestial:['neutron_star','white_dwarf'],superhero:['super_speed','laser_eyes','freezing_breath'],cultivation:['ninefold_dao','alchemy']};
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.11.1','game version for v0.11.1 skill regression');
-eq(allSkillIds.length,39,'all current 39 skills listed');
-eq(new Set(allSkillIds).size,39,'all current 39 skills unique');
+assert.equal(GAME_VERSION,'0.11.2','game version for v0.11.1 skill regression');
+eq(allSkillIds.length,40,'all current 39 skills listed');
+eq(new Set(allSkillIds).size,40,'all current 39 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
 allSkillIds.forEach(id=>assert.ok(SKILLS[id],`missing skill ${id}`));
 

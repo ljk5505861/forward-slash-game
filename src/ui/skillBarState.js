@@ -1,4 +1,5 @@
 import { NINEFOLD_DAO_ID, getCultivationSnapshot } from '../skills/handlers/CultivationCoreSkill.js';
+import { ALCHEMY_ID, CultivationAlchemySkill } from '../skills/handlers/CultivationAlchemySkill.js';
 
 const SPECIAL_RUNTIMES = {
   guardian_shield: 'guardianShieldRuntime',
@@ -15,6 +16,7 @@ export function getSkillBarStateText(scene, skillData, cfg) {
     const pct = Math.max(0, Math.min(100, Math.floor((snap.progress / (snap.nextThreshold || 1)) * 100)));
     return `${snap.realm} ${pct}%`;
   }
+  if (skillData.id === ALCHEMY_ID) return CultivationAlchemySkill.getSkillBarState(scene.skillSystem).text;
   const readyAt = scene.skillSystem?.cooldowns.get(skillData.id) || 0;
   const cooldownRemainingMs = Math.max(0, readyAt - scene.getGameplayTime());
   const runtimeKey = SPECIAL_RUNTIMES[skillData.id];
