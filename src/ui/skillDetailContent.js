@@ -1,7 +1,7 @@
 import '../skills/handlers/index.js';
 import { SKILLS } from '../config/skills.js';
 import { NINEFOLD_DAO_ID, CULTIVATION_REALMS, CULTIVATION_THRESHOLDS, CULTIVATION_REALM_STATS, getCultivationSnapshot, getCultivationSpellModifiers } from '../skills/handlers/CultivationCoreSkill.js';
-import { ALCHEMY_ID, MATERIAL_MULTIPLIERS, getAlchemyState, getAlchemyRecipe } from '../skills/handlers/CultivationAlchemySkill.js';
+import { ALCHEMY_ID, MATERIAL_MULTIPLIERS, getAlchemyState, getAlchemyRecipe, getAlchemyDaoBuffModifiers } from '../skills/handlers/CultivationAlchemySkill.js';
 import { SOUL_THRESHOLDS, SWORD_MYTHIC, getSwordFlowReadSnapshot, mainSwordStatsReadOnly, tombStatsReadOnly } from '../skills/handlers/SwordFlowState.js';
 
 const QUALITY_NAMES={COMMON:'普通',RARE:'稀有',EPIC:'史诗',MYTHIC:'神话'};
@@ -97,7 +97,7 @@ function cultivationDetail(cfg,level,context={}){
 }
 
 function alchemyDetail(cfg,level,context={}){
-  const scene=context.scene; const st=getAlchemyState(scene)||{}; const recipe=getAlchemyRecipe(scene||context.scene?.skillSystem); const snap=getCultivationSnapshot(scene);
+  const scene=context.scene; const st=getAlchemyState(scene)||{}; const recipe=st.crafting&&st.currentRecipe?st.currentRecipe:getAlchemyRecipe(scene||context.scene?.skillSystem); const snap=getCultivationSnapshot(scene); const daoBuff=getAlchemyDaoBuffModifiers(scene);
   const progress=st.crafting?Math.floor(((st.craftProgressMs||0)/Math.max(1,st.craftDurationMs||1))*100):0;
   const hasDao=!!snap.active; const actualCultivation=recipe.tribulation?0:(recipe.cultivation||0)*((level>=9&&(st.nineTurnCounter||0)===8)?9:1);
   return { name:cfg.name,level,maxLevel:cfg.maxLevel,description:cfg.description,currentEffects:[
@@ -114,7 +114,9 @@ function alchemyDetail(cfg,level,context={}){
     `Lv6 血骨相济：${level>=6?'已解锁':'未解锁'}`,
     `Lv9 九转丹成：${level>=9?'已解锁':'未解锁'}`,
     hasDao?`当前境界：${snap.realm}，本炉实际修为+${actualCultivation}`:'未拥有九转大道：丹药只恢复生命与法力',
-    recipe.tribulation?'炼制渡劫仙丹，不再增加修为':'渡劫前丹药可增加修为'
+    recipe.tribulation?'炼制渡劫仙丹，不再增加修为':'渡劫前丹药可增加修为',
+    `仙丹道韵：主动技能×${daoBuff.activeSkillDamageMultiplier}，修仙技能×${daoBuff.cultivationSkillDamageMultiplier}`,
+    '定位：开放式丹药辅助技能；普通流派可通过回血、回蓝和渡劫仙丹道韵获益，修仙技能收益更高。'
   ],mechanics:['详情为只读快照：不会增加材料、推进炼丹、触发丹药完成或调用 grantCultivation()。'],milestones:milestones(cfg,level),nextLevelPreview:nextPreview(cfg,level,cfg.levels[level-1]||{},cfg.levels[level]||null),progress:`${level}/${cfg.maxLevel}`};
 }
 
