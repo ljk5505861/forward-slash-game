@@ -8,7 +8,7 @@ assert.doesNotMatch(gravityFollowupSource,/skillId\s*===?\s*['"]black_hole['"]/)
 assert.doesNotMatch(gravityFollowupSource,/rt\.transients/);
 const { GAME_VERSION } = await import('../src/config/version.js');
 const { SKILLS } = await import('../src/config/skills.js'); await import('../src/skills/handlers/index.js'); const { SKILL_HANDLERS } = await import('../src/skills/handlers/index.js'); const { getSkillDetailData } = await import('../src/ui/skillDetailContent.js'); const { applyEnemyGravity, applyGravityNudge } = await import('../src/systems/EnemyGravityControl.js');
-assert.equal(GAME_VERSION,'0.11.2'); assert.equal(Object.values(SKILLS).filter(s=>s?.id&&!s.hidden).length,40);
+assert.equal(GAME_VERSION,'0.11.3'); assert.equal(Object.values(SKILLS).filter(s=>s?.id&&!s.hidden).length,40);
 const removed=['collapseIntervalMs','collapseDamage','collapseOuterDamageRatio','collapseChargeMs','collapsePullDistance','ultimateCollapseEvery','ultimateCollapseDamageMultiplier','ultimateCoreDamageMultiplier','ultimateCollapseChargeMs','ultimatePullMultiplier','ultimateSlowDurationMs','ultimateMoveSlow','ultimateAttackSlow'];
 const bhCfg=SKILLS.black_hole; bhCfg.levels.forEach((level,i)=>removed.forEach(k=>assert.equal(k in level,false,`level ${i+1} still has ${k}`))); assert(bhCfg.milestones[9].includes('奇点')); assert(!/[坍塌坍缩]/.test(bhCfg.milestones[9]));
 assert.deepEqual(bhCfg.levels.map(l=>l.tickDamage),[10,12,14,16,18,20,23,26,30]); assert.deepEqual(bhCfg.levels.map(l=>l.tickIntervalMs),[650,640,620,610,600,580,560,530,500]); assert.deepEqual(bhCfg.levels.map(l=>l.resonanceDamageBonus),[0,0,0,0,0,.35,.35,.35,.35]);

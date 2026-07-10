@@ -15,8 +15,8 @@ const enemy=(x=0,y=0,hp=100)=>({x,y,hp,isDefeated:false});
 const hit=(s,e,actual=10,tags=[TAGS.NORMAL_ATTACK])=>s.eventBus.emit(CombatEvents.PLAYER_HIT,{source:'attack',enemy:e,actualDamage:actual,damage:999,tags});
 const st=e=>e[Object.getOwnPropertySymbols(e).find(sym=>String(sym).includes('lightningMarkState'))];
 
-assert.equal(GAME_VERSION,'0.11.2');
-assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version,'0.11.2');
+assert.equal(GAME_VERSION,'0.11.3');
+assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version,'0.11.3');
 assert.equal(Object.keys(SKILLS).length,40);
 const cfg=SKILLS.lightning_mark;
 assert.equal(cfg.name,'雷印'); assert.equal(cfg.rarity,'RARE'); assert.equal(cfg.passive,true); assert.equal(cfg.maxLevel,9); assert.equal(cfg.handler,'lightning_mark'); assert.equal(cfg.requiredSkillId,undefined);
