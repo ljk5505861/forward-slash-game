@@ -120,9 +120,7 @@ function tick(scene, milliseconds) {
   scene.now += milliseconds;
   scene.skillSystem.update(scene.now);
 }
-function completeTweens(scene) {
-  [...scene.tweenRecords].forEach(tween => tween.complete());
-}
+function completeTweens(scene) { [...scene.tweenRecords].forEach(tween => tween.complete()); }
 function detailLine(detail, prefix) { return detail.currentEffects.find(line => line.startsWith(prefix)); }
 
 assert.equal(GAME_VERSION, '0.11.2');
@@ -201,13 +199,13 @@ assert.equal(scene.playerData.mana, scene.playerData.maxMana);
 assert.deepEqual(getAlchemyDaoBuffModifiers(scene), { activeSkillDamageMultiplier:1.2, cultivationSkillDamageMultiplier:1.5 });
 assert.equal(getAlchemyCultivationDamageMultiplier(scene), 1.5);
 
-const activeAt = scene.now;
 tick(scene, 3000);
-const remainingBeforePause = state.alchemyBuffUntil - scene.now;
+const pauseStartedAt = scene.now;
+const remainingBeforePause = state.alchemyBuffUntil - pauseStartedAt;
 assert.equal(remainingBeforePause, 7000);
 scene.paused = true;
 scene.now += 10000;
-scene.skillSystem.shiftTimers(10000, activeAt + 3000);
+scene.skillSystem.shiftTimers(10000, pauseStartedAt);
 assert.equal(state.alchemyBuffUntil - scene.now, 7000);
 assert.deepEqual(getAlchemyDaoBuffModifiers(scene), { activeSkillDamageMultiplier:1.2, cultivationSkillDamageMultiplier:1.5 });
 scene.paused = false;
