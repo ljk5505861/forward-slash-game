@@ -79,7 +79,7 @@ function createScene(skills = [], { autoCompleteTweens = true } = {}) {
     container:(x = 0, y = 0) => addNode('container', { x, y }),
     circle:(x, y, radius, fillColor, alpha) => addNode('circle', { x, y, radius, fillColor, alpha }),
     rectangle:(x, y, width, height, fillColor, alpha) => addNode('rectangle', { x, y, width, height, fillColor, alpha }),
-    text:(x, y,text, style) => addNode('text', { x, y, text, style }),
+    text:(x, y, text, style) => addNode('text', { x, y, text, style }),
   };
   scene.tweens = {
     add(config) {
