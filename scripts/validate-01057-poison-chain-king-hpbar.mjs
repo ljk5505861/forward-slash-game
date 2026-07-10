@@ -225,7 +225,7 @@ function makeRealSkillSystem(scene){
   return system;
 }
 
-assert.equal(GAME_VERSION,'0.11.1');
+assert.equal(GAME_VERSION,'0.11.2');
 assert.equal(SKILLS.poison_chain.passive,false);
 assert.equal(SKILLS.poison_chain.targetType,'nearestAhead');
 assert.equal(SKILLS.poison_chain.levels[0].damage,34);

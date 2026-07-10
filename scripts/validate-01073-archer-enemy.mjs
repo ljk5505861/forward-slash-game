@@ -12,7 +12,7 @@ global.HTMLCanvasElement=class {};
 const { default: EnemyBehaviorManager, entryMove } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
 const { default: CombatSystem } = await import('../src/systems/CombatSystem.js');
 
-assert.equal(GAME_VERSION,'0.11.1');
+assert.equal(GAME_VERSION,'0.11.2');
 assert(ENEMIES.archer, 'archer config exists');
 assert.equal(ENEMIES.archer.behavior,'archer');
 assert.equal(ENEMIES.archer.attackRange,450);

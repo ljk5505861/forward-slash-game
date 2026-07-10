@@ -5,10 +5,10 @@ import { SKILLS } from '../src/config/skills.js';
 import { GAME_VERSION } from '../src/config/version.js';
 import { getSkillBarStateText } from '../src/ui/skillBarState.js';
 
-assert.equal(GAME_VERSION, '0.11.1');
-assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version, '0.11.1');
+assert.equal(GAME_VERSION, '0.11.2');
+assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version, '0.11.2');
 assert.equal(SKILLS.neutron_star.levels.length, 9);
-assert.equal(Object.keys(SKILLS).length, 39);
+assert.equal(Object.keys(SKILLS).length, 40);
 assert.deepEqual(SKILLS.neutron_star.levels.map(x => x.roundCooldownMs), [7200,7000,6800,6600,6400,6100,5900,5700,5400]);
 assert.equal(SKILLS.neutron_star.levels.some(x => 'cycleIntervalMs' in x), false);
 assert.deepEqual(SKILLS.neutron_star.levels.map(x => x.singlePulseDamage), [72,80,90,101,113,128,144,162,184]);
