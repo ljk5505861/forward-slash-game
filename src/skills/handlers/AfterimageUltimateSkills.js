@@ -106,7 +106,8 @@ const wolfShadowMeta=(amount,kind)=>({ source:'skill',skillId:SOURCE,originalSki
 function clearWolfShadow(state,shadow){ if(!shadow||shadow.destroyed) return; shadow.destroyed=true; if(shadow.timer){ state.timers?.delete?.(shadow.timer); shadow.timer.remove?.(false); shadow.timer=null; } if(shadow.tween){ shadow.tween.remove?.(); shadow.tween=null; } state.wolfShadows?.delete?.(shadow); shadow.view?.destroy?.(); shadow.view=null; }
 function copySpiritWolves(system,state,afterimage,trigger,scale,full){
   const scene=system.scene,level=system.getLevel(SPIRIT_WOLVES_ID)||trigger.level||1,origin={x:afterimage.view?.x??scene.player.x,y:afterimage.view?.y??scene.player.y};
-  const attack=Math.max(1,Math.round((scene.playerData.baseAttack||scene.playerData.attack||1)*inheritRatioForLevel(level))), amount=Math.max(1,Math.round(attack*scale));
+  const activeModifier=Number(trigger.ctx?.castModifierSnapshot?.appliedDamageMultiplier)||1;
+  const attack=Math.max(1,Math.round((scene.playerData.baseAttack||scene.playerData.attack||1)*inheritRatioForLevel(level)*activeModifier)), amount=Math.max(1,Math.round(attack*scale));
   const target=scene.targeting.all().filter(enemy=>scene.targeting.valid(enemy)&&enemy.x>=origin.x-20).sort((a,b)=>Math.hypot(a.x-origin.x,a.y-origin.y)-Math.hypot(b.x-origin.x,b.y-origin.y))[0]||null;
   const view=scene.add?.circle?.(origin.x,origin.y,18,0xffffff,.34)?.setStrokeStyle?.(3,0x9fd7ff,.55)?.setDepth?.(147);
   const shadow={view,destroyed:false,timer:null,tween:null}; state.wolfShadows.add(shadow);

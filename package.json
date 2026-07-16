@@ -105,7 +105,8 @@
     "validate:01101-ninefold-dao": "node scripts/validate-01101-ninefold-dao.mjs",
     "validate:01101-playtest-fixes": "npm run validate:01101-ninefold-dao && npm run validate:01100-playtest-fixes && npm run build",
     "validate:01102-alchemy": "node scripts/validate-01102-alchemy.mjs",
-    "validate:01102-playtest-fixes": "npm run validate:01102-alchemy && npm run validate:01101-playtest-fixes && npm run build"
+    "validate:01102-playtest-fixes": "npm run validate:01102-alchemy && npm run validate:01101-playtest-fixes && npm run build",
+    "validate:01103-active-skill-modifiers": "node scripts/validate-01103-active-skill-modifiers.mjs"
   },
   "dependencies": {
     "phaser": "4.1.0",

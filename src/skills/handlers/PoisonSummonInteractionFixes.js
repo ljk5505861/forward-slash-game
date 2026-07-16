@@ -337,8 +337,8 @@ export const PoisonChainActiveSkill={
         1,
         3200,
         system.getData('poison_cloud')?.poisonDamage||6,
-        'poison_chain_hit',
-        {poisonChainApplied:true}
+        `poison_chain_hit_${ctx.castId}`,
+        {poisonChainApplied:true,sourceSkillId:'poison_chain',ctx}
       );
       if(!scene.targeting.valid(target)) return {target,targets:[target]};
 
