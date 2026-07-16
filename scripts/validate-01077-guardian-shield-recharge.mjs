@@ -19,7 +19,7 @@ const normal=s=>g(s).filter(e=>e.guardianShieldKind==='normal');
 const regen=s=>g(s).filter(e=>e.guardianShieldKind==='regen');
 const addLevels=(s,n)=>{for(let i=0;i<n;i++) s.skillSystem.addOrLevel('guardian_shield'); run(s);};
 
-assert.equal(GAME_VERSION,'0.11.2');
+assert.equal(GAME_VERSION,'0.11.3');
 assert.deepEqual(SKILLS.guardian_shield.levels.map(l=>l.rechargeMs),[5000,4800,4600,4400,4200,4000,3800,3600,3400]);
 assert(SKILLS.guardian_shield.levels.every(l=>l.intervalMs===undefined));
 assert.deepEqual(SKILLS.guardian_shield.levels.map(l=>l.generatedShieldMultiplier),[1,1,1.3,1.3,1.3,1.3,1.3,1.3,1.3]);

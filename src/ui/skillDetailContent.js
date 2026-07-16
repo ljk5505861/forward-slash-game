@@ -1,6 +1,6 @@
 import '../skills/handlers/index.js';
 import { SKILLS } from '../config/skills.js';
-import { NINEFOLD_DAO_ID, CULTIVATION_REALMS, CULTIVATION_THRESHOLDS, CULTIVATION_REALM_STATS, getCultivationSnapshot, getCultivationSpellModifiers } from '../skills/handlers/CultivationCoreSkill.js';
+import { NINEFOLD_DAO_ID, CULTIVATION_REALMS, CULTIVATION_THRESHOLDS, CULTIVATION_REALM_STATS, getCultivationSnapshot, getCultivationSpellModifiers, getCultivationUniversalModifiers } from '../skills/handlers/CultivationCoreSkill.js';
 import { ALCHEMY_ID, MATERIAL_MULTIPLIERS, getAlchemyState, getAlchemyRecipe, getAlchemyDaoBuffModifiers } from '../skills/handlers/CultivationAlchemySkill.js';
 import { SOUL_THRESHOLDS, SWORD_MYTHIC, getSwordFlowReadSnapshot, mainSwordStatsReadOnly, tombStatsReadOnly } from '../skills/handlers/SwordFlowState.js';
 
@@ -69,7 +69,7 @@ function milestones(cfg,level){
 
 function cultivationDetail(cfg,level,context={}){
   const snap=getCultivationSnapshot(context.scene||context.scene?.skillSystem);
-  const active=snap.active; const idx=active?snap.realmIndex:0; const st=CULTIVATION_REALM_STATS[idx]; const spell=active?getCultivationSpellModifiers(context.scene):CULTIVATION_REALM_STATS[idx].spell;
+  const active=snap.active; const idx=active?snap.realmIndex:0; const st=CULTIVATION_REALM_STATS[idx]; const spell=active?getCultivationSpellModifiers(context.scene):CULTIVATION_REALM_STATS[idx].spell; const universal=getCultivationUniversalModifiers(context.scene);
   const nextStats=idx<8?CULTIVATION_REALM_STATS[idx+1]:null;
   const lines=[
     `当前境界：${active?snap.realm:'炼气'}`,
@@ -87,6 +87,9 @@ function cultivationDetail(cfg,level,context={}){
     `当前修仙法术范围倍率：${numberText(spell.rangeMultiplier)}倍`,
     `当前修仙法术冷却倍率：${numberText(spell.cooldownMultiplier)}倍`,
     `当前修仙法术耗蓝倍率：${numberText(spell.manaCostMultiplier)}倍`,
+    `当前通用主动技能伤害倍率：${numberText(universal.activeSkillDamageMultiplier)}倍`,
+    `当前通用主动技能冷却倍率：${numberText(universal.activeSkillCooldownMultiplier)}倍`,
+    `说明：普通攻击不受该倍率影响；普通主动技能使用通用主动倍率；修仙主动技能使用修仙法术专属倍率，不重复叠加通用主动倍率。`,
     `下一境界：${idx<8?CULTIVATION_REALMS[idx+1]:'无'}`,
     `下一境界属性：${nextStats?`生命${percentText(nextStats.maxHpPct)}、法力+${nextStats.maxMana}、回蓝${nextStats.manaRegen}/秒、减伤${percentText(nextStats.damageReduction)}`:'大道圆满'}`,
     `Lv3周天运转：${level>=3?'已解锁':'未解锁'}`,
