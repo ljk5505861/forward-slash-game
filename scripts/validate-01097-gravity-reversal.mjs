@@ -13,9 +13,9 @@ globalThis.document ??= { documentElement:{style:{}}, createElement:()=>({getCon
 globalThis.HTMLCanvasElement ??= class {};
 globalThis.Image ??= class {};
 const { default: EnemyBehaviorManager } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
-assert.equal(GAME_VERSION,'0.11.3'); assert.equal(pkg.version,'0.11.3');
+assert.equal(GAME_VERSION,'0.11.4'); assert.equal(pkg.version,'0.11.4');
 assert.equal(SKILLS.gravity_field, undefined); assert.equal(SKILL_HANDLERS.gravity_field, undefined);
-assert(SKILLS.gravity_reversal); assert(SKILL_HANDLERS.gravity_reversal); assert.equal(Object.values(SKILLS).filter(s=>!s.hidden).length,40);
+assert(SKILLS.gravity_reversal); assert(SKILL_HANDLERS.gravity_reversal); assert.equal(Object.values(SKILLS).filter(s=>!s.hidden).length,41);
 assert.equal(Object.values(SKILLS).filter(s=>s.rarity==='RARE'&&s.tags?.includes('gravity')).map(s=>s.id).sort().join(','),'gravity_crush,gravity_reversal');
 const expected=[[9000,130,120,280,480,260,42],[8700,140,130,270,500,250,48],[8400,155,160,260,620,240,58],[8100,165,170,250,650,230,66],[7800,175,180,240,680,220,74],[7400,190,195,230,720,210,84],[7100,200,205,220,740,200,94],[6800,210,220,210,760,190,104],[6400,225,240,200,800,180,118]];
 SKILLS.gravity_reversal.levels.forEach((l,i)=>{ assert.deepEqual([l.cooldownMs,l.halfWidth,l.riseHeight,l.riseDurationMs,l.hoverDurationMs,l.fallDurationMs,l.landingDamage], expected[i]); assert.equal(l.manaCost,5); assert.equal(l.eliteLiftScale,.55); assert.equal(l.eliteHoverScale,.60); assert.equal(l.bossDamageScale,.60); });

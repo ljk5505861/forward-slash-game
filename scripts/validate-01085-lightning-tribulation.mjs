@@ -7,9 +7,9 @@ import { TAGS } from '../src/config/tags.js';
 import { CombatEvents } from '../src/core/CombatEvents.js';
 import SkillSystem from '../src/systems/SkillSystem.js';
 
-assert.equal(GAME_VERSION,'0.11.3');
-assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version,'0.11.3');
-assert.equal(Object.keys(SKILLS).length,40);
+assert.equal(GAME_VERSION,'0.11.4');
+assert.equal(JSON.parse(fs.readFileSync('package.json','utf8')).version,'0.11.4');
+assert.equal(Object.keys(SKILLS).length,41);
 const cfg=SKILLS.lightning_tribulation;
 assert(cfg); assert.equal(cfg.name,'雷劫兵主'); assert.equal(cfg.rarity,'MYTHIC'); assert.equal(cfg.ultimateSkill,true); assert.equal(cfg.passive,true); assert.equal(cfg.maxLevel,9); assert.equal(cfg.handler,'lightning_tribulation'); assert.equal(cfg.requiredSkillId,undefined);
 [TAGS.MAGIC,TAGS.LIGHTNING,TAGS.NORMAL_ATTACK,TAGS.BUILD_WEAPON,'mythicSkill'].forEach(t=>assert(cfg.tags.includes(t),`missing tag ${t}`));
