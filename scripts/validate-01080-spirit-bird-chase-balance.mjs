@@ -15,8 +15,8 @@ function tick(s,ms,{post=true}={}){ s.now+=ms; s.skillSystem.update(s.now); if(p
 function addLevels(s,n){ for(let i=0;i<n;i++) s.skillSystem.addOrLevel('spirit_bird'); s.skillSystem.update(s.now); return s.spiritBirdRuntime.get(); }
 const close=(actual,expected,epsilon=1e-9)=>Math.abs(actual-expected)<=epsilon;
 
-assert.equal(GAME_VERSION,'0.11.2');
-assert.equal(pkg.version,'0.11.2');
+assert.equal(GAME_VERSION,'0.11.3');
+assert.equal(pkg.version,'0.11.3');
 assert.deepEqual(SPIRIT_BIRD_HEAL_RATIOS,[0.018,0.020,0.022,0.025,0.028,0.031,0.034,0.036,0.038]);
 assert.deepEqual(SPIRIT_BIRD_HEAL_MULTIPLIERS,[1,1,1.3,1.3,1.3,1.3,1.3,1.3,1.3]);
 assert.deepEqual(SPIRIT_BIRD_INTERVALS,[6000,5800,5600,5400,5200,4800,4600,4400,4200]);

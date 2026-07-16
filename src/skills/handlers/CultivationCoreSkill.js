@@ -17,6 +17,18 @@ export const CULTIVATION_REALM_STATS = Object.freeze([
   { maxHpPct:4.00, maxMana:1500, manaRegen:30, damageReduction:.40, spell:{damageMultiplier:60,rangeMultiplier:2.50,cooldownMultiplier:.45,manaCostMultiplier:.50}},
 ]);
 const neutralSpell=Object.freeze({damageMultiplier:1,rangeMultiplier:1,cooldownMultiplier:1,manaCostMultiplier:1});
+export const CULTIVATION_UNIVERSAL_ACTIVE_MODIFIERS=Object.freeze([
+  Object.freeze({activeSkillDamageMultiplier:1.00,activeSkillCooldownMultiplier:1.00}),
+  Object.freeze({activeSkillDamageMultiplier:1.03,activeSkillCooldownMultiplier:1.00}),
+  Object.freeze({activeSkillDamageMultiplier:1.06,activeSkillCooldownMultiplier:.98}),
+  Object.freeze({activeSkillDamageMultiplier:1.10,activeSkillCooldownMultiplier:.96}),
+  Object.freeze({activeSkillDamageMultiplier:1.15,activeSkillCooldownMultiplier:.94}),
+  Object.freeze({activeSkillDamageMultiplier:1.22,activeSkillCooldownMultiplier:.92}),
+  Object.freeze({activeSkillDamageMultiplier:1.30,activeSkillCooldownMultiplier:.90}),
+  Object.freeze({activeSkillDamageMultiplier:1.45,activeSkillCooldownMultiplier:.88}),
+  Object.freeze({activeSkillDamageMultiplier:1.70,activeSkillCooldownMultiplier:.85})
+]);
+const neutralUniversal=Object.freeze({activeSkillDamageMultiplier:1,activeSkillCooldownMultiplier:1});
 const MANA_REGEN_STEP_MS=250;
 const stateOf=x=>x?.skillSystem?.passiveState?.ninefoldDao || x?.passiveState?.ninefoldDao || null;
 const systemOf=x=>x?.skillSystem || x;
@@ -28,6 +40,7 @@ function rate(sys, st=stateOf(sys)){ const lv=levelOf(sys); if(!lv||!st||st.real
 function snapshot(sys){ const st=stateOf(sys); if(!st) return { active:false, hidden:true }; const idx=st.realmIndex||0, need=CULTIVATION_THRESHOLDS[idx]??null; return { active:true, realmIndex:idx, realm:CULTIVATION_REALMS[idx], progress:st.progress||0, nextThreshold:need, isComplete:idx>=8, cycleProgressMs:st.cycleProgressMs||0, breakthroughCount:st.breakthroughCount||0, autoRate:rate(systemOf(sys),st), gainMultiplier:levelOf(systemOf(sys))>=6?1.25:1, stats:stat(idx), nextRealm:idx<8?CULTIVATION_REALMS[idx+1]:null, nextStats:idx<8?stat(idx+1):null } }
 export function getCultivationSnapshot(sceneOrSystem){ return snapshot(systemOf(sceneOrSystem)); }
 export function getCultivationSpellModifiers(sceneOrSystem){ const st=stateOf(sceneOrSystem); return st ? { ...stat(st.realmIndex).spell } : { ...neutralSpell }; }
+export function getCultivationUniversalModifiers(sceneOrSystem){ const st=stateOf(sceneOrSystem); return st ? { ...CULTIVATION_UNIVERSAL_ACTIVE_MODIFIERS[Math.max(0,Math.min(8,st.realmIndex||0))] } : { ...neutralUniversal }; }
 function applyStats(sys){ const st=stateOf(sys), p=sys?.scene?.playerData; if(!st||!p) return; p.damageReductionBonuses??={}; const baseHp=Math.max(1,(p.maxHp||0)-(st.appliedMaxHpBonus||0)); const baseMana=Math.max(0,(p.maxMana||0)-(st.appliedMaxManaBonus||0)); const s=stat(st.realmIndex); const hpBonus=Math.round(baseHp*s.maxHpPct), manaBonus=s.maxMana; const hpDiff=hpBonus-(st.appliedMaxHpBonus||0), manaDiff=manaBonus-(st.appliedMaxManaBonus||0); p.maxHp=baseHp+hpBonus; p.maxMana=baseMana+manaBonus; if(hpDiff>0) p.hp=Math.min(p.maxHp,(p.hp||0)+hpDiff); else p.hp=Math.min(p.hp||0,p.maxHp); if(manaDiff>0) p.mana=Math.min(p.maxMana,(p.mana||0)+manaDiff); else p.mana=Math.min(p.mana||0,p.maxMana); p.damageReductionBonuses[NINEFOLD_DAO_ID]=s.damageReduction; st.appliedMaxHpBonus=hpBonus; st.appliedMaxManaBonus=manaBonus; }
 function removeTimer(timer){ timer?.remove?.(false); timer?.destroy?.(); }
 function removeTween(tween){ tween?.stop?.(); tween?.remove?.(); tween?.destroy?.(); }

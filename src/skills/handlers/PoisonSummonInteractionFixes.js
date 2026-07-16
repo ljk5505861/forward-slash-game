@@ -20,7 +20,7 @@ const dist=(a,b)=>Math.hypot(
   (a?.y||0)-(b?.y||0)
 );
 
-function addPoison(system,target,stacks,durationMs,value,sourceId,meta={}){
+function addPoison(system,target,stacks,durationMs,value,sourceId,meta={},ctx=null){
   const poison=system.getData('poison_cloud')||{};
   return system.scene.statusEffects.add(StatusEffects.POISON,target,{
     durationMs,
@@ -29,9 +29,9 @@ function addPoison(system,target,stacks,durationMs,value,sourceId,meta={}){
     stacks,
     maxStacks:Math.max(poison.maxStacks||15,stacks),
     sourceId,
-    damageMultiplier:1,
-    baseDamageMultiplierWithoutProfession:1,
-    professionMultiplier:1,
+    damageMultiplier:ctx?.damageMultiplier||1,
+    baseDamageMultiplierWithoutProfession:ctx?.baseDamageMultiplierWithoutProfession||1,
+    professionMultiplier:ctx?.professionMultiplier||1,
     professionApplied:true,
     poisonMeta:meta
   });
@@ -337,8 +337,9 @@ export const PoisonChainActiveSkill={
         1,
         3200,
         system.getData('poison_cloud')?.poisonDamage||6,
-        'poison_chain_hit',
-        {poisonChainApplied:true}
+        `poison_chain_hit_${ctx.castId}`,
+        {poisonChainApplied:true,sourceSkillId:'poison_chain'},
+        ctx
       );
       if(!scene.targeting.valid(target)) return {target,targets:[target]};
 
