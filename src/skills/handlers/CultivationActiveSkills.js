@@ -15,6 +15,7 @@ const validEnemies=s=>(s.enemies||s.targeting?.all?.()||[]).filter(e=>alive(e)&&
 const dist=(a,b,c,d)=>Math.hypot(a-c,b-d);
 function destroyVisuals(system,visuals=[]){ visuals.forEach(v=>{ system.scene?.tweens?.killTweensOf?.(v); v?.destroy?.(); }); visuals.length=0; }
 function addVisual(arr,node){ if(node) arr.push(node); return node; }
+function removeVisual(arr,node){ const index=arr.indexOf(node); if(index>=0) arr.splice(index,1); }
 function nodeContainer(scene,x,y){ return scene.add?.container?.(x,y)||null; }
 function palmVisual(scene,center,radius,visuals){
   const palm=nodeContainer(scene,center.x,center.y-180), parts=[];
@@ -36,13 +37,13 @@ function drawWarning(system,active){
   const palm=palmVisual(s,c,r,v); palm?.setDepth?.(20); active.palmVisual=palm;
   s.tweens?.add?.({targets:palm,y:c.y-20,scaleX:1.35,scaleY:1.35,alpha:.62,duration:active.data.warningMs});
 }
-function transient(system,active,r,color=0xf59e0b,alpha=.28){ const n=addVisual(active.visuals,system.scene.add?.circle?.(active.lockedCenter.x,active.lockedCenter.y,r,color,alpha)?.setStrokeStyle?.(2,0xffd166,.55)?.setDepth?.(21)); system.scene.tweens?.add?.({targets:n,alpha:0,scaleX:1.2,scaleY:1.2,duration:260,onComplete:()=>n?.destroy?.()}); }
+function transient(system,active,r,color=0xf59e0b,alpha=.28){ const n=addVisual(active.visuals,system.scene.add?.circle?.(active.lockedCenter.x,active.lockedCenter.y,r,color,alpha)?.setStrokeStyle?.(2,0xffd166,.55)?.setDepth?.(21)); system.scene.tweens?.add?.({targets:n,alpha:0,scaleX:1.2,scaleY:1.2,duration:260,onComplete:()=>{ removeVisual(active.visuals,n); n?.destroy?.(); }}); }
 function rippleVisual(system,active){
   const s=system.scene,c=active.lockedCenter,r=active.finalRadius*.72, palm=nodeContainer(s,c.x,c.y);
   const pieces=[];
   [-.58,-.29,0,.29,.58].forEach((offset,index)=>{ const length=r*(index===2?1.35:index===1||index===3?1.2:1.05); const n=s.add?.ellipse?.(offset*r*.9,-length*.12,r*.16,length,0xdc2626,.12)?.setStrokeStyle?.(2,0xfacc15,.65); if(n){ pieces.push(n); palm?.add?.(n); } });
   if(palm) addVisual(active.visuals,palm); else pieces.forEach(n=>addVisual(active.visuals,n));
-  s.tweens?.add?.({targets:palm||pieces,scaleX:1.8,scaleY:1.8,alpha:0,duration:260,onComplete:()=>palm?.destroy?.()||pieces.forEach(n=>n.destroy?.())});
+  s.tweens?.add?.({targets:palm||pieces,scaleX:1.8,scaleY:1.8,alpha:0,duration:260,onComplete:()=>{ if(palm){ removeVisual(active.visuals,palm); palm.destroy?.(); } else pieces.forEach(n=>{ removeVisual(active.visuals,n); n.destroy?.(); }); }});
 }
 function crackVisual(system,active){
   const s=system.scene,c=active.lockedCenter,r=active.finalRadius*.48;
@@ -53,7 +54,7 @@ function crackVisual(system,active){
     line?.setLineWidth?.(2,2);
     line?.setDepth?.(22);
     addVisual(active.visuals,line);
-    s.tweens?.add?.({targets:line,alpha:0,duration:260,onComplete:()=>line?.destroy?.()});
+    s.tweens?.add?.({targets:line,alpha:0,duration:260,onComplete:()=>{ removeVisual(active.visuals,line); line?.destroy?.(); }});
   });
 }
 function applySuppression(system,active,e){
@@ -62,7 +63,7 @@ function applySuppression(system,active,e){
   applyEnemyGravity(e,{sourceId:'sky_covering_palm_suppression',moveSlow:elite?.15:.30,attackSlow:elite?.12:.25,expiresAt:t+(elite?2000:2500),countsAsGravitySuppression:false});
   const ring=addVisual(active.visuals,system.scene.add?.circle?.(e.x,e.y+(e.height||80)/2,Math.max(18,(e.width||50)*.42),0xb91c1c,.16)?.setDepth?.(19));
   if(ring) ring.skyCoveringPalmSuppressionVisual=true;
-  system.scene.tweens?.add?.({targets:ring,alpha:0,duration:350,onComplete:()=>ring?.destroy?.()});
+  system.scene.tweens?.add?.({targets:ring,alpha:0,duration:350,onComplete:()=>{ removeVisual(active.visuals,ring); ring?.destroy?.(); }});
 }
 function enemiesIn(system,center,radius){ return validEnemies(system.scene).filter(e=>dist(e.x,e.y,center.x,center.y)<=radius); }
 function damagePhase(system,active,ratio,radius,kind,suppress=false){ const {cfg,data,level,ctx}=active,base=data.damage*ratio; enemiesIn(system,active.lockedCenter,radius).forEach(enemy=>{ const target=enemy; if(!alive(target)) return; const ok=system.hit(target,system.damageValue(base,ctx),cfg,level,ctx,system.baseDamageValue(base,ctx),[TAGS.MAGIC,TAGS.SPELL,TAGS.CULTIVATION,'area']); if(ok&&suppress) applySuppression(system,active,target); }); active.phaseLog?.push?.({kind,castId:ctx.castId,ctx}); }
