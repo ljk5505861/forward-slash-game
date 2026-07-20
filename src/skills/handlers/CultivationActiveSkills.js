@@ -46,11 +46,26 @@ function rippleVisual(system,active){
 }
 function crackVisual(system,active){
   const s=system.scene,c=active.lockedCenter,r=active.finalRadius*.48;
-  [-.48,-.16,.16,.48].forEach((offset,index)=>{ const line=addVisual(active.visuals,s.add?.line?.(c.x+offset*r,c.y-r*.14,c.x+offset*r-r*.14,c.y-r*.14,c.x+offset*r+r*.12,c.y+r*.34,0xffd166,.85)?.setLineWidth?.(2,2)?.setDepth?.(22)); s.tweens?.add?.({targets:line,alpha:0,duration:260,onComplete:()=>line?.destroy?.()}); });
+  [-.48,-.16,.16,.48].forEach(offset=>{
+    const x=c.x+offset*r;
+    const line=s.add?.line?.(0,0,x-r*.14,c.y-r*.14,x+r*.12,c.y+r*.34,0xffd166,.85);
+    line?.setOrigin?.(0);
+    line?.setLineWidth?.(2,2);
+    line?.setDepth?.(22);
+    addVisual(active.visuals,line);
+    s.tweens?.add?.({targets:line,alpha:0,duration:260,onComplete:()=>line?.destroy?.()});
+  });
 }
-function applySuppression(system,e){ if(!alive(e)||e.isBoss) return; const t=now(system.scene), elite=!!e.isElite; applyEnemyGravity(e,{sourceId:'sky_covering_palm_suppression',moveSlow:elite?.15:.30,attackSlow:elite?.12:.25,expiresAt:t+(elite?2000:2500),countsAsGravitySuppression:false}); const ring=system.scene.add?.circle?.(e.x,e.y+(e.height||80)/2,Math.max(18,(e.width||50)*.42),0xb91c1c,.16)?.setDepth?.(19); system.scene.tweens?.add?.({targets:ring,alpha:0,duration:350,onComplete:()=>ring?.destroy?.()}); }
+function applySuppression(system,active,e){
+  if(!alive(e)||e.isBoss) return;
+  const t=now(system.scene), elite=!!e.isElite;
+  applyEnemyGravity(e,{sourceId:'sky_covering_palm_suppression',moveSlow:elite?.15:.30,attackSlow:elite?.12:.25,expiresAt:t+(elite?2000:2500),countsAsGravitySuppression:false});
+  const ring=addVisual(active.visuals,system.scene.add?.circle?.(e.x,e.y+(e.height||80)/2,Math.max(18,(e.width||50)*.42),0xb91c1c,.16)?.setDepth?.(19));
+  if(ring) ring.skyCoveringPalmSuppressionVisual=true;
+  system.scene.tweens?.add?.({targets:ring,alpha:0,duration:350,onComplete:()=>ring?.destroy?.()});
+}
 function enemiesIn(system,center,radius){ return validEnemies(system.scene).filter(e=>dist(e.x,e.y,center.x,center.y)<=radius); }
-function damagePhase(system,active,ratio,radius,kind,suppress=false){ const {cfg,data,level,ctx}=active,base=data.damage*ratio; enemiesIn(system,active.lockedCenter,radius).forEach(enemy=>{ const target=enemy; if(!alive(target)) return; const ok=system.hit(target,system.damageValue(base,ctx),cfg,level,ctx,system.baseDamageValue(base,ctx),[TAGS.MAGIC,TAGS.SPELL,TAGS.CULTIVATION,'area']); if(ok&&suppress) applySuppression(system,target); }); active.phaseLog?.push?.({kind,castId:ctx.castId,ctx}); }
+function damagePhase(system,active,ratio,radius,kind,suppress=false){ const {cfg,data,level,ctx}=active,base=data.damage*ratio; enemiesIn(system,active.lockedCenter,radius).forEach(enemy=>{ const target=enemy; if(!alive(target)) return; const ok=system.hit(target,system.damageValue(base,ctx),cfg,level,ctx,system.baseDamageValue(base,ctx),[TAGS.MAGIC,TAGS.SPELL,TAGS.CULTIVATION,'area']); if(ok&&suppress) applySuppression(system,active,target); }); active.phaseLog?.push?.({kind,castId:ctx.castId,ctx}); }
 function endActive(active,system){ if(active.ended) return; destroyVisuals(system,active.visuals||[]); active.ended=true; }
 function tickPalm(system,active){
   const t=now(system.scene);
