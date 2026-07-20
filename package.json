@@ -107,12 +107,14 @@
     "validate:01102-alchemy": "node scripts/validate-01102-alchemy.mjs",
     "validate:01102-playtest-fixes": "npm run validate:01102-alchemy && npm run validate:01101-playtest-fixes && npm run build",
     "validate:01103-active-skill-modifiers": "node scripts/validate-01103-active-skill-modifiers.mjs",
-    "validate:01103-playtest-fixes": "npm run validate:01103-active-skill-modifiers && npm run validate:01102-playtest-fixes"
+    "validate:01103-playtest-fixes": "npm run validate:01103-active-skill-modifiers && npm run validate:01102-playtest-fixes",
+    "validate:01104-sky-covering-palm": "node scripts/validate-01104-sky-covering-palm.mjs",
+    "validate:01104-playtest-fixes": "npm run validate:01104-sky-covering-palm && npm run validate:01103-playtest-fixes"
   },
   "dependencies": {
     "phaser": "4.1.0",
     "vite": "latest"
   },
   "devDependencies": {},
-  "version": "0.11.3"
+  "version": "0.11.4"
 }
