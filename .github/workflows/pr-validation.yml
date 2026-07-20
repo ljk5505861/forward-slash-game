@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  v01104-full-pr-validation:
-    name: v0.11.4 full PR validation
+  v01105-full-pr-validation:
+    name: v0.11.5 full PR validation
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -40,6 +40,9 @@ jobs:
       - name: Validate sky covering palm
         run: npm run validate:01104-sky-covering-palm
 
+      - name: Validate full skill slot upgrade guarantee
+        run: npm run validate:01105-full-slot-upgrade-guarantee
+
       - name: Validate active skill modifiers
         run: npm run validate:01103-active-skill-modifiers
 
@@ -52,8 +55,8 @@ jobs:
       - name: Validate superhero kinetic enhancement
         run: npm run validate:01100-superhero-kinetic
 
-      - name: Validate full v0.11.4 playtest regression chain
-        run: npm run validate:01104-playtest-fixes
+      - name: Validate full v0.11.5 playtest regression chain
+        run: npm run validate:01105-playtest-fixes
 
       - name: Validate gravity runtime directly
         run: node scripts/validate-01087-gravity-flow-runtime.mjs

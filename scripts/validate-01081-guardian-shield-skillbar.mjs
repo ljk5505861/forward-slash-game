@@ -24,8 +24,8 @@ const addLevels=(s,n)=>{for(let i=0;i<n;i++) s.skillSystem.addOrLevel('guardian_
 const slotText=(s,id='guardian_shield',level=s.skillSystem.getLevel(id)||1)=>{ const cfg=SKILLS[id], rarity=getRarity(cfg.rarity); return `${rarity.name} ${cfg.name}\nLv.${level}　${getSkillBarStateText(s,{id,level},cfg)}`; };
 const state=s=>s.guardianShieldRuntime?.getSkillBarState?.()||null;
 
-assert.equal(GAME_VERSION,'0.11.4');
-assert.equal(pkg.version,'0.11.4');
+assert.equal(GAME_VERSION,'0.11.5');
+assert.equal(pkg.version,'0.11.5');
 assert.deepEqual(SKILLS.guardian_shield.levels.map(l=>l.rechargeMs),[5000,4800,4600,4400,4200,4000,3800,3600,3400]);
 assert.deepEqual(SKILLS.guardian_shield.levels.map(l=>l.durationMs),[8000,8000,8000,8000,8000,null,null,null,null]);
 assert.equal(SKILLS.guardian_shield.levels[8].regenRatio,0.4);

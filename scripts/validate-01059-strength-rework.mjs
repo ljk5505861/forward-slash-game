@@ -16,7 +16,7 @@ function makeScene(){ const bus=new Bus(); const p=createPlayerRuntime(); const 
 const runPassives=s=>s.skillSystem.passiveUpdaters.forEach(fn=>fn());
 function countedRandom(value,fn){ const old=Math.random; let count=0; Math.random=()=>{count++;return value;}; try{return fn(()=>count);} finally{Math.random=old;} }
 
-assert.equal(GAME_VERSION,'0.11.4');
+assert.equal(GAME_VERSION,'0.11.5');
 assert.equal(Object.keys(SKILLS).length,41,'formal skill count');
 const strength=['giant_force','spinning_blade','bloodthirst','last_stand'];
 assert.deepEqual(Object.keys(SKILLS).filter(id=>SKILLS[id].tags?.includes('buildStrength')).sort(),strength.sort());

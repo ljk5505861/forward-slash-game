@@ -12,7 +12,7 @@ const { SKILLS } = await import('../src/config/skills.js');
 const { configureEntryArchetypeSkills } = await import('../src/skills/handlers/EntryArchetypeSkills.js');
 const { SpiritWolvesSkill, SPIRIT_WOLVES_ID, inheritRatioForLevel, hpInheritRatioForLevel } = await import('../src/skills/handlers/SpiritWolvesSkill.js');
 configureEntryArchetypeSkills();
-assert.equal(GAME_VERSION,'0.11.4');
+assert.equal(GAME_VERSION,'0.11.5');
 assert.equal(FRONTLINE_SWITCH_THRESHOLD,18);
 const wolfSrc=fs.readFileSync('src/skills/handlers/SpiritWolvesSkill.js','utf8');
 const combatSrc=fs.readFileSync('src/systems/CombatSystem.js','utf8');

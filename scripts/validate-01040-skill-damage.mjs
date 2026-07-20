@@ -10,7 +10,7 @@ const src=file=>readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
 const hasHandler=handler=>new RegExp(`${handler}:`).test(src('src/skills/handlers/index.js'));
 const archetypes={fire:['fireball','fire_seed','burn_burst','solar_flame'],sword:['sword_wave','sword_sheath','sword_tomb'],strength:['giant_force','spinning_blade','bloodthirst','last_stand'],defense:['healing','thorn_armor','guardian_shield'],afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],summon:['spirit_wolves','spirit_bird','spirit_slime'],weapon:['lightning_enchant','lightning_mark','lightning_tribulation'],gravity:['gravity_crush','gravity_reversal','gravity_orb','black_hole'],celestial:['neutron_star','white_dwarf'],superhero:['super_speed','laser_eyes','freezing_breath'],cultivation:['ninefold_dao','alchemy','sky_covering_palm']};
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.11.4','game version for v0.11.4 skill regression');
+assert.equal(GAME_VERSION,'0.11.5','game version for v0.11.5 skill regression');
 eq(allSkillIds.length,41,'all current 41 skills listed');
 eq(new Set(allSkillIds).size,41,'all current 41 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
@@ -96,4 +96,4 @@ eq(nums('sky_covering_palm','damage'),[48,54,62,71,81,93,106,121,138],'sky_cover
 eq(nums('sky_covering_palm','radius'),[110,115,130,135,145,155,165,175,185],'sky_covering_palm.radius');
 eq(nums('sky_covering_palm','cooldownMs'),[6500,6300,6100,5900,5700,5400,5200,5000,4600],'sky_covering_palm.cooldownMs');
 eq(nums('sky_covering_palm','manaCost'),[12,12,12,13,13,13,14,14,15],'sky_covering_palm.manaCost');
-console.log('v0.11.4 skill damage regression validation passed.');
+console.log('v0.11.5 skill damage regression validation passed.');

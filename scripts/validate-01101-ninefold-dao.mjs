@@ -57,7 +57,7 @@ function add(sys, level=1){ sys.scene.playerData.skills=[{id:NINEFOLD_DAO_ID,lev
 function slotText(scene, skillData){ const cfg=SKILLS[skillData.id]; const rarity=getRarity(cfg.rarity); return `${rarity.name} ${cfg.name}\nLv.${skillData.level}　${getSkillBarStateText(scene, skillData, cfg)}`; }
 function makeSkillSystemScene({paused=false}={}){ const c=scene({paused}); c.s.skillSystem=new SkillSystem(c.s); return c; }
 
-assert.equal(GAME_VERSION,'0.11.4'); assert.equal(pkg.version,'0.11.4');
+assert.equal(GAME_VERSION,'0.11.5'); assert.equal(pkg.version,'0.11.5');
 const cfg=SKILLS[NINEFOLD_DAO_ID]; assert(cfg); assert.equal(cfg.rarity,'MYTHIC'); assert.equal(cfg.passive,true); assert.equal(cfg.maxLevel,9); assert.equal(cfg.requiredSkillId,undefined); assert(cfg.tags.includes(TAGS.CULTIVATION)); assert(cfg.tags.includes(TAGS.BUILD_CULTIVATION)); assert(BUILD_TAGS.includes(TAGS.BUILD_CULTIVATION)); assert.equal(Object.values(SKILLS).filter(s=>s?.id&&!s.hidden).length,41);
 ['great_handprint','soul_destroying_needle','three_pure_ones','mantra_heaven_book'].forEach(id=>assert(!SKILLS[id]));
 for(let i=1;i<=9;i++){ const c=scene(); add(c.sys,i); c.advance(1000); assert(Math.abs(getCultivationSnapshot(c.s).progress-CULTIVATION_BASE_RATES[i-1]*(i>=6?1.25:1))<.001); }
