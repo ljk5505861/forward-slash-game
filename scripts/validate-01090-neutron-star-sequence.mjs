@@ -3,7 +3,7 @@ import { SKILL_HANDLERS } from '../src/skills/handlers/index.js';
 import { SKILLS } from '../src/config/skills.js';
 import { GAME_VERSION } from '../src/config/version.js';
 
-assert.equal(GAME_VERSION, '0.11.4');
+assert.equal(GAME_VERSION, '0.11.5');
 assert.equal(SKILLS.neutron_star.levels.length, 9);
 assert.equal(Object.keys(SKILLS).length, 41);
 assert.deepEqual(SKILLS.neutron_star.levels.map(x => x.singlePulseDamage), [72,80,90,101,113,128,144,162,184]);

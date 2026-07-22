@@ -8,7 +8,7 @@ await import('../src/skills/handlers/index.js');
 const { SKILL_HANDLERS } = await import('../src/skills/handlers/index.js');
 const { validateSkillDetailContent, getSkillDetailData } = await import('../src/ui/skillDetailContent.js');
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-assert.equal(GAME_VERSION,'0.11.4'); assert.equal(pkg.version,'0.11.4');
+assert.equal(GAME_VERSION,'0.11.5'); assert.equal(pkg.version,'0.11.5');
 assert.match(pkg.scripts['validate:01087-gravity-flow'],/validate-01087-gravity-flow-runtime\.mjs/,'runtime validation is part of the gravity gate');
 assert.equal(Object.keys(SKILLS).length,41); assert.equal(Object.values(SKILLS).filter(s=>s.rarity==='RARE'&&s.tags.includes(TAGS.GRAVITY)).length,2); assert.equal(Object.values(SKILLS).filter(s=>s.rarity==='EPIC'&&s.tags.includes(TAGS.GRAVITY)).length,1); assert.equal(Object.values(SKILLS).filter(s=>s.rarity==='MYTHIC'&&s.tags.includes(TAGS.GRAVITY)).length,1);
 assert.equal(TAGS.GRAVITY,'gravity'); assert.equal(TAGS.CELESTIAL,'celestial'); assert.equal(TAGS.BUILD_GRAVITY,'buildGravity'); assert(BUILD_TAGS.includes(TAGS.BUILD_GRAVITY));

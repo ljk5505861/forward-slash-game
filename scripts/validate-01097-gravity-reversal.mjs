@@ -13,7 +13,7 @@ globalThis.document ??= { documentElement:{style:{}}, createElement:()=>({getCon
 globalThis.HTMLCanvasElement ??= class {};
 globalThis.Image ??= class {};
 const { default: EnemyBehaviorManager } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
-assert.equal(GAME_VERSION,'0.11.4'); assert.equal(pkg.version,'0.11.4');
+assert.equal(GAME_VERSION,'0.11.5'); assert.equal(pkg.version,'0.11.5');
 assert.equal(SKILLS.gravity_field, undefined); assert.equal(SKILL_HANDLERS.gravity_field, undefined);
 assert(SKILLS.gravity_reversal); assert(SKILL_HANDLERS.gravity_reversal); assert.equal(Object.values(SKILLS).filter(s=>!s.hidden).length,41);
 assert.equal(Object.values(SKILLS).filter(s=>s.rarity==='RARE'&&s.tags?.includes('gravity')).map(s=>s.id).sort().join(','),'gravity_crush,gravity_reversal');

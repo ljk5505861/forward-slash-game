@@ -69,7 +69,7 @@ function makeSystem(scene){
 }
 const runUpdaters=system=>system.passiveUpdaters.slice().forEach(fn=>fn());
 
-assert.equal(GAME_VERSION,'0.11.4');
+assert.equal(GAME_VERSION,'0.11.5');
 assert.equal(SKILLS.shadow_assault,undefined);
 assert.equal(SKILLS.swift_shadow,undefined);
 for(const id of ['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage']){

@@ -9,7 +9,7 @@ const { default: CombatSystem, FRONTLINE_SWITCH_THRESHOLD } = await import('../s
 const { default: EnemyBehaviorManager } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
 const { GAME_VERSION } = await import('../src/config/version.js');
 
-assert.equal(GAME_VERSION,'0.11.4');
+assert.equal(GAME_VERSION,'0.11.5');
 assert.equal(FRONTLINE_SWITCH_THRESHOLD,18);
 const src = {
   wolf: fs.readFileSync('src/skills/handlers/SpiritWolvesSkill.js','utf8'),
