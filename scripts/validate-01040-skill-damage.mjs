@@ -8,11 +8,11 @@ const nums=(id,key)=>SKILLS[id]?.levels?.map(level=>level[key]);
 const eq=(actual,expected,label)=>assert.deepEqual(actual,expected,label);
 const src=file=>readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
 const hasHandler=handler=>new RegExp(`${handler}:`).test(src('src/skills/handlers/index.js'));
-const archetypes={fire:['fireball','fire_seed','burn_burst','solar_flame'],sword:['sword_wave','sword_sheath','sword_tomb'],strength:['giant_force','spinning_blade','bloodthirst','last_stand'],defense:['healing','thorn_armor','guardian_shield'],afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],summon:['spirit_wolves','spirit_bird','spirit_slime'],weapon:['lightning_enchant','lightning_mark','lightning_tribulation'],gravity:['gravity_crush','gravity_reversal','gravity_orb','black_hole'],celestial:['neutron_star','white_dwarf'],superhero:['super_speed','laser_eyes','freezing_breath'],cultivation:['ninefold_dao','alchemy','sky_covering_palm']};
+const archetypes={fire:['fireball','fire_seed','burn_burst','solar_flame'],sword:['sword_wave','sword_sheath','sword_tomb'],strength:['giant_force','spinning_blade','bloodthirst','last_stand'],defense:['healing','thorn_armor','guardian_shield'],afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],summon:['spirit_wolves','spirit_bird','spirit_slime'],weapon:['lightning_enchant','lightning_mark','lightning_tribulation'],gravity:['gravity_crush','gravity_reversal','gravity_orb','black_hole'],celestial:['neutron_star','white_dwarf'],superhero:['super_speed','laser_eyes','freezing_breath'],cultivation:['ninefold_dao','alchemy','sky_covering_palm','soul_destroying_needle']};
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.11.5','game version for v0.11.5 skill regression');
-eq(allSkillIds.length,41,'all current 41 skills listed');
-eq(new Set(allSkillIds).size,41,'all current 41 skills unique');
+assert.equal(GAME_VERSION,'0.11.6','game version for v0.11.6 skill regression');
+eq(allSkillIds.length,42,'all current 42 skills listed');
+eq(new Set(allSkillIds).size,42,'all current 42 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');
 allSkillIds.forEach(id=>assert.ok(SKILLS[id],`missing skill ${id}`));
 
@@ -96,4 +96,7 @@ eq(nums('sky_covering_palm','damage'),[48,54,62,71,81,93,106,121,138],'sky_cover
 eq(nums('sky_covering_palm','radius'),[110,115,130,135,145,155,165,175,185],'sky_covering_palm.radius');
 eq(nums('sky_covering_palm','cooldownMs'),[6500,6300,6100,5900,5700,5400,5200,5000,4600],'sky_covering_palm.cooldownMs');
 eq(nums('sky_covering_palm','manaCost'),[12,12,12,13,13,13,14,14,15],'sky_covering_palm.manaCost');
-console.log('v0.11.5 skill damage regression validation passed.');
+eq(nums('soul_destroying_needle','damage'),[72,80,90,101,113,126,141,157,175],'soul_destroying_needle.damage');
+eq(nums('soul_destroying_needle','cooldownMs'),[5800,5600,5400,5200,5000,4800,4600,4400,4200],'soul_destroying_needle.cooldownMs');
+eq(nums('soul_destroying_needle','manaCost'),[10,10,10,11,11,12,12,13,14],'soul_destroying_needle.manaCost');
+console.log('v0.11.6 skill damage regression validation passed.');

@@ -4,7 +4,7 @@ import { TAGS, BUILD_TAGS } from '../src/config/tags.js';
 import { SKILL_HANDLERS } from '../src/skills/handlers/index.js';
 import { SKILLS } from '../src/config/skills.js';
 import pkg from '../package.json' with { type:'json' };
-assert.equal(GAME_VERSION,'0.11.5'); assert.equal(pkg.version,'0.11.5'); assert.equal(Object.keys(SKILLS).length,41);
+assert.equal(GAME_VERSION,'0.11.6'); assert.equal(pkg.version,'0.11.6'); assert.equal(Object.keys(SKILLS).length,42);
 assert.equal(Object.values(SKILLS).filter(s=>s.rarity==='MYTHIC').length,9);
 for (const id of ['solar_flame','myriad_afterimage','poison_king','lightning_tribulation','black_hole','neutron_star','white_dwarf']) assert.equal(SKILLS[id].rarity,'MYTHIC');
 assert.equal(TAGS.BUILD_CELESTIAL,'buildCelestial'); assert(BUILD_TAGS.includes(TAGS.BUILD_CELESTIAL));
