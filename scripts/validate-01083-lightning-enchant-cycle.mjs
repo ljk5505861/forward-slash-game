@@ -18,7 +18,7 @@ const enemy=(hp=500,x=100,y=100)=>({hp,x,y});
 const hit=(sc,e,actualDamage=100)=>sc.eventBus.emit(CombatEvents.PLAYER_HIT,{enemy:e,source:'attack',tags:[TAGS.NORMAL_ATTACK],actualDamage});
 const bar=(sc,level=1)=>getSkillBarStateText(sc,{id:'lightning_enchant',level},SKILLS.lightning_enchant);
 
-assert.equal(GAME_VERSION,'0.11.5'); assert.equal(pkg.version,'0.11.5'); assert.equal(Object.keys(SKILLS).length,41);
+assert.equal(GAME_VERSION,'0.11.6'); assert.equal(pkg.version,'0.11.6'); assert.equal(Object.keys(SKILLS).length,42);
 const cfg=SKILLS.lightning_enchant; assert.equal(cfg.rarity,'FINE'); assert.equal(cfg.passive,true); assert.equal(cfg.maxLevel,9); assert.equal(cfg.cooldownMs,7000);
 assert.deepEqual(cfg.levels.map(l=>l.durationMs),Array(9).fill(8000)); assert.deepEqual(cfg.levels.map(l=>l.cooldownMs),Array(9).fill(7000));
 assert.deepEqual(cfg.levels.map(l=>l.damageRatio),[0.12,0.14,0.18,0.20,0.22,0.24,0.27,0.30,0.34]); assert.equal(cfg.levels[5].chainCount,1); assert.equal(cfg.levels[5].chainRatio,0.5); assert.equal(cfg.levels[5].chainRadius,130); assert.equal(cfg.levels[8].chainCount,2); assert.equal(cfg.levels[8].chainRatio,0.65); assert.equal(cfg.levels[8].chainRadius,150); assert.match(cfg.description,/8秒/); assert.match(cfg.description,/7秒/); assert(cfg.levels.every(l=>/8秒/.test(l.desc)&&/7秒/.test(l.desc)));

@@ -111,12 +111,14 @@
     "validate:01104-sky-covering-palm": "node scripts/validate-01104-sky-covering-palm.mjs",
     "validate:01104-playtest-fixes": "npm run validate:01104-sky-covering-palm && npm run validate:01103-playtest-fixes",
     "validate:01105-full-slot-upgrade-guarantee": "node scripts/validate-01105-full-slot-upgrade-guarantee.mjs",
-    "validate:01105-playtest-fixes": "npm run validate:01105-full-slot-upgrade-guarantee && npm run validate:01104-playtest-fixes"
+    "validate:01105-playtest-fixes": "npm run validate:01105-full-slot-upgrade-guarantee && npm run validate:01104-playtest-fixes",
+    "validate:01106-soul-destroying-needle": "node scripts/validate-01106-soul-destroying-needle.mjs",
+    "validate:01106-playtest-fixes": "npm run validate:01106-soul-destroying-needle && npm run validate:01105-playtest-fixes"
   },
   "dependencies": {
     "phaser": "4.1.0",
     "vite": "latest"
   },
   "devDependencies": {},
-  "version": "0.11.5"
+  "version": "0.11.6"
 }

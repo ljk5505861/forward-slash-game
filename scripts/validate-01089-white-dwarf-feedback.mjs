@@ -4,7 +4,7 @@ import { SKILL_HANDLERS } from '../src/skills/handlers/index.js';
 import { SKILLS } from '../src/config/skills.js';
 import { GAME_VERSION } from '../src/config/version.js';
 
-assert.equal(GAME_VERSION, '0.11.5');
+assert.equal(GAME_VERSION, '0.11.6');
 assert.equal(SKILLS.white_dwarf.levels.length, 9);
 assert.equal(SKILLS.white_dwarf.description, '白矮星永久围绕玩家旋转，提供常驻减伤和护体；触碰敌人时以强重力造成高额魔法伤害，并将敌人瞬间压扁。');
 assert.equal(SKILLS.white_dwarf.levels.some(l => 'guardTriggerMaxHpRatio' in l || 'criticalHpRatio' in l), false);
@@ -12,7 +12,7 @@ assert.deepEqual(SKILLS.white_dwarf.levels.map(l => l.contactDamage), [70,85,100
 assert.deepEqual(SKILLS.white_dwarf.levels.map(l => l.contactCooldownMs), [1800,1750,1700,1650,1600,1500,1400,1300,1200]);
 assert.equal(SKILLS.white_dwarf.levels.some(l => 'contactKnockback' in l), false);
 assert.deepEqual(SKILLS.white_dwarf.levels.map(l => l.contactPadding), [8,8,9,9,10,11,12,13,14]);
-assert.equal(Object.values(SKILLS).filter(s => !s.hidden).length, 41);
+assert.equal(Object.values(SKILLS).filter(s => !s.hidden).length, 42);
 assert.equal(['solar_flame','myriad_afterimage','poison_king','lightning_tribulation','black_hole','neutron_star','white_dwarf'].filter(id => SKILLS[id]?.rarity === 'MYTHIC').length, 7);
 
 const detailSource = readFileSync(new URL('../src/ui/skillDetailContent.js', import.meta.url), 'utf8');

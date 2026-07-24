@@ -13,7 +13,7 @@ const { SKILL_HANDLERS } = await import('../src/skills/handlers/index.js');
 const { mostDense, mostDenseHorizontal, GRAVITY_CRUSH_COLUMN_HEIGHT, GRAVITY_CRUSH_PRESS_DURATION_MS, GRAVITY_CRUSH_START_OFFSET_Y, GRAVITY_CRUSH_IMPACT_OFFSET_Y } = await import('../src/skills/handlers/GravityFlowSkills.js');
 const { applyEnemyGravity } = await import('../src/systems/EnemyGravityControl.js');
 import pkg from '../package.json' with { type:'json' };
-assert.equal(GAME_VERSION,'0.11.5'); assert.equal(pkg.version,'0.11.5');
+assert.equal(GAME_VERSION,'0.11.6'); assert.equal(pkg.version,'0.11.6');
 assert.equal(GRAVITY_CRUSH_COLUMN_HEIGHT,240); assert.equal(GRAVITY_CRUSH_PRESS_DURATION_MS,120); assert.equal(GRAVITY_CRUSH_START_OFFSET_Y,-250); assert.equal(GRAVITY_CRUSH_IMPACT_OFFSET_Y,-80);
 
 function node(type,x=0,y=0,w=0,h=0,color=0,alpha=1){ return {type,x,y,width:w,height:h,color,alpha,fillAlpha:alpha,active:true,destroyed:false,stroke:null,setDepth(d){this.depth=d;return this},setStrokeStyle(width,color,alpha){this.stroke={width,color,alpha};return this},setScrollFactor(){return this},setFillStyle(c,a){this.color=c;this.alpha=a;this.fillAlpha=a;return this},setPosition(x,y){this.x=x;this.y=y;return this},setScale(v){this.scale=v;return this},add(items){this.children=items;return this},destroy(){this.destroyed=true;this.active=false;return this}}; }

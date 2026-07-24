@@ -10,7 +10,7 @@ import { applyEnemyGravity, getEnemyMoveSpeed, getEnemyAttackDelay, isGravitySup
 import { CombatEvents } from '../src/core/CombatEvents.js';
 
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-assert.equal(GAME_VERSION,'0.11.5'); assert.equal(pkg.version,'0.11.5'); assert.equal(Object.keys(SKILLS).length,41);
+assert.equal(GAME_VERSION,'0.11.6'); assert.equal(pkg.version,'0.11.6'); assert.equal(Object.keys(SKILLS).length,42);
 const cfg=SKILLS.sky_covering_palm; assert(cfg); assert.equal(Object.values(SKILLS).filter(s=>s.id==='sky_covering_palm').length,1);
 assert.equal(cfg.rarity,'EPIC'); assert.equal(cfg.maxLevel,9); assert.equal(cfg.passive,false); assert.equal(cfg.targetType,'random');
 [TAGS.MAGIC,TAGS.SPELL,TAGS.ACTIVE_SKILL,TAGS.CULTIVATION,TAGS.BUILD_CULTIVATION].forEach(t=>assert(cfg.tags.includes(t)));
@@ -49,5 +49,5 @@ sc=scene({skills:[{id:'sky_covering_palm',level:9}],enemies:[e(100,0,1000)]}); s
 
 sc=scene({skills:[{id:'sky_covering_palm',level:9}],enemies:[e(100,0,1000)]}); step(sc,0); assert.equal(sc.skillSystem.active.length,1); sc.skillSystem.removeSkillRuntime('sky_covering_palm'); sc.playerData.skills=[]; step(sc,2000); assert.equal(sc.combatSystem.hits.length,0); assert.equal(sc.skillSystem.active.length,0);
 sc=scene({skills:[{id:'sky_covering_palm',level:6}],enemies:[e(100,0,1000)]}); step(sc,0); step(sc,616); const resetSuppressionRings=sc.skillSystem.active[0].visuals.filter(v=>v.skyCoveringPalmSuppressionVisual); assert.equal(resetSuppressionRings.length,1); const hitsBeforeReset=sc.combatSystem.hits.length; sc.skillSystem.reset(); sc.playerData.skills=[]; step(sc,2000); assert.equal(sc.combatSystem.hits.length,hitsBeforeReset); assert.equal(sc.skillSystem.active.length,0); assert(resetSuppressionRings.every(v=>v.destroyed));
-assert.equal(Object.keys(SKILLS).length,41);
-console.log('v0.11.5 sky covering palm validation passed.');
+assert.equal(Object.keys(SKILLS).length,42);
+console.log('v0.11.6 sky covering palm validation passed.');
