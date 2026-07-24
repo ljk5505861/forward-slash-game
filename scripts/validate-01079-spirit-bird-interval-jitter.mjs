@@ -13,7 +13,7 @@ function scene(){ const lines=[]; const s={now:0,lines,player:{x:220,y:850.25,gr
 function tick(s,ms){ s.now+=ms; s.skillSystem.update(s.now); s.events.emit('postupdate'); }
 function addLevels(s,n){ for(let i=0;i<n;i++) s.skillSystem.addOrLevel('spirit_bird'); s.skillSystem.update(s.now); return s.spiritBirdRuntime.get(); }
 
-assert.equal(GAME_VERSION,'0.11.6');
+assert.equal(GAME_VERSION,'0.11.7');
 assert.deepEqual(SPIRIT_BIRD_INTERVALS,[6000,5800,5600,5400,5200,4800,4600,4400,4200]);
 assert.deepEqual(SKILLS.spirit_bird.levels.map(l=>l.healIntervalMs),SPIRIT_BIRD_INTERVALS);
 for(let i=1;i<SPIRIT_BIRD_INTERVALS.length;i++) assert(SPIRIT_BIRD_INTERVALS[i]<SPIRIT_BIRD_INTERVALS[i-1],'intervals strictly decrease');

@@ -16,8 +16,8 @@ function makeScene(){ const bus=new Bus(); const p=createPlayerRuntime(); const 
 const runPassives=s=>s.skillSystem.passiveUpdaters.forEach(fn=>fn());
 function countedRandom(value,fn){ const old=Math.random; let count=0; Math.random=()=>{count++;return value;}; try{return fn(()=>count);} finally{Math.random=old;} }
 
-assert.equal(GAME_VERSION,'0.11.6');
-assert.equal(Object.keys(SKILLS).length,42,'formal skill count');
+assert.equal(GAME_VERSION,'0.11.7');
+assert.equal(Object.keys(SKILLS).length,43,'formal skill count');
 
 // v0.10.60 strength balance tables.
 assert.deepEqual(SKILLS.bloodthirst.levels.map(l=>[l.lifeSteal,l.empoweredLifeSteal,l.durationMs,l.cooldownMs]),[[.05,.10,5000,10000],[.06,.11,5000,10000],[.07,.14,5000,10000],[.08,.15,5500,9500],[.09,.17,5500,9000],[.10,.20,6000,8000],[.11,.21,6000,8000],[.12,.22,6000,8000],[.12,.24,6000,8000]]);

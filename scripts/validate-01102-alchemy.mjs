@@ -123,8 +123,8 @@ function tick(scene, milliseconds) {
 function completeTweens(scene) { [...scene.tweenRecords].forEach(tween => tween.complete()); }
 function detailLine(detail, prefix) { return detail.currentEffects.find(line => line.startsWith(prefix)); }
 
-assert.equal(GAME_VERSION, '0.11.6');
-assert.equal(Object.keys(SKILLS).length, 42);
+assert.equal(GAME_VERSION, '0.11.7');
+assert.equal(Object.keys(SKILLS).length, 43);
 const config = SKILLS[ALCHEMY_ID];
 assert.equal(config.rarity, 'EPIC');
 assert.equal(config.passive, true);
@@ -132,7 +132,7 @@ assert.equal(config.maxLevel, 9);
 assert(!config.prerequisite && !config.requires);
 assert(config.tags.includes(TAGS.CULTIVATION));
 assert(config.tags.includes(TAGS.BUILD_CULTIVATION));
-for (const id of ['mitian_handprint',  'one_qi_three_purities', 'mantra_heavenly_book']) assert(!SKILLS[id]);
+for (const id of ['mitian_handprint',  'one_qi_three_purities']) assert(!SKILLS[id]);
 
 for (const [enemy, bone, blood] of [
   [{ level:3 }, 6, 3],
