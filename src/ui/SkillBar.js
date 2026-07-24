@@ -5,6 +5,7 @@ import { getRarity } from '../config/rarities.js';
 import { getSkillDetailData } from './skillDetailContent.js';
 import { MYRIAD_AFTERIMAGE_SKILL_ID, getMyriadAfterimageDetailState, openMyriadAfterimageSelection } from '../skills/handlers/AfterimageUltimateSkills.js';
 import { getSkillBarStateText } from './skillBarState.js';
+import { MANTRA_HEAVENLY_BOOK_ID, openMantraHeavenlyBookSelection } from '../skills/handlers/MantraHeavenlyBookSkill.js';
 
 export const SKILL_DETAIL_LONG_PRESS_MS = 450;
 const LONG_PRESS_MOVE_CANCEL_PX = 18;
@@ -72,6 +73,7 @@ export default class SkillBar {
     if (this.scene.upgradeSystem?.pendingReplacement) { this.cancelLongPress(pointer); this.scene.upgradeSystem.confirmReplacement(slotIndex); return; }
     if(!lp || lp.pointerId!==pointer.id) return;
     const triggered=lp.triggered; this.cancelLongPress(pointer); if(triggered) return;
+    if(this.scene.playerData.skills[slotIndex]?.id===MANTRA_HEAVENLY_BOOK_ID) openMantraHeavenlyBookSelection(this.scene);
   }
   cancelLongPress(pointer=null){ if(pointer&&this.longPress&&this.longPress.pointerId!==pointer.id) return; this.longPress?.timer?.remove?.(false); this.longPress=null; }
 
@@ -128,6 +130,6 @@ export default class SkillBar {
   hideDetail(){ if(!this.detail) return; const detail=this.detail; this.detail=null; [detail.overlay,detail.panel,detail.close,detail.bodyText].forEach(n=>n?.removeAllListeners?.()); detail.mask?.destroy?.(); detail.nodes.forEach(n=>n?.destroy?.()); }
 
   update() { const skills = this.scene.playerData.skills; const replacing = !!this.scene.upgradeSystem?.pendingReplacement; const soulCount=Math.floor(Number(this.scene.skillSystem?.passiveState?.swordFlow?.effectiveSouls)||0); this.title.setText(replacing ? '请选择要替换的技能' : `技能槽 ${Math.min(skills.length, SKILL_SLOT_COUNT)}/${SKILL_SLOT_COUNT}`);
-    this.slotNodes.forEach(({ box, text, soulBadge }, index) => { const skillData = skills[index]; if (!skillData) { text.setText('空技能槽'); soulBadge.setText('').setVisible(false); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 3, replacing ? 0xffd166 : 0x89a8e8, 1); return; } const cfg = SKILLS[skillData.id]; const rarity = getRarity(cfg?.rarity); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 4, replacing ? 0xffd166 : rarity.color, 1); const state = getSkillBarStateText(this.scene, skillData, cfg); text.setText(`${rarity.name} ${cfg?.name || skillData.id}\nLv.${skillData.level}　${state}`); const showSouls=SOUL_BADGE_SKILLS.has(skillData.id); soulBadge.setText(showSouls?`魂 ${soulCount}`:'').setVisible(showSouls); }); }
+    this.slotNodes.forEach(({ box, text, soulBadge }, index) => { const skillData = skills[index]; if (!skillData) { text.setText('空技能槽'); soulBadge.setText('').setVisible(false); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 3, replacing ? 0xffd166 : 0x89a8e8, 1); return; } const cfg = SKILLS[skillData.id]; const rarity = getRarity(cfg?.rarity); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 4, replacing ? 0xffd166 : rarity.color, 1); const state = getSkillBarStateText(this.scene, skillData, cfg); const mantra=skillData.id===MANTRA_HEAVENLY_BOOK_ID?(this.scene.playerData.mantraHeavenlyBookMode||'未选'):''; text.setText(`${rarity.name} ${cfg?.name || skillData.id}${mantra?`·${mantra}`:''}\nLv.${skillData.level}　${state}`); const showSouls=SOUL_BADGE_SKILLS.has(skillData.id); soulBadge.setText(showSouls?`魂 ${soulCount}`:'').setVisible(showSouls); }); }
   destroy() { this.destroyed = true; this.cancelLongPress(); this.hideDetail(); this.nodes.forEach((node) => { node.removeAllListeners?.(); node.destroy?.(); }); this.nodes = []; this.slotNodes = []; }
 }

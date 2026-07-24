@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { GAME_VERSION } from '../src/config/version.js';
+import { SKILLS } from '../src/config/skills.js';
+import '../src/skills/handlers/index.js';
+import { TAGS } from '../src/config/tags.js';
+import { MANTRA_MODES, MANTRA_HEAVENLY_BOOK_ID, chooseMantraMode, getMantraMode } from '../src/skills/handlers/MantraHeavenlyBookSkill.js';
+assert.equal(GAME_VERSION,'0.11.7');
+assert.equal(Object.values(SKILLS).filter(s=>s?.id&&!s.hidden).length,43);
+const cfg=SKILLS[MANTRA_HEAVENLY_BOOK_ID]; assert(cfg); assert.equal(cfg.rarity,'MYTHIC'); assert.equal(cfg.maxLevel,9); assert.equal(cfg.passive,false);
+[TAGS.CULTIVATION,TAGS.MAGIC,TAGS.SPELL,TAGS.ACTIVE_SKILL].forEach(t=>assert(cfg.tags.includes(t)));
+assert.deepEqual(MANTRA_MODES,['life','spirit','slash','soul','curse','absorb']);
+assert.deepEqual(cfg.levels.map(x=>x.cooldownMs),[8000,7800,7600,7400,7200,6900,6600,6300,5800]);
+assert.deepEqual(cfg.levels.map(x=>x.manaCost),[14,14,15,15,16,16,17,18,20]);
+const scene={playerData:{},skillBar:{update(){}}}; assert.equal(getMantraMode(scene),null);assert(chooseMantraMode(scene,'curse'));assert.equal(getMantraMode(scene),'curse');assert.equal(chooseMantraMode(scene,'bad'),false);
+console.log('v0.11.7 mantra heavenly book validation passed.');
