@@ -9,7 +9,7 @@ import CombatSystem from '../src/systems/CombatSystem.js';
 import { CombatEvents } from '../src/core/CombatEvents.js';
 const src=f=>readFileSync(new URL(`../${f}`,import.meta.url),'utf8');
 const pkg=JSON.parse(src('package.json'));
-assert.equal(GAME_VERSION,'0.11.6'); assert.equal(pkg.version,'0.11.6'); assert.equal(Object.keys(SKILLS).length,42);
+assert.equal(GAME_VERSION,'0.11.7'); assert.equal(pkg.version,'0.11.7'); assert.equal(Object.keys(SKILLS).length,43);
 const cfg=SKILLS.lightning_enchant; assert(cfg); assert.equal(cfg.rarity,'FINE'); assert.equal(cfg.passive,true); assert.equal(cfg.maxLevel,9); assert.equal(cfg.handler,'lightning_enchant'); assert.equal(cfg.targetType,'passive'); assert.equal(cfg.ultimateSkill,undefined); assert.equal(cfg.requiredSkillId,undefined);
 for(const t of [TAGS.MAGIC,TAGS.LIGHTNING,TAGS.NORMAL_ATTACK,TAGS.BUILD_WEAPON]) assert(cfg.tags.includes(t));
 for(const t of ['physical',TAGS.ACTIVE_SKILL,TAGS.SPELL,TAGS.SUMMON]) assert(!cfg.tags.includes(t)); assert(BUILD_TAGS.includes(TAGS.BUILD_WEAPON));

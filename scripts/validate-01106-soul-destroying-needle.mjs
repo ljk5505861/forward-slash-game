@@ -8,7 +8,7 @@ import SkillSystem from '../src/systems/SkillSystem.js';
 import { selectSoulDestroyingNeedleTarget } from '../src/skills/handlers/CultivationSoulDestroyingNeedleSkill.js';
 import { CombatEvents } from '../src/core/CombatEvents.js';
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-assert.equal(GAME_VERSION,'0.11.6'); assert.equal(pkg.version,'0.11.6'); assert.equal(Object.keys(SKILLS).length,42);
+assert.equal(GAME_VERSION,'0.11.7'); assert.equal(pkg.version,'0.11.7'); assert.equal(Object.keys(SKILLS).length,43);
 const cfg=SKILLS.soul_destroying_needle; assert(cfg); assert.equal(cfg.rarity,'EPIC'); assert.equal(cfg.maxLevel,9); assert.equal(cfg.passive,false); assert.equal(cfg.requiredSkillId,undefined);
 [TAGS.MAGIC,TAGS.SPELL,TAGS.PROJECTILE,TAGS.ACTIVE_SKILL,TAGS.CULTIVATION,TAGS.BUILD_CULTIVATION].forEach(tag=>assert(cfg.tags.includes(tag)));
 assert.deepEqual(cfg.levels.map(x=>x.damage),[72,80,90,101,113,126,141,157,175]); assert.deepEqual(cfg.levels.map(x=>x.cooldownMs),[5800,5600,5400,5200,5000,4800,4600,4400,4200]); assert.deepEqual(cfg.levels.map(x=>x.manaCost),[10,10,10,11,11,12,12,13,14]);
@@ -23,4 +23,4 @@ s=scene({level:3,enemies:[enemy(100,0,100),enemy(120,0,100,{isElite:true})]});st
 s=scene({level:6,enemies:[enemy(100,0,1000,{isBoss:true})]});step(s,0);step(s,180);assert.equal(s.combatSystem.hits[0].meta.defenseIgnore,.5);assert.equal(s.combatSystem.hits[0].d,Math.round(126*1.2));
 s=scene({level:9,enemies:[enemy(100,0,5000)]});step(s,0);assert.equal(s.skillSystem.active[0].needles.filter(n=>n.launched).length,1);step(s,160);assert.equal(s.skillSystem.active[0].needles.filter(n=>n.launched).length,2);step(s,180);step(s,320);step(s,340);step(s,500);assert.deepEqual(s.combatSystem.hits.map(h=>h.d),[175,105,105]);assert.equal(s.casts,1);assert.equal(s.eventBus.events.filter(x=>x.e===CombatEvents.SKILL_CAST_COMPLETED).length,1);
 s=scene({level:9,enemies:[enemy(100,0,5000)]});step(s,0);s.skillSystem.shiftTimers(1000,100);const n=s.skillSystem.active[0].needles;assert.equal(n[0].hitAt,1180);assert.equal(n[1].fireAt,1160);assert.equal(n[2].hitAt,1500);step(s,1179);assert.equal(s.combatSystem.hits.length,0);step(s,1180);assert.equal(s.combatSystem.hits.length,1);s.skillSystem.removeSkillRuntime();s.playerData.skills=[];step(s,2000);assert.equal(s.skillSystem.active.length,0);
-console.log('v0.11.6 soul destroying needle validation passed.');
+console.log('v0.11.7 soul destroying needle validation passed.');

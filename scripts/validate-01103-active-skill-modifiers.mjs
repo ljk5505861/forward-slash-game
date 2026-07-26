@@ -12,12 +12,12 @@ import { getActiveSkillCastModifierSnapshot, manaCostValue, rangeValue } from '.
 import SkillSystem from '../src/systems/SkillSystem.js';
 
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-const expectedSkillIds=['fireball','fire_seed','burn_burst','solar_flame','sword_wave','sword_sheath','sword_tomb','giant_force','spinning_blade','bloodthirst','last_stand','healing','thorn_armor','guardian_shield','shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage','poison_cloud','parasitic_gu','poison_chain','poison_king','spirit_wolves','spirit_bird','spirit_slime','lightning_enchant','lightning_mark','lightning_tribulation','gravity_crush','gravity_reversal','gravity_orb','black_hole','neutron_star','white_dwarf','super_speed','laser_eyes','freezing_breath','ninefold_dao','alchemy','sky_covering_palm','soul_destroying_needle'];
+const expectedSkillIds=['fireball','fire_seed','burn_burst','solar_flame','sword_wave','sword_sheath','sword_tomb','giant_force','spinning_blade','bloodthirst','last_stand','healing','thorn_armor','guardian_shield','shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage','poison_cloud','parasitic_gu','poison_chain','poison_king','spirit_wolves','spirit_bird','spirit_slime','lightning_enchant','lightning_mark','lightning_tribulation','gravity_crush','gravity_reversal','gravity_orb','black_hole','neutron_star','white_dwarf','super_speed','laser_eyes','freezing_breath','ninefold_dao','alchemy','sky_covering_palm','soul_destroying_needle','mantra_heavenly_book'];
 function assertSkillPool(){
-  assert.equal(GAME_VERSION,'0.11.6');
-  assert.equal(pkg.version,'0.11.6');
-  assert.equal(Object.keys(SKILLS).length,42);
-  assert.equal(new Set(Object.keys(SKILLS)).size,42);
+  assert.equal(GAME_VERSION,'0.11.7');
+  assert.equal(pkg.version,'0.11.7');
+  assert.equal(Object.keys(SKILLS).length,43);
+  assert.equal(new Set(Object.keys(SKILLS)).size,43);
   assert.deepEqual(Object.keys(SKILLS).sort(),[...expectedSkillIds].sort());
 }
 assertSkillPool();
@@ -89,4 +89,4 @@ for(const [realm,expected] of [[0,1],[2,1.06],[3,1.10],[8,1.70]]){
 }
 
 assertSkillPool();
-console.log('v0.11.6 active skill modifier validation passed.');
+console.log('v0.11.7 active skill modifier validation passed.');

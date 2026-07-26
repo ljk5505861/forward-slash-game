@@ -19,7 +19,7 @@ const seededRandom=seed=>()=>{
   return seed/4294967296;
 };
 
-assert.equal(GAME_VERSION,'0.11.6');
+assert.equal(GAME_VERSION,'0.11.7');
 assert.equal(SKILLS.poison_king.rarity,'MYTHIC');
 assert.equal(SKILLS.poison_king.ultimateSkill,true);
 
