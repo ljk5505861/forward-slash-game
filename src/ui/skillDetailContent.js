@@ -3,6 +3,7 @@ import { SKILLS } from '../config/skills.js';
 import { NINEFOLD_DAO_ID, CULTIVATION_REALMS, CULTIVATION_THRESHOLDS, CULTIVATION_REALM_STATS, getCultivationSnapshot, getCultivationSpellModifiers, getCultivationUniversalModifiers } from '../skills/handlers/CultivationCoreSkill.js';
 import { ALCHEMY_ID, MATERIAL_MULTIPLIERS, getAlchemyState, getAlchemyRecipe, getAlchemyDaoBuffModifiers } from '../skills/handlers/CultivationAlchemySkill.js';
 import { SOUL_THRESHOLDS, SWORD_MYTHIC, getSwordFlowReadSnapshot, mainSwordStatsReadOnly, tombStatsReadOnly } from '../skills/handlers/SwordFlowState.js';
+import { getHumanGodActualStats, getHumanGodSolarMultiplier } from '../skills/handlers/HumanGodSkill.js';
 
 const QUALITY_NAMES={COMMON:'普通',RARE:'稀有',EPIC:'史诗',MYTHIC:'神话'};
 const MYTHIC_NAMES={ [SWORD_MYTHIC.NONE]:'无', [SWORD_MYTHIC.MAIN]:'御剑术', [SWORD_MYTHIC.TOMB]:'剑冢' };
@@ -123,12 +124,25 @@ function alchemyDetail(cfg,level,context={}){
   ],mechanics:['详情为只读快照：不会增加材料、推进炼丹、触发丹药完成或调用 grantCultivation()。'],milestones:milestones(cfg,level),nextLevelPreview:nextPreview(cfg,level,cfg.levels[level-1]||{},cfg.levels[level]||null),progress:`${level}/${cfg.maxLevel}`};
 }
 
+function humanGodDetail(cfg, level, context = {}) {
+  const system = context.scene?.skillSystem;
+  const multiplier = system ? getHumanGodSolarMultiplier(system) : 1;
+  const data = cfg.levels[level - 1];
+  const stats = getHumanGodActualStats(data, multiplier);
+  const sunlight = multiplier === 1.4 ? '双日强化：当前拥有2颗太阳，人间之神属性提高40%。' : multiplier === 1.25 ? '日照强化：当前拥有1颗太阳，人间之神属性提高25%。' : '获得“太阳”后，本技能提供的全部属性将受到日照强化。';
+  return { name:cfg.name, level, maxLevel:cfg.maxLevel, description:cfg.description, currentEffects:[
+    `力量：+${stats.strength}`, `防御：+${stats.defense}`, `最大生命：+${stats.maxHpBonus}`,
+    `移动速度：+${percentText(stats.moveSpeedBonus)}`, `攻击速度：+${percentText(stats.attackSpeedBonus)}`, `伤害减免：+${percentText(stats.damageReduction)}`, sunlight
+  ], mechanics:[data.desc, sunlight], milestones:milestones(cfg,level), nextLevelPreview:nextPreview(cfg,level,data,cfg.levels[level]||null), progress:`${level}/${cfg.maxLevel}` };
+}
+
 export function getSkillDetailData(skillId,context={}){
   const cfg=SKILLS[skillId]; if(!cfg) return null;
   const owned=context.scene?.playerData?.skills?.find(s=>s.id===skillId)||context.skill||{level:1};
   const level=Math.max(1,Math.min(cfg.maxLevel||1,owned.level||1));
   if(skillId===NINEFOLD_DAO_ID) return cultivationDetail(cfg,level,context);
   if(skillId===ALCHEMY_ID) return alchemyDetail(cfg,level,context);
+  if(skillId==='human_god') return humanGodDetail(cfg,level,context);
   if(skillId==='sword_wave') return swordDetail(cfg,level,context);
   if(skillId==='sword_tomb') return tombDetail(cfg,level,context);
   const data=cfg.levels?.[level-1]||{};

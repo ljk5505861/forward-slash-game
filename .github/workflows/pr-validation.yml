@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  v01107-full-pr-validation:
-    name: v0.11.7 full PR validation
+  v01108-full-pr-validation:
+    name: v0.11.8 full PR validation
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -37,6 +37,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate human god
+        run: npm run validate:01108-human-god
+
+      - name: Validate superhero flow
+        run: npm run validate:01098-superhero-flow
+
+      - name: Validate superhero kinetic enhancement
+        run: npm run validate:01100-superhero-kinetic
+
+      - name: Validate strength flow
+        run: npm run validate:01060-strength-balance
+
+      - name: Validate defense flow
+        run: npm run validate:01062-defense-rework
+
+      - name: Validate flame and solar flow
+        run: npm run validate:01044-flame-rework
+
+      - name: Validate skill pool
+        run: npm run validate:01056-open-skill-pool
+
+      - name: Validate selection and replacement flow
+        run: npm run validate:01105-full-slot-upgrade-guarantee
+
+      - name: Validate reward build bias
+        run: npm run validate:reward-bias
+
       - name: Validate sky covering palm
         run: npm run validate:01104-sky-covering-palm
 
@@ -58,10 +85,7 @@ jobs:
       - name: Validate ninefold dao
         run: npm run validate:01101-ninefold-dao
 
-      - name: Validate superhero kinetic enhancement
-        run: npm run validate:01100-superhero-kinetic
-
-      - name: Validate full v0.11.7 playtest regression chain
+      - name: Validate full v0.11.8 playtest regression chain
         run: npm run validate:01107-playtest-fixes
 
       - name: Validate gravity runtime directly
