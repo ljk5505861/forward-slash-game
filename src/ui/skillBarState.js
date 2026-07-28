@@ -1,6 +1,7 @@
 import { NINEFOLD_DAO_ID, getCultivationSnapshot } from '../skills/handlers/CultivationCoreSkill.js';
 import { ALCHEMY_ID, CultivationAlchemySkill } from '../skills/handlers/CultivationAlchemySkill.js';
 import { CHARGED_SLAM_ID, getChargedSlamState } from '../skills/handlers/ChargedSlamSkill.js';
+import { KINETIC_RELEASE_ID, getKineticReleaseState } from '../skills/handlers/KineticReleaseSkill.js';
 
 const SPECIAL_RUNTIMES = {
   guardian_shield: 'guardianShieldRuntime',
@@ -16,6 +17,12 @@ export function getSkillBarStateText(scene, skillData, cfg) {
     if (snap.isComplete) return '渡劫 圆满';
     const pct = Math.max(0, Math.min(100, Math.floor((snap.progress / (snap.nextThreshold || 1)) * 100)));
     return `${snap.realm} ${pct}%`;
+  }
+  if (skillData.id === KINETIC_RELEASE_ID) {
+    const snap = getKineticReleaseState(scene.skillSystem);
+    if (snap?.ready) return '动能 就绪';
+    const required = snap?.required || cfg?.levels?.[skillData.level - 1]?.kineticRequired || 400;
+    return `动能 ${Math.max(0, Math.min(100, Math.floor(((snap?.kinetic || 0) / required) * 100)))}%`;
   }
   if (skillData.id === CHARGED_SLAM_ID) {
     const snap = getChargedSlamState(scene.skillSystem);

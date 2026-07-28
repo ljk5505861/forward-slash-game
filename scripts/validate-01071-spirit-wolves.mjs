@@ -27,8 +27,8 @@ function makeSystemWithSkill(level=1){ return addSkillToScene(makeScene(),level)
 function makeRealSystemWithSkill(level=1){ return addSkillToScene(makeRealScene(),level); }
 function update(sys,s,time){ s.setTime(time); sys.update(time); }
 
-assert.equal(GAME_VERSION,'0.11.9');
-assert.equal(Object.keys(SKILLS).length,45);
+assert.equal(GAME_VERSION,'0.11.10');
+assert.equal(Object.keys(SKILLS).length,46);
 assert.ok(SKILLS.spirit_wolves);
 assert.equal(SKILLS.spirit_wolves.requiredSkillId,undefined);
 assert.equal(SKILLS.spirit_wolves.rarity,'COMMON');
