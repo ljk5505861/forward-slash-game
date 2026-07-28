@@ -1,5 +1,6 @@
 import { NINEFOLD_DAO_ID, getCultivationSnapshot } from '../skills/handlers/CultivationCoreSkill.js';
 import { ALCHEMY_ID, CultivationAlchemySkill } from '../skills/handlers/CultivationAlchemySkill.js';
+import { CHARGED_SLAM_ID, getChargedSlamState } from '../skills/handlers/ChargedSlamSkill.js';
 
 const SPECIAL_RUNTIMES = {
   guardian_shield: 'guardianShieldRuntime',
@@ -15,6 +16,11 @@ export function getSkillBarStateText(scene, skillData, cfg) {
     if (snap.isComplete) return '渡劫 圆满';
     const pct = Math.max(0, Math.min(100, Math.floor((snap.progress / (snap.nextThreshold || 1)) * 100)));
     return `${snap.realm} ${pct}%`;
+  }
+  if (skillData.id === CHARGED_SLAM_ID) {
+    const snap = getChargedSlamState(scene.skillSystem);
+    if (snap?.ready) return '重击 就绪';
+    return `蓄势 ${snap?.count || 0}/${snap?.required || cfg?.levels?.[skillData.level - 1]?.attacksRequired || 5}`;
   }
   if (skillData.id === ALCHEMY_ID) return CultivationAlchemySkill.getSkillBarState(scene.skillSystem).text;
   const readyAt = scene.skillSystem?.cooldowns.get(skillData.id) || 0;
