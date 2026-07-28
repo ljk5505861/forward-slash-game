@@ -2,6 +2,7 @@ import { NINEFOLD_DAO_ID, getCultivationSnapshot } from '../skills/handlers/Cult
 import { ALCHEMY_ID, CultivationAlchemySkill } from '../skills/handlers/CultivationAlchemySkill.js';
 import { CHARGED_SLAM_ID, getChargedSlamState } from '../skills/handlers/ChargedSlamSkill.js';
 import { KINETIC_RELEASE_ID, getKineticReleaseState } from '../skills/handlers/KineticReleaseSkill.js';
+import { SPELL_TIDE_ID, getSpellTideState } from '../skills/handlers/SpellTideSkill.js';
 
 const SPECIAL_RUNTIMES = {
   guardian_shield: 'guardianShieldRuntime',
@@ -11,6 +12,10 @@ const SPECIAL_RUNTIMES = {
 };
 
 export function getSkillBarStateText(scene, skillData, cfg) {
+  if (skillData.id === SPELL_TIDE_ID) {
+    const snap = getSpellTideState(scene.skillSystem);
+    return snap?.pendingTide ? '潮汐 涌动' : `潮汐 ${snap?.count || 0}/3`;
+  }
   if (skillData.id === NINEFOLD_DAO_ID) {
     const snap = getCultivationSnapshot(scene);
     if (!snap.active) return '炼气 0%';

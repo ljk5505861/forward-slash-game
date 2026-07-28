@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  v01110-full-pr-validation:
-    name: v0.11.10 full PR validation
+  v01111-full-pr-validation:
+    name: v0.11.11 full PR validation
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -36,6 +36,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate spell tide
+        run: npm run validate:01111-spell-tide
 
       - name: Validate kinetic release
         run: npm run validate:01110-kinetic-release
@@ -91,7 +94,7 @@ jobs:
       - name: Validate ninefold dao
         run: npm run validate:01101-ninefold-dao
 
-      - name: Validate full v0.11.10 playtest regression chain
+      - name: Validate full v0.11.11 playtest regression chain
         run: npm run validate:01107-playtest-fixes
 
       - name: Validate gravity runtime directly
