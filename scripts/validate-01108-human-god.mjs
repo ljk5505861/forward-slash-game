@@ -9,7 +9,7 @@ import { getHumanGodActualStats, getHumanGodSolarMultiplier } from '../src/skill
 import { getSkillDetailData } from '../src/ui/skillDetailContent.js';
 
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-assert.equal(GAME_VERSION,'0.11.9'); assert.equal(pkg.version,'0.11.9'); assert.equal(Object.keys(SKILLS).length,45);
+assert.equal(GAME_VERSION,'0.11.10'); assert.equal(pkg.version,'0.11.10'); assert.equal(Object.keys(SKILLS).length,46);
 const cfg=SKILLS.human_god;
 assert(cfg); assert.equal(cfg.name,'人间之神'); assert.equal(cfg.rarity,'LEGENDARY'); assert.equal(cfg.passive,true); assert.equal(cfg.ultimateSkill,true); assert.equal(cfg.maxLevel,9); assert(cfg.tags.includes(TAGS.SUPERPOWER)); assert(cfg.tags.includes(TAGS.BUILD_SUPERHERO)); assert.equal(cfg.handler,'human_god'); assert(SKILL_HANDLERS.human_god);
 const expected={strength:[4,5,7,9,11,14,16,18,22],defense:[3,4,6,7,9,11,13,15,18],maxHpBonus:[30,40,60,75,90,115,130,145,180],moveSpeedBonus:[.03,.04,.05,.06,.07,.08,.09,.10,.12],attackSpeedBonus:[.03,.04,.05,.06,.07,.08,.09,.10,.12],damageReduction:[0,0,.02,.02,.03,.05,.05,.06,.08]};

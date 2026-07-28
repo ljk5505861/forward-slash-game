@@ -12,12 +12,12 @@ import { getActiveSkillCastModifierSnapshot, manaCostValue, rangeValue } from '.
 import SkillSystem from '../src/systems/SkillSystem.js';
 
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-const expectedSkillIds=['fireball','fire_seed','burn_burst','solar_flame','sword_wave','sword_sheath','sword_tomb','giant_force','spinning_blade','bloodthirst','last_stand','healing','thorn_armor','guardian_shield','shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage','poison_cloud','parasitic_gu','poison_chain','poison_king','spirit_wolves','spirit_bird','spirit_slime','lightning_enchant','lightning_mark','lightning_tribulation','gravity_crush','gravity_reversal','gravity_orb','black_hole','neutron_star','white_dwarf','super_speed','laser_eyes','freezing_breath','human_god','ninefold_dao','alchemy','sky_covering_palm','soul_destroying_needle','mantra_heavenly_book','charged_slam'];
+const expectedSkillIds=['fireball','fire_seed','burn_burst','solar_flame','sword_wave','sword_sheath','sword_tomb','giant_force','spinning_blade','bloodthirst','last_stand','healing','thorn_armor','guardian_shield','shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage','poison_cloud','parasitic_gu','poison_chain','poison_king','spirit_wolves','spirit_bird','spirit_slime','lightning_enchant','lightning_mark','lightning_tribulation','gravity_crush','gravity_reversal','gravity_orb','black_hole','neutron_star','white_dwarf','super_speed','laser_eyes','freezing_breath','human_god','ninefold_dao','alchemy','sky_covering_palm','soul_destroying_needle','mantra_heavenly_book','charged_slam','kinetic_release'];
 function assertSkillPool(){
-  assert.equal(GAME_VERSION,'0.11.9');
-  assert.equal(pkg.version,'0.11.9');
-  assert.equal(Object.keys(SKILLS).length,45);
-  assert.equal(new Set(Object.keys(SKILLS)).size,45);
+  assert.equal(GAME_VERSION,'0.11.10');
+  assert.equal(pkg.version,'0.11.10');
+  assert.equal(Object.keys(SKILLS).length,46);
+  assert.equal(new Set(Object.keys(SKILLS)).size,46);
   assert.deepEqual(Object.keys(SKILLS).sort(),[...expectedSkillIds].sort());
 }
 assertSkillPool();

@@ -8,9 +8,9 @@ import { SKILL_HANDLERS } from '../src/skills/handlers/index.js';
 import { PoisonKingSkillWithSpiritSlime } from '../src/skills/handlers/PoisonKingSpiritSlimeCompat.js';
 
 const cfg=SKILLS.spirit_slime;
-assert.equal(GAME_VERSION,'0.11.9');
-assert.equal(pkg.version,'0.11.9');
-assert.equal(Object.keys(SKILLS).length,45);
+assert.equal(GAME_VERSION,'0.11.10');
+assert.equal(pkg.version,'0.11.10');
+assert.equal(Object.keys(SKILLS).length,46);
 assert(cfg);
 assert.equal(cfg.name,'灵泥');
 assert.equal(cfg.rarity,'RARE');
