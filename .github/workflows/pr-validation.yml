@@ -86,7 +86,21 @@ jobs:
         run: npm run validate:01101-ninefold-dao
 
       - name: Validate full v0.11.8 playtest regression chain
-        run: npm run validate:01107-playtest-fixes
+        run: |
+          set +e
+          npm run validate:01107-playtest-fixes > full-regression.log 2>&1
+          status=$?
+          tail -n 200 full-regression.log
+          exit $status
+
+      - name: Upload failed full regression log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v01108-full-regression-log
+          path: full-regression.log
+          if-no-files-found: ignore
+          retention-days: 3
 
       - name: Validate gravity runtime directly
         run: node scripts/validate-01087-gravity-flow-runtime.mjs
