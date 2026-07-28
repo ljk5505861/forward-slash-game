@@ -19,7 +19,7 @@ const seededRandom=seed=>()=>{
   return seed/4294967296;
 };
 
-assert.equal(GAME_VERSION,'0.11.10');
+assert.equal(GAME_VERSION,'0.11.11');
 assert.equal(SKILLS.poison_king.rarity,'MYTHIC');
 assert.equal(SKILLS.poison_king.ultimateSkill,true);
 
@@ -72,7 +72,7 @@ try{
     .filter(skill=>!mythicIds.includes(skill.id))
     .map(skill=>skill.id);
 
-  for(let i=0;i<4000;i+=1){
+  for(let i=0;i<10000;i+=1){
     const options=system.rollStartingOptions();
     assert.equal(options.length,3,'starting choice always contains three skills');
     assert.equal(new Set(options.map(option=>option.skillId)).size,3,'starting skills never repeat');
