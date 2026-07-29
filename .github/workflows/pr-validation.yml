@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  v01111-full-pr-validation:
-    name: v0.11.11 full PR validation
+  v01112-full-pr-validation:
+    name: v0.11.12 full PR validation
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -36,6 +36,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate mech flow
+        run: npm run validate:01112-mech-flow
 
       - name: Validate spell tide
         run: npm run validate:01111-spell-tide

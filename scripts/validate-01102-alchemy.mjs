@@ -123,8 +123,8 @@ function tick(scene, milliseconds) {
 function completeTweens(scene) { [...scene.tweenRecords].forEach(tween => tween.complete()); }
 function detailLine(detail, prefix) { return detail.currentEffects.find(line => line.startsWith(prefix)); }
 
-assert.equal(GAME_VERSION, '0.11.11');
-assert.equal(Object.keys(SKILLS).length, 47);
+assert.equal(GAME_VERSION, '0.11.12');
+assert.equal(Object.keys(SKILLS).length, 50);
 const config = SKILLS[ALCHEMY_ID];
 assert.equal(config.rarity, 'EPIC');
 assert.equal(config.passive, true);

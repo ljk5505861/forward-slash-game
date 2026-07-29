@@ -30,6 +30,8 @@ import { configureMantraHeavenlyBookSkill, MantraHeavenlyBookSkill } from './Man
 import { configureChargedSlamSkill, ChargedSlamSkill } from './ChargedSlamSkill.js';
 import { configureKineticReleaseSkill, KineticReleaseSkill } from './KineticReleaseSkill.js';
 import { configureSpellTideSkill, SpellTideSkill } from './SpellTideSkill.js';
+import { configureMechFlowSkills, PoweredArmorSkill, ShoulderMissileSkill, OverloadCoreSkill } from './MechFlowSkills.js';
+import { MechRuntimeSkill } from './MechRuntime.js';
 
 configureEntryArchetypeSkills();
 configureFlameCoreSkills();
@@ -57,6 +59,7 @@ configureMantraHeavenlyBookSkill();
 configureChargedSlamSkill();
 configureKineticReleaseSkill();
 configureSpellTideSkill();
+configureMechFlowSkills();
 
 const baseSuperSpeedShiftTimers = SuperSpeedSkill.shiftTimers;
 SuperSpeedSkill.shiftTimers = (system, duration, pausedAt) => {
@@ -131,4 +134,4 @@ FreezingBreathSkill.cast = (system, cfg, data, level, ctx) => {
   return result;
 };
 
-export const SKILL_HANDLERS={spell_tide:SpellTideSkill,kinetic_release:KineticReleaseSkill,charged_slam:ChargedSlamSkill,entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,fire_seed:FireSeedSkill,burn_burst:BurnBurstSkill,solar_flame:SolarFlameSkill,sword_sheath:SwordSheathSkill,sword_tomb:SwordTombSkill,giant_force:GiantForceSkill,spinning_blade:SpinningBladeSkill,bloodthirst:BloodthirstSkill,last_stand:LastStandSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,phantom_step:PhantomStepSkill,traceless:TracelessSkill,instant_step:InstantStepSkill,myriad_afterimage:MyriadAfterimageSkill,parasitic_gu:ParasiticGuHostVisualSkill,poison_chain:PoisonChainActiveSkill,poison_king:PoisonKingSkillWithSpiritSlime,spirit_wolves:SpiritWolvesSkill,spirit_bird:SpiritBirdSkill,spirit_slime:SpiritSlimeSkill,lightning_enchant:LightningEnchantSkill,lightning_mark:LightningMarkSkill,lightning_tribulation:LightningTribulationSkill,gravity_crush:GravityCrushFixedSkill,gravity_reversal:GravityReversalSkill,gravity_orb:GravityOrbSkill,black_hole:BlackHoleFixedSkill,neutron_star:NeutronStarSkill,white_dwarf:WhiteDwarfSkill,super_speed:SuperSpeedSkill,laser_eyes:LaserEyesSkill,freezing_breath:FreezingBreathSkill,human_god:HumanGodSkill,ninefold_dao:NinefoldDaoSkill,alchemy:CultivationAlchemySkill,sky_covering_palm:SkyCoveringPalmSkill,soul_destroying_needle:SoulDestroyingNeedleSkill,mantra_heavenly_book:MantraHeavenlyBookSkill};
+export const SKILL_HANDLERS={mech_runtime:MechRuntimeSkill,powered_armor:PoweredArmorSkill,shoulder_missile:ShoulderMissileSkill,overload_core:OverloadCoreSkill,spell_tide:SpellTideSkill,kinetic_release:KineticReleaseSkill,charged_slam:ChargedSlamSkill,entry_fireball:EntryFireballSkill,entry_sword:EntrySwordSkill,entry_poison_needle:EntryPoisonNeedleSkill,entry_iron_wall:EntryIronWallSkill,entry_movement:EntryMovementSkill,fire_seed:FireSeedSkill,burn_burst:BurnBurstSkill,solar_flame:SolarFlameSkill,sword_sheath:SwordSheathSkill,sword_tomb:SwordTombSkill,giant_force:GiantForceSkill,spinning_blade:SpinningBladeSkill,bloodthirst:BloodthirstSkill,last_stand:LastStandSkill,thorn_armor:ThornArmorSkill,guardian_shield:GuardianShieldSkill,phantom_step:PhantomStepSkill,traceless:TracelessSkill,instant_step:InstantStepSkill,myriad_afterimage:MyriadAfterimageSkill,parasitic_gu:ParasiticGuHostVisualSkill,poison_chain:PoisonChainActiveSkill,poison_king:PoisonKingSkillWithSpiritSlime,spirit_wolves:SpiritWolvesSkill,spirit_bird:SpiritBirdSkill,spirit_slime:SpiritSlimeSkill,lightning_enchant:LightningEnchantSkill,lightning_mark:LightningMarkSkill,lightning_tribulation:LightningTribulationSkill,gravity_crush:GravityCrushFixedSkill,gravity_reversal:GravityReversalSkill,gravity_orb:GravityOrbSkill,black_hole:BlackHoleFixedSkill,neutron_star:NeutronStarSkill,white_dwarf:WhiteDwarfSkill,super_speed:SuperSpeedSkill,laser_eyes:LaserEyesSkill,freezing_breath:FreezingBreathSkill,human_god:HumanGodSkill,ninefold_dao:NinefoldDaoSkill,alchemy:CultivationAlchemySkill,sky_covering_palm:SkyCoveringPalmSkill,soul_destroying_needle:SoulDestroyingNeedleSkill,mantra_heavenly_book:MantraHeavenlyBookSkill};

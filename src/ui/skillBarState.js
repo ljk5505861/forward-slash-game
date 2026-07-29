@@ -3,6 +3,7 @@ import { ALCHEMY_ID, CultivationAlchemySkill } from '../skills/handlers/Cultivat
 import { CHARGED_SLAM_ID, getChargedSlamState } from '../skills/handlers/ChargedSlamSkill.js';
 import { KINETIC_RELEASE_ID, getKineticReleaseState } from '../skills/handlers/KineticReleaseSkill.js';
 import { SPELL_TIDE_ID, getSpellTideState } from '../skills/handlers/SpellTideSkill.js';
+import { POWERED_ARMOR_ID, OVERLOAD_CORE_ID, getPoweredArmorState, getOverloadCoreState } from '../skills/handlers/MechFlowSkills.js';
 
 const SPECIAL_RUNTIMES = {
   guardian_shield: 'guardianShieldRuntime',
@@ -12,6 +13,17 @@ const SPECIAL_RUNTIMES = {
 };
 
 export function getSkillBarStateText(scene, skillData, cfg) {
+  if (skillData.id === POWERED_ARMOR_ID) {
+    const snap = getPoweredArmorState(scene.skillSystem);
+    if (!snap?.max) return '装甲 常驻';
+    if (snap.ready > 0) return `装甲 ${snap.ready}/${snap.max}`;
+    return `装甲 充能 ${(snap.remainingMs / 1000).toFixed(1)}s`;
+  }
+  if (skillData.id === OVERLOAD_CORE_ID) {
+    const snap = getOverloadCoreState(scene.skillSystem);
+    if (snap?.overloaded) return `过载 ${(snap.remainingMs / 1000).toFixed(1)}s`;
+    return `核心 ${snap?.energy || 0}/${snap?.threshold || 10}`;
+  }
   if (skillData.id === SPELL_TIDE_ID) {
     const snap = getSpellTideState(scene.skillSystem);
     return snap?.pendingTide ? '潮汐 涌动' : `潮汐 ${snap?.count || 0}/3`;
