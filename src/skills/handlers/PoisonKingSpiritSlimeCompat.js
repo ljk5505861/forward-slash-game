@@ -12,12 +12,33 @@ function isNormalPoisonTick(payload) {
     && !payload.effect?.noPoisonKingRecursive;
 }
 
+function removeUpdater(system, updater) {
+  const index = system.passiveUpdaters.indexOf(updater);
+  if (index >= 0) system.passiveUpdaters.splice(index, 1);
+}
+
 function syncHpBar(king) {
   const bar = king?.hpBar;
   if (!bar || !king || king.dead || king.hp <= 0) return;
   const ratio = Math.max(0, Math.min(1, king.hp / Math.max(1, king.maxHp || 1)));
   bar.fill?.setDisplaySize?.(bar.width * ratio, bar.height);
   bar.fill?.setPosition?.(-bar.width / 2, 0);
+}
+
+export function poisonKingContractData(data, {
+  stage = 0,
+  growthMultiplier = 1,
+  stageStatMultiplier = 1
+} = {}) {
+  if (!data) return data;
+  return {
+    ...data,
+    growthRatio: (Number(data.growthRatio) || 0) * Math.max(1, Number(growthMultiplier) || 1),
+    biteDamage: (Number(data.biteDamage) || 0)
+      + Math.max(0, Number(stage) || 0)
+        * POISON_ADVANCED_TUNING.king.damagePerStage
+        * (Math.max(1, Number(stageStatMultiplier) || 1) - 1)
+  };
 }
 
 export function correctedPoisonKingGrowthHp({
@@ -60,11 +81,62 @@ export function correctedPoisonKingGrowthHp({
   );
 }
 
+function contractMultiplier(scene, key) {
+  return scene.professionSystem
+    ?.summonCreatureContractMultiplier?.('poison_king', key) || 1;
+}
+
+function desiredStageHpBonus(scene, king) {
+  const stage = Math.max(0, Number(king?.stage) || 0);
+  const multiplier = contractMultiplier(scene, 'stageStatMultiplier');
+  const standard = POISON_ADVANCED_TUNING.king.hpPerStage;
+  const contracted = Math.round(standard * multiplier);
+  return stage * Math.max(0, contracted - standard);
+}
+
+function syncContractStageHp(system, king) {
+  if (!king || king.dead || king.hp <= 0) return false;
+  const scene = system.scene;
+  const previous = Math.max(0, Number(king.contractStageHpBonus) || 0);
+  const desired = desiredStageHpBonus(scene, king);
+  if (previous === desired) return false;
+
+  const baseWithoutContract = Math.max(
+    1,
+    (Number(king.baseMaxHp) || Number(king.maxHp) || 1) - previous
+  );
+  king.contractStageHpBonus = desired;
+  king.baseMaxHp = baseWithoutContract + desired;
+
+  const data = system.getData('poison_king') || {};
+  scene.professionSystem?.applyEntitySummonStats?.(king, 'poison_king', {
+    baseAttack: (Number(data.biteDamage) || 0)
+      + (Math.max(0, Number(king.stage) || 0) * POISON_ADVANCED_TUNING.king.damagePerStage),
+    baseDefense: 0,
+    baseMaxHp: king.baseMaxHp
+  });
+  syncHpBar(king);
+  return true;
+}
+
 export const PoisonKingSkillWithSpiritSlime = {
   ...PoisonKingSkill,
   bind(system) {
     const scene = system.scene;
     let beforeGrowth = null;
+
+    const originalGetData = system.getData;
+    const wrappedGetData = function(skillId, ...args) {
+      const data = originalGetData.call(system, skillId, ...args);
+      if (skillId !== 'poison_king' || !data) return data;
+      const king = scene.poisonKingRuntime?.get?.();
+      return poisonKingContractData(data, {
+        stage: king?.stage || 0,
+        growthMultiplier: contractMultiplier(scene, 'growthMultiplier'),
+        stageStatMultiplier: contractMultiplier(scene, 'stageStatMultiplier')
+      });
+    };
+    system.getData = wrappedGetData;
 
     const offBefore = scene.eventBus.on(CombatEvents.STATUS_TICK, payload => {
       if (!isNormalPoisonTick(payload)) {
@@ -85,68 +157,7 @@ export const PoisonKingSkillWithSpiritSlime = {
       };
     });
 
-    const eventBus = scene.eventBus;
-    const originalOn = eventBus.on;
-    let wrappedGrowthListener = false;
-    eventBus.on = function(eventName, listener) {
-      if (!wrappedGrowthListener && eventName === CombatEvents.STATUS_TICK) {
-        wrappedGrowthListener = true;
-        return originalOn.call(this, eventName, payload => {
-          if (!isNormalPoisonTick(payload)) return listener(payload);
-          const growthMultiplier = scene.professionSystem
-            ?.summonCreatureContractMultiplier?.('poison_king', 'growthMultiplier') || 1;
-          if (growthMultiplier === 1) return listener(payload);
-          return listener({
-            ...payload,
-            actualDamage: payload.actualDamage * growthMultiplier
-          });
-        });
-      }
-      return originalOn.call(this, eventName, listener);
-    };
-
-    let originalOff;
-    try {
-      originalOff = PoisonKingSkill.bind(system);
-    } finally {
-      eventBus.on = originalOn;
-    }
-
-    const combat = scene.combatSystem;
-    const originalDamageEnemy = combat?.damageEnemy;
-    const wrappedDamageEnemy = function(enemy, amount, meta = {}) {
-      if (
-        meta.skillId === 'poison_king'
-        && meta.damageKind === 'poisonKingBite'
-        && meta.poisonKingContractStageApplied !== true
-      ) {
-        const stageStatMultiplier = scene.professionSystem
-          ?.summonCreatureContractMultiplier?.('poison_king', 'stageStatMultiplier') || 1;
-        const king = scene.poisonKingRuntime?.get?.();
-        const data = system.getData('poison_king') || {};
-        if (stageStatMultiplier > 1 && king && (king.stage || 0) > 0) {
-          const slimeModifier = scene.spiritSlimeRuntime?.getModifier?.(king) || {};
-          const contractedNativeAttack = (Number(data.biteDamage) || 0)
-            + (king.stage || 0)
-              * POISON_ADVANCED_TUNING.king.damagePerStage
-              * stageStatMultiplier;
-          const adjustedBase = Math.max(
-            0,
-            Math.round(contractedNativeAttack * (1 + (slimeModifier.powerBonus || 0)))
-          );
-          const professionMultiplier = Number.isFinite(Number(meta.professionMultiplier))
-            ? Number(meta.professionMultiplier)
-            : 1;
-          return originalDamageEnemy.call(combat, enemy, Math.round(adjustedBase * professionMultiplier), {
-            ...meta,
-            baseAmountBeforeProfession: adjustedBase,
-            poisonKingContractStageApplied: true
-          });
-        }
-      }
-      return originalDamageEnemy.call(combat, enemy, amount, meta);
-    };
-    if (combat?.damageEnemy) combat.damageEnemy = wrappedDamageEnemy;
+    const originalOff = PoisonKingSkill.bind(system);
 
     const offAfter = scene.eventBus.on(CombatEvents.STATUS_TICK, payload => {
       const snapshot = beforeGrowth;
@@ -157,22 +168,8 @@ export const PoisonKingSkillWithSpiritSlime = {
       const stageGain = Math.max(0, (king.stage || 0) - snapshot.stage);
       if (stageGain <= 0) return;
 
-      const stageStatMultiplier = scene.professionSystem
-        ?.summonCreatureContractMultiplier?.('poison_king', 'stageStatMultiplier') || 1;
-      if (stageStatMultiplier > 1) {
-        const standardGain = POISON_ADVANCED_TUNING.king.hpPerStage;
-        const contractedGain = Math.round(standardGain * stageStatMultiplier);
-        king.baseMaxHp = (king.baseMaxHp || king.maxHp)
-          + stageGain * Math.max(0, contractedGain - standardGain);
-        const data = system.getData('poison_king') || {};
-        scene.professionSystem?.applyEntitySummonStats?.(king, 'poison_king', {
-          baseAttack: (data.biteDamage || 0)
-            + (king.stage || 0) * POISON_ADVANCED_TUNING.king.damagePerStage,
-          baseDefense: 0,
-          baseMaxHp: king.baseMaxHp
-        });
-      }
-
+      syncContractStageHp(system, king);
+      const stageStatMultiplier = contractMultiplier(scene, 'stageStatMultiplier');
       king.hp = correctedPoisonKingGrowthHp({
         oldHp: snapshot.hp,
         oldMaxHp: snapshot.maxHp,
@@ -186,11 +183,19 @@ export const PoisonKingSkillWithSpiritSlime = {
       syncHpBar(king);
     });
 
+    const contractUpdater = () => {
+      const king = scene.poisonKingRuntime?.get?.();
+      if (king) syncContractStageHp(system, king);
+    };
+    system.passiveUpdaters.push(contractUpdater);
+    contractUpdater();
+
     return () => {
       offBefore?.();
-      originalOff?.();
       offAfter?.();
-      if (combat?.damageEnemy === wrappedDamageEnemy) combat.damageEnemy = originalDamageEnemy;
+      removeUpdater(system, contractUpdater);
+      if (system.getData === wrappedGetData) system.getData = originalGetData;
+      originalOff?.();
       beforeGrowth = null;
     };
   }
