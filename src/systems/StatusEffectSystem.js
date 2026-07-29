@@ -56,9 +56,9 @@ export default class StatusEffectSystem {
 
   add(type,target,options={}){
     const isPlayerTarget=target===this.scene.playerData;
-    const isDebuff=!isPlayerTarget&&type!==StatusEffects.SHIELD&&type!==StatusEffects.DAMAGE_REDUCTION;
-    if(isDebuff) options={...options,durationMs:this.scene.professionSystem?.debuffDuration?.(options.durationMs??1000,target)??options.durationMs,isDebuff:true,playerApplied:true};
-    if(type===StatusEffects.SHIELD&&isPlayerTarget&&options.professionShieldGain!==false){const gained=this.scene.professionSystem?.shieldGain?.(options.remainingValue??options.value??0,{ordinary:true})??(options.remainingValue??options.value??0);options={...options,value:gained,remainingValue:gained};}
+    const playerAppliedDebuff=!isPlayerTarget&&options.isDebuff===true&&['player','summon'].includes(options.sourceOwner);
+    if(playerAppliedDebuff) options={...options,playerApplied:true,durationMs:this.scene.professionSystem?.debuffDuration?.(options.durationMs??1000,target,options)??options.durationMs};
+    if(type===StatusEffects.SHIELD&&isPlayerTarget&&options.shieldKind==='ordinary'){const gained=this.scene.professionSystem?.shieldGain?.(options.remainingValue??options.value??0,{ordinary:true})??(options.remainingValue??options.value??0);options={...options,value:gained,remainingValue:gained};}
     const {
       sourceId='',
       durationMs=1000,
@@ -245,6 +245,7 @@ export default class StatusEffectSystem {
           const hpBefore=e.target.hp;
           this.scene.combatSystem.damageEnemy(e.target,amount,{
             source,
+            skillId:e.sourceSkillId||e.skillId,sourceSkillId:e.sourceSkillId||e.skillId,sourceOwner:e.sourceOwner,
             tags:e.tags||[source,TAGS.DOT],
             canTriggerArtifacts:false,
             statusId:e.id,

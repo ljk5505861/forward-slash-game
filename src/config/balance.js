@@ -15,5 +15,6 @@ export const sumRuntimeBonuses = (bonuses={}) => Object.values(bonuses||{}).redu
 export const getTotalStrength = (p={}) => Math.max(0, Math.round((Number(p.strength)||0)+sumRuntimeBonuses(p.strengthBonuses)));
 export const getEffectiveAttack = (p={}) => Math.max(1, Math.round(((Number(p.attack)||1)+getTotalStrength(p)+sumRuntimeBonuses(p.attackBonuses))*(1+sumRuntimeBonuses(p.attackMultiplierBonuses))));
 export const getEffectiveDefense = (p={}) => Math.max(0, Math.round((Number(p.defense)||0)+sumRuntimeBonuses(p.defenseBonuses)));
+export const getEffectiveCritMultiplier = (p={}, { physical=false, bonusCritMultiplier=0 }={}) => Math.max(1, (Number(p.critMultiplier)||1.5)+sumRuntimeBonuses(p.critMultiplierBonuses)+(physical?sumRuntimeBonuses(p.physicalCritMultiplierBonuses):0)+(Number(bonusCritMultiplier)||0));
 export const getEffectiveDamageReduction = (p={}) => Math.min(0.8, Math.max(0, (Number(p.damageReduction)||0)+sumRuntimeBonuses(p.damageReductionBonuses)));
 export const getEffectiveMaxShield = (p={}) => Math.max(0, Math.round((Number(p.baseMaxShield ?? p.maxShield)||0)+sumRuntimeBonuses(p.maxShieldBonuses)));

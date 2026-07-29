@@ -96,7 +96,7 @@ export function applyElementalSouls(system, target, stats, sourceId, weakened=fa
   if(level<6 || !target) return;
   const fire=stats?.fireSoul||0, poison=stats?.poisonSoul||0;
   const scale=weakened?0.55:1;
-  if(fire>0) s.statusEffects.add(StatusEffects.BURN,target,{ durationMs:2600, intervalMs:650, value:Math.max(2,Math.round((3+fire)*scale)), stacks:1, maxStacks:5, sourceId:`${sourceId}_fire`, tags:[TAGS.FIRE,TAGS.DOT] });
-  if(poison>0) s.statusEffects.add(StatusEffects.POISON,target,{ durationMs:3000, intervalMs:700, value:Math.max(2,Math.round((2+poison)*scale)), stacks:1, maxStacks:15, sourceId:`${sourceId}_poison`, tags:[TAGS.POISON,TAGS.DOT] });
+  if(fire>0) s.statusEffects.add(StatusEffects.BURN,target,{ durationMs:2600, intervalMs:650, value:Math.max(2,Math.round((3+fire)*scale)), stacks:1, maxStacks:5, sourceId:`${sourceId}_fire`, isDebuff:true,debuffCategory:'damage',sourceOwner:'player',sourceSkillId:sourceId, tags:[TAGS.FIRE,TAGS.DOT] });
+  if(poison>0) s.statusEffects.add(StatusEffects.POISON,target,{ durationMs:3000, intervalMs:700, value:Math.max(2,Math.round((2+poison)*scale)), stacks:1, maxStacks:15, sourceId:`${sourceId}_poison`, isDebuff:true,debuffCategory:'damage',sourceOwner:'player',sourceSkillId:sourceId, tags:[TAGS.POISON,TAGS.DOT] });
 }
 export function canMainSwordClaimMythic(system){ return hasMainSword(system) && getSwordFlowState(system).effectiveSouls>=SOUL_THRESHOLDS[3] && getSwordFlowState(system).mythicOwner!==SWORD_MYTHIC.TOMB; }

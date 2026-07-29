@@ -212,7 +212,7 @@ function wrapFreezingBreath(FreezingBreathSkill) {
         baseTick?.();
         firstHits.forEach(enemy => {
           firstHitTargets.add(enemy);
-          applyEnemyCold(enemy, {
+          applyEnemyCold(enemy, { sourceOwner:'player',isDebuff:true,debuffCategory:'control',
             now: nowOf(system.scene), data: active.data,
             stacks: speedData.kineticBreathFirstHitExtraStacks || 1,
             level: active.level, ctx: active.ctx, sourceId: 'freezing_breath'

@@ -44,7 +44,7 @@ for(const [realm,expected] of [[0,1],[2,1.06],[3,1.10],[8,1.70]]){
   assert.ok(hit,`fireball hit realm ${realm}`);
   assert.equal(hit.meta.professionMultiplier,1.5);
   assert.equal(hit.meta.baseAmountBeforeProfession,Math.round((SKILLS.fireball.levels[0].damage)*2*1.45*expected));
-  assert.equal(sc.professionSystem.calls,1);
+  assert.equal(sc.professionSystem.calls,0);
   assert.equal(sc.eventBus.counts.completed,1);
 }
 {

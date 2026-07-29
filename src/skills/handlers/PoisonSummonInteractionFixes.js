@@ -29,6 +29,7 @@ function addPoison(system,target,stacks,durationMs,value,sourceId,meta={},ctx=nu
     stacks,
     maxStacks:Math.max(poison.maxStacks||15,stacks),
     sourceId,
+    isDebuff:true,debuffCategory:'damage',sourceOwner:'summon',sourceSkillId:sourceId,
     damageMultiplier:ctx?.damageMultiplier||1,
     baseDamageMultiplierWithoutProfession:ctx?.baseDamageMultiplierWithoutProfession||1,
     professionMultiplier:ctx?.professionMultiplier||1,

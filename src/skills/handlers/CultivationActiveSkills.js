@@ -60,7 +60,7 @@ function crackVisual(system,active){
 function applySuppression(system,active,e){
   if(!alive(e)||e.isBoss) return;
   const t=now(system.scene), elite=!!e.isElite;
-  applyEnemyGravity(e,{sourceId:'sky_covering_palm_suppression',moveSlow:elite?.15:.30,attackSlow:elite?.12:.25,expiresAt:t+(elite?2000:2500),countsAsGravitySuppression:false});
+  applyEnemyGravity(e,{sourceOwner:'player',isDebuff:true,debuffCategory:'control',sourceId:'sky_covering_palm_suppression',moveSlow:elite?.15:.30,attackSlow:elite?.12:.25,expiresAt:t+(elite?2000:2500),countsAsGravitySuppression:false});
   const ring=addVisual(active.visuals,system.scene.add?.circle?.(e.x,e.y+(e.height||80)/2,Math.max(18,(e.width||50)*.42),0xb91c1c,.16)?.setDepth?.(19));
   if(ring) ring.skyCoveringPalmSuppressionVisual=true;
   system.scene.tweens?.add?.({targets:ring,alpha:0,duration:350,onComplete:()=>{ removeVisual(active.visuals,ring); ring?.destroy?.(); }});

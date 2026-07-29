@@ -65,6 +65,7 @@ function addPoison(system,target,stacks,durationMs,value,sourceId,meta={}){
     stacks,
     maxStacks:Math.max(d.maxStacks||15,stacks),
     sourceId,
+    isDebuff:true,debuffCategory:'damage',sourceOwner:'summon',sourceSkillId:sourceId,
     damageMultiplier:1,
     baseDamageMultiplierWithoutProfession:1,
     professionMultiplier:1,
@@ -580,12 +581,13 @@ export const PoisonKingSkill={
       const level=system.getLevel('poison_king');
       const poisoned=s.statusEffects.has(target,StatusEffects.POISON);
       const slimeMod=s.spiritSlimeRuntime?.getModifier?.(king)||{}; const damage=Math.round((data.biteDamage+king.stage*POISON_ADVANCED_TUNING.king.damagePerStage)*(1+(slimeMod.powerBonus||0)));
-      const before=target.hp||0;
-      s.combatSystem.damageEnemy(target,damage,{
+      const before=target.hp||0, professionMultiplier=s.professionSystem?.getGeneralDamageMultiplier?.({tags:[TAGS.SUMMON]})||1;
+      s.combatSystem.damageEnemy(target,Math.round(damage*professionMultiplier),{
         source:'skill',
         skillId:'poison_king',
         damageKind:'poisonKingBite',
         tags:[TAGS.POISON,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON],
+        professionApplied:true,professionMultiplier,baseAmountBeforeProfession:damage,summonDirectSingleTarget:true,
         allowLifeSteal:false,
         noKnockback:true,
         noPoisonChain:true
@@ -671,6 +673,7 @@ export const PoisonKingSkill={
         return;
       }
       const mod=s.spiritSlimeRuntime?.getModifier?.(king)||{}; if(king&&king.baseMaxHp){ const oldMax=Math.max(1,king.maxHp||1), ratio=Math.max(0,Math.min(1,king.hp/oldMax)); const nextMax=Math.max(1,Math.round(king.baseMaxHp*(1+(mod.maxHpBonus||0)))); if(nextMax!==king.maxHp){ king.maxHp=nextMax; king.hp=king.hp>0?Math.max(1,Math.min(king.maxHp,Math.round(king.maxHp*ratio))):0; updateHpBar(king); } }
+      s.professionSystem?.applyEntitySummonStats?.(king,'poison_king',{baseAttack:data.biteDamage+king.stage*POISON_ADVANCED_TUNING.king.damagePerStage,baseDefense:0,baseMaxHp:king.baseMaxHp});
       const target=choose();
       king.target=target;
       const goal=target
@@ -685,7 +688,7 @@ export const PoisonKingSkill={
       king.view.x+=(goal.x-king.view.x)*0.1;
       king.view.y+=(goal.y-king.view.y)*0.1;
       if(target&&now>=king.nextBiteAt){
-        king.nextBiteAt=now+Math.max(1,Math.round(data.biteIntervalMs/(1+((s.spiritSlimeRuntime?.getModifier?.(king)||{}).actionSpeedBonus||0))));
+        king.nextBiteAt=now+Math.max(1,s.professionSystem?.summonActionInterval?.('poison_king',data.biteIntervalMs/(1+((s.spiritSlimeRuntime?.getModifier?.(king)||{}).actionSpeedBonus||0)),king)??Math.round(data.biteIntervalMs/(1+((s.spiritSlimeRuntime?.getModifier?.(king)||{}).actionSpeedBonus||0))));
         bite(target,data);
       }
       if(now>=king.nextDomainAt){

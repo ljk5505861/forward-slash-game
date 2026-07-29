@@ -439,7 +439,7 @@ function triggerColdShatter(system, enemy, state, scale = 1, kind = 'coldShatter
     const targetBase = Math.max(1, Math.round(base * (target === enemy ? 1 : 0.65)));
     const damage = Math.max(1, Math.round(targetBase * (ctx.damageMultiplier || scene.playerData.skillDamageMultiplier || 1)));
     scene.combatSystem.damageEnemy(target, damage, { ...meta, baseAmountBeforeProfession: Math.max(1, Math.round(targetBase * (ctx.baseDamageMultiplierWithoutProfession || scene.playerData.skillDamageMultiplier || 1))) });
-    if (target !== enemy) applyEnemyCold(target, { now: nowOf(scene), data, stacks: kind === 'coldDeathShatter' ? 1 : 2, level, ctx, sourceId: 'freezing_breath' });
+    if (target !== enemy) applyEnemyCold(target, { sourceOwner:'player',isDebuff:true,debuffCategory:'control', now: nowOf(scene), data, stacks: kind === 'coldDeathShatter' ? 1 : 2, level, ctx, sourceId: 'freezing_breath' });
   });
 }
 
@@ -479,7 +479,7 @@ export const FreezingBreathSkill = {
       active.syncVisual?.();
       const current = active.currentSnapshot;
       (scene.targeting.all() || []).filter(enemy => validEnemy(scene, enemy) && current && inConeSnapshot(enemy, current)).forEach(enemy => {
-        const coldState = applyEnemyCold(enemy, { now: nowOf(scene), data, stacks: 1, level, ctx, sourceId: 'freezing_breath' });
+        const coldState = applyEnemyCold(enemy, { sourceOwner:'player',isDebuff:true,debuffCategory:'control', now: nowOf(scene), data, stacks: 1, level, ctx, sourceId: 'freezing_breath' });
         const bonus = enemy.isBoss && coldState.stacks >= (data.maxStacks || 8) ? data.bossBreathDamageBonus || 0 : 0;
         system.hit(enemy, system.damageValue(data.damage * (1 + bonus), ctx), cfg, level, ctx, system.baseDamageValue(data.damage * (1 + bonus), ctx), [TAGS.MAGIC, TAGS.SPELL, TAGS.ICE]);
       });
@@ -560,7 +560,7 @@ function createColdZone(system, cfg, data, level, ctx, snapshot) {
     visual,
     onEnd() { cleanupVisual(visual); },
     tick() {
-      (scene.targeting.all() || []).filter(enemy => validEnemy(scene, enemy) && inConeSnapshot(enemy, snapshot)).forEach(enemy => applyEnemyCold(enemy, { now: nowOf(scene), data, stacks: 1, level, ctx, sourceId: 'freezing_breath' }));
+      (scene.targeting.all() || []).filter(enemy => validEnemy(scene, enemy) && inConeSnapshot(enemy, snapshot)).forEach(enemy => applyEnemyCold(enemy, { sourceOwner:'player',isDebuff:true,debuffCategory:'control', now: nowOf(scene), data, stacks: 1, level, ctx, sourceId: 'freezing_breath' }));
     }
   };
   system.active.push(active);

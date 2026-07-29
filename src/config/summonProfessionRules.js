@@ -1,13 +1,13 @@
-// Production summons opt in explicitly; never infer behavior from an id or name.
+// Every current production TAGS.SUMMON skill is explicitly classified here.
 export const SUMMON_PROFESSION_RULES=Object.freeze({
-  bullet_eater:{summonEntityType:'non_entity',professionCountMode:'none',role:'attack'},
-  mirror_march:{summonEntityType:'non_entity',professionCountMode:'none',role:'attack'},
-  spirit_wolves:{summonEntityType:'entity',professionCountMode:'extra',role:'attack'},
-  spirit_bird:{summonEntityType:'entity',professionCountMode:'unique',role:'healing'},
-  spirit_slime:{summonEntityType:'entity',professionCountMode:'unique',role:'support'},
-  sword_soul:{summonEntityType:'non_entity',professionCountMode:'none',role:'attack'},
-  sword_array:{summonEntityType:'non_entity',professionCountMode:'none',role:'attack'},
-  poison_parasite:{summonEntityType:'entity',professionCountMode:'extra',role:'attack'},
-  mantra_heavenly_book:{summonEntityType:'entity',professionCountMode:'unique',role:'attack'},
+  sword_wave:{summonEntityType:'non_entity',professionCountMode:'none',primaryEffect:'attack'},
+  spirit_wolves:{summonEntityType:'entity',professionCountMode:'extra',primaryEffect:'attack'},
+  spirit_bird:{summonEntityType:'entity',professionCountMode:'unique',primaryEffect:'healing'},
+  spirit_slime:{summonEntityType:'entity',professionCountMode:'unique',primaryEffect:'support'},
+  sword_sheath:{summonEntityType:'non_entity',professionCountMode:'none',primaryEffect:'attack'},
+  sword_tomb:{summonEntityType:'non_entity',professionCountMode:'none',primaryEffect:'attack'},
+  parasitic_gu:{summonEntityType:'entity',professionCountMode:'extra',primaryEffect:'attack'},
+  poison_chain:{summonEntityType:'non_entity',professionCountMode:'none',primaryEffect:'attack'},
+  poison_king:{summonEntityType:'entity',professionCountMode:'unique',primaryEffect:'attack'},
 });
 export const getSummonProfessionRule=skillId=>SUMMON_PROFESSION_RULES[skillId]||null;

@@ -167,7 +167,7 @@ export const ParasiticGuSkill={
       const data=system.getData('parasitic_gu');
       if(
         !data
-        ||guList.filter(gu=>!gu.dead).length>=data.maxCount
+        ||guList.filter(gu=>!gu.dead).length>=(scene.professionSystem?.summonCount?.('parasitic_gu',data.maxCount)??data.maxCount)
       ){
         return null;
       }
@@ -197,7 +197,7 @@ export const ParasiticGuSkill={
     };
     const split=(gu,data)=>{
       if(
-        guList.filter(item=>!item.dead).length>=data.maxCount
+        guList.filter(item=>!item.dead).length>=(scene.professionSystem?.summonCount?.('parasitic_gu',data.maxCount)??data.maxCount)
         ||!choose()
       ){
         return false;
@@ -216,6 +216,7 @@ export const ParasiticGuSkill={
         stacks:data.poisonStacks||1,
         maxStacks:poisonData.maxStacks||15,
         sourceId:'parasitic_gu_attack',
+        isDebuff:true,debuffCategory:'damage',sourceOwner:'summon',sourceSkillId:'parasitic_gu',
         poisonMeta:{
           normal:true,
           sourceSkillId:'parasitic_gu'
@@ -272,6 +273,7 @@ export const ParasiticGuSkill={
       }
       guList.forEach(gu=>{
         if(gu.dead) return;
+        scene.professionSystem?.applyEntitySummonStats?.(gu,'parasitic_gu',{baseAttack:data.attackDamage??data.leechDamage,baseDefense:0,baseMaxHp:data.hp});
         if(
           !gu.host
           ||!scene.targeting.valid(gu.host)
@@ -310,7 +312,7 @@ export const ParasiticGuSkill={
               ?POISON_SUMMON_TUNING.gu.berserkIntervalMultiplier
               :1
           );
-          gu.nextLeechAt=now+interval;
+          gu.nextLeechAt=now+(scene.professionSystem?.summonActionInterval?.('parasitic_gu',interval,gu)??interval);
           const damage=Math.round(
             (data.attackDamage??data.leechDamage)
               *(berserk
@@ -318,11 +320,13 @@ export const ParasiticGuSkill={
                 :1)
           );
           const host=gu.host;
-          scene.combatSystem.damageEnemy(host,damage,{
+          const professionMultiplier=scene.professionSystem?.getGeneralDamageMultiplier?.({tags:[TAGS.SUMMON]})||1;
+          scene.combatSystem.damageEnemy(host,Math.round(damage*professionMultiplier),{
             source:'skill',
             skillId:'parasitic_gu',
             damageKind:'guAttack',
             tags:[TAGS.POISON,TAGS.SUMMON,TAGS.BUILD_POISON_SUMMON],
+            professionApplied:true,professionMultiplier,baseAmountBeforeProfession:damage,summonDirectSingleTarget:true,
             allowLifeSteal:false,
             noKnockback:true,
             noPoisonChain:true

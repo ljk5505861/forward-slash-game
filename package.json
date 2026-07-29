@@ -121,7 +121,8 @@
     "validate:01110-kinetic-release": "node scripts/validate-01110-kinetic-release.mjs",
     "validate:01111-spell-tide": "node scripts/validate-01111-spell-tide.mjs",
     "validate:01112-mech-flow": "node scripts/validate-01112-mech-flow.mjs",
-    "validate:01113-profession-rework": "node scripts/validate-01113-profession-rework.mjs"
+    "validate:01113-profession-rework": "node scripts/validate-01113-profession-rework.mjs",
+    "validate:lightning-enchant": "npm run validate:01082-lightning-enchant"
   },
   "dependencies": {
     "phaser": "4.1.0",
