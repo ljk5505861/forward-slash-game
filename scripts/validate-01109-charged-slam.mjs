@@ -8,10 +8,10 @@ import { CHARGED_SLAM_DAMAGE_RATIOS, CHARGED_SLAM_RADII, CHARGED_SLAM_ATTACKS, g
 import { getSkillBarStateText } from '../src/ui/skillBarState.js';
 
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-assert.equal(GAME_VERSION,'0.11.11'); assert.equal(pkg.version,'0.11.11');
+assert.equal(GAME_VERSION,'0.11.12'); assert.equal(pkg.version,'0.11.12');
 const cfg=SKILLS.charged_slam; assert(cfg); assert.equal(cfg.rarity,'FINE'); assert.equal(cfg.passive,true); assert.equal(cfg.targetType,'passive'); assert.equal(cfg.maxLevel,9); assert.equal(cfg.requiredSkillId,undefined);
 assert.deepEqual(cfg.levels.map(x=>x.damageRatio),CHARGED_SLAM_DAMAGE_RATIOS); assert.deepEqual(cfg.levels.map(x=>x.radius),CHARGED_SLAM_RADII); assert.deepEqual(cfg.levels.map(x=>x.attacksRequired),CHARGED_SLAM_ATTACKS);
-assert.equal(Object.keys(SKILLS).length,47); assert.equal(Object.values(SKILLS).filter(x=>x.rarity==='FINE').length,4); assert.equal(new Set(Object.values(SKILLS).map(x=>x.id)).size,47);
+assert.equal(Object.keys(SKILLS).length,50); assert.equal(Object.values(SKILLS).filter(x=>x.rarity==='FINE').length,6); assert.equal(new Set(Object.values(SKILLS).map(x=>x.id)).size,50);
 const oldIds=['fireball','healing','poison_cloud','sword_wave','shadow_fist','spirit_wolves','spirit_bird','spirit_slime','fire_seed','burn_burst','solar_flame','sword_sheath','sword_tomb','giant_force','spinning_blade','bloodthirst','last_stand','thorn_armor','guardian_shield','traceless','phantom_step','instant_step','myriad_afterimage','parasitic_gu','poison_chain','poison_king','lightning_enchant','lightning_mark','lightning_tribulation','gravity_crush','gravity_reversal','gravity_orb','black_hole','neutron_star','white_dwarf','super_speed','laser_eyes','freezing_breath','human_god','ninefold_dao','alchemy','sky_covering_palm','soul_destroying_needle','mantra_heavenly_book']; oldIds.forEach(id=>assert(SKILLS[id],`retains ${id}`));
 
 function harness(level=1,{dataOverride=null,damageResult=true}={}){
