@@ -8,7 +8,6 @@ export function applyEnemyGravity(enemy, source){
   let next={...source};
   const playerApplied=next.isDebuff===true&&['player','summon'].includes(next.sourceOwner);
   if(playerApplied){
-    next.playerApplied=true;
     next.debuffCategory=next.debuffCategory||'control';
     const now=enemy.scene?.getGameplayTime?.();
     if(Number.isFinite(now)&&Number.isFinite(next.expiresAt)&&next.expiresAt>now){
