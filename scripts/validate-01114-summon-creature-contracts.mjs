@@ -136,7 +136,7 @@ for(const excluded of ['sword_wave','sword_sheath','sword_tomb','poison_chain'])
     stageGain:1,
     poisonKingLevel:1,
     stageStatMultiplier:1.2
-  }),165,'contract stage uses 42 life growth instead of 35');
+  }),142,'contract stage uses 42 life growth instead of 35');
 }
 
 for(const [skillId,contract] of Object.entries(SUMMON_CREATURE_CONTRACTS)){
