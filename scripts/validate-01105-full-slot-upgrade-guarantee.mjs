@@ -17,8 +17,8 @@ const assertValidLevels=(options,owned)=>options.filter(option=>option.type==='s
   assert(option.nextLevel<=SKILLS[option.skillId].maxLevel,'skill upgrade does not exceed max level');
 });
 
-assert.equal(GAME_VERSION,'0.11.13');
-assert.equal(pkg.version,'0.11.13');
+assert.equal(GAME_VERSION,'0.11.14');
+assert.equal(pkg.version,'0.11.14');
 assert.equal(Object.keys(SKILLS).length,50);
 assert.equal(MAX_SKILL_SLOTS,6);
 
@@ -61,4 +61,4 @@ assert(fullMeta.some(option=>option.type==='newSkill'&&option.baseWeight===3),'f
 const partialMeta=systemFor([{id:skillIds[0],level:1}]).rollOptions({random:()=>0.999999});
 assert(partialMeta.every(option=>option.type==='newSkill'&&option.baseWeight===6),'non-full-slot new-skill base weight remains 6');
 
-console.log('v0.11.13 full-slot upgrade guarantee validation passed.');
+console.log('v0.11.14 full-slot upgrade guarantee validation passed.');
