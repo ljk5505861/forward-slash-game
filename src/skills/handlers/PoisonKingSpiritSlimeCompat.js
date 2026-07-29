@@ -112,6 +112,42 @@ export const PoisonKingSkillWithSpiritSlime = {
       eventBus.on = originalOn;
     }
 
+    const combat = scene.combatSystem;
+    const originalDamageEnemy = combat?.damageEnemy;
+    const wrappedDamageEnemy = function(enemy, amount, meta = {}) {
+      if (
+        meta.skillId === 'poison_king'
+        && meta.damageKind === 'poisonKingBite'
+        && meta.poisonKingContractStageApplied !== true
+      ) {
+        const stageStatMultiplier = scene.professionSystem
+          ?.summonCreatureContractMultiplier?.('poison_king', 'stageStatMultiplier') || 1;
+        const king = scene.poisonKingRuntime?.get?.();
+        const data = system.getData('poison_king') || {};
+        if (stageStatMultiplier > 1 && king && (king.stage || 0) > 0) {
+          const slimeModifier = scene.spiritSlimeRuntime?.getModifier?.(king) || {};
+          const contractedNativeAttack = (Number(data.biteDamage) || 0)
+            + (king.stage || 0)
+              * POISON_ADVANCED_TUNING.king.damagePerStage
+              * stageStatMultiplier;
+          const adjustedBase = Math.max(
+            0,
+            Math.round(contractedNativeAttack * (1 + (slimeModifier.powerBonus || 0)))
+          );
+          const professionMultiplier = Number.isFinite(Number(meta.professionMultiplier))
+            ? Number(meta.professionMultiplier)
+            : 1;
+          return originalDamageEnemy.call(combat, enemy, Math.round(adjustedBase * professionMultiplier), {
+            ...meta,
+            baseAmountBeforeProfession: adjustedBase,
+            poisonKingContractStageApplied: true
+          });
+        }
+      }
+      return originalDamageEnemy.call(combat, enemy, amount, meta);
+    };
+    if (combat?.damageEnemy) combat.damageEnemy = wrappedDamageEnemy;
+
     const offAfter = scene.eventBus.on(CombatEvents.STATUS_TICK, payload => {
       const snapshot = beforeGrowth;
       beforeGrowth = null;
@@ -154,6 +190,7 @@ export const PoisonKingSkillWithSpiritSlime = {
       offBefore?.();
       originalOff?.();
       offAfter?.();
+      if (combat?.damageEnemy === wrappedDamageEnemy) combat.damageEnemy = originalDamageEnemy;
       beforeGrowth = null;
     };
   }
