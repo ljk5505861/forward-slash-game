@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import '../src/skills/handlers/index.js';
 import { GAME_VERSION } from '../src/config/version.js';
 import { createPlayerRuntime } from '../src/config/balance.js';
@@ -10,7 +11,11 @@ import {
   getSummonCreatureContract
 } from '../src/config/summonCreatureContracts.js';
 import ProfessionSystem from '../src/systems/ProfessionSystem.js';
-import { correctedPoisonKingGrowthHp } from '../src/skills/handlers/PoisonKingSpiritSlimeCompat.js';
+import {
+  correctedPoisonKingGrowthHp,
+  poisonKingContractData
+} from '../src/skills/handlers/PoisonKingSpiritSlimeCompat.js';
+import { POISON_ADVANCED_TUNING } from '../src/skills/handlers/PoisonSummonAdvancedSkills.js';
 
 class Bus {
   constructor(){ this.map=new Map(); }
@@ -146,6 +151,19 @@ for(const excluded of ['sword_wave','sword_sheath','sword_tomb','poison_chain'])
   scene.professionSystem.selectProfession('summoner');
   assert.equal(scene.professionSystem.summonCreatureContractMultiplier('poison_king','growthMultiplier'),1.3);
   assert.equal(scene.professionSystem.summonCreatureContractMultiplier('poison_king','stageStatMultiplier'),1.2);
+  const base={growthRatio:.25,biteDamage:40};
+  const contracted=poisonKingContractData(base,{stage:3,growthMultiplier:1.3,stageStatMultiplier:1.2});
+  assert.equal(contracted.growthRatio,.325,'poison damage converts to growth 30% faster');
+  assert.equal(
+    contracted.biteDamage,
+    40+3*POISON_ADVANCED_TUNING.king.damagePerStage*.2,
+    'stage attack growth is increased by 20% without wrapping combat damage'
+  );
+  assert.deepEqual(
+    poisonKingContractData(base,{stage:3,growthMultiplier:1,stageStatMultiplier:1}),
+    base,
+    'moving the contract away removes current poison king data bonuses'
+  );
   assert.equal(correctedPoisonKingGrowthHp({
     oldHp:100,
     oldMaxHp:180,
@@ -161,6 +179,13 @@ for(const excluded of ['sword_wave','sword_sheath','sword_tomb','poison_chain'])
 for(const [skillId,contract] of Object.entries(SUMMON_CREATURE_CONTRACTS)){
   assert(SKILLS[skillId],`${skillId} exists in production skill pool`);
   assert(contract.name&&contract.description,`${skillId} has readable contract text`);
+}
+
+{
+  const skillBar=readFileSync(new URL('../src/ui/SkillBar.js',import.meta.url),'utf8');
+  assert.match(skillBar,/contractBadge/,'skill bar owns a dedicated contract badge');
+  assert.match(skillBar,/showContract\?\s*'契'/,'active contract slot renders the contract mark');
+  assert.match(skillBar,/\['召唤契约'/,'contracted skill detail displays the contract section');
 }
 
 console.log('v0.11.14 summon creature contract validation passed');
