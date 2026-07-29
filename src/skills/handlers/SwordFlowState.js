@@ -14,6 +14,7 @@ const LV3 = { speed:1.25, interval:0.85 };
 const LV6 = { critChance:0.15, critMultiplierBonus:0.5 };
 const LV9 = { finalDamage:1.5, bodySize:1.3, glowSize:1.3 };
 const BASE_SOUL_VALUE = { normal:1, elite:5, boss:20 };
+const professionSwordInterval=(system,interval)=>system.scene?.professionSystem?.summonActionInterval?.('sword_wave',interval)??interval;
 
 export function getSwordFlowState(system){
   return system.passiveState.swordFlow ||= { totalSouls:0, effectiveSouls:0, soulBreakdown:{normal:0,elite:0,boss:0}, affinities:{fire:0,poison:0}, mainQuality:'COMMON', mythicOwner:SWORD_MYTHIC.NONE, sheath:null, tomb:null, domain:null };
@@ -70,13 +71,15 @@ export function mainSwordStatsReadOnly(system, data=system.getData('sword_wave')
   const quality=getReadonlyMainSwordQuality(system,st), q=QUALITY_MULTIPLIERS[quality]||QUALITY_MULTIPLIERS.COMMON, lv=swordLevelBonuses(system.getLevel('sword_wave'));
   const fireFlat=(st.affinities.fire||0)*(swordTombLevel(system)>=6?2:6);
   const poisonFlat=(st.affinities.poison||0)*(swordTombLevel(system)>=6?2:5);
-  return { state:st, quality, mythic:quality==='MYTHIC'&&st.mythicOwner!==SWORD_MYTHIC.TOMB, damage:Math.max(1,Math.round((data?.damage||1)*q.damage*lv.finalDamage+fireFlat+poisonFlat)), speed:q.speed*lv.speed, intervalMs:Math.max(320,Math.round((data?.attackIntervalMs||1200)*q.interval*lv.interval)), bodySize:q.bodySize*lv.bodySize, glowSize:q.glowSize*lv.glowSize, critChance:lv.critChance, critMultiplierBonus:lv.critMultiplierBonus, fireSoul:st.affinities.fire||0, poisonSoul:st.affinities.poison||0 };
+  const nativeInterval=Math.max(320,Math.round((data?.attackIntervalMs||1200)*q.interval*lv.interval));
+  return { state:st, quality, mythic:quality==='MYTHIC'&&st.mythicOwner!==SWORD_MYTHIC.TOMB, damage:Math.max(1,Math.round((data?.damage||1)*q.damage*lv.finalDamage+fireFlat+poisonFlat)), speed:q.speed*lv.speed, intervalMs:professionSwordInterval(system,nativeInterval), bodySize:q.bodySize*lv.bodySize, glowSize:q.glowSize*lv.glowSize, critChance:lv.critChance, critMultiplierBonus:lv.critMultiplierBonus, fireSoul:st.affinities.fire||0, poisonSoul:st.affinities.poison||0 };
 }
 export function mainSwordStats(system, data=system.getData('sword_wave')){
   const st=refreshSwordQuality(system), q=QUALITY_MULTIPLIERS[st.mainQuality]||QUALITY_MULTIPLIERS.COMMON, lv=swordLevelBonuses(system.getLevel('sword_wave'));
   const fireFlat=(st.affinities.fire||0)*(swordTombLevel(system)>=6?2:6);
   const poisonFlat=(st.affinities.poison||0)*(swordTombLevel(system)>=6?2:5);
-  return { state:st, quality:st.mainQuality, mythic:st.mythicOwner===SWORD_MYTHIC.MAIN, damage:Math.max(1,Math.round((data?.damage||1)*q.damage*lv.finalDamage+fireFlat+poisonFlat)), speed:q.speed*lv.speed, intervalMs:Math.max(320,Math.round((data?.attackIntervalMs||1200)*q.interval*lv.interval)), bodySize:q.bodySize*lv.bodySize, glowSize:q.glowSize*lv.glowSize, critChance:lv.critChance, critMultiplierBonus:lv.critMultiplierBonus, fireSoul:st.affinities.fire||0, poisonSoul:st.affinities.poison||0 };
+  const nativeInterval=Math.max(320,Math.round((data?.attackIntervalMs||1200)*q.interval*lv.interval));
+  return { state:st, quality:st.mainQuality, mythic:st.mythicOwner===SWORD_MYTHIC.MAIN, damage:Math.max(1,Math.round((data?.damage||1)*q.damage*lv.finalDamage+fireFlat+poisonFlat)), speed:q.speed*lv.speed, intervalMs:professionSwordInterval(system,nativeInterval), bodySize:q.bodySize*lv.bodySize, glowSize:q.glowSize*lv.glowSize, critChance:lv.critChance, critMultiplierBonus:lv.critMultiplierBonus, fireSoul:st.affinities.fire||0, poisonSoul:st.affinities.poison||0 };
 }
 export function tombStats(system, data=system.getData('sword_tomb')){
   const st=getSwordFlowState(system);
