@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { GAME_VERSION } from '../src/config/version.js';
+import { PROFESSIONS, ADVANCED_PROFESSIONS, getAdvancedProfessionChoices } from '../src/config/professions.js';
+import { SUMMON_PROFESSION_RULES } from '../src/config/summonProfessionRules.js';
+import { berserkerDamageBonus } from '../src/systems/ProfessionSystem.js';
+import { createPlayerRuntime, getEffectiveAttack, getEffectiveDefense } from '../src/config/balance.js';
+assert.equal(GAME_VERSION,'0.11.13');
+assert.deepEqual(Object.keys(PROFESSIONS),['warrior','mage','summoner']);
+for(const id of Object.keys(PROFESSIONS)) assert.equal(getAdvancedProfessionChoices(id).length,3,id);
+for(const old of ['ranger','guardian','swordmaster','elementalist','blood_mage','sharpshooter','beast_hunter','shadow_dancer']) assert.equal(PROFESSIONS[old]||ADVANCED_PROFESSIONS[old],undefined,old);
+assert.equal(berserkerDamageBonus(500),.10);assert.equal(berserkerDamageBonus(700),.14);assert.equal(berserkerDamageBonus(1200),.24);assert.equal(berserkerDamageBonus(5000),.24);
+const p=createPlayerRuntime(),weapon=p.weaponId;p.attackMultiplierBonuses.profession_base=.1;p.defenseBonuses.profession_base=4;assert.equal(getEffectiveAttack(p),11);assert.equal(getEffectiveDefense(p),4);delete p.attackMultiplierBonuses.profession_base;delete p.defenseBonuses.profession_base;assert.equal(getEffectiveAttack(p),10);assert.equal(getEffectiveDefense(p),0);assert.equal(p.weaponId,weapon);
+assert.equal(SUMMON_PROFESSION_RULES.spirit_wolves.professionCountMode,'extra');assert.equal(SUMMON_PROFESSION_RULES.spirit_bird.professionCountMode,'unique');
+const production=fs.readFileSync(new URL('../src/config/professions.js',import.meta.url),'utf8')+fs.readFileSync(new URL('../src/systems/CombatSystem.js',import.meta.url),'utf8')+fs.readFileSync(new URL('../src/scenes/GameScene.js',import.meta.url),'utf8');
+for(const obsolete of ['PROFESSION_ATTACK_PROFILES','professionWeaponId','professionAttackProfile','sword_slash','arcane_bolt','hunter_arrow','ProfessionWeaponView']) assert.ok(!production.includes(obsolete),obsolete);
+assert.ok(!fs.existsSync(new URL('../src/views/ProfessionWeaponView.js',import.meta.url)));
+console.log('v0.11.13 profession rework validation passed');

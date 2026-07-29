@@ -9,7 +9,7 @@ import { PoweredArmorSkill, ShoulderMissileSkill, OverloadCoreSkill, getPoweredA
 import { selectDenseEnemyCluster, launchShoulderVolley, launchEnergyCannon, clearMechTasks, shiftMechTimers, createMechRuntime, MechRuntimeSkill } from '../src/skills/handlers/MechRuntime.js';
 
 const pkg=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url)));
-assert.equal(GAME_VERSION,'0.11.12'); assert.equal(pkg.version,'0.11.12');
+assert.equal(GAME_VERSION,'0.11.13'); assert.equal(pkg.version,'0.11.13');
 assert.equal(Object.keys(SKILLS).length,50); assert.equal(new Set(Object.values(SKILLS).map(s=>s.id)).size,50);
 assert.deepEqual(Object.values(SKILLS).reduce((a,s)=>(a[s.rarity]=(a[s.rarity]||0)+1,a),{}),{COMMON:9,RARE:14,EPIC:10,MYTHIC:10,FINE:6,LEGENDARY:1});
 assert.equal(TAGS.MECH,'mech'); assert.equal(TAGS.BUILD_MECH,'buildMech'); assert(BUILD_TAGS.includes(TAGS.BUILD_MECH));
@@ -51,4 +51,4 @@ function scene(skills){let now=0,paused=false;const eventBus=makeBus(),es=[],dam
 {const s=scene([{id:'overload_core',level:9},{id:'shoulder_missile',level:9}]);createMechRuntime(s.system);s.scene.playerData.skillDamageMultiplier=1.5;s.scene.playerData.mana=37;s.system.cooldowns.set('shoulder_missile',9999);s.es.push(enemy(600,100,10000));const off=OverloadCoreSkill.bind(s.system);for(let i=0;i<8;i++)s.scene.eventBus.emit(CombatEvents.PLAYER_ATTACK_RESOLVED,{baseDamage:100,enemy:s.es[0]});const free=s.system.passiveState.mechRuntime.tasks.filter(t=>t.sourceSkillId==='overload_core'&&t.projectileSkillId==='shoulder_missile');assert.equal(free.length,2);assert.equal(free[0].ctx.damageMultiplier,1.5*1.25);assert.equal(s.scene.playerData.mana,37);assert.equal(s.system.cooldowns.get('shoulder_missile'),9999);assert.equal(s.scene.eventBus.emitted.filter(e=>e.event===CombatEvents.SKILL_CAST||e.event===CombatEvents.SKILL_CAST_COMPLETED).length,0);off();assert.equal(s.system.passiveState.mechRuntime.tasks.filter(t=>t.sourceSkillId==='overload_core').length,0);}
 {const s=scene([{id:'overload_core',level:1}]);const offRuntime=MechRuntimeSkill.bind(s.system),offCore=OverloadCoreSkill.bind(s.system);s.es.push(enemy(500));for(let i=0;i<10;i++)s.scene.eventBus.emit(CombatEvents.PLAYER_ATTACK_RESOLVED,{baseDamage:100,enemy:s.es[0]});assert(s.scene.playerData.attackSpeedMultiplierBonuses.overload_core);s.scene.playerData.hp=0;s.update();assert.equal(s.system.passiveState.mechRuntime.tasks.length,0);assert.equal(s.system.passiveState.mechRuntime.visuals.size,0);assert.equal(s.system.passiveState.mechRuntime.tweens.size,0);s.system.passiveUpdaters.forEach(fn=>fn());assert.equal(s.scene.playerData.attackSpeedMultiplierBonuses.overload_core,undefined);offCore();offRuntime();assert.equal(s.system.passiveState.mechRuntime,undefined);}
 
-console.log('v0.11.12 mech flow configuration and behavior validation passed.');
+console.log('v0.11.13 mech flow configuration and behavior validation passed.');

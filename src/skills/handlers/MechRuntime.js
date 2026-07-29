@@ -138,7 +138,7 @@ export function launchShoulderVolley(system, data, level, ctx = {}, { free = fal
 
 function fallbackEnergyBase(system) {
   const scene = system.scene;
-  return scene.combatSystem?.calcNonCritAttackBaseDamage?.(getWeapon(scene.playerData.weaponId), scene.professionSystem?.currentAttackProfile?.() || null, false) || scene.playerData.attack || 1;
+  return scene.combatSystem?.calcNonCritAttackBaseDamage?.(getWeapon(scene.playerData.weaponId), false) || scene.playerData.attack || 1;
 }
 
 function initialEnergyTarget(system, preferred, excluded = new Set()) {

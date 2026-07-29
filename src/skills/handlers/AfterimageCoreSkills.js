@@ -45,9 +45,8 @@ export function configureAfterimageCoreSkills(){ Object.entries(AFTERIMAGE_CORE_
 
 function normalAttackRoll(scene,ratio){
   const weapon=getWeapon(scene.playerData.weaponId);
-  const profile=scene.professionSystem?.currentAttackProfile?.()||null;
   if(scene.combatSystem?.calcAttackDamage&&weapon){
-    const result=scene.combatSystem.calcAttackDamage(weapon,profile,false,true);
+    const result=scene.combatSystem.calcAttackDamage(weapon,false,true);
     return {
       amount:Math.max(1,Math.round(result.damage*ratio)),
       meta:{

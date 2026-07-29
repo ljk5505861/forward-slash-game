@@ -1,52 +1,42 @@
 import { CombatEvents } from '../core/CombatEvents.js';
-import { getProfession, getProfessionAttackProfile, getAdvancedProfession, PROFESSION_STATE_DEFAULTS } from '../config/professions.js';
+import { getProfession, getAdvancedProfession, PROFESSION_STATE_DEFAULTS, PROFESSION_SOURCE_KEYS } from '../config/professions.js';
+import { sumRuntimeBonuses, getEffectiveAttack, getEffectiveDefense } from '../config/balance.js';
+import { TAGS } from '../config/tags.js';
+import { getSummonProfessionRule } from '../config/summonProfessionRules.js';
 
-const cloneState = () => ({ ...PROFESSION_STATE_DEFAULTS });
+const BUCKETS=['attackMultiplierBonuses','maxHpBonuses','defenseBonuses','maxManaBonuses','manaRegenPerSecondBonuses','activeSkillDamageBonuses','cooldownReductionBonuses','activeSkillManaCostReductionBonuses','shieldGainMultiplierBonuses','attackSpeedMultiplierBonuses','critMultiplierBonuses','allDamageMultiplierBonuses','summonDamageBonuses','summonHealingBonuses','summonMaxHpBonuses','summonActionSpeedBonuses'];
+const cloneState=()=>({...PROFESSION_STATE_DEFAULTS});
+const setBucket=(p,bucket,key,value=0)=>{ p[bucket]??={}; if(value) p[bucket][key]=value; else delete p[bucket][key]; };
+const resourceRatio=(value,max)=>max>0?Math.max(0,Math.min(1,value/max)):0;
 
-export default class ProfessionSystem {
-  constructor(scene){ this.scene=scene; this.unsubs=[]; this.appliedId=null; this.appliedBonuses=null; this.rangerMarks=new WeakMap(); }
-  logError(stage, error, extra={}){ console.error(`[ProfessionSystem] ${stage}`, { professionId:this.scene.playerData?.professionId, appliedId:this.appliedId, ...extra, error }); }
-  currentConfig(){ return getProfession(this.scene.playerData?.professionId); }
-  currentAttackProfile(){ const cfg=this.currentConfig(); return cfg ? getProfessionAttackProfile(cfg.professionAttackProfile) : null; }
-  selectProfession(id){
-    const cfg=getProfession(id);
-    if(!cfg){ console.error('[ProfessionSystem] profession application failed: unknown profession id', { professionId:id }); return false; }
-    try {
-      this.resetCoreState();
-      const p=this.scene.playerData;
-      p.professionId=id;
-      p.professionState=cloneState();
-      this.applyBonuses(cfg.bonuses);
-      this.appliedId=id;
-      this.appliedBonuses=cfg.bonuses;
-      this.bind();
-    } catch(error){
-      this.logError('profession core application failed', error, { requestedId:id });
-      return false;
-    }
-    this.notifyProfessionChosen(id,cfg);
-    this.refreshProfessionPresentation(id);
-    return true;
-  }
-  resetCoreState(){ this.unsubs.forEach(off=>off()); this.unsubs=[]; if(this.appliedBonuses) this.removeBonuses(this.appliedBonuses); this.appliedBonuses=null; this.appliedId=null; this.rangerMarks=new WeakMap(); if(this.scene.playerData){ this.scene.playerData.professionId=null; this.scene.playerData.professionState=cloneState(); } }
-  notifyProfessionChosen(id,cfg){
-    try { this.scene.runStats?.setProfession?.(id); } catch(error){ this.logError('profession stats update failed', error, { requestedId:id }); }
-    try { this.scene.eventBus.emit(CombatEvents.PROFESSION_CHOSEN,{ professionId:id, profession:cfg }); } catch(error){ this.logError('PROFESSION_CHOSEN listener failed', error, { requestedId:id }); }
-  }
-  refreshProfessionPresentation(id){
-    try { this.scene.professionWeaponView?.refresh(); } catch(error){ this.logError('profession weapon refresh failed', error, { requestedId:id }); }
-    try { this.scene.hud?.update(); } catch(error){ this.logError('profession hud refresh failed', error, { requestedId:id }); }
-  }
-  applyBonuses(b={}){ const p=this.scene.playerData; if(b.attackMultiplier) p.attack=Math.max(1,Math.round(p.attack*b.attackMultiplier)); if(b.maxHp){ p.maxHp+=b.maxHp; p.hp+=b.maxHp; } if(b.skillDamageMultiplier) p.skillDamageMultiplier+=b.skillDamageMultiplier; if(b.cooldownReduction) p.cooldownReduction=Math.min(0.8,(p.cooldownReduction||0)+b.cooldownReduction); if(b.attackSpeedMultiplier) p.attackSpeedMultiplier+=b.attackSpeedMultiplier; if(b.critChance) p.critChance+=b.critChance; }
-  removeBonuses(b={}){ const p=this.scene.playerData; if(b.attackMultiplier) p.attack=Math.max(1,Math.round(p.attack/b.attackMultiplier)); if(b.maxHp){ p.maxHp-=b.maxHp; p.hp=Math.min(p.hp,p.maxHp); } if(b.skillDamageMultiplier) p.skillDamageMultiplier-=b.skillDamageMultiplier; if(b.cooldownReduction) p.cooldownReduction-=b.cooldownReduction; if(b.attackSpeedMultiplier) p.attackSpeedMultiplier-=b.attackSpeedMultiplier; if(b.critChance) p.critChance-=b.critChance; }
-  bind(){ const off=this.scene.eventBus.on(CombatEvents.PLAYER_DAMAGED,p=>this.onPlayerDamaged(p)); this.unsubs.push(off); }
-  selectAdvancedProfession(id){ const cfg=getAdvancedProfession(id); const p=this.scene.playerData; if(!cfg||!p.professionId||cfg.base!==p.professionId||p.advancedProfessionId) return false; p.advancedProfessionId=id; if(id==='berserker'){ p.lifeSteal=(p.lifeSteal||0)+0.04; p.attackSpeedMultiplier+=0.08; } if(id==='guardian'){ p.maxShield=(p.maxShield||50)+30; p.damageReduction=(p.damageReduction||0)+0.06; } if(id==='swordmaster'){ p.critChance+=0.08; p.attackSpeedMultiplier+=0.08; } if(id==='elementalist'){ p.skillDamageMultiplier+=0.12; } if(id==='arcanist'){ p.cooldownReduction=Math.min(0.8,(p.cooldownReduction||0)+0.08); } if(id==='blood_mage'){ p.skillDamageMultiplier+=0.16; p.lifeSteal=(p.lifeSteal||0)+0.03; } if(id==='sharpshooter'){ p.critChance+=0.1; p.critMultiplier+=0.25; } if(id==='beast_hunter'){ p.skillDamageMultiplier+=0.08; } if(id==='shadow_dancer'){ p.attackSpeedMultiplier+=0.14; p.critChance+=0.04; } this.scene.eventBus.emit(CombatEvents.PROFESSION_CHOSEN,{ professionId:id, advanced:true, profession:cfg }); this.scene.hud?.update(); return true; }
-  onPlayerDamaged(payload){ if(this.scene.playerData.professionId!=='warrior') return; if((payload.hpDamage||0)<=0 || payload.blocked) return; this.scene.playerData.professionState.warriorBuffUntil=this.scene.getGameplayTime()+4000; this.scene.runStats?.recordProfessionTrigger?.('warrior'); this.scene.hud?.update(); }
-  getDamageMultiplier(source){ const p=this.scene.playerData; let mult=1; if(p.advancedProfessionId==='berserker' && p.hp/p.maxHp<0.5) mult*=1.25+(0.5-p.hp/p.maxHp); if(p.advancedProfessionId==='sharpshooter' && source?.distance>420) mult*=1.2; if(p.advancedProfessionId==='blood_mage' && source?.type==='activeSkill') mult*=1.15; if(p.professionId==='warrior' && this.scene.getGameplayTime() < (p.professionState.warriorBuffUntil||0)) mult*=1.2; if(p.professionId==='mage' && source?.type==='activeSkill' && source?.damaging && p.professionState.mageEmpoweredNext){ mult*=1.5; if(!source.preview){ p.professionState.mageEmpoweredNext=false; p.professionState.mageCastCount=0; this.scene.runStats?.recordProfessionTrigger?.('mage'); this.scene.hud?.update(); } } return mult; }
-  onActiveSkillCast(){ const p=this.scene.playerData; if(p.professionId!=='mage') return; if(!p.professionState.mageEmpoweredNext){ p.professionState.mageCastCount=Math.min(5,(p.professionState.mageCastCount||0)+1); if(p.professionState.mageCastCount>=5) p.professionState.mageEmpoweredNext=true; } this.scene.hud?.update(); }
-  onDirectHit({ enemy, source='attack', baseDamage=0 }={}){ const p=this.scene.playerData; if(p.professionId!=='ranger' || !enemy) return; if(!['attack','skill'].includes(source)) return; const st=p.professionState; const next=(this.rangerMarks.get(enemy)||0)+1; this.rangerMarks.set(enemy,next); st.rangerLastTargetId=enemy.name || enemy.enemyId || '目标'; st.rangerLastTargetMarks=next; if(next>=3){ this.rangerMarks.set(enemy,0); st.rangerLastTargetMarks=0; const extra=Math.max(1,Math.round((baseDamage||p.attack)*0.55)); this.scene.combatSystem?.damageEnemy(enemy,extra,{ source:'profession', tags:['profession','mark'], professionApplied:true, professionMultiplier:1, baseAmountBeforeProfession:extra, noRangerMark:true }); this.scene.runStats?.recordProfessionTrigger?.('ranger'); this.scene.floatText(enemy.x,enemy.y-92,'猎印','#9dff8c'); }
-    this.scene.hud?.update(); }
-  shiftTimers(pausedDuration, pausedAt){ const st=this.scene.playerData.professionState; if(st?.warriorBuffUntil>pausedAt) st.warriorBuffUntil+=pausedDuration; }
-  reset(){ this.resetCoreState(); try { this.scene.professionWeaponView?.clear(); } catch(error){ this.logError('profession weapon clear failed', error); } }
-  destroy(){ this.reset(); }
+export const berserkerDamageBonus=maxHp=>Math.min(.24,Math.floor(Math.max(0,maxHp)/100)*.02);
+
+export default class ProfessionSystem{
+  constructor(scene){this.scene=scene;this.unsubs=[];this.ensureBuckets();}
+  ensureBuckets(){const p=this.scene.playerData;BUCKETS.forEach(k=>p[k]??={});p.summonContractSkillId??=null;p.professionState??=cloneState();}
+  currentConfig(){return getProfession(this.scene.playerData?.professionId);}
+  clearSource(key){const p=this.scene.playerData;BUCKETS.forEach(bucket=>setBucket(p,bucket,key,0));}
+  updateResourceMax(kind,next){const p=this.scene.playerData,maxKey=kind==='hp'?'maxHp':'maxMana',ratio=resourceRatio(p[kind],p[maxKey]);p[maxKey]=Math.max(0,Math.round(next));p[kind]=Math.min(p[maxKey],Math.round(p[maxKey]*ratio));}
+  refreshResourceMaximums(){const p=this.scene.playerData;this.updateResourceMax('hp',(p.baseMaxHp||0)+sumRuntimeBonuses(p.maxHpBonuses));this.updateResourceMax('mana',(p.baseMaxMana??p.maxMana??0)+sumRuntimeBonuses(p.maxManaBonuses));}
+  applyBase(id){const p=this.scene.playerData,b=getProfession(id)?.bonuses||{},k=PROFESSION_SOURCE_KEYS.base;setBucket(p,'attackMultiplierBonuses',k,b.attackMultiplierBonus);setBucket(p,'maxHpBonuses',k,b.maxHp);setBucket(p,'defenseBonuses',k,b.defense);setBucket(p,'maxManaBonuses',k,b.maxMana);setBucket(p,'manaRegenPerSecondBonuses',k,b.manaRegenPerSecond);setBucket(p,'activeSkillDamageBonuses',k,b.activeSkillDamage);setBucket(p,'summonDamageBonuses',k,b.summonDamage);setBucket(p,'summonHealingBonuses',k,b.summonHealing);setBucket(p,'summonMaxHpBonuses',k,b.summonMaxHp);this.refreshResourceMaximums();}
+  applyAdvanced(id){const p=this.scene.playerData,k=PROFESSION_SOURCE_KEYS.advanced;if(id==='swordsman'){setBucket(p,'maxHpBonuses',k,70);setBucket(p,'defenseBonuses',k,8);setBucket(p,'shieldGainMultiplierBonuses',k,.25);}if(id==='blade_master'){setBucket(p,'allDamageMultiplierBonuses',k,.10);setBucket(p,'attackSpeedMultiplierBonuses',k,.10);setBucket(p,'critMultiplierBonuses',k,.15);}if(id==='arcanist'){setBucket(p,'cooldownReductionBonuses',k,.12);setBucket(p,'activeSkillManaCostReductionBonuses',k,.15);}if(id==='blood_demon')setBucket(p,'activeSkillDamageBonuses',k,.15);if(id==='spirit_horde_master'){setBucket(p,'summonMaxHpBonuses',k,.20);setBucket(p,'summonDamageBonuses',k,.10);setBucket(p,'summonHealingBonuses',k,.10);}if(id==='summon_commander')setBucket(p,'summonActionSpeedBonuses',k,.20);this.refreshResourceMaximums();}
+  selectProfession(id){const cfg=getProfession(id),p=this.scene.playerData;if(!cfg)return false;const weapon=p.weaponId;this.reset();p.professionId=id;p.professionState=cloneState();p.summonContractSkillId=null;this.applyBase(id);this.bind();if(p.weaponId!==weapon)throw new Error('profession changed weaponId');this.scene.runStats?.setProfession?.(id);this.scene.eventBus.emit(CombatEvents.PROFESSION_CHOSEN,{professionId:id,profession:cfg});this.scene.hud?.update();return true;}
+  selectAdvancedProfession(id){const cfg=getAdvancedProfession(id),p=this.scene.playerData;if(!cfg||cfg.base!==p.professionId||p.advancedProfessionId)return false;p.advancedProfessionId=id;this.applyAdvanced(id);this.scene.eventBus.emit(CombatEvents.PROFESSION_CHOSEN,{professionId:id,advanced:true,profession:cfg});this.scene.hud?.update();return true;}
+  bind(){this.unsubs.push(this.scene.eventBus.on(CombatEvents.SKILL_CAST_COMPLETED,e=>this.onCompletedCast(e)));}
+  onCompletedCast(e){const p=this.scene.playerData,ctx=e?.ctx||{};if(p.advancedProfessionId!=='arcanist'||!ctx.isActiveSkill||ctx.fromMyriadAfterimage||ctx.isFreeCast||ctx.isCopiedCast||ctx.isExtraCast||Number(ctx.effectiveManaCost)<=0)return;this.scene.skillSystem?.recoverMana?.(2);}
+  bindSummonContract(skillId){const p=this.scene.playerData;if(p.professionId!=='summoner')return false;p.summonContractSkillId=skillId||null;p.professionState.summonContractSkillId=p.summonContractSkillId;this.scene.hud?.update();return true;}
+  summonContract(){return this.scene.playerData?.summonContractSkillId||null;}
+  getDamageMultiplier(source={},target=null){const p=this.scene.playerData;let bonus=sumRuntimeBonuses(p.allDamageMultiplierBonuses);if(p.advancedProfessionId==='berserker')bonus+=berserkerDamageBonus(p.maxHp);if(p.advancedProfessionId==='curse_master'&&this.hasPlayerDebuff(target))bonus+=.12;if((source.tags||[]).includes(TAGS.SUMMON))bonus+=sumRuntimeBonuses(p.summonDamageBonuses);return 1+bonus;}
+  activeSkillDamageMultiplier(){return 1+sumRuntimeBonuses(this.scene.playerData.activeSkillDamageBonuses);}
+  attackMultiplier(){return 1+sumRuntimeBonuses(this.scene.playerData.attackMultiplierBonuses);}
+  cooldownReduction(){return sumRuntimeBonuses(this.scene.playerData.cooldownReductionBonuses);}
+  manaCostMultiplier(){return 1-sumRuntimeBonuses(this.scene.playerData.activeSkillManaCostReductionBonuses);}
+  shieldGain(amount,{ordinary=true}={}){return ordinary?Math.round(amount*(1+sumRuntimeBonuses(this.scene.playerData.shieldGainMultiplierBonuses))):amount;}
+  onDamageDealt(actual,meta={}){const p=this.scene.playerData;if(p.advancedProfessionId!=='blood_demon'||actual<=0||meta.noProfessionLifeSteal)return;const tags=meta.tags||[],dot=tags.includes(TAGS.DOT),direct=meta.source==='skill'&&!dot;if(!dot&&!direct)return;if(tags.includes(TAGS.SUMMON)||['attack','normalAttack','reflect','environment'].includes(meta.source))return;const raw=actual*(dot?.01:.05)+(dot?(p.professionState.dotLifeStealRemainder||0):0),heal=dot?Math.floor(raw):raw;if(dot)p.professionState.dotLifeStealRemainder=raw-Math.floor(raw);if(heal>=1)this.scene.healPlayer?.(heal,'profession_lifesteal',{noProfessionLifeSteal:true});}
+  debuffDuration(duration,target){if(this.scene.playerData.advancedProfessionId!=='curse_master')return duration;if(target?.isBoss&&target?.controlImmune)return duration;return Math.round(duration*1.25);}
+  hasPlayerDebuff(target){return !!target&&!!this.scene.statusEffects?.getEffects?.(target)?.some(e=>e.isDebuff!==false&&e.target!==this.scene.playerData);}
+  summonModifiers(skill={}){const p=this.scene.playerData,rule=getSummonProfessionRule(skill.id)||skill,mode=rule.professionCountMode||'none',entity=rule.summonEntityType==='entity';return {countBonus:p.advancedProfessionId==='spirit_horde_master'&&entity&&mode==='extra'?1:0,uniqueEffectMultiplier:p.advancedProfessionId==='spirit_horde_master'&&mode==='unique'?1.2:1,maxHpMultiplier:entity?1+sumRuntimeBonuses(p.summonMaxHpBonuses):1,damageMultiplier:1+sumRuntimeBonuses(p.summonDamageBonuses),healingMultiplier:1+sumRuntimeBonuses(p.summonHealingBonuses),actionSpeedMultiplier:1+sumRuntimeBonuses(p.summonActionSpeedBonuses),inheritance:p.advancedProfessionId==='symbiosis_master'?{attack:getEffectiveAttack(p)*.20,defense:getEffectiveDefense(p)*.20,maxHp:p.maxHp*.15,attackSpeedBonus:Math.max(0,(p.attackSpeedMultiplier+sumRuntimeBonuses(p.attackSpeedMultiplierBonuses))-1)*.30}:null};}
+  reset(){this.unsubs.splice(0).forEach(off=>off?.());const p=this.scene.playerData;if(!p)return;this.clearSource(PROFESSION_SOURCE_KEYS.base);this.clearSource(PROFESSION_SOURCE_KEYS.advanced);p.professionId=null;p.advancedProfessionId=null;p.summonContractSkillId=null;p.professionState=cloneState();this.refreshResourceMaximums();}
+  shiftTimers(){}
+  destroy(){this.reset();}
 }

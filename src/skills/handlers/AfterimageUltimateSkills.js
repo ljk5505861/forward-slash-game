@@ -131,11 +131,11 @@ function copyNormalAttack(system,state,afterimage,trigger,scale){
   const scene=system.scene,event=trigger.event||{},originX=afterimage.view?.x??scene.player.x;
   const target=scene.targeting.valid(event.enemy)?event.enemy:nearestFrom(scene,originX);
   if(!target) return false;
-  const physical=event.profile?.type!=='arcaneBolt';
+  const physical=true;
   let amount=Math.max(1,Math.round((event.baseDamage||scene.playerData.attack||1)*scale));
   let meta={canCrit:true,professionApplied:false};
   if(event.weapon&&scene.combatSystem?.calcAttackDamage){
-    const result=scene.combatSystem.calcAttackDamage(event.weapon,event.profile||null,!!event.heavy,physical);
+    const result=scene.combatSystem.calcAttackDamage(event.weapon,!!event.heavy,physical);
     amount=Math.max(1,Math.round(result.damage*scale));
     meta={critResolved:true,crit:!!result.crit,professionApplied:true,professionMultiplier:result.professionMult||1,baseAmountBeforeProfession:Math.max(1,Math.round((result.baseBeforeProfession||result.damage)*scale))};
   }

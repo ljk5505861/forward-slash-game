@@ -8,7 +8,7 @@ import { KINETIC_RELEASE_DAMAGE_RATIOS, KINETIC_RELEASE_THRESHOLDS, KINETIC_RELE
 import { getSkillBarStateText } from '../src/ui/skillBarState.js';
 
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-assert.equal(GAME_VERSION,'0.11.12');assert.equal(pkg.version,'0.11.12');
+assert.equal(GAME_VERSION,'0.11.13');assert.equal(pkg.version,'0.11.13');
 const cfg=SKILLS.kinetic_release;assert(cfg);assert.equal(cfg.rarity,'FINE');assert.equal(cfg.passive,true);assert.equal(cfg.targetType,'passive');assert.equal(cfg.maxLevel,9);assert.equal(cfg.requiredSkillId,undefined);
 assert.deepEqual(cfg.levels.map(x=>x.damageRatio),KINETIC_RELEASE_DAMAGE_RATIOS);assert.deepEqual(cfg.levels.map(x=>x.kineticRequired),KINETIC_RELEASE_THRESHOLDS);assert.deepEqual(cfg.levels.map(x=>x.radius),KINETIC_RELEASE_RADII);
 assert.equal(Object.keys(SKILLS).length,50);assert.equal(Object.values(SKILLS).filter(x=>x.rarity==='FINE').length,6);assert.equal(new Set(Object.values(SKILLS).map(x=>x.id)).size,50);

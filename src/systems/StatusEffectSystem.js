@@ -55,6 +55,10 @@ export default class StatusEffectSystem {
   }
 
   add(type,target,options={}){
+    const isPlayerTarget=target===this.scene.playerData;
+    const isDebuff=!isPlayerTarget&&type!==StatusEffects.SHIELD&&type!==StatusEffects.DAMAGE_REDUCTION;
+    if(isDebuff) options={...options,durationMs:this.scene.professionSystem?.debuffDuration?.(options.durationMs??1000,target)??options.durationMs,isDebuff:true,playerApplied:true};
+    if(type===StatusEffects.SHIELD&&isPlayerTarget&&options.professionShieldGain!==false){const gained=this.scene.professionSystem?.shieldGain?.(options.remainingValue??options.value??0,{ordinary:true})??(options.remainingValue??options.value??0);options={...options,value:gained,remainingValue:gained};}
     const {
       sourceId='',
       durationMs=1000,
@@ -516,7 +520,7 @@ export default class StatusEffectSystem {
 
   getEffects(target,type){
     return [...this.effects.values()].filter(
-      effect=>effect.target===target&&effect.type===type
+      effect=>effect.target===target&&(type===undefined||effect.type===type)
     );
   }
 

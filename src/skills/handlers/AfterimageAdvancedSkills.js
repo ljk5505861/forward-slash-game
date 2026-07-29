@@ -36,9 +36,8 @@ export function configureAfterimageAdvancedSkills(){ Object.entries(AFTERIMAGE_A
 function extraAttackSpeed(playerData){ return Math.max(0,(playerData.attackSpeedMultiplier||1)+sumBonuses(playerData.attackSpeedMultiplierBonuses)-1); }
 function normalAttackRoll(scene,ratio){
   const weapon=getWeapon(scene.playerData.weaponId);
-  const profile=scene.professionSystem?.currentAttackProfile?.()||null;
   if(scene.combatSystem?.calcAttackDamage&&weapon){
-    const result=scene.combatSystem.calcAttackDamage(weapon,profile,false,true);
+    const result=scene.combatSystem.calcAttackDamage(weapon,false,true);
     return {
       amount:Math.max(1,Math.round(result.damage*ratio)),
       meta:{critResolved:true,crit:!!result.crit,professionApplied:true,professionMultiplier:result.professionMult||1,baseAmountBeforeProfession:Math.max(1,Math.round((result.baseBeforeProfession||result.damage)*ratio))}
