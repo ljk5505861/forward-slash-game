@@ -192,7 +192,7 @@ export default class ProfessionSystem{
           }
         }
         const contractDamage=owner.summonCreatureContractMultiplier(meta.skillId,'damageMultiplier');
-        if(contractDamage!==1&&nextMeta.summonContractDamageApplied!==true){
+        if(contractDamage!==1&&nextMeta.summonContractDamageApplied!==true&&nextMeta.professionSplash!==true){
           if(nextMeta.professionApplied===true&&Number.isFinite(Number(nextMeta.baseAmountBeforeProfession))){
             const adjustedBase=Math.max(0,Math.round(Number(nextMeta.baseAmountBeforeProfession)*contractDamage));
             const professionMultiplier=Number.isFinite(Number(nextMeta.professionMultiplier))?Number(nextMeta.professionMultiplier):1;
