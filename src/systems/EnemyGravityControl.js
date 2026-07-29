@@ -3,7 +3,22 @@ const alive=e=>e?.active!==false&&!e?.isDefeated;
 const bossScale=e=>e?.isBoss?0.4:1;
 const sourceMap=e=>e&&(e.gravitySources ||= new Map());
 const pullImmuneStates=new Set(['windup','charge','slamWind','skillActive','recovery','cool']);
-export function applyEnemyGravity(enemy, source){ if(!enemy||!source?.sourceId) return; sourceMap(enemy).set(source.sourceId,{...source}); }
+export function applyEnemyGravity(enemy, source){
+  if(!enemy||!source?.sourceId) return;
+  let next={...source};
+  const playerApplied=next.isDebuff===true&&['player','summon'].includes(next.sourceOwner);
+  if(playerApplied){
+    next.playerApplied=true;
+    next.debuffCategory=next.debuffCategory||'control';
+    const now=enemy.scene?.getGameplayTime?.();
+    if(Number.isFinite(now)&&Number.isFinite(next.expiresAt)&&next.expiresAt>now){
+      const rawDuration=next.expiresAt-now;
+      const duration=enemy.scene?.professionSystem?.debuffDuration?.(rawDuration,enemy,{...next,hardControl:next.hardControl===true})??rawDuration;
+      next.expiresAt=now+duration;
+    }
+  }
+  sourceMap(enemy).set(next.sourceId,next);
+}
 export function removeEnemyGravitySource(enemy, sourceId){ enemy?.gravitySources?.delete?.(sourceId); }
 export function removeEnemyGravitySourcesByPrefix(enemy, prefix){ if(!enemy?.gravitySources) return; [...enemy.gravitySources.keys()].forEach(id=>{ if(String(id).startsWith(prefix)) enemy.gravitySources.delete(id); }); }
 export function getEnemyGravityState(enemy, now=0){ const state={moveSlow:0,attackSlow:0,suppressed:false,externalSuppressed:false}; if(!enemy?.gravitySources) return state; for(const [id,src] of [...enemy.gravitySources.entries()]){ if(src.expiresAt!==Infinity&&src.expiresAt<=now){ enemy.gravitySources.delete(id); continue; } const scale=enemy?.isBoss&&src.ignoreBossScale===true?1:bossScale(enemy); state.moveSlow=Math.max(state.moveSlow,Math.max(0,src.moveSlow||0)*scale); state.attackSlow=Math.max(state.attackSlow,Math.max(0,src.attackSlow||0)*scale); if(src.countsAsGravitySuppression!==false){ state.suppressed=true; if(src.external) state.externalSuppressed=true; } } return state; }
