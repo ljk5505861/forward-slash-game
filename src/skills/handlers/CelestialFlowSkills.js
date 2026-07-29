@@ -766,7 +766,7 @@ function applyWhiteDwarfCrush(system, runtime, visual, enemy, time) {
   };
   runtime.crushStates.set(enemy, state);
   setEnemyScale(enemy, lethal ? state.targetScaleX : state.startScaleX, lethal ? state.targetScaleY : state.startScaleY);
-  if (!enemy.isBoss) applyEnemyGravity(enemy, { sourceId: WHITE_DWARF_CRUSH_SOURCE, moveSlow: profile.moveSlow, attackSlow: profile.attackSlow, expiresAt: time + profile.durationMs, external: true });
+  if (!enemy.isBoss) applyEnemyGravity(enemy, { sourceOwner:'player',isDebuff:true,debuffCategory:'control', sourceId: WHITE_DWARF_CRUSH_SOURCE, moveSlow: profile.moveSlow, attackSlow: profile.attackSlow, expiresAt: time + profile.durationMs, external: true });
   visual.crushFlashUntil = time + 180;
   showWhiteDwarfCrushVisuals(system, runtime, enemy, time);
 }

@@ -6,7 +6,7 @@ import { GAME_VERSION } from '../src/config/version.js';
 const close = (actual, expected, message, epsilon = 1e-6) => assert(Math.abs(actual - expected) <= epsilon, `${message}: expected ${expected}, got ${actual}`);
 const between = (value, a, b, message) => assert(value > Math.min(a, b) && value < Math.max(a, b), `${message}: ${value} not between ${a} and ${b}`);
 
-assert.equal(GAME_VERSION, '0.11.12');
+assert.equal(GAME_VERSION, '0.11.13');
 assert.deepEqual(SKILLS.white_dwarf.levels.map(l=>l.contactDamage), [70,85,100,120,140,165,195,230,280]);
 assert.deepEqual(SKILLS.white_dwarf.levels.map(l=>l.contactCooldownMs), [1800,1750,1700,1650,1600,1500,1400,1300,1200]);
 assert.equal(SKILLS.white_dwarf.levels.some(l=>'contactKnockback' in l), false);
@@ -33,7 +33,7 @@ function crushLines(rt){ return rt.transients.filter(t=>t.type==='crushLine'); }
  assert.equal(s.hits.length,1); assert.equal(s.hits[0].damage,70); assert.equal(s.hits[0].meta.damageKind,'gravityCrush'); assert.equal(s.hits[0].meta.allowLifeSteal,false); assert.equal(s.hits[0].meta.canTriggerArtifacts,false); assert.equal(s.hits[0].meta.noKnockback,true); assert.equal(s.knockbacks.length,0);
  close(n.scaleX,2,'nonlethal hit frame keeps original scaleX'); close(n.scaleY,1.5,'nonlethal hit frame keeps original scaleY'); assert.notEqual(n.scaleX,2*1.35,'hit frame is not final crush scale');
  assert.equal(n.x,old.x); assert.equal(n.y,old.y); assert.equal(n.body.x,old.bx); assert.equal(n.body.y,old.by); assert.equal(n.body.width,old.bw); assert.equal(n.body.height,old.bh); assert.equal(n.width,old.w); assert.equal(n.height,old.h);
- assert.deepEqual(n.gravitySources.get('white_dwarf_gravity_crush'), {sourceId:'white_dwarf_gravity_crush',moveSlow:.80,attackSlow:.50,expiresAt:500,external:true});
+ assert.deepEqual(n.gravitySources.get('white_dwarf_gravity_crush'), {sourceOwner:'player',isDebuff:true,debuffCategory:'control',sourceId:'white_dwarf_gravity_crush',moveSlow:.80,attackSlow:.50,expiresAt:500,external:true});
  assert(s.created.some(o=>o.type==='ellipse'),'impact ring created'); assert.equal(crushLines(rt).length,6,'upper/lower gravity lines created'); assert(s.floats.some(f=>f.text==='重力碾压')); assert(rt.visuals[0].crushFlashUntil>s.now);
  tick(sys,40); between(n.scaleX,2,2*1.35,'half-compressed scaleX'); between(n.scaleY,1.5,1.5*.25,'half-compressed scaleY');
  tick(sys,40); close(n.scaleX,2*1.35,'normal reaches final crushed scaleX at 80ms'); close(n.scaleY,1.5*.25,'normal reaches final crushed scaleY at 80ms');

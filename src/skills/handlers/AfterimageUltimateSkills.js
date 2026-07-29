@@ -131,11 +131,11 @@ function copyNormalAttack(system,state,afterimage,trigger,scale){
   const scene=system.scene,event=trigger.event||{},originX=afterimage.view?.x??scene.player.x;
   const target=scene.targeting.valid(event.enemy)?event.enemy:nearestFrom(scene,originX);
   if(!target) return false;
-  const physical=event.profile?.type!=='arcaneBolt';
+  const physical=true;
   let amount=Math.max(1,Math.round((event.baseDamage||scene.playerData.attack||1)*scale));
   let meta={canCrit:true,professionApplied:false};
   if(event.weapon&&scene.combatSystem?.calcAttackDamage){
-    const result=scene.combatSystem.calcAttackDamage(event.weapon,event.profile||null,!!event.heavy,physical);
+    const result=scene.combatSystem.calcAttackDamage(event.weapon,!!event.heavy,physical);
     amount=Math.max(1,Math.round(result.damage*scale));
     meta={critResolved:true,crit:!!result.crit,professionApplied:true,professionMultiplier:result.professionMult||1,baseAmountBeforeProfession:Math.max(1,Math.round((result.baseBeforeProfession||result.damage)*scale))};
   }
@@ -152,7 +152,7 @@ function copyTriggeredDamage(system,state,afterimage,trigger,scale,full){
   const scene=system.scene,originX=afterimage.view?.x??scene.player.x; const target=scene.targeting.valid(trigger.target)?trigger.target:nearestFrom(scene,originX); if(!target) return; const thornData=trigger.skillId==='thorn_armor'?system.getData('thorn_armor'):null; dealEventDamage(system,target,trigger.event,scale,trigger.skillId,`myriad_${trigger.skillId}`,thornData?{defenseIgnore:thornData.defenseIgnore||0}:{}); if(full&&trigger.skillId==='thorn_armor'&&(thornData?.burstRadius||0)>0){ const center={x:target.x,y:target.y}; scene.targeting.all().filter(enemy=>enemy!==target&&scene.targeting.valid(enemy)&&Math.hypot(enemy.x-center.x,enemy.y-center.y)<=thornData.burstRadius).forEach(enemy=>dealEventDamage(system,enemy,trigger.event,scale*(thornData.burstRatio||0.6),'thorn_armor','myriadThornBurst',{defenseIgnore:thornData.defenseIgnore||0})); }
 }
 function copyHeal(system,state,afterimage,trigger,scale){ const scene=system.scene; const configured=trigger.skillId==='traceless'?system.getData('traceless')?.dodgeHeal:0; const base=configured||trigger.event.amount||0; const amount=Math.max(1,Math.round(base*scale)); const healed=scene.healPlayer?.(amount,SOURCE,{skillId:SOURCE,originalSkillId:trigger.skillId,fromMyriadAfterimage:true})||0; if(healed>0) scene.floatText?.(afterimage.view?.x??scene.player.x,(afterimage.view?.y??scene.player.y)-70,`残影 +${healed}`,'#d8b4fe'); }
-function copyShield(system,state,afterimage,trigger,scale){ const scene=system.scene,effect=trigger.event.effect||{}; const amount=Math.max(1,Math.round((trigger.event.amount||effect.initialValue||0)*scale)); scene.statusEffects?.add?.(StatusEffects.SHIELD,scene.playerData,{durationMs:effect.durationMs||1,persistent:!!effect.persistent||effect.expiresNaturally===false,expiresNaturally:effect.expiresNaturally!==false,value:amount,remainingValue:amount,sourceId:`myriad_afterimage_guardian_${afterimage.id}_${scene.getGameplayTime()}`,fromMyriadAfterimage:true}); }
+function copyShield(system,state,afterimage,trigger,scale){ const scene=system.scene,effect=trigger.event.effect||{}; const amount=Math.max(1,Math.round((trigger.event.amount||effect.initialValue||0)*scale)); scene.statusEffects?.add?.(StatusEffects.SHIELD,scene.playerData,{shieldKind:'ordinary',durationMs:effect.durationMs||1,persistent:!!effect.persistent||effect.expiresNaturally===false,expiresNaturally:effect.expiresNaturally!==false,value:amount,remainingValue:amount,sourceId:`myriad_afterimage_guardian_${afterimage.id}_${scene.getGameplayTime()}`,fromMyriadAfterimage:true}); }
 function executeCopy(system,state,afterimage,trigger,scale,full){
   const adapter=COPY_ADAPTERS[trigger.skillId];
   pulse(system.scene,afterimage,trigger.skillId==='traceless'||trigger.skillId==='bloodthirst'?0xd8b4fe:trigger.skillId==='guardian_shield'?0x8fd7ff:0x9b7cff);

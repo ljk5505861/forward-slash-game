@@ -160,7 +160,7 @@ function enterHighSpeed(scene) { update(scene, 0); scene.player.x += 120; update
   assert.equal(scene.skillSystem.passiveState.superSpeed.kineticReady, true);
 }
 
-// Without linked skills, the next body weapon attack snapshots +40% for default and profile attacks, then consumes kinetic once.
+// Without linked skills, the next body weapon attack snapshots +40% and consumes kinetic once.
 {
   const scene = makeScene();
   setSkills(scene, [['super_speed', 6]]);
@@ -178,10 +178,9 @@ function enterHighSpeed(scene) { update(scene, 0); scene.player.x += 120; update
   scene.player.x += 120;
   update(scene, 6101);
   assert.equal(scene.skillSystem.passiveState.superSpeed.kineticReady, true);
-  let profileDamage = 0;
-  combat.performSwordSlashAttack = function(profile, currentWeapon){ profileDamage = this.attackDamageFactors(currentWeapon, profile, false).nonCritBaseDamage; };
-  combat.performAttack(enemy(), weapon, {id:'test_slash',type:'swordSlash',damageMultiplier:1,pierce:3,range:300});
-  assert.equal(profileDamage, 140, 'profile attacks carry the same one-attack kinetic snapshot');
+  combat.performDefaultAttack = function(_target, currentWeapon){ captured = this.attackDamageFactors(currentWeapon, false).nonCritBaseDamage; };
+  combat.performAttack(enemy(), weapon);
+  assert.equal(captured, 140, 'unchanged weapon attack carries the next kinetic snapshot');
   assert.equal(scene.skillSystem.passiveState.superSpeed.kineticReady, false);
 }
 
@@ -197,4 +196,4 @@ function enterHighSpeed(scene) { update(scene, 0); scene.player.x += 120; update
   assert.equal(scene.skillSystem.passiveState.superSpeed, undefined);
 }
 
-console.log('v0.11.12 superhero kinetic enhancement validation passed');
+console.log('v0.11.13 superhero kinetic enhancement validation passed');

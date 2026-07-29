@@ -10,7 +10,7 @@ import { applyEnemyGravity, getEnemyMoveSpeed, getEnemyAttackDelay, isGravitySup
 import { CombatEvents } from '../src/core/CombatEvents.js';
 
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-assert.equal(GAME_VERSION,'0.11.12'); assert.equal(pkg.version,'0.11.12'); assert.equal(Object.keys(SKILLS).length,50);
+assert.equal(GAME_VERSION,'0.11.13'); assert.equal(pkg.version,'0.11.13'); assert.equal(Object.keys(SKILLS).length,50);
 const cfg=SKILLS.sky_covering_palm; assert(cfg); assert.equal(Object.values(SKILLS).filter(s=>s.id==='sky_covering_palm').length,1);
 assert.equal(cfg.rarity,'EPIC'); assert.equal(cfg.maxLevel,9); assert.equal(cfg.passive,false); assert.equal(cfg.targetType,'random');
 [TAGS.MAGIC,TAGS.SPELL,TAGS.ACTIVE_SKILL,TAGS.CULTIVATION,TAGS.BUILD_CULTIVATION].forEach(t=>assert(cfg.tags.includes(t)));
@@ -30,7 +30,7 @@ sc=scene({enemies:[e(100,0,10),e(120,0,10),e(300,0,60),e(320,0,60)]}); assert.de
 sc=scene({enemies:[e(100,0,20),e(120,0,20),e(140,0,20),e(500,0,20),e(520,0,20),e(480,0,20)]}); assert.deepEqual(selectSkyCoveringPalmCenter(sc.skillSystem,50),{x:100,y:0});
 sc=scene({enemies:[e(10,0,1,{visible:false}),e(20,0,1,{hp:0})]}); assert.equal(selectSkyCoveringPalmCenter(sc.skillSystem,50),null);
 
-sc=scene({enemies:[e(100,0,100)]}); step(sc,0); assert.equal(sc.playerData.mana,88); assert(sc.skillSystem.cooldowns.get('sky_covering_palm')>0); assert.equal(sc.eventBus.events.filter(x=>x.e===CombatEvents.SKILL_CAST_COMPLETED).length,1); assert.equal(sc.professionSystem.casts,1);
+sc=scene({enemies:[e(100,0,100)]}); step(sc,0); assert.equal(sc.playerData.mana,88); assert(sc.skillSystem.cooldowns.get('sky_covering_palm')>0); assert.equal(sc.eventBus.events.filter(x=>x.e===CombatEvents.SKILL_CAST_COMPLETED).length,1); assert.equal(sc.professionSystem.casts,0);
 sc=scene({enemies:[],mana:50,battle:5}); step(sc,0); assert.equal(sc.playerData.mana,50); assert.equal(sc.skillSystem.cooldowns.has('sky_covering_palm'),false); assert.equal(sc.eventBus.events.filter(x=>x.e===CombatEvents.SKILL_CAST_COMPLETED).length,0); assert.equal(sc.professionSystem.casts,0); assert.equal(sc.playerData.battleMarkStacks,5);
 
 sc=scene({enemies:[e(100,0,1000)],prof:2,skillMult:3}); step(sc,0); step(sc,599); assert.equal(sc.combatSystem.hits.length,0); step(sc,616); assert.equal(sc.combatSystem.hits.length,1); assert.equal(sc.combatSystem.hits[0].d,288); const castId=sc.combatSystem.hits[0].meta.skillId; assert.equal(castId,'sky_covering_palm'); const completed=sc.eventBus.events.filter(x=>x.e===CombatEvents.SKILL_CAST_COMPLETED).length; step(sc,850); step(sc,1050); assert.equal(sc.eventBus.events.filter(x=>x.e===CombatEvents.SKILL_CAST_COMPLETED).length,completed);

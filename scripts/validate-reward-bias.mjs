@@ -19,7 +19,7 @@ assert.ok(weight(SKILLS.poison_cloud.tags, poisonCtx) > weight(SKILLS.sword_wave
 assert.ok(weight(artifactTags('venom_sac'), poisonCtx) > weight(artifactTags('blood_jade'), poisonCtx), 'poison/dot build raises poison artifact');
 const attackCtx = ctx([{ id:'shadow_fist' }, { id:'mirror_march' }], [{ id:'battle_mark' }]);
 assert.ok(weight(SKILLS.shadow_fist.tags, attackCtx) > weight(SKILLS.fireball.tags, attackCtx), 'normal attack build raises normalAttack rewards');
-assert.ok(weight(artifactTags('thunder_orb'), ctx([{ id:'shadow_fist' }], [{ id:'battle_mark' }], 'ranger')) > 1, 'critical reference can add small reward weight');
+assert.ok(weight(SKILLS.spirit_wolves.tags, ctx([{ id:'shadow_fist' }], [], 'summoner')) > 1, 'summoner direction can add small reward weight');
 const duplicate = calculateBuildBiasWeight({ tags:['poison','poison','dot'], context:poisonCtx, baseWeight:1 }).weight;
 const deduped = calculateBuildBiasWeight({ tags:['poison','dot'], context:poisonCtx, baseWeight:1 }).weight;
 assert.equal(duplicate, deduped, 'duplicate related tags are deduped');

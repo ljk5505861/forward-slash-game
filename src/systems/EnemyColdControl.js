@@ -59,16 +59,29 @@ export function getEnemyColdAttackDelay(enemy, baseDelayMs = 1000, now = 0) {
 
 export function applyEnemyCold(enemy, options = {}) {
   if (!alive(enemy)) return null;
-  const now = options.now ?? 0;
+  const now = options.now ?? enemy.scene?.getGameplayTime?.() ?? 0;
   const data = options.data || {};
   const sourceId = options.sourceId || 'freezing_breath';
   const previous = getEnemyColdState(enemy, now);
   const maxStacks = data.maxStacks || 8;
   const stacks = Math.min(maxStacks, Math.max(0, previous.stacks) + Math.max(1, options.stacks || 1));
+  const playerApplied = options.isDebuff === true && ['player', 'summon'].includes(options.sourceOwner);
+  const sourceMeta = {
+    isDebuff: options.isDebuff === true,
+    debuffCategory: options.debuffCategory || 'control',
+    sourceOwner: options.sourceOwner,
+    sourceSkillId: options.sourceSkillId || sourceId,
+    playerApplied
+  };
+  const rawDuration = data.coldDurationMs || 3400;
+  const duration = playerApplied
+    ? enemy.scene?.professionSystem?.debuffDuration?.(rawDuration, enemy, { ...sourceMeta, hardControl:false }) ?? rawDuration
+    : rawDuration;
   const source = {
     sourceId,
+    ...sourceMeta,
     stacks,
-    expiresAt: now + (data.coldDurationMs || 3400),
+    expiresAt: now + duration,
     moveSlow: Math.min(enemy.isBoss && stacks >= maxStacks ? data.bossMaxMoveSlow ?? 0.45 : 0.95, stacks * (data.slowPerStack ?? 0.04)),
     attackSlow: Math.min(enemy.isBoss && stacks >= maxStacks ? data.bossMaxAttackSlow ?? 0.75 : 0.95, stacks * (data.attackSlowPerStack ?? 0.03)),
     frozenUntil: previous.frozenUntil || 0,
@@ -81,7 +94,10 @@ export function applyEnemyCold(enemy, options = {}) {
   };
   const threshold = enemy.isBoss ? Infinity : (enemy.isElite ? data.eliteFreezeStacks : data.normalFreezeStacks);
   if (stacks >= threshold && now >= source.refreezeGuardUntil && now >= source.frozenUntil) {
-    const freezeMs = enemy.isElite ? data.eliteFreezeMs : data.normalFreezeMs;
+    const rawFreezeMs = enemy.isElite ? data.eliteFreezeMs : data.normalFreezeMs;
+    const freezeMs = playerApplied
+      ? enemy.scene?.professionSystem?.debuffDuration?.(rawFreezeMs || 0, enemy, { ...sourceMeta, hardControl:true }) ?? rawFreezeMs
+      : rawFreezeMs;
     source.frozenUntil = now + (freezeMs || 0);
     source.refreezeGuardUntil = source.frozenUntil + (data.refreezeGuardMs || 800);
     source.shatterUsed = false;
