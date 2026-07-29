@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from '../config/gameConfig.js';
 import { SKILLS } from '../config/skills.js';
 import { getRarity } from '../config/rarities.js';
+import { getSummonCreatureContract } from '../config/summonCreatureContracts.js';
 import { getSkillDetailData } from './skillDetailContent.js';
 import { MYRIAD_AFTERIMAGE_SKILL_ID, getMyriadAfterimageDetailState, openMyriadAfterimageSelection } from '../skills/handlers/AfterimageUltimateSkills.js';
 import { getSkillBarStateText } from './skillBarState.js';
@@ -36,6 +37,7 @@ export default class SkillBar {
       const box = this.scene.add.rectangle(x, y, SLOT_W, SLOT_H, 0x1f3158, 0.96).setStrokeStyle(3, 0x89a8e8, 1).setScrollFactor(0).setDepth(2101);
       const text = this.scene.add.text(x, y, '', { fontFamily: 'Arial', fontSize: '17px', color: '#ffffff', align: 'center', stroke: '#000', strokeThickness: 3, wordWrap: { width: SLOT_W - 14 } }).setOrigin(0.5).setScrollFactor(0).setDepth(2102);
       const soulBadge = this.scene.add.text(x + SLOT_W / 2 - 8, y - SLOT_H / 2 + 6, '', { fontFamily:'Arial', fontSize:'15px', color:'#ffd166', stroke:'#000', strokeThickness:4 }).setOrigin(1,0).setScrollFactor(0).setDepth(2103).setVisible(false);
+      const contractBadge = this.scene.add.text(x - SLOT_W / 2 + 8, y - SLOT_H / 2 + 6, '', { fontFamily:'Arial', fontSize:'18px', color:'#86efac', stroke:'#000', strokeThickness:4 }).setOrigin(0,0).setScrollFactor(0).setDepth(2103).setVisible(false);
       const slotIndex = i;
       box.setInteractive({ useHandCursor:true })
         .on('pointerdown', (pointer) => this.onSlotPointerDown(slotIndex, pointer, box))
@@ -44,7 +46,7 @@ export default class SkillBar {
         .on('pointerupoutside', (pointer) => this.cancelLongPress(pointer))
         .on('pointercancel', (pointer) => this.cancelLongPress(pointer))
         .on('pointerout', (pointer) => this.cancelLongPress(pointer));
-      this.slotNodes.push({ box, text, soulBadge }); this.nodes.push(box, text, soulBadge);
+      this.slotNodes.push({ box, text, soulBadge, contractBadge }); this.nodes.push(box, text, soulBadge, contractBadge);
     }
     this.update();
   }
@@ -89,7 +91,7 @@ export default class SkillBar {
     const maskShape=this.scene.add.rectangle(DESIGN_WIDTH/2,maskCenterY,700,bodyVisibleHeight,0xffffff,0).setScrollFactor(0).setVisible(false);
     const mask=maskShape.createGeometryMask();
     const body=this.scene.add.container(DESIGN_WIDTH/2-340,bodyBaseY).setScrollFactor(0).setDepth(depth+2).setMask(mask);
-    const bodyText=this.scene.add.text(0,0,this.formatDetail(data),{fontFamily:'Arial',fontSize:'20px',color:'#eaf2ff',stroke:'#000',strokeThickness:3,lineSpacing:8,wordWrap:{width:680}}).setOrigin(0,0);
+    const bodyText=this.scene.add.text(0,0,this.formatDetail(data,skill.id),{fontFamily:'Arial',fontSize:'20px',color:'#eaf2ff',stroke:'#000',strokeThickness:3,lineSpacing:8,wordWrap:{width:680}}).setOrigin(0,0);
     body.add(bodyText);
     const nodes=[overlay,panel,title,close,maskShape,body];
     const contentHeight=bodyText.height;
@@ -120,7 +122,7 @@ export default class SkillBar {
     }
     return {nodes:[bg,label],bg,label,bounds:new Phaser.Geom.Rectangle(x-DETAIL_COPY_BUTTON_WIDTH/2,y-DETAIL_COPY_BUTTON_HEIGHT/2,DETAIL_COPY_BUTTON_WIDTH,DETAIL_COPY_BUTTON_HEIGHT)};
   }
-  formatDetail(d){ const secs=[['技能说明',[d.description]],['当前效果',d.currentEffects],['特殊机制',d.mechanics],['3/6/9级强化',d.milestones.map(m=>`${m.unlocked?'✓':'○'} ${m.level}级：${m.text}`)],['下一等级预览',d.nextLevelPreview]]; return secs.map(([h,arr])=>`【${h}】\n${(arr||[]).join('\n')}`).join('\n\n'); }
+  formatDetail(d,skillId){ const contract=this.scene.professionSystem?.summonContract?.()===skillId?getSummonCreatureContract(skillId):null; const secs=[['技能说明',[d.description]],['当前效果',d.currentEffects],...(contract?[['召唤契约',[`${contract.name}：${contract.description}`]]]:[]),['特殊机制',d.mechanics],['3/6/9级强化',d.milestones.map(m=>`${m.unlocked?'✓':'○'} ${m.level}级：${m.text}`)],['下一等级预览',d.nextLevelPreview]]; return secs.map(([h,arr])=>`【${h}】\n${(arr||[]).join('\n')}`).join('\n\n'); }
   startScroll(pointer){ if(!this.detail || this.isPointerInCopyButton(pointer)) return; this.detail.isDragging=true; this.detail.dragPointerId=pointer.id; this.detail.dragStartY=pointer.y; this.detail.dragStartScrollY=this.detail.scrollY; this.detail.hasDragged=false; }
   dragScroll(pointer){ const d=this.detail; if(!d?.isDragging||d.dragPointerId!==pointer.id) return; const delta=pointer.y-d.dragStartY; if(Math.abs(delta)>DRAG_THRESHOLD_PX) d.hasDragged=true; if(d.hasDragged){ d.scrollY=Phaser.Math.Clamp(d.dragStartScrollY-delta,0,d.maxScroll); this.applyScroll(); } }
   endScroll(pointer){ const d=this.detail; if(!d||d.dragPointerId!==pointer.id) return; d.isDragging=false; d.dragPointerId=null; }
@@ -129,7 +131,7 @@ export default class SkillBar {
   isPointerInCopyButton(pointer){ const bounds=this.detail?.copyButton?.bounds; return !!bounds&&Phaser.Geom.Rectangle.Contains(bounds,pointer.x,pointer.y); }
   hideDetail(){ if(!this.detail) return; const detail=this.detail; this.detail=null; [detail.overlay,detail.panel,detail.close,detail.bodyText].forEach(n=>n?.removeAllListeners?.()); detail.mask?.destroy?.(); detail.nodes.forEach(n=>n?.destroy?.()); }
 
-  update() { const skills = this.scene.playerData.skills; const replacing = !!this.scene.upgradeSystem?.pendingReplacement; const soulCount=Math.floor(Number(this.scene.skillSystem?.passiveState?.swordFlow?.effectiveSouls)||0); this.title.setText(replacing ? '请选择要替换的技能' : `技能槽 ${Math.min(skills.length, SKILL_SLOT_COUNT)}/${SKILL_SLOT_COUNT}`);
-    this.slotNodes.forEach(({ box, text, soulBadge }, index) => { const skillData = skills[index]; if (!skillData) { text.setText('空技能槽'); soulBadge.setText('').setVisible(false); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 3, replacing ? 0xffd166 : 0x89a8e8, 1); return; } const cfg = SKILLS[skillData.id]; const rarity = getRarity(cfg?.rarity); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 4, replacing ? 0xffd166 : rarity.color, 1); const state = getSkillBarStateText(this.scene, skillData, cfg); const mantra=skillData.id===MANTRA_HEAVENLY_BOOK_ID?(this.scene.playerData.mantraHeavenlyBookMode||'未选'):''; text.setText(`${rarity.name} ${cfg?.name || skillData.id}${mantra?`·${mantra}`:''}\nLv.${skillData.level}　${state}`); const showSouls=SOUL_BADGE_SKILLS.has(skillData.id); soulBadge.setText(showSouls?`魂 ${soulCount}`:'').setVisible(showSouls); }); }
+  update() { const skills = this.scene.playerData.skills; const replacing = !!this.scene.upgradeSystem?.pendingReplacement; const soulCount=Math.floor(Number(this.scene.skillSystem?.passiveState?.swordFlow?.effectiveSouls)||0); const contractSkillId=this.scene.professionSystem?.summonContract?.()||null; this.title.setText(replacing ? '请选择要替换的技能' : `技能槽 ${Math.min(skills.length, SKILL_SLOT_COUNT)}/${SKILL_SLOT_COUNT}`);
+    this.slotNodes.forEach(({ box, text, soulBadge, contractBadge }, index) => { const skillData = skills[index]; if (!skillData) { text.setText('空技能槽'); soulBadge.setText('').setVisible(false); contractBadge.setText('').setVisible(false); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 3, replacing ? 0xffd166 : 0x89a8e8, 1); return; } const cfg = SKILLS[skillData.id]; const rarity = getRarity(cfg?.rarity); box.setFillStyle(0x1f3158, 0.96); box.setStrokeStyle(replacing ? 5 : 4, replacing ? 0xffd166 : rarity.color, 1); const state = getSkillBarStateText(this.scene, skillData, cfg); const mantra=skillData.id===MANTRA_HEAVENLY_BOOK_ID?(this.scene.playerData.mantraHeavenlyBookMode||'未选'):''; text.setText(`${rarity.name} ${cfg?.name || skillData.id}${mantra?`·${mantra}`:''}\nLv.${skillData.level}\u3000${state}`); const showSouls=SOUL_BADGE_SKILLS.has(skillData.id); soulBadge.setText(showSouls?`魂 ${soulCount}`:'').setVisible(showSouls); const showContract=skillData.id===contractSkillId; contractBadge.setText(showContract?'契':'').setVisible(showContract); }); }
   destroy() { this.destroyed = true; this.cancelLongPress(); this.hideDetail(); this.nodes.forEach((node) => { node.removeAllListeners?.(); node.destroy?.(); }); this.nodes = []; this.slotNodes = []; }
 }

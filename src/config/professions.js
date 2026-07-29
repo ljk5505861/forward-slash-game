@@ -5,7 +5,7 @@ export const PROFESSION_SOURCE_KEYS=Object.freeze({ base:'profession_base', adva
 export const PROFESSIONS=Object.freeze({
   warrior:{id:'warrior',name:'战士',description:'选择坚韧的战斗方向。',bonuses:{attackMultiplierBonus:.10,maxHp:40,defense:4},mechanic:'攻击力 +10%，最大生命 +40，防御 +4',color:0xd95f3f,supportedTags:['physical',TAGS.MELEE,'survival']},
   mage:{id:'mage',name:'法师',description:'选择主动法术方向。',bonuses:{maxMana:30,manaRegenPerSecond:1,activeSkillDamage:.10},mechanic:'最大法力 +30，法力恢复 +1/秒，主动技能伤害 +10%',color:0x6f7cff,supportedTags:[TAGS.ACTIVE_SKILL,TAGS.MAGIC,TAGS.SPELL]},
-  summoner:{id:'summoner',name:'召唤师',description:'选择召唤与契约方向。',bonuses:{summonDamage:.10,summonHealing:.10,summonMaxHp:.15},mechanic:'召唤伤害/治疗 +10%，实体召唤生命 +15%，获得一个契约槽',color:0x42c978,supportedTags:[TAGS.SUMMON]},
+  summoner:{id:'summoner',name:'召唤师',description:'选择召唤与契约方向。',bonuses:{summonDamage:.10,summonHealing:.10,summonMaxHp:.15},mechanic:'召唤伤害/治疗 +10%，实体召唤生命 +15%；自动契约技能槽中最靠前的召唤兽',color:0x42c978,supportedTags:[TAGS.SUMMON]},
 });
 
 export const ADVANCED_PROFESSIONS=Object.freeze({

@@ -3,7 +3,7 @@ import { GAME_VERSION } from '../src/config/version.js';
 import { SKILLS } from '../src/config/skills.js';
 import '../src/skills/handlers/index.js';
 import { TAGS, BUILD_TAGS } from '../src/config/tags.js';
-assert.equal(GAME_VERSION,'0.11.13');
+assert.equal(GAME_VERSION,'0.11.14');
 assert.equal(Object.keys(SKILLS).length,50,'skill total 41');
 const counts={COMMON:0,FINE:0,RARE:0,EPIC:0,LEGENDARY:0,MYTHIC:0}; Object.values(SKILLS).forEach(s=>counts[s.rarity]++);
 assert.deepEqual(counts,{COMMON:9,FINE:6,RARE:14,EPIC:10,LEGENDARY:1,MYTHIC:10});

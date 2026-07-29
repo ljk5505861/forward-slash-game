@@ -242,6 +242,7 @@ export const ParasiticGuSkill={
           const multiplier=berserk
             ?POISON_SUMMON_TUNING.gu.berserkPoisonEnergyMultiplier
             :1;
+          const contractEnergy=scene.professionSystem?.summonCreatureContractMultiplier?.('parasitic_gu','poisonEnergyMultiplier')||1;
           healEntity(
             gu,
             payload.actualDamage*data.poisonAbsorbRatio*multiplier,
@@ -249,7 +250,8 @@ export const ParasiticGuSkill={
           );
           gu.energy+=payload.actualDamage
             *data.poisonEnergyRatio
-            *multiplier;
+            *multiplier
+            *contractEnergy;
           if(gu.energy>=data.splitEnergy) split(gu,data);
         });
     });
@@ -281,7 +283,8 @@ export const ParasiticGuSkill={
         ){
           attach(gu,choose());
         }
-        gu.hp-=data.lifeLossPerSecond*deltaSeconds;
+        const lifeLossMultiplier=scene.professionSystem?.summonCreatureContractMultiplier?.('parasitic_gu','lifeLossMultiplier')||1;
+        gu.hp-=data.lifeLossPerSecond*lifeLossMultiplier*deltaSeconds;
         if(gu.hp<=0){
           kill(gu);
           nextReviveAt=now+data.reviveMs;

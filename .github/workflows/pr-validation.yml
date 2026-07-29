@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  v01113-full-pr-validation:
-    name: v0.11.13 full PR validation
+  v01114-full-pr-validation:
+    name: v0.11.14 full PR validation
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -36,6 +36,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate summon creature contracts
+        run: npm run validate:01114-summon-creature-contracts
 
       - name: Validate profession rework
         run: npm run validate:01113-profession-rework

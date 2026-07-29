@@ -7,7 +7,7 @@
     "validate:reward-bias": "node scripts/validate-reward-bias.mjs",
     "validate:gameplay-entry": "node scripts/validate-gameplay-entry.mjs",
     "validate:selection-ui": "node scripts/validate-selection-ui.mjs",
-    "validate:profession-flow": "npm run validate:01113-profession-rework",
+    "validate:profession-flow": "npm run validate:01113-profession-rework && npm run validate:01114-summon-creature-contracts",
     "validate:player-info-flow": "node scripts/validate-player-info-flow.mjs",
     "validate:shop-flow": "node scripts/validate-shop-flow.mjs",
     "validate:enemy-population": "node scripts/validate-enemy-population.mjs",
@@ -122,6 +122,7 @@
     "validate:01111-spell-tide": "node scripts/validate-01111-spell-tide.mjs",
     "validate:01112-mech-flow": "node scripts/validate-01112-mech-flow.mjs",
     "validate:01113-profession-rework": "node scripts/validate-01113-profession-rework.mjs",
+    "validate:01114-summon-creature-contracts": "node scripts/validate-01114-summon-creature-contracts.mjs",
     "validate:lightning-enchant": "npm run validate:01082-lightning-enchant"
   },
   "dependencies": {
@@ -129,5 +130,5 @@
     "vite": "latest"
   },
   "devDependencies": {},
-  "version": "0.11.13"
+  "version": "0.11.14"
 }

@@ -10,7 +10,7 @@ import { applyEnemyGravity, getEnemyMoveSpeed, getEnemyAttackDelay, isGravitySup
 import { CombatEvents } from '../src/core/CombatEvents.js';
 
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-assert.equal(GAME_VERSION,'0.11.13'); assert.equal(pkg.version,'0.11.13'); assert.equal(Object.keys(SKILLS).length,50);
+assert.equal(GAME_VERSION,'0.11.14'); assert.equal(pkg.version,'0.11.14'); assert.equal(Object.keys(SKILLS).length,50);
 const cfg=SKILLS.sky_covering_palm; assert(cfg); assert.equal(Object.values(SKILLS).filter(s=>s.id==='sky_covering_palm').length,1);
 assert.equal(cfg.rarity,'EPIC'); assert.equal(cfg.maxLevel,9); assert.equal(cfg.passive,false); assert.equal(cfg.targetType,'random');
 [TAGS.MAGIC,TAGS.SPELL,TAGS.ACTIVE_SKILL,TAGS.CULTIVATION,TAGS.BUILD_CULTIVATION].forEach(t=>assert(cfg.tags.includes(t)));

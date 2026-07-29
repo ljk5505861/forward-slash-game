@@ -8,7 +8,7 @@ import { CHARGED_SLAM_DAMAGE_RATIOS, CHARGED_SLAM_RADII, CHARGED_SLAM_ATTACKS, g
 import { getSkillBarStateText } from '../src/ui/skillBarState.js';
 
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-assert.equal(GAME_VERSION,'0.11.13'); assert.equal(pkg.version,'0.11.13');
+assert.equal(GAME_VERSION,'0.11.14'); assert.equal(pkg.version,'0.11.14');
 const cfg=SKILLS.charged_slam; assert(cfg); assert.equal(cfg.rarity,'FINE'); assert.equal(cfg.passive,true); assert.equal(cfg.targetType,'passive'); assert.equal(cfg.maxLevel,9); assert.equal(cfg.requiredSkillId,undefined);
 assert.deepEqual(cfg.levels.map(x=>x.damageRatio),CHARGED_SLAM_DAMAGE_RATIOS); assert.deepEqual(cfg.levels.map(x=>x.radius),CHARGED_SLAM_RADII); assert.deepEqual(cfg.levels.map(x=>x.attacksRequired),CHARGED_SLAM_ATTACKS);
 assert.equal(Object.keys(SKILLS).length,50); assert.equal(Object.values(SKILLS).filter(x=>x.rarity==='FINE').length,6); assert.equal(new Set(Object.values(SKILLS).map(x=>x.id)).size,50);
