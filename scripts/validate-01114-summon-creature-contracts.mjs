@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import '../src/skills/handlers/index.js';
+import { GAME_VERSION } from '../src/config/version.js';
 import { createPlayerRuntime } from '../src/config/balance.js';
 import { SKILLS } from '../src/config/skills.js';
 import { CombatEvents } from '../src/core/CombatEvents.js';
@@ -39,6 +40,7 @@ function makeScene(){
   return scene;
 }
 
+assert.equal(GAME_VERSION,'0.11.14');
 assert.deepEqual(
   [...SUMMON_CREATURE_CONTRACT_IDS].sort(),
   ['spirit_wolves','spirit_bird','spirit_slime','parasitic_gu','poison_king'].sort()
@@ -85,6 +87,23 @@ for(const excluded of ['sword_wave','sword_sheath','sword_tomb','poison_chain'])
     summonDirectSingleTarget:true
   });
   assert.equal(enemy.hp,362,'wolf base damage 100 becomes 125 before summoner 10% bonus');
+}
+
+{
+  const scene=makeScene();
+  scene.playerData.skills=[{id:'spirit_wolves',level:1}];
+  scene.professionSystem.selectProfession('summoner');
+  scene.playerData.advancedProfessionId='summon_commander';
+  scene.professionSystem.applyAdvanced('summon_commander');
+  const main={hp:500,x:0,y:0};
+  const nearby={hp:500,x:50,y:0};
+  scene.targeting.all=()=>[main,nearby];
+  scene.professionSystem.applySummonSplash(
+    {target:main,x:0,y:0},
+    138,
+    {skillId:'spirit_wolves',tags:['summon'],summonDirectSingleTarget:true}
+  );
+  assert.equal(nearby.hp,472,'commander splash uses 20% of already-contracted damage and does not apply wolf contract twice');
 }
 
 {
