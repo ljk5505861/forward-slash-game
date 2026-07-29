@@ -27,7 +27,8 @@ export function correctedPoisonKingGrowthHp({
   newMaxHp,
   newBaseMaxHp,
   stageGain,
-  poisonKingLevel
+  poisonKingLevel,
+  stageStatMultiplier = 1
 }) {
   const safeOldMaxHp = Math.max(1, Number(oldMaxHp) || 1);
   const safeOldBaseMaxHp = Math.max(1, Number(oldBaseMaxHp) || safeOldMaxHp);
@@ -40,7 +41,11 @@ export function correctedPoisonKingGrowthHp({
     safeOldBaseMaxHp,
     safeOldHp * safeOldBaseMaxHp / safeOldMaxHp
   );
-  const healPerStage = POISON_ADVANCED_TUNING.king.hpPerStage
+  const stageHpGain = Math.round(
+    POISON_ADVANCED_TUNING.king.hpPerStage
+      * Math.max(1, Number(stageStatMultiplier) || 1)
+  );
+  const healPerStage = stageHpGain
     + (poisonKingLevel >= 3 ? POISON_ADVANCED_TUNING.king.stageHealL3 : 0);
   const newBaseHp = Math.min(
     safeNewBaseMaxHp,
@@ -80,7 +85,32 @@ export const PoisonKingSkillWithSpiritSlime = {
       };
     });
 
-    const originalOff = PoisonKingSkill.bind(system);
+    const eventBus = scene.eventBus;
+    const originalOn = eventBus.on;
+    let wrappedGrowthListener = false;
+    eventBus.on = function(eventName, listener) {
+      if (!wrappedGrowthListener && eventName === CombatEvents.STATUS_TICK) {
+        wrappedGrowthListener = true;
+        return originalOn.call(this, eventName, payload => {
+          if (!isNormalPoisonTick(payload)) return listener(payload);
+          const growthMultiplier = scene.professionSystem
+            ?.summonCreatureContractMultiplier?.('poison_king', 'growthMultiplier') || 1;
+          if (growthMultiplier === 1) return listener(payload);
+          return listener({
+            ...payload,
+            actualDamage: payload.actualDamage * growthMultiplier
+          });
+        });
+      }
+      return originalOn.call(this, eventName, listener);
+    };
+
+    let originalOff;
+    try {
+      originalOff = PoisonKingSkill.bind(system);
+    } finally {
+      eventBus.on = originalOn;
+    }
 
     const offAfter = scene.eventBus.on(CombatEvents.STATUS_TICK, payload => {
       const snapshot = beforeGrowth;
@@ -90,6 +120,23 @@ export const PoisonKingSkillWithSpiritSlime = {
       if (!king || king !== snapshot.king || king.dead || king.hp <= 0) return;
       const stageGain = Math.max(0, (king.stage || 0) - snapshot.stage);
       if (stageGain <= 0) return;
+
+      const stageStatMultiplier = scene.professionSystem
+        ?.summonCreatureContractMultiplier?.('poison_king', 'stageStatMultiplier') || 1;
+      if (stageStatMultiplier > 1) {
+        const standardGain = POISON_ADVANCED_TUNING.king.hpPerStage;
+        const contractedGain = Math.round(standardGain * stageStatMultiplier);
+        king.baseMaxHp = (king.baseMaxHp || king.maxHp)
+          + stageGain * Math.max(0, contractedGain - standardGain);
+        const data = system.getData('poison_king') || {};
+        scene.professionSystem?.applyEntitySummonStats?.(king, 'poison_king', {
+          baseAttack: (data.biteDamage || 0)
+            + (king.stage || 0) * POISON_ADVANCED_TUNING.king.damagePerStage,
+          baseDefense: 0,
+          baseMaxHp: king.baseMaxHp
+        });
+      }
+
       king.hp = correctedPoisonKingGrowthHp({
         oldHp: snapshot.hp,
         oldMaxHp: snapshot.maxHp,
@@ -97,7 +144,8 @@ export const PoisonKingSkillWithSpiritSlime = {
         newMaxHp: king.maxHp,
         newBaseMaxHp: king.baseMaxHp || king.maxHp,
         stageGain,
-        poisonKingLevel: system.getLevel('poison_king')
+        poisonKingLevel: system.getLevel('poison_king'),
+        stageStatMultiplier
       });
       syncHpBar(king);
     });
