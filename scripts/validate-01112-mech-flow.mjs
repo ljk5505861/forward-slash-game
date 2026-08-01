@@ -9,7 +9,7 @@ import { PoweredArmorSkill, ShoulderMissileSkill, OverloadCoreSkill, getPoweredA
 import { selectDenseEnemyCluster, launchShoulderVolley, launchEnergyCannon, clearMechTasks, shiftMechTimers, createMechRuntime, MechRuntimeSkill } from '../src/skills/handlers/MechRuntime.js';
 
 const pkg=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url)));
-assert.equal(GAME_VERSION,'0.11.14'); assert.equal(pkg.version,'0.11.14');
+assert.equal(GAME_VERSION,'0.11.15'); assert.equal(pkg.version,'0.11.15');
 assert.equal(Object.keys(SKILLS).length,50); assert.equal(new Set(Object.values(SKILLS).map(s=>s.id)).size,50);
 assert.deepEqual(Object.values(SKILLS).reduce((a,s)=>(a[s.rarity]=(a[s.rarity]||0)+1,a),{}),{COMMON:9,RARE:14,EPIC:10,MYTHIC:10,FINE:6,LEGENDARY:1});
 assert.equal(TAGS.MECH,'mech'); assert.equal(TAGS.BUILD_MECH,'buildMech'); assert(BUILD_TAGS.includes(TAGS.BUILD_MECH));

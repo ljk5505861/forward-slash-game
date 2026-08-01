@@ -21,7 +21,7 @@ class Bus{constructor(){this.map=new Map();}on(e,f){const a=this.map.get(e)||[];
 const enemy=(hp=500,x=100)=>({hp,maxHp:hp,x,y:100,defense:0,damageReduction:0,physicalDamageTakenBonuses:{},active:true,isDefeated:false,destroy(){}});
 function scene(){const s={playerData:createPlayerRuntime(),eventBus:new Bus(),enemies:[],player:{x:0,y:0},killCount:0,balance:{stageWorldWidth:1000,enemyFadeMs:1},targeting:{valid:e=>!!e&&e.active!==false&&!e.isDefeated&&e.hp>0,isEnemyFullyInsideViewport:()=>true,all:()=>s.enemies},floatText(){},tweens:{add(){return{}}},runStats:{setProfession(){}},hud:{update(){}},skillSystem:{recoverMana(n){const p=s.playerData,b=p.mana;p.mana=Math.min(p.maxMana,p.mana+n);return p.mana-b;}},healPlayer(n){const p=s.playerData,b=p.hp;p.hp=Math.min(p.maxHp,p.hp+n);return p.hp-b;},getGameplayTime:()=>1000};s.professionSystem=new ProfessionSystem(s);s.statusEffects=new StatusEffectSystem(s);s.combatSystem=new CombatSystem(s);return s;}
 
-assert.equal(GAME_VERSION,'0.11.14');
+assert.equal(GAME_VERSION,'0.11.15');
 assert.deepEqual(Object.keys(PROFESSIONS),['warrior','mage','summoner']);
 for(const id of Object.keys(PROFESSIONS))assert.equal(getAdvancedProfessionChoices(id).length,3);
 for(const old of ['ranger','guardian','swordmaster','elementalist','blood_mage','sharpshooter','beast_hunter','shadow_dancer'])assert.equal(PROFESSIONS[old]||ADVANCED_PROFESSIONS[old],undefined);

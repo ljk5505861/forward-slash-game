@@ -123,6 +123,7 @@
     "validate:01112-mech-flow": "node scripts/validate-01112-mech-flow.mjs",
     "validate:01113-profession-rework": "node scripts/validate-01113-profession-rework.mjs",
     "validate:01114-summon-creature-contracts": "node scripts/validate-01114-summon-creature-contracts.mjs",
+    "validate:01115-game-speed": "node scripts/validate-01115-game-speed.mjs",
     "validate:lightning-enchant": "npm run validate:01082-lightning-enchant"
   },
   "dependencies": {
@@ -130,5 +131,5 @@
     "vite": "latest"
   },
   "devDependencies": {},
-  "version": "0.11.14"
+  "version": "0.11.15"
 }

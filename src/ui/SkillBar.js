@@ -56,13 +56,13 @@ export default class SkillBar {
     const skillData = this.scene.playerData.skills[slotIndex]; if (!skillData) return;
     const startingSkillId = skillData.id;
     this.cancelLongPress();
-    const timer = this.scene.time.delayedCall(SKILL_DETAIL_LONG_PRESS_MS, () => {
+    const timerId = globalThis.setTimeout(() => {
       const currentSkill = this.scene.playerData.skills[slotIndex];
       if (this.destroyed || !this.longPress || this.longPress.pointerId !== pointer.id || this.longPress.slotIndex !== slotIndex) return;
       if (!currentSkill || currentSkill.id !== startingSkillId || this.scene.upgradeSystem?.pendingReplacement) { this.cancelLongPress(pointer); return; }
       this.longPress.triggered = true; this.showDetail(slotIndex);
-    });
-    this.longPress = { slotIndex, pointerId:pointer.id, startX:pointer.x, startY:pointer.y, triggered:false, timer, box };
+    }, SKILL_DETAIL_LONG_PRESS_MS);
+    this.longPress = { slotIndex, pointerId:pointer.id, startX:pointer.x, startY:pointer.y, triggered:false, timerId, box };
   }
   onSlotPointerMove(slotIndex, pointer, box) {
     const lp=this.longPress; if(!lp || lp.pointerId!==pointer.id || lp.slotIndex!==slotIndex || lp.triggered) return;
@@ -77,7 +77,7 @@ export default class SkillBar {
     const triggered=lp.triggered; this.cancelLongPress(pointer); if(triggered) return;
     if(this.scene.playerData.skills[slotIndex]?.id===MANTRA_HEAVENLY_BOOK_ID) openMantraHeavenlyBookSelection(this.scene);
   }
-  cancelLongPress(pointer=null){ if(pointer&&this.longPress&&this.longPress.pointerId!==pointer.id) return; this.longPress?.timer?.remove?.(false); this.longPress=null; }
+  cancelLongPress(pointer=null){ if(pointer&&this.longPress&&this.longPress.pointerId!==pointer.id) return; if(this.longPress?.timerId!=null) globalThis.clearTimeout(this.longPress.timerId); this.longPress=null; }
 
   showDetail(slotIndex){ const skill=this.scene.playerData.skills[slotIndex]; if(!skill) return; const data=getSkillDetailData(skill.id,{ scene:this.scene, skill }); if(!data) return; this.hideDetail(); this.detailScrollY=0; this.detailData=data; const depth=5000;
     const hasFixedCopyButton=skill.id===MYRIAD_AFTERIMAGE_SKILL_ID;
