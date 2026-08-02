@@ -8,7 +8,7 @@ import SkillSystem from '../src/systems/SkillSystem.js';
 import { selectSoulDestroyingNeedleTarget } from '../src/skills/handlers/CultivationSoulDestroyingNeedleSkill.js';
 import { CombatEvents } from '../src/core/CombatEvents.js';
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-assert.equal(GAME_VERSION,'0.11.14'); assert.equal(pkg.version,'0.11.14'); assert.equal(Object.keys(SKILLS).length,50);
+assert.equal(GAME_VERSION,'0.11.15'); assert.equal(pkg.version,'0.11.15'); assert.equal(Object.keys(SKILLS).length,50);
 const cfg=SKILLS.soul_destroying_needle; assert(cfg); assert.equal(cfg.rarity,'EPIC'); assert.equal(cfg.maxLevel,9); assert.equal(cfg.passive,false); assert.equal(cfg.requiredSkillId,undefined);
 [TAGS.MAGIC,TAGS.SPELL,TAGS.PROJECTILE,TAGS.ACTIVE_SKILL,TAGS.CULTIVATION,TAGS.BUILD_CULTIVATION].forEach(tag=>assert(cfg.tags.includes(tag)));
 assert.deepEqual(cfg.levels.map(x=>x.damage),[72,80,90,101,113,126,141,157,175]); assert.deepEqual(cfg.levels.map(x=>x.cooldownMs),[5800,5600,5400,5200,5000,4800,4600,4400,4200]); assert.deepEqual(cfg.levels.map(x=>x.manaCost),[10,10,10,11,11,12,12,13,14]);

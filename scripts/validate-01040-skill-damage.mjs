@@ -10,7 +10,7 @@ const src=file=>readFileSync(new URL(`../${file}`,import.meta.url),'utf8');
 const hasHandler=handler=>new RegExp(`${handler}:`).test(src('src/skills/handlers/index.js'));
 const archetypes={fire:['fireball','fire_seed','burn_burst','solar_flame'],sword:['sword_wave','sword_sheath','sword_tomb'],strength:['giant_force','spinning_blade','bloodthirst','last_stand'],defense:['healing','thorn_armor','guardian_shield'],afterimage:['shadow_fist','traceless','phantom_step','instant_step','myriad_afterimage'],poison:['poison_cloud','parasitic_gu','poison_chain','poison_king'],summon:['spirit_wolves','spirit_bird','spirit_slime'],weapon:['lightning_enchant','lightning_mark','lightning_tribulation'],gravity:['gravity_crush','gravity_reversal','gravity_orb','black_hole'],celestial:['neutron_star','white_dwarf'],superhero:['super_speed','laser_eyes','freezing_breath','human_god'],cultivation:['ninefold_dao','alchemy','sky_covering_palm','soul_destroying_needle','mantra_heavenly_book'],mech:['powered_armor','shoulder_missile','overload_core'],standalone:['charged_slam','kinetic_release','spell_tide']};
 const allSkillIds=Object.values(archetypes).flat();
-assert.equal(GAME_VERSION,'0.11.14','game version for v0.11.14 skill regression');
+assert.equal(GAME_VERSION,'0.11.15','game version for v0.11.14 skill regression');
 eq(allSkillIds.length,50,'all current 50 skills listed');
 eq(new Set(allSkillIds).size,50,'all current 50 skills unique');
 eq(Object.keys(SKILLS).sort(),[...allSkillIds].sort(),'skill pool exactly matches current archetype list');

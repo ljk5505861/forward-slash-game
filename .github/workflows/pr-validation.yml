@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  v01114-full-pr-validation:
-    name: v0.11.14 full PR validation
+  v01115-full-pr-validation:
+    name: v0.11.15 full PR validation
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -36,6 +36,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate game speed
+        run: npm run validate:01115-game-speed
 
       - name: Validate summon creature contracts
         run: npm run validate:01114-summon-creature-contracts

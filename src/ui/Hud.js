@@ -32,10 +32,14 @@ export default class Hud {
     this.gold=scene.add.text(DESIGN_WIDTH-292,92,'🪙 0',{fontFamily:'Arial',fontSize:'22px',color:'#ffd166',stroke:'#000',strokeThickness:4}).setScrollFactor(0).setDepth(DEPTH+2);
     this.stage=scene.add.text(DESIGN_WIDTH-182,92,'',{fontFamily:'Arial',fontSize:'20px',color:'#e9efff',stroke:'#000',strokeThickness:4}).setScrollFactor(0).setDepth(DEPTH+2);
     this.settings=scene.add.text(DESIGN_WIDTH-48,88,'⚙',{fontFamily:'Arial',fontSize:'28px',color:'#ffffff',stroke:'#000',strokeThickness:4}).setScrollFactor(0).setDepth(DEPTH+2);
+    this.speedButton=scene.add.text(DESIGN_WIDTH-64,142,'1×',{fontFamily:'Arial',fontSize:'22px',fontStyle:'bold',color:'#ffffff',backgroundColor:'#24415f',padding:{left:16,right:16,top:11,bottom:11}}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+3);
+    this.speedButton.setInteractive?.({useHandCursor:true});
+    this.speedButton.on?.('pointerdown',()=>scene.cycleGameSpeed?.());
     this.version=scene.add.text(DESIGN_WIDTH/2,76,GAME_VERSION_LABEL,{fontFamily:'Arial',fontSize:'18px',color:'#cbd6ee',stroke:'#000',strokeThickness:3}).setOrigin(0.5,0).setScrollFactor(0).setDepth(DEPTH);
     this.boss=scene.add.text(DESIGN_WIDTH/2,104,'',{fontFamily:'Arial',fontSize:'22px',color:'#ffd1ff',stroke:'#000',strokeThickness:4}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+1);
-    this.nodes=[this.leftPanel,this.heart,this.levelText,this.hpBg,this.hpFill,this.hpText,this.mpBg,this.mpFill,this.mpText,this.stBg,this.stFill,this.cultPanel,this.cultBg,this.cultFill,this.cultText,this.rightPanel,this.gold,this.stage,this.settings,this.version,this.boss];
+    this.nodes=[this.leftPanel,this.heart,this.levelText,this.hpBg,this.hpFill,this.hpText,this.mpBg,this.mpFill,this.mpText,this.stBg,this.stFill,this.cultPanel,this.cultBg,this.cultFill,this.cultText,this.rightPanel,this.gold,this.stage,this.settings,this.speedButton,this.version,this.boss];
   }
+  setGameSpeed(speed){ this.speedButton?.setText(`${speed}×`); }
   setStatus(m){ this.statusMessage=m||''; }
   setStage(n){ this.stageName=n||''; }
   setBar(fill,width,current,max){ const ratio=max>0?clamp01(current/max):0; fill.setDisplaySize(Math.round(width*ratio), fill.height); }
