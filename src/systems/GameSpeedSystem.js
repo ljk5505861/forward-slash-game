@@ -11,9 +11,7 @@ export default class GameSpeedSystem {
     this.gameplayTimeMs = 0;
     this.realActivePlayTimeMs = 0;
     this.speedChanges = [];
-    const world = scene.physics?.world;
-    this.physicsFrameTime = world?._frameTime ?? (1/60);
-    this.physicsFrameTimeMs = world?._frameTimeMS ?? (1000/60);
+    this.physicsPausedBySystem = false;
     this.syncEngineClocks(false);
   }
   advance(realDeltaMs, paused = false) {
@@ -39,8 +37,15 @@ export default class GameSpeedSystem {
     if (this.scene.time) this.scene.time.timeScale = scale;
     this.scene.tweens?.setGlobalTimeScale?.(scale);
     const world=this.scene.physics?.world;
-    if(world){ world._frameTime=this.physicsFrameTime*(paused?0:this.speed); world._frameTimeMS=paused?Number.POSITIVE_INFINITY:this.physicsFrameTimeMs/this.speed; }
+    if(!world) return;
+    world.timeScale=1/this.speed;
+    if(paused && !world.isPaused){ world.pause?.(); this.physicsPausedBySystem=true; }
+    else if(!paused && this.physicsPausedBySystem){ world.resume?.(); this.physicsPausedBySystem=false; }
   }
   snapshot() { return { gameplayTimeMs:this.gameplayTimeMs, realActivePlayTimeMs:this.realActivePlayTimeMs, currentGameSpeed:this.speed, speedChanges:this.speedChanges.map(change=>({ ...change })) }; }
-  destroy() { const world=this.scene.physics?.world; if(world){ world._frameTime=this.physicsFrameTime; world._frameTimeMS=this.physicsFrameTimeMs; } }
+  destroy() {
+    const world=this.scene.physics?.world;
+    if(world){ world.timeScale=1; if(this.physicsPausedBySystem) world.resume?.(); }
+    this.physicsPausedBySystem=false;
+  }
 }
