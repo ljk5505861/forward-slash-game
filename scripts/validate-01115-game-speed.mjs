@@ -51,5 +51,5 @@ const stage=new StageSystem({}); const spawned=[]; stage.spawn=(id)=>spawned.pus
 const events={once(){},on(){},off(){}}; const phaserClock=new Clock({sys:{events,game:{loop:{time:0}}}}); let delayed=0; phaserClock.delayedCall(1000,()=>{delayed+=1;}); phaserClock.preUpdate(); phaserClock.timeScale=2; phaserClock.update(499,499); assert.equal(delayed,0); phaserClock.update(500,1); assert.equal(delayed,1);
 
 assert(!fs.readFileSync('src/systems/GameSpeedSystem.js','utf8').includes('_frameTime'));
-assert(/version is 0\.11\.15/.test(fs.readFileSync('scripts/validate-01043-boss-knockback.mjs','utf8')));
+assert(/version is 0\.11\.16/.test(fs.readFileSync('scripts/validate-01043-boss-knockback.mjs','utf8')));
 console.log(`v0.11.15 game speed passed; physics distances: ${distances.map(x=>x.toFixed(2)).join(', ')}.`);
