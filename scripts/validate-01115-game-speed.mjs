@@ -12,7 +12,7 @@ import StageSystem from '../src/systems/StageSystem.js';
 import { SpiritWolvesSkill } from '../src/skills/handlers/SpiritWolvesSkill.js';
 
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-assert.equal(GAME_VERSION,'0.11.16'); assert.equal(pkg.version,'0.11.16');
+assert.equal(GAME_VERSION,'0.11.17'); assert.equal(pkg.version,'0.11.17');
 assert.deepEqual(GAME_SPEEDS,[1,1.5,2]); assert.equal(DEFAULT_GAME_SPEED,1);
 assert.deepEqual(GAME_SPEEDS.map(nextGameSpeed),[1.5,2,1]);
 for(const invalid of [0,-1,1.25,3,NaN,null,undefined]) assert.equal(normalizeGameSpeed(invalid),1);
@@ -51,5 +51,5 @@ const stage=new StageSystem({}); const spawned=[]; stage.spawn=(id)=>spawned.pus
 const events={once(){},on(){},off(){}}; const phaserClock=new Clock({sys:{events,game:{loop:{time:0}}}}); let delayed=0; phaserClock.delayedCall(1000,()=>{delayed+=1;}); phaserClock.preUpdate(); phaserClock.timeScale=2; phaserClock.update(499,499); assert.equal(delayed,0); phaserClock.update(500,1); assert.equal(delayed,1);
 
 assert(!fs.readFileSync('src/systems/GameSpeedSystem.js','utf8').includes('_frameTime'));
-assert(/version is 0\.11\.16/.test(fs.readFileSync('scripts/validate-01043-boss-knockback.mjs','utf8')));
+assert(/version is 0\.11\.17/.test(fs.readFileSync('scripts/validate-01043-boss-knockback.mjs','utf8')));
 console.log(`v0.11.15 game speed passed; physics distances: ${distances.map(x=>x.toFixed(2)).join(', ')}.`);

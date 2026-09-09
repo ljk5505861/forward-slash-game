@@ -17,8 +17,8 @@ const assertValidLevels=(options,owned)=>options.filter(option=>option.type==='s
   assert(option.nextLevel<=SKILLS[option.skillId].maxLevel,'skill upgrade does not exceed max level');
 });
 
-assert.equal(GAME_VERSION,'0.11.16');
-assert.equal(pkg.version,'0.11.16');
+assert.equal(GAME_VERSION,'0.11.17');
+assert.equal(pkg.version,'0.11.17');
 assert.equal(Object.keys(SKILLS).length,50);
 assert.equal(MAX_SKILL_SLOTS,6);
 
