@@ -12,7 +12,7 @@ import StageSystem from '../src/systems/StageSystem.js';
 import { SpiritWolvesSkill } from '../src/skills/handlers/SpiritWolvesSkill.js';
 
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-assert.equal(GAME_VERSION,'0.11.15'); assert.equal(pkg.version,'0.11.15');
+assert.equal(GAME_VERSION,'0.11.16'); assert.equal(pkg.version,'0.11.16');
 assert.deepEqual(GAME_SPEEDS,[1,1.5,2]); assert.equal(DEFAULT_GAME_SPEED,1);
 assert.deepEqual(GAME_SPEEDS.map(nextGameSpeed),[1.5,2,1]);
 for(const invalid of [0,-1,1.25,3,NaN,null,undefined]) assert.equal(normalizeGameSpeed(invalid),1);
