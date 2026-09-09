@@ -26,6 +26,19 @@ assert.equal(upgrade.milestoneRows[0].activatesNow,true);
 assert.equal(fmt('myriadCopySkill',3).milestoneRows[0].activatesNow,false);
 assert.equal(fmt('skillLevel',3).milestoneRows[0].active,true);
 panel.createDetails(upgrade);
+assert.ok(!panel.detailNodes.some(n=>!n.text&&n.height>400),'no opaque detail backdrop covering the battlefield');
+const screenX=(node,x,scrollX)=>x-scrollX*(node.setScrollFactorArgs?.[0]??1);
+for(const cameraScroll of [0,120,720,2400]){
+ const clipLeft=screenX(panel.detailClip,24,cameraScroll),clipRight=screenX(panel.detailClip,696,cameraScroll);
+ const textNode=panel.detailNodes.find(n=>n.text===upgrade.purposeLines.join('\n'));
+ const textRight=screenX(textNode,textNode.x+624,cameraScroll);
+ assert.ok(clipLeft<=48&&clipRight>=textRight,'camera movement must not clip the rightmost text');
+}
+const neutron=formatSkillSelectionOption({type:'newSkill',skillId:'neutron_star'},{skills:[]});
+assert.ok(neutron.effectLines.join('\n').includes('单体脉冲72'),'keep current damage information');
+assert.ok(!neutron.effectLines.join('\n').includes('Lv3'),'no duplicate future-level preview');
+assert.equal(neutron.milestoneRows.length,3,'keep all three structured milestones');
+assert.ok(neutron.milestoneRows.every(row=>row.text.length>0));
 const texts=panel.detailNodes.filter(n=>n.text);
 assert.ok(texts.every(n=>n.x===48&&n.style.align==='left'&&n.setOriginArgs[0]===0));
 const growth=texts.find(n=>n.text==='等级成长'),prev=texts[texts.indexOf(growth)-1];

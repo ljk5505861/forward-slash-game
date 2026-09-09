@@ -65,9 +65,6 @@ export default class UpgradePanel{
         .setOrigin(0,0).setScrollFactor(0).setDepth(DEPTH+3);
       this.detailNodes.push(node); return node;
     };
-    const backdrop=this.scene.add.rectangle(360,(top+bottom)/2,672,bottom-top+24,0x142238,1)
-      .setScrollFactor(0).setDepth(DEPTH+1);
-    this.detailNodes.push(backdrop);
     const title=addText(top,formatted?.title||'点击上方选项查看详情',{
       fontSize:formatted?'32px':'24px',fontStyle:'bold',color:formatted?WHITE:MUTED});
     const bodyTop=top+title.height+16;
@@ -97,6 +94,7 @@ export default class UpgradePanel{
     let offset=0;
     this.detailClip=this.scene.make?.graphics({x:0,y:0,add:false});
     if(this.detailClip){
+      this.detailClip.setScrollFactor(0);
       this.detailClip.fillStyle(0xffffff).fillRect(24,bodyTop,672,Math.max(1,viewportBottom-bodyTop));
       this.detailMask=this.detailClip.createGeometryMask();
       moving.forEach(({node})=>node.setMask(this.detailMask));
