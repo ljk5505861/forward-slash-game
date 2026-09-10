@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import StageSystem, {FLOW_GROUPS,LevelFlowStates as F} from '../src/systems/StageSystem.js';
+import StageSystem, {WAVE_SETTLEMENT_MS,FLOW_GROUPS,LevelFlowStates as F} from '../src/systems/StageSystem.js';
 import {BALANCE,createPlayerRuntime} from '../src/config/balance.js';
 import {onShopClosed} from '../src/systems/ShopFlow.js';
 globalThis.window??={};
@@ -28,7 +28,7 @@ assert.equal(FLOW_GROUPS.length,18);
 for(const g of FLOW_GROUPS){assert.equal(g.waves.length,2);assert.equal(g.ids.length,2);assert.equal(g.rangedCounts.length,2);}
 // Keep real queue/drain/transition logic; replace only rendered enemy creation.
 stage.spawn=(id)=>{const e={active:true,isDefeated:false,id};scene.enemies.push(e);return e;};
-function clearWave(){time+=100000;stage.update(time);assert.ok(scene.enemies.length>0);scene.enemies=[];stage.update(time);}
+function clearWave(){time+=100000;stage.update(time);assert.ok(scene.enemies.length>0);scene.enemies=[];stage.update(time);assert.equal(stage.flowState,F.GROUP_COMBAT);time+=WAVE_SETTLEMENT_MS;stage.update(time);}
 for(let group=1;group<=18;group++){
  assert.equal(stage.groupIndex,group-1);assert.equal(stage.flowState,F.GROUP_COMBAT);
  stage.update(time);assert.equal(stage.currentWave,1);assert.equal(stage.progressionWaveIndex(),(group-1)*2);
@@ -54,7 +54,7 @@ for(let group=1;group<=18;group++){
  assert.equal(stage.onSkillRewardClosed(),false);
  if(group%3===0){const boss=`boss${group/3}`;
  if(group===9){assert.equal(stage.flowState,F.ADVANCED_PROFESSION_STATUE);stage.onAdvancedProfessionChosen();stage.onCampfireClosed('advanced');}
- else {assert.equal(stage.flowState,F.SHOP);scene.shopSystem.closeCurrent();}
+ else {assert.equal(stage.flowState,F.BOSS_RUSH);assert.equal(shops.length,group,'no extra shop after skill reward');}
  assert.equal(stage.flowState,F.BOSS_RUSH);assert.equal(stage.activeRush,boss);
  stage.spawnBoss(boss);assert.equal(stage.flowState,F.BOSS_FIGHT);scene.enemies=[];
  stage.onBossKilled(boss);stage.onBossKilled(boss);
@@ -66,7 +66,7 @@ for(let group=1;group<=18;group++){
 }
 assert.equal(events.filter(e=>e?.payload?.kind==='wave').length,36);
 assert.equal(shops.filter(s=>s.startsWith('group_')).length,18);
-assert.equal(shops.length,23,'18 regular visits plus 5 preserved boss supplies');
+assert.equal(shops.length,18,'only the 18 group shops remain');
 assert.equal(rewards.length,18);assert.equal(artifacts.length,5);assert.equal(campfires.length,6);
 stage.reset();scene.shopSystem.reset();paused=false;scene.enemies=[];stage.update(time);clearWave();
 assert.equal(scene.shopSystem.visits,1,'restart permits the first group shop again');
