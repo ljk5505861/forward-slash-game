@@ -4,7 +4,7 @@ import CombatSystem from '../src/systems/CombatSystem.js';
 import GameSpeedSystem, { GAME_SPEEDS } from '../src/systems/GameSpeedSystem.js';
 import { BALANCE, createPlayerRuntime } from '../src/config/balance.js';
 
-function harness(wave=1,speed=1){
+function harness(wave=4,speed=1){
   const modals=[],tweens=[];
   let paused=false;
   const scene={balance:BALANCE,enemies:[],killCount:0,playerData:createPlayerRuntime(),
@@ -37,7 +37,7 @@ function harness(wave=1,speed=1){
 }
 
 // Reproduce the real kill path: it removes the enemy immediately, but schedules corpse destruction later.
-for(const speed of GAME_SPEEDS) for(const wave of [1,2]) for(const isElite of [false,true]){
+for(const speed of GAME_SPEEDS) for(const wave of [2,4]) for(const isElite of [false,true]){
   const h=harness(wave,speed),corpse=h.enemy({isElite});
   h.combat.killEnemy(corpse);h.tick(0);
   assert.equal(h.scene.enemies.length,0);assert.equal(corpse.destroyed,undefined);
@@ -47,7 +47,7 @@ for(const speed of GAME_SPEEDS) for(const wave of [1,2]) for(const isElite of [f
   h.tick((WAVE_SETTLEMENT_MS-BALANCE.enemyFadeMs-1)/speed);
   assert.equal(h.modals.length,0);
   h.tick(1/speed);
-  assert.deepEqual(h.modals,[wave===1?'group_1':'skill']);
+  assert.deepEqual(h.modals,[wave===2?'skill':'group_1']);
   h.tick(10000);assert.equal(h.modals.length,1,'modal pause cannot duplicate settlement');
 }
 
@@ -71,7 +71,7 @@ for(const speed of GAME_SPEEDS) for(const wave of [1,2]) for(const isElite of [f
   const h=harness();h.stage.waveQueue=[{at:10000,id:'grunt'}];h.tick(0);
   assert.equal(h.stage.waveSettlementAt,null,'pending spawns prevent settlement');
   h.stage.waveQueue=[];h.tick(0);h.stage.reset();
-  h.stage.currentWave=1;h.stage.waveState='fighting';h.stage.waveSpawnFinished=true;
+  h.stage.currentWave=4;h.stage.waveState='fighting';h.stage.waveSpawnFinished=true;
   h.tick(1000);assert.equal(h.modals.length,0,'restart cannot reuse the old deadline');
   h.tick(800);assert.equal(h.modals.length,1);
 }

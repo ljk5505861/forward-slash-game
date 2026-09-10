@@ -12,8 +12,8 @@ const hud = read('src/ui/Hud.js');
 const tuning = read('src/config/tuning.js');
 const balance = read('src/config/balance.js');
 
-assert.equal(GAME_VERSION, '0.11.19');
-assert.equal(TUNING.leveling.wavesPerLevel, 2);
+assert.equal(GAME_VERSION, '0.11.20');
+assert.equal(TUNING.leveling.wavesPerLevel, 4);
 assert.equal(TUNING.leveling.playerHpPerLevel, 8);
 assert.equal(TUNING.leveling.playerManaPerLevel, 5);
 assert.equal(TUNING.leveling.initialPlayerMana, 100);
@@ -57,15 +57,16 @@ assert.equal(scene.playerData.maxHp,500);
 assert.equal(scene.playerData.mana,100);
 assert.equal(scene.playerData.maxMana,100);
 
+stageSystem.currentWave=4;
 stageSystem.finishGroup();
-assert.equal(stageSystem.pendingLevelUp,true,'second wave completion only queues the level-up');
-assert.equal(stageSystem.completedWaveCount,2);
+assert.equal(stageSystem.pendingLevelUp,true,'fourth wave completion only queues the level-up');
+assert.equal(stageSystem.completedWaveCount,4);
 assert.equal(scene.playerData.level,1,'player must remain Lv.1 while selection is open');
 assert.equal(stageSystem.currentEnemyLevel,1,'enemy level must remain Lv.1 while selection is open');
 assert.equal(scene.playerData.maxHp,500);
 assert.equal(scene.playerData.maxMana,100);
 
-assert.equal(stageSystem.onSkillRewardClosed(),true,'closing the three-choice reward applies the pending level-up');
+assert.equal(stageSystem.onShopClosed('group_1'),true,'closing the end-of-group shop applies the pending level-up');
 assert.equal(scene.playerData.level,2);
 assert.equal(stageSystem.currentEnemyLevel,2);
 assert.equal(scene.playerData.maxHp,508);
@@ -75,7 +76,7 @@ assert.equal(scene.playerData.mana,105);
 assert.equal(notifications.length,1,'level-up notification should appear exactly once');
 
 const afterFirst={...scene.playerData};
-assert.equal(stageSystem.onSkillRewardClosed(),false,'duplicate close callback must be ignored');
+assert.equal(stageSystem.onShopClosed('group_1'),false,'duplicate close callback must be ignored');
 assert.equal(scene.playerData.level,afterFirst.level);
 assert.equal(scene.playerData.maxHp,afterFirst.maxHp);
 assert.equal(scene.playerData.hp,afterFirst.hp);
@@ -84,9 +85,9 @@ assert.equal(scene.playerData.mana,afterFirst.mana);
 assert.equal(stageSystem.currentEnemyLevel,2);
 assert.equal(notifications.length,1);
 
-stageSystem.completedWaveCount=4;
+stageSystem.completedWaveCount=8;
 stageSystem.pendingLevelUp=true;
-assert.equal(stageSystem.applyPendingLevelUp(),true,'second completed two-wave group applies the next level');
+assert.equal(stageSystem.applyPendingLevelUp(),true,'second completed four-wave group applies the next level');
 assert.equal(scene.playerData.level,3);
 assert.equal(stageSystem.currentEnemyLevel,3);
 assert.equal(scene.playerData.maxHp,516);

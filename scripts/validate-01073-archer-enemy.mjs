@@ -12,7 +12,7 @@ global.HTMLCanvasElement=class {};
 const { default: EnemyBehaviorManager, entryMove } = await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
 const { default: CombatSystem } = await import('../src/systems/CombatSystem.js');
 
-assert.equal(GAME_VERSION,'0.11.19');
+assert.equal(GAME_VERSION,'0.11.20');
 assert(ENEMIES.archer, 'archer config exists');
 assert.equal(ENEMIES.archer.behavior,'archer');
 assert.equal(ENEMIES.archer.attackRange,450);
@@ -67,7 +67,7 @@ FLOW_GROUPS.slice(3,11).forEach(g=>g.waves.forEach((_,i)=>assert.equal(idsOf(g,i
 FLOW_GROUPS.slice(0,11).forEach(g=>g.waves.forEach((_,i)=>assert.equal(idsOf(g,i).includes('bomber'),false,`before group 12 no bomber`)));
 const bomberWaves=[]; let totalArchers=0, totalBombers=0;
 FLOW_GROUPS.forEach(g=>g.waves.forEach((count,i)=>{ const ids=idsOf(g,i); assert.equal(ids.length,count,`group ${g.group} wave ${i+1} count`); const b=ids.filter(id=>id==='bomber').length; const h=ids.filter(id=>id==='healer').length; const a=ids.filter(id=>id==='archer').length; totalArchers+=a; totalBombers+=b; assert(b<=1,`group ${g.group} wave ${i+1} bomber cap`); assert(h<=1,`group ${g.group} wave ${i+1} healer cap`); if(b) bomberWaves.push(`${g.group}-${i+1}`); const expectedBack=g.rangedCounts?.[i]??0; assert.equal(ids.filter(id=>ranged.has(id)).length, expectedBack,`group ${g.group} wave ${i+1} ranged count`); }));
-assert.deepEqual(bomberWaves,['12-2','14-2','16-2','17-2','18-2']);
+assert.deepEqual(bomberWaves,['12-3','12-4','14-3','14-4','16-3','16-4','17-3','17-4','18-3','18-4']);
 assert(totalArchers > totalBombers * 8, 'archers are clearly the main ranged source');
 assert.equal(stage.makeWaveIds(['grunt','healer'],6,3).filter(x=>x.id==='archer').length,2,'archer fills ranged fallback when no ranged damage unit is in pool');
 assert.equal(stage.makeWaveIds(['grunt','bomber'],8,5).filter(x=>x.id==='bomber').length,1,'bomber does not fill high rangedCount loops');
