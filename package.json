@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "validate:01119-wave-settlement": "node scripts/validate-01119-wave-settlement.mjs",
     "validate:01118-two-wave-shop-loop": "node scripts/validate-01118-two-wave-shop-loop.mjs",
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
@@ -132,5 +133,5 @@
     "vite": "latest"
   },
   "devDependencies": {},
-  "version": "0.11.18"
+  "version": "0.11.19"
 }
