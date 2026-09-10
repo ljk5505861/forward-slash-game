@@ -11,7 +11,7 @@ export const TUNING = {
     bossDamageMultiplier: 0.8,
   },
   leveling: {
-    wavesPerLevel: 3,
+    wavesPerLevel: 2,
     playerHpPerLevel: 8,
     playerManaPerLevel: 5,
     initialPlayerMana: 100,

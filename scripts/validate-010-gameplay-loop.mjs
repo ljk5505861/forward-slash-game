@@ -18,12 +18,12 @@ function makeScene(){
   return scene;
 }
 
-assert.equal(GAME_VERSION,'0.11.17');
+assert.equal(GAME_VERSION,'0.11.18');
 assert.equal(BALANCE.camera.playerScreenAnchorX, 0.15);
 assert.equal(BALANCE.stageWorldWidth, 100000);
 assert.equal('entrySpeed' in BALANCE.enemies, false);
 assert.equal(BALANCE.enemyPopulation.waveClearDelayMs, 1500);
-assert.deepEqual(FLOW_GROUPS.map(g=>g.waves), [[3,3,3],[4,4,4],[5,5,5],[6,6,6],[7,7,7],[8,8,8],[9,9,9],[10,10,10],[11,12,12],[12,12,13],[13,13,14],[14,15,15],[15,15,16],[16,16,17],[17,18,18],[18,18,19],[19,20,20],[20,21,22]]);
+assert.deepEqual(FLOW_GROUPS.map(g=>g.waves), [[3,3],[4,4],[5,5],[6,6],[7,7],[8,8],[9,9],[10,10],[11,12],[12,13],[13,14],[14,15],[15,16],[16,17],[17,18],[18,19],[19,20],[20,22]]);
 ['GROUP_COMBAT','SKILL_REWARD','SHOP','BOSS_RUSH','BOSS_FIGHT','ARTIFACT_REWARD','PROFESSION_REWARD','ADVANCED_PROFESSION_STATUE','CAMPFIRE','VICTORY'].forEach(k=>assert.equal(LevelFlowStates[k], k));
 
 Object.values(SKILLS).forEach(skill=>{ assert.equal(skill.maxLevel,9, `${skill.id} maxLevel`); assert.equal(skill.levels.length,9, `${skill.id} levels`); [3,6,9].forEach(lv=>{ assert(skill.levels[lv-1], `${skill.id} Lv${lv}`); if(skill.milestones) assert.equal(skillMilestoneText(skill,lv), skill.milestones[lv]); }); });
@@ -68,7 +68,7 @@ scene.playerData.skills=[{id:'fireball',level:9},{id:'sword_wave',level:1},{id:'
 
 const stageScene=makeScene(); const stage=new StageSystem(stageScene); stageScene.stageSystem=stage; stage.start(); stage.update(0); assert.equal(stage.waveQueue.length,3); assert.equal(stage.makeWaveIds(['grunt','bomber'],5,1).filter(x=>x.role==='back').length,1); assert.equal(stage.makeWaveIds(['grunt','charger'],5,0).filter(x=>x.role==='back').length,0); assert(stage.makeWaveIds(['grunt','bomber'],6,2).slice(0,4).every(x=>x.role==='front')); assert(stage.makeWaveIds(['grunt','bomber'],6,2).slice(4).every(x=>x.role==='back'));
 stage.finishGroup(); assert.equal(stage.flowState,LevelFlowStates.SKILL_REWARD); assert.equal(stageScene.skillRewards.length,1); stage.onSkillRewardClosed(); assert.equal(stage.groupIndex,1); stage.onSkillRewardClosed(); assert.equal(stage.groupIndex,1);
-stage.groupIndex=2; stage.currentWave=3; stage.finishGroup(); stage.onSkillRewardClosed(); assert.deepEqual(stageScene.shopRequests,['first']); stage.onShopClosed('first'); assert.equal(stage.flowState,LevelFlowStates.BOSS_RUSH); stage.onBossKilled('boss1'); stage.onBossKilled('boss1'); assert.deepEqual(stageScene.artifactRequests,['boss1']); stage.beginAfterBossReward('boss1'); assert.deepEqual(stageScene.campfires,['boss1']); stage.onCampfireClosed('boss1'); assert.equal(stage.groupIndex,3);
+stage.groupIndex=2; stage.currentWave=2; stage.finishGroup(); stage.onSkillRewardClosed(); assert.deepEqual(stageScene.shopRequests,['first']); stage.onShopClosed('first'); assert.equal(stage.flowState,LevelFlowStates.BOSS_RUSH); stage.onBossKilled('boss1'); stage.onBossKilled('boss1'); assert.deepEqual(stageScene.artifactRequests,['boss1']); stage.beginAfterBossReward('boss1'); assert.deepEqual(stageScene.campfires,['boss1']); stage.onCampfireClosed('boss1'); assert.equal(stage.groupIndex,3);
 stage.activeRush='boss2'; stage.onBossKilled('boss2'); stage.onBossKilled('boss2'); assert.deepEqual(stageScene.artifactRequests,['boss1','boss2']); stage.beginAfterBossReward('boss2'); assert.equal(stageScene.professionChoices,1); stage.onProfessionChosen(); assert.deepEqual(stageScene.campfires,['boss1','boss2']);
 stage.enterAdvancedStatue(); assert.equal(stageScene.advancedChoices,1); stage.onAdvancedProfessionChosen(); assert.deepEqual(stageScene.campfires,['boss1','boss2','advanced']); stage.onCampfireClosed('advanced'); assert.equal(stage.flowState,LevelFlowStates.BOSS_RUSH);
 stage.activeRush='boss3'; stage.onBossKilled('boss3'); assert.equal(stageScene.victories,0); assert.deepEqual(stageScene.artifactRequests,['boss1','boss2','boss3']); stage.beginAfterBossReward('boss3'); stage.onCampfireClosed('boss3'); assert.equal(stage.groupIndex,9);

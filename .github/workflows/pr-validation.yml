@@ -37,6 +37,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate two-wave shop loop
+        run: npm run validate:01118-two-wave-shop-loop
+
       - name: Validate game speed
         run: npm run validate:01115-game-speed
 
