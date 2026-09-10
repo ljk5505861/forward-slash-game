@@ -12,8 +12,8 @@ const hud = read('src/ui/Hud.js');
 const tuning = read('src/config/tuning.js');
 const balance = read('src/config/balance.js');
 
-assert.equal(GAME_VERSION, '0.11.17');
-assert.equal(TUNING.leveling.wavesPerLevel, 3);
+assert.equal(GAME_VERSION, '0.11.18');
+assert.equal(TUNING.leveling.wavesPerLevel, 2);
 assert.equal(TUNING.leveling.playerHpPerLevel, 8);
 assert.equal(TUNING.leveling.playerManaPerLevel, 5);
 assert.equal(TUNING.leveling.initialPlayerMana, 100);
@@ -58,8 +58,8 @@ assert.equal(scene.playerData.mana,100);
 assert.equal(scene.playerData.maxMana,100);
 
 stageSystem.finishGroup();
-assert.equal(stageSystem.pendingLevelUp,true,'third wave completion only queues the level-up');
-assert.equal(stageSystem.completedWaveCount,3);
+assert.equal(stageSystem.pendingLevelUp,true,'second wave completion only queues the level-up');
+assert.equal(stageSystem.completedWaveCount,2);
 assert.equal(scene.playerData.level,1,'player must remain Lv.1 while selection is open');
 assert.equal(stageSystem.currentEnemyLevel,1,'enemy level must remain Lv.1 while selection is open');
 assert.equal(scene.playerData.maxHp,500);
@@ -84,9 +84,9 @@ assert.equal(scene.playerData.mana,afterFirst.mana);
 assert.equal(stageSystem.currentEnemyLevel,2);
 assert.equal(notifications.length,1);
 
-stageSystem.completedWaveCount=6;
+stageSystem.completedWaveCount=4;
 stageSystem.pendingLevelUp=true;
-assert.equal(stageSystem.applyPendingLevelUp(),true,'second completed three-wave group applies the next level');
+assert.equal(stageSystem.applyPendingLevelUp(),true,'second completed two-wave group applies the next level');
 assert.equal(scene.playerData.level,3);
 assert.equal(stageSystem.currentEnemyLevel,3);
 assert.equal(scene.playerData.maxHp,516);
