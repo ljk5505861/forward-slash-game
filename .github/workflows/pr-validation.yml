@@ -82,6 +82,9 @@ jobs:
       - name: Validate flame and solar flow
         run: npm run validate:01044-flame-rework
 
+      - name: Validate start menu and game modes
+        run: npm run validate:01121-start-menu
+
       - name: Validate skill pool
         run: npm run validate:01056-open-skill-pool
 

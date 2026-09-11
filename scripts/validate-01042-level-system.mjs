@@ -12,7 +12,7 @@ const hud = read('src/ui/Hud.js');
 const tuning = read('src/config/tuning.js');
 const balance = read('src/config/balance.js');
 
-assert.equal(GAME_VERSION, '0.11.20');
+assert.equal(GAME_VERSION, '0.11.21');
 assert.equal(TUNING.leveling.wavesPerLevel, 4);
 assert.equal(TUNING.leveling.playerHpPerLevel, 8);
 assert.equal(TUNING.leveling.playerManaPerLevel, 5);
