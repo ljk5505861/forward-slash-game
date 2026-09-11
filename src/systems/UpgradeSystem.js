@@ -48,13 +48,8 @@ export default class UpgradeSystem{
   isSkillUnlocked(){ return true; }
   rollOptions({ random = Math.random } = {}){ const p=this.scene.playerData, context=this.buildBiasContext(), candidates=[], fullSlots=p.skills.length>=MAX_SKILL_SLOTS; Object.values(SKILLS).forEach(skill=>{ const own=p.skills.find(s=>s.id===skill.id); if(own){ if(own.level<skill.maxLevel) candidates.push(this.weightSkillOption({type:'skillLevel',id:`lv_${skill.id}`,title:`升级：${skill.name} Lv.${own.level+1}`,skillId:skill.id,nextLevel:own.level+1},skill,8,context)); } else candidates.push(this.weightSkillOption({type:'newSkill',id:`new_${skill.id}`,title:`获得：${skill.name}`,skillId:skill.id,nextLevel:1},skill,fullSlots?3:6,context)); }); const picked=createWeightedCandidates(candidates,{count:3,random,uniqueKey:o=>o.skillId}); return ensureFullSlotUpgradeGuarantee({picked,candidates,fullSlots,random}).slice(0,3); }
   rollHighQualityOptions(){ return this.rollOptions(); }
-  rollStartingOptions(){
-    const skills=Object.values(SKILLS);
-    const mythics=skills.filter(skill=>skill.rarity==='MYTHIC'||skill.ultimateSkill);
-    const regular=skills.filter(skill=>!mythics.includes(skill));
-    const firstTwo=equalRandomPick(regular,2);
-    const mythic=equalRandomPick(mythics,1)[0];
-    return [...firstTwo,...(mythic?[mythic]:[])].map(startingOption);
+  rollStartingOptions({ random = Math.random } = {}){
+    return equalRandomPick(Object.values(SKILLS),3,random).map(startingOption);
   }
   maybeShow({force=false,title='技能三选一',source=RewardSources.STAGE_SKILL_REWARD,meta={}}={}){ if(this.panelOpen||this.pending<=0) return; const s=this.scene; if(!force && s.hasBlockingModal?.()) return; s.beginGameplayPause(); s.runState=RunStates.UPGRADING; this.panelOpen=true; const options=this.rollOptions(); s.upgradePanel.show({ title, options, onConfirm:o=>this.applyOption(o,{source,meta,originalOptions:options}) }); }
   requestSkillReward(title='技能三选一', { source=RewardSources.STAGE_SKILL_REWARD, meta={} }={}){ this.pending+=1; this.maybeShow({force:true,title,source,meta}); }
