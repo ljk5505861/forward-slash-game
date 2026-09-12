@@ -1,3 +1,4 @@
+import { rollNormalSkillCandidates } from '../config/normalSkillRewards.js';
 import { SKILLS } from '../config/skills.js';
 import { CombatEvents, RunStates } from '../core/CombatEvents.js';
 import { REWARD_BIAS } from '../config/rewardBias.js';
@@ -46,7 +47,7 @@ export default class UpgradeSystem{
   buildBiasContext(){ const p=this.scene.playerData; return getBuildBiasContext({ skills:p.skills, artifacts:p.artifacts, professionId:p.professionId, config:REWARD_BIAS }); }
   weightSkillOption(option, skill, baseWeight, context){ const bias=calculateBuildBiasWeight({ baseWeight, tags:skill.tags, context }); return { ...option, tags:skill.tags||[], baseWeight, ...bias }; }
   isSkillUnlocked(){ return true; }
-  rollOptions({ random = Math.random } = {}){ const p=this.scene.playerData, context=this.buildBiasContext(), candidates=[], fullSlots=p.skills.length>=MAX_SKILL_SLOTS; Object.values(SKILLS).forEach(skill=>{ const own=p.skills.find(s=>s.id===skill.id); if(own){ if(own.level<skill.maxLevel) candidates.push(this.weightSkillOption({type:'skillLevel',id:`lv_${skill.id}`,title:`升级：${skill.name} Lv.${own.level+1}`,skillId:skill.id,nextLevel:own.level+1},skill,8,context)); } else candidates.push(this.weightSkillOption({type:'newSkill',id:`new_${skill.id}`,title:`获得：${skill.name}`,skillId:skill.id,nextLevel:1},skill,fullSlots?3:6,context)); }); const picked=createWeightedCandidates(candidates,{count:3,random,uniqueKey:o=>o.skillId}); return ensureFullSlotUpgradeGuarantee({picked,candidates,fullSlots,random}).slice(0,3); }
+  rollOptions({ random = Math.random } = {}){ const p=this.scene.playerData, context=this.buildBiasContext(), candidates=[], fullSlots=p.skills.length>=MAX_SKILL_SLOTS; Object.values(SKILLS).forEach(skill=>{ const own=p.skills.find(s=>s.id===skill.id); if(own){ if(own.level<skill.maxLevel) candidates.push(this.weightSkillOption({type:'skillLevel',id:`lv_${skill.id}`,title:`升级：${skill.name} Lv.${own.level+1}`,skillId:skill.id,nextLevel:own.level+1},skill,8,context)); } else candidates.push(this.weightSkillOption({type:'newSkill',id:`new_${skill.id}`,title:`获得：${skill.name}`,skillId:skill.id,nextLevel:1},skill,fullSlots?3:6,context)); }); const picked=this.scene.runMode==='normal' ? rollNormalSkillCandidates(candidates,p.level,{count:3,random}) : createWeightedCandidates(candidates,{count:3,random,uniqueKey:o=>o.skillId}); return ensureFullSlotUpgradeGuarantee({picked,candidates,fullSlots,random}).slice(0,3); }
   rollHighQualityOptions(){ return this.rollOptions(); }
   rollStartingOptions({ random = Math.random } = {}){
     return equalRandomPick(Object.values(SKILLS),3,random).map(startingOption);

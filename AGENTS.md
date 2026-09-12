@@ -23,6 +23,8 @@
 
 ## Gameplay Rules
 
+- Apply future balance experiments to normal mode only unless the user explicitly requests otherwise. Preserve test-mode reward rules; shared bug fixes may apply to both modes.
+
 - Every skill must work when obtained independently.
 - Skills must not require prerequisite skills to appear in rewards.
 - Choosing one archetype may increase the probability of related skills, but must not block other archetypes.
