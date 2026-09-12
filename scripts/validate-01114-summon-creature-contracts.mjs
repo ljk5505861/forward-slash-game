@@ -45,7 +45,7 @@ function makeScene(){
   return scene;
 }
 
-assert.equal(GAME_VERSION,'0.11.21');
+assert.equal(GAME_VERSION,'0.11.22');
 assert.deepEqual(
   [...SUMMON_CREATURE_CONTRACT_IDS].sort(),
   ['spirit_wolves','spirit_bird','spirit_slime','parasitic_gu','poison_king'].sort()
