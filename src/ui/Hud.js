@@ -39,11 +39,12 @@ export default class Hud {
     this.boss=scene.add.text(DESIGN_WIDTH/2,104,'',{fontFamily:'Arial',fontSize:'22px',color:'#ffd1ff',stroke:'#000',strokeThickness:4}).setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH+1);
     this.nodes=[this.leftPanel,this.heart,this.levelText,this.hpBg,this.hpFill,this.hpText,this.mpBg,this.mpFill,this.mpText,this.stBg,this.stFill,this.cultPanel,this.cultBg,this.cultFill,this.cultText,this.rightPanel,this.gold,this.stage,this.settings,this.speedButton,this.version,this.boss];
   }
-  setGameSpeed(speed){ this.speedButton?.setText(`${speed}×`); }
+  setGameSpeed(speed){ if(this.destroyed) return; this.speedButton?.setText(`${speed}×`); }
   setStatus(m){ this.statusMessage=m||''; }
   setStage(n){ this.stageName=n||''; }
   setBar(fill,width,current,max){ const ratio=max>0?clamp01(current/max):0; fill.setDisplaySize(Math.round(width*ratio), fill.height); }
   update(){
+    if(this.destroyed) return;
     const p=this.scene.playerData;
     this.setBar(this.hpFill,BAR_W,p.hp,p.maxHp);
     this.levelText.setText(`Lv.${p.level||1}`);
@@ -59,5 +60,11 @@ export default class Hud {
     const boss=this.scene.enemies.find(e=>e.isBoss&&!e.isDefeated);
     this.boss.setText(boss?`${boss.name} ${boss.hp}/${boss.maxHp}`:'');
   }
-  destroy(){ this.nodes.forEach(x=>x?.destroy()); this.nodes=[]; }
+  destroy(){
+    if(this.destroyed) return;
+    this.destroyed=true;
+    if(this.scene?.hud===this) this.scene.hud=null;
+    this.nodes.forEach(x=>x?.destroy());
+    this.nodes=[];
+  }
 }

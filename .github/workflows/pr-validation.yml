@@ -88,6 +88,9 @@ jobs:
       - name: Validate normal skill rarity progression
         run: npm run validate:01122-normal-rarity
 
+      - name: Validate restart HUD lifecycle
+        run: npm run validate:01123-restart-hud
+
       - name: Validate skill pool
         run: npm run validate:01056-open-skill-pool
 

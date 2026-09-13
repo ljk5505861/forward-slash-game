@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "validate:01123-restart-hud": "node scripts/validate-01123-restart-hud.mjs",
     "validate:01122-normal-rarity": "node scripts/validate-01122-normal-rarity.mjs",
     "validate:01121-start-menu": "node scripts/validate-01121-start-menu.mjs",
     "validate:01119-wave-settlement": "node scripts/validate-01119-wave-settlement.mjs",
@@ -135,5 +136,5 @@
     "vite": "latest"
   },
   "devDependencies": {},
-  "version": "0.11.22"
+  "version": "0.11.23"
 }
