@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import { SHOP_ITEMS, LEGACY_SHOP_ITEMS, SHOP_SKILL_CHANCE, SHOP_SKILL_PRICES, shopRefreshPrice, shopSellPrice } from '../config/shopItems.js';
 import { SKILLS } from '../config/skills.js';
 import { rollNormalSkillCandidates } from '../config/normalSkillRewards.js';
@@ -37,7 +38,7 @@ export default class ShopSystem {
   }
   generateItems(count=4) {
     if(!this.normal) {
-      this.currentItems=this.shuffle(LEGACY_SHOP_ITEMS).slice(0,count).map(item=>({...item}));
+      this.currentItems=Phaser.Utils.Array.Shuffle([...LEGACY_SHOP_ITEMS]).slice(0,count).map(item=>({...item}));
     } else {
       const slots=Array.from({length:4},(_,index)=>{
         const offer=this.currentItems[index];

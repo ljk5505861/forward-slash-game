@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import '../src/skills/handlers/index.js';
-import ShopSystem from '../src/systems/ShopSystem.js';
+
 import SkillSystem from '../src/systems/SkillSystem.js';
 import ProfessionSystem from '../src/systems/ProfessionSystem.js';
 import { SHOP_ITEMS, LEGACY_SHOP_ITEMS, shopSellPrice } from '../src/config/shopItems.js';
@@ -11,6 +11,15 @@ import { createPlayerRuntime, getEffectiveAttack, getEffectiveDefense, getEffect
 import { getRarity } from '../src/config/rarities.js';
 import { formatSkillSelectionOption } from '../src/ui/selectionFormatters.js';
 import { drawShopIcon } from '../src/ui/shopIcons.js';
+
+globalThis.window??={};
+const context={fillRect(){},drawImage(){},getImageData(){return {data:new Uint8ClampedArray([0,0,0,255])};},putImageData(){},createImageData(){return {data:new Uint8ClampedArray(4)};},clearRect(){}};
+globalThis.document??={documentElement:{style:{}},createElement:()=>({getContext:()=>context,style:{}})};
+globalThis.navigator??={userAgent:'node'};
+globalThis.HTMLCanvasElement??=class {};
+globalThis.Image??=class { set src(_value){setTimeout(()=>this.onload?.(),0);} };
+
+const {default:ShopSystem}=await import('../src/systems/ShopSystem.js');
 
 function harness(mode='normal',random=()=>0.8) {
   const s={runMode:mode,playerData:createPlayerRuntime(),enemies:[],player:{x:100,y:100},
