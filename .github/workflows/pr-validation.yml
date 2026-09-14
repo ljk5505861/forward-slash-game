@@ -37,6 +37,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate growth shop behavior
+        run: npm run validate:01124-growth-shop
+
+      - name: Run every regression against PR base
+        env:
+          VALIDATION_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/run-validation-suite.mjs
+
       - name: Validate wave settlement pacing
         run: npm run validate:01119-wave-settlement
 
