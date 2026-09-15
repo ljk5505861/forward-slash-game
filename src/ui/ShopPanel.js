@@ -97,11 +97,11 @@ export default class ShopPanel {
     if(this.expanded && formatted) {
       const rows=[main,...(formatted.effectLines||[]),...(formatted.milestoneRows||[]).map(row=>'Lv.'+row.level+'：'+row.text)];
       // Short pages keep every line within the viewport; no cropping or browser-specific mask.
-      const lines=rows.flatMap(row=>this.wrap(row,25)), pages=Math.max(1,Math.ceil(lines.length/5));
+      const lines=rows.flatMap(row=>this.wrap(row,25)), pages=Math.max(1,Math.ceil(lines.length/3));
       this.detailPage=Math.min(this.detailPage,pages-1);
-      this.text(42,662,lines.slice(this.detailPage*5,this.detailPage*5+5).join('\n'),{fontSize:'22px',lineSpacing:4,color:MUTED});
+      this.text(42,662,lines.slice(this.detailPage*3,this.detailPage*3+3).join('\n'),{fontSize:'22px',lineSpacing:4,color:MUTED});
       this.button(595,808,164,(this.detailPage+1)+'/'+pages+' 下一页',()=>{this.detailPage=(this.detailPage+1)%pages;this.render();},{disabled:pages===1});
-    } else this.text(42,668,this.wrap(main,25).slice(0,4).join('\n'),{fontSize:'24px',lineSpacing:5});
+    } else this.text(42,668,this.wrap(main,25).slice(0,3).join('\n'),{fontSize:'24px',lineSpacing:5});
     if(formatted) this.button(132,808,180,this.expanded?'收起详情':'完整详情',()=>{this.expanded=!this.expanded;this.detailPage=0;this.render();});
     const bought=!selling&&system.purchased.has(item.id);
     const label=selling?'出售一件 · '+item.price+' 金币':bought?'已售出':'购买 · '+item.price+' 金币';

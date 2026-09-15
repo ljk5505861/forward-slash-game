@@ -59,6 +59,7 @@ try {
         s.shopPanel.render();
       });
       await tap(111,410);await tap(132,808);
+      assert.deepEqual(await page.evaluate(()=>s.shopPanel.nodes.filter(n=>n.type==='Text'&&[662,668].includes(n.y)&&n.getBounds().bottom>780).map(n=>n.text)),[],'skill details must stay above purchase buttons');
       await page.screenshot({path:'test-artifacts/shop/'+name+'-skill-details.png'});
       await tap(360,808);assert.equal(await page.evaluate(()=>s.skillSystem.getLevel('healing')),1);
       await page.evaluate(()=>{
@@ -78,6 +79,25 @@ try {
       await page.screenshot({path:'test-artifacts/shop/'+name+'-replacement.png'});
       await tap(530,850);assert.equal(await page.evaluate(()=>s.playerData.skills[5].id),'healing');
       assert(await page.evaluate(()=>s.playerData.gold===beforeReplaceGold-20));
+      assert.deepEqual(await page.evaluate(()=>{
+        const overflow=[];
+        for(const cfg of Object.values(skillCatalog)){
+          const offer={id:'layout_'+cfg.id,skillId:cfg.id,itemId:cfg.id,kind:'skill',name:cfg.name,
+            icon:cfg.short,rarity:cfg.rarity,price:20,type:'newSkill'};
+          s.shopSystem.currentItems=[offer];s.shopPanel.selectedId=offer.id;
+          for(const expanded of [false,true]){
+            s.shopPanel.expanded=expanded;s.shopPanel.detailPage=0;s.shopPanel.render();
+            const pages=expanded?Number(s.shopPanel.nodes.find(n=>n.type==='Text'&&n.text.includes(' 下一页'))?.text.match(/\/(\d+)/)?.[1]||1):1;
+            for(let index=0;index<pages;index++){
+              s.shopPanel.detailPage=index;s.shopPanel.render();
+              for(const node of s.shopPanel.nodes.filter(n=>n.type==='Text'&&[662,668].includes(n.y))){
+                const b=node.getBounds();if(b.bottom>780||b.right>700)overflow.push({id:cfg.id,expanded,index,text:node.text});
+              }
+            }
+          }
+        }
+        return overflow;
+      }),[],'all skill detail pages stay clear of buttons and screen edges');
       // Every pictogram and lengthy description must fit inside the portrait viewport.
       await page.evaluate(()=>{
         for(const item of shopCatalog){
