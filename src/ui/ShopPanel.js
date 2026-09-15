@@ -47,9 +47,9 @@ export default class ShopPanel {
     items.forEach((item,index)=>this.card(item,index,selling));
     if(selling && !all.length) this.text(360,410,'还没有可出售的道具',{color:MUTED},[0.5,0]);
     if(selling && all.length>4) {
-      this.button(248,570,100,'上一页',()=>{this.page--;this.selectedId=null;this.render();},{disabled:this.page===0});
-      this.text(360,570,(this.page+1)+' / '+Math.ceil(all.length/4),{fontSize:'20px'},[0.5,0.5]);
-      this.button(472,570,100,'下一页',()=>{this.page++;this.selectedId=null;this.render();},{disabled:(this.page+1)*4>=all.length});
+      this.button(248,584,100,'上一页',()=>{this.page--;this.selectedId=null;this.render();},{disabled:this.page===0});
+      this.text(360,584,(this.page+1)+' / '+Math.ceil(all.length/4),{fontSize:'20px'},[0.5,0.5]);
+      this.button(472,584,100,'下一页',()=>{this.page++;this.selectedId=null;this.render();},{disabled:(this.page+1)*4>=all.length});
     }
     const selected=items.find(item=>item.id===this.selectedId);
     if(selected) this.details(selected,selling); else this.text(42,632,selling?'点击道具查看返还金额':'点击商品查看效果',{color:MUTED});
@@ -77,7 +77,7 @@ export default class ShopPanel {
     } else this.add(drawShopIcon(this.scene,x,389,item.icon,item.color,76)).setAlpha(bought?0.3:1);
     this.text(x,454,item.name,{fontSize:'22px',color:bought?MUTED:rarity.uiColor,align:'center',wordWrap:{width:152}},[0.5,0]);
     this.text(x,508,bought?'已售出':item.price+' 金币',{fontSize:'23px',color:bought?MUTED:'#ffda80'},[0.5,0.5]);
-    if(selling) this.text(x,540,'×'+item.units,{fontSize:'20px',color:MUTED},[0.5,0]);
+    if(selling) this.text(x,530,'×'+item.units,{fontSize:'18px',color:MUTED},[0.5,0]);
     else if(system.normal&&!bought) {
       const lock=this.add(this.scene.add.graphics());
       lock.lineStyle(3,item.locked?0xffda80:0x97aabe,1);

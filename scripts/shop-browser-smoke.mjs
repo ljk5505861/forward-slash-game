@@ -111,7 +111,8 @@ try {
         assert.deepEqual(await page.evaluate(()=>s.shopPanel.nodes.filter(n=>n.type==='Text').filter(n=>{
           const b=n.getBounds();return b.left<20||b.right>700||b.bottom>1100;
         }).map(n=>n.text)),[],'text stays inside safe width');
-        if(i<3)await tap(472,570);
+        assert.deepEqual(await page.evaluate(()=>s.shopPanel.nodes.filter(n=>n.type==='Text'&&n.text.startsWith('×')&&n.getBounds().bottom>557).map(n=>n.text)),[],'owned counts must stay above pagination buttons');
+        if(i<3)await tap(472,584);
       }
       await tap(537,1022);
       assert.equal(await page.evaluate(()=>s.shopPanel.isOpen),false);
