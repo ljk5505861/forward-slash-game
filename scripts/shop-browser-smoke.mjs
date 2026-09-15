@@ -6,7 +6,8 @@ fs.mkdirSync('test-artifacts/shop',{recursive:true});
 const entry='src/shop-smoke-entry.js',html='shop-smoke.html';
 fs.writeFileSync(entry,fs.readFileSync('src/main.js','utf8').replace('const game = new Phaser.Game(gameConfig);','const game = window.__shopGame = new Phaser.Game(gameConfig);'));
 fs.writeFileSync(html,fs.readFileSync('index.html','utf8').replace('/src/main.js','/src/shop-smoke-entry.js'));
-const server=spawn('node',['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','4173'],{stdio:'pipe'});
+const server=spawn('node',['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','4173','--strictPort','--base','/'],{stdio:'pipe'});
+server.stderr.on('data',chunk=>process.stderr.write(chunk));
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 try {
   let ready=false;
