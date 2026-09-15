@@ -37,6 +37,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate growth shop behavior
+        run: npm run validate:01124-growth-shop
+
+      - name: Run every regression against PR base
+        env:
+          VALIDATION_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/run-validation-suite.mjs
+
       - name: Validate wave settlement pacing
         run: npm run validate:01119-wave-settlement
 
@@ -144,3 +152,21 @@ jobs:
 
       - name: Build production bundle
         run: npm run build
+
+      - name: Install browser smoke runtime
+        run: |
+          npm install --prefix /tmp/game-shop-browser playwright@1.55.1
+          node /tmp/game-shop-browser/node_modules/playwright/cli.js install --with-deps chromium webkit
+
+      - name: Exercise shop in Chromium and WebKit
+        env:
+          PLAYWRIGHT_MODULE: /tmp/game-shop-browser/node_modules/playwright/index.mjs
+        run: node scripts/shop-browser-smoke.mjs
+
+      - name: Upload shop browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shop-browser-screenshots
+          path: test-artifacts/shop
+          if-no-files-found: ignore
