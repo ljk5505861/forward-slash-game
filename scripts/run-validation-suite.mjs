@@ -22,7 +22,7 @@ if(failed.length && base){
   if(checkout.status!==0) throw new Error(checkout.stderr);
   try {
     fs.symlinkSync(path.join(root,'node_modules'),path.join(dir,'node_modules'),'dir');
-    const normalize=(result,cwd)=>(result.stdout+result.stderr).replaceAll(cwd,'<repo>')
+    const normalize=(result,cwd)=>(result.stdout+result.stderr).replaceAll(cwd,'<repo>').replace(/\(node:\d+\)/g,'(node:<pid>)')
       .replace(/0[.\\]+11[.\\]+\d+/g,'<version>').replace(/Node.js v[^\n]+/g,'<node>');
     for(const {file,result} of failed){
       const previous=execute(dir,file);
