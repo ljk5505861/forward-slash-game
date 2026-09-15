@@ -49,6 +49,7 @@ for(const item of SHOP_ITEMS) {
   p.attackBonuses.other=4;p.defenseBonuses.other=3;p.critMultiplierBonuses.other=.2;
   const before=stats(p),entry=offer(s,item.id),gold=p.gold;
   assert.equal(s.shopSystem.buy(entry.id).ok,true,item.id);
+  if(item.id==='hourglass_shard') assert.equal(p.cooldownReduction,0.02,'hourglass uses the field shown by the character panel');
   assert.notDeepEqual(stats(p),before,item.id+' has a real runtime effect');
   assert.equal(s.shopSystem.buy(entry.id).ok,false,'double buy');
   assert.equal(p.gold,gold-item.price);

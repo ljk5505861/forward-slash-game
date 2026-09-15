@@ -30,7 +30,7 @@ export const SHOP_ITEMS = [
   item('sharp_fang','尖牙','暴击伤害倍率 +0.05',8,'fang',0xe4eaf4,'critMultiplier',0.05,(p,n)=>bonus(p,'critMultiplierBonuses','shop_sharp_fang',n)),
   item('rune_shard','魔纹碎片','技能伤害 +5%',12,'rune',0xc0a0ff,'skillDamageMultiplier',0.05,(p,n)=>scalar(p,'skillDamageMultiplier',n)),
   item('battle_badge','战斗徽记','普通攻击伤害 +5%',8,'badge',0xf0b565,'normalAttackDamage',0.05,(p,n)=>bonus(p,'normalAttackDamageBonuses','shop_battle_badge',n)),
-  item('hourglass_shard','沙漏碎片','冷却缩减 +2个百分点',12,'hourglass',0xe7d594,'cooldownReduction',0.02,(p,n)=>bonus(p,'cooldownReductionBonuses','shop_hourglass_shard',n)),
+  item('hourglass_shard','沙漏碎片','冷却缩减 +2个百分点',12,'hourglass',0xe7d594,'cooldownReduction',0.02,(p,n)=>scalar(p,'cooldownReduction',n)),
   item('mana_crystal','回魔水晶','每秒法力恢复 +0.2',10,'crystal',0x68d5ec,'manaRegenPerSecond',0.2,(p,n)=>bonus(p,'manaRegenPerSecondBonuses','shop_mana_crystal',n)),
 ];
 export const SHOP_SKILL_CHANCE = 0.25;
