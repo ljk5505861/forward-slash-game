@@ -21,6 +21,31 @@ try {
       await page.goto('http://127.0.0.1:4173/shop-smoke.html');
       await page.waitForFunction(()=>window.__shopGame?.scene.getScene('GameScene')?.startMenu);
       await page.evaluate(()=>{window.s=window.__shopGame.scene.getScene('GameScene');s.startRun('normal');});
+      // Reproduce the full reward UI path: selecting a new skill must not overwrite replacement UI.
+      for(const mode of ['normal','test']) for(const slot of [4,5]){
+        await page.evaluate(({mode})=>{
+          s.runMode=mode;s.skillSystem.reset();
+          s.playerData.skills=['fireball','poison_cloud','shadow_fist','spinning_blade','healing','parasitic_gu'].map(id=>({id,level:1}));
+          s.stageSystem.flowState='SKILL_REWARD';s.stageSystem.awaitingSkillRewardClose=true;
+          s.upgradeSystem.pending=0;s.upgradeSystem.panelOpen=false;
+          window.originalRoll=s.upgradeSystem.rollOptions;
+          s.upgradeSystem.rollOptions=()=>[{type:'newSkill',id:'new_sword_wave',skillId:'sword_wave'},{type:'skillLevel',id:'lv_fireball',skillId:'fireball',nextLevel:2},{type:'newSkill',id:'new_black_hole',skillId:'black_hole'}];
+          s.upgradeSystem.requestSkillReward();s.upgradeSystem.rollOptions=window.originalRoll;
+          window.beforeCancel=JSON.stringify({skills:s.playerData.skills,gold:s.playerData.gold,choices:s.playerData.upgradesChosen});
+        },{mode});
+        const rewardTap=async(x,y)=>{const box=await page.locator('canvas').first().boundingBox();await page.touchscreen.tap(box.x+x*box.width/720,box.y+y*box.height/1280);await pause(100);};
+        for(let attempt=0;attempt<2;attempt++){
+          await rewardTap(170,294);await rewardTap(170,294);
+          assert(await page.evaluate(()=>s.upgradePanel.nodes.some(n=>n.text==='取消 / 返回')),'real reward confirmation keeps replacement cancel visible');
+          await page.screenshot({path:'test-artifacts/shop/'+name+'-'+mode+'-reward-replace.png'});
+          await rewardTap(360,260);
+          assert(await page.evaluate(()=>!s.upgradeSystem.pendingReplacement&&s.upgradeSystem.pending===1&&s.upgradePanel.options.length===3&&s.isGameplayPaused()&&window.beforeCancel===JSON.stringify({skills:s.playerData.skills,gold:s.playerData.gold,choices:s.playerData.upgradesChosen})),'touch cancel restores same rewards without consuming resources or resuming');
+        }
+        await page.screenshot({path:'test-artifacts/shop/'+name+'-'+mode+'-reward-cancel.png'});
+        await rewardTap(170,294);await rewardTap(170,294);await rewardTap(140+(slot%3)*220,604);
+        assert(await page.evaluate(slot=>s.playerData.skills[slot].id==='sword_wave'&&s.upgradeSystem.pending===0&&!s.upgradePanel.isOpen&&!s.isGameplayPaused(),slot),'fifth/sixth slot completes and resumes once');
+      }
+      await page.evaluate(()=>{s.runMode='normal';s.skillSystem.reset();s.playerData.skills=[];});
       await page.evaluate(async()=>{
         const {SHOP_ITEMS}=await import('/src/config/shopItems.js');
         const {SKILLS}=await import('/src/config/skills.js');
