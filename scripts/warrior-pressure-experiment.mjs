@@ -44,14 +44,21 @@ try{
         if(result&&e.enemyId==='grunt'){e.lastFixtureKnockback=s.getGameplayTime();r.knockbacks.push({...before,until:e.knockbackUntil-r.start});}
         return result;
       };
-      const positions=s.stageSystem.assignWaveSpawnXs(Array.from({length:config.count},()=>({id:'grunt'})));
-      positions.forEach(({x},i)=>{
-        const e=s.stageSystem.spawn('grunt',x);e.fixtureId=i;
-        // Restore effective pre-redesign Lv1 stats for the control, not raw config HP.
-        if(config.legacy){e.hp=e.maxHp=32;e.attackIntervalMs=e.baseAttackIntervalMs=1650;}
+      let spawnId=0;
+      const originalSpawn=s.stageSystem.spawn.bind(s.stageSystem);
+      s.stageSystem.spawn=(...args)=>{
+        const e=originalSpawn(...args);if(!e)return e;e.fixtureId=spawnId++;
         e.speed=config.speed;e.attackRange=config.range;
-        r.initial.push({unit:i,hp:e.hp,damage:e.damage,speed:e.speed,range:e.attackRange,interval:e.attackIntervalMs});
-      });
+        r.initial.push({unit:e.fixtureId,hp:e.hp,damage:e.damage,speed:e.speed,range:e.attackRange,interval:e.attackIntervalMs});return e;
+      };
+      // Use the real opening wave for three-warrior cases; ten-warrior load uses
+      // the same placement and 100ms queue spacing, never simultaneous creation.
+      if(config.count===3)s.stageSystem.queueGroupWave(s.getGameplayTime());
+      else {
+        const positions=s.stageSystem.assignWaveSpawnXs(Array.from({length:config.count},()=>({id:'grunt'})));
+        s.stageSystem.waveQueue=positions.map(({x},i)=>({at:s.getGameplayTime()+i*s.balance.enemyPopulation.sameTypeSpawnIntervalMs,id:'grunt',x}));
+        s.stageSystem.waveState='spawning';
+      }
       const offAttack=s.eventBus.on('PLAYER_ATTACK',p=>r.attacks.push({at:s.getGameplayTime()-r.start,unit:p.enemy?.fixtureId}));
       const offHit=s.eventBus.on('PLAYER_DAMAGED',p=>{
         if(p.hpDamage<=0)return;const e=p.enemy;
@@ -62,7 +69,7 @@ try{
         const alive=s.enemies.filter(e=>!e.isDefeated),now=s.getGameplayTime(),dt=now-r.last;r.last=now;
         r.aliveEnemyMs+=dt*alive.length;r.controlledEnemyMs+=dt*alive.filter(e=>e.isKnockbackActive).length;
         r.maxNear=Math.max(r.maxNear,alive.filter(e=>Math.hypot(e.x-s.player.x,e.y-s.player.y)<=e.attackRange).length);
-        if(now-r.start>=45000||!alive.length||s.playerData.hp<=0){
+        if(now-r.start>=45000||(!alive.length&&!s.stageSystem.waveQueue.length&&r.initial.length===config.count)||s.playerData.hp<=0){
           r.finished=true;r.elapsed=now-r.start;r.hp=s.playerData.hp;r.remaining=alive.length;
           offAttack();offHit();s.events.off('update',tick);
           s.stageSystem.flowState='EXPERIMENT_DONE';s.beginGameplayPause();
@@ -79,30 +86,31 @@ try{
     assert(r.hits.every(h=>!h.kb),'warriors never attack while knockback control is active');
     assert.equal(await page.locator('#global-error-panel').count(),0);
     assert.deepEqual(errors,[]);
-    const summary={...config,hits:r.hits.length,damage:500-r.hp,seconds:+(r.elapsed/1000).toFixed(2),remaining:r.remaining,
+    const combatSeconds=(r.elapsed-(r.attacks[0]?.at||0))/1000;
+    const summary={...config,hits:r.hits.length,damage:500-r.hp,seconds:+(r.elapsed/1000).toFixed(2),combatSeconds:+combatSeconds.toFixed(2),hitsPerSecond:r.hits.length/combatSeconds,remaining:r.remaining,
       suppression:+(r.controlledEnemyMs/Math.max(1,r.aliveEnemyMs)).toFixed(3),restarts:r.knockbacks.filter(k=>k.restart).length,
       hitBeforeAnyKnockback:r.hits.filter(h=>h.sinceKnockback===null).length,hitAfterLanding:r.hits.filter(h=>h.sinceKnockback!==null).length};
     results.push(summary);fs.writeFileSync(`${dir}/summary.json`,JSON.stringify(results,null,2));
     console.log('RESULT '+engine+' '+JSON.stringify(summary));
     return summary;
   }
-  const current={label:'current',speed:216,range:86,legacy:false};
-  const old={label:'old-effective-stats',speed:216,range:86,legacy:true};
-  // Screening includes slower and faster approach, without touching knockback visuals.
-  const grid=[];
-  for(const speed of [144,216,288])for(const range of [48,64,86])grid.push({label:`speed${speed}-range${range}`,speed,range,legacy:false});
+  const current={label:'current',speed:216,range:86};
+  const grid=[36,54,72,108].map(speed=>({label:`speed${speed}`,speed,range:86}));
   const screening=[];
-  for(const cfg of [old,current,...grid.filter(c=>c.speed!==216||c.range!==86)]){
+  for(const cfg of [current,...grid]){
     const r=await run({...cfg,seed:1126,count:10,attackSpeed:1});
-    if(!cfg.legacy)screening.push(r);
+    screening.push(r);
+    await run({...cfg,seed:1126,count:3,attackSpeed:1});
   }
-  const best=screening.filter(r=>r.remaining===0).sort((a,b)=>Math.abs(a.hits-3.5)-Math.abs(b.hits-3.5)).slice(0,2)
-    .map(({label,speed,range,legacy})=>({label,speed,range,legacy}));
+  const target=screening[0].hitsPerSecond/2;
+  const best=screening.filter(r=>r.label!=='current'&&r.remaining===0).sort((a,b)=>Math.abs(a.hitsPerSecond-target)-Math.abs(b.hitsPerSecond-target)).slice(0,1)
+    .map(({label,speed,range})=>({label,speed,range}));
   fs.writeFileSync(`${dir}/selected.json`,JSON.stringify(best,null,2));
-  // Report all outcomes, including zero hits or >4; never loosen a target assertion or pick a lucky seed.
-  const validation=[old,current,...best.filter(c=>c.label!=='current')];
+  // Latest user target supersedes the historical fixed 3–4 hits target.
+  // Measure hit rate from first player attack, excluding approach/travel time.
+  const validation=[current,...best];
   for(const cfg of validation)for(const seed of [1126,2026,7]){
-    if(seed!==1126)await run({...cfg,seed,count:10,attackSpeed:1});
+    if(seed!==1126){await run({...cfg,seed,count:10,attackSpeed:1});await run({...cfg,seed,count:3,attackSpeed:1});}
     await run({...cfg,seed,count:1,attackSpeed:1});
     await run({...cfg,seed,count:10,attackSpeed:2});
   }
