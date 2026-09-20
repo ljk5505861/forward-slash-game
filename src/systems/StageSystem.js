@@ -1,5 +1,5 @@
 import { getEnemyAttackDelay } from './EnemyGravityControl.js';
-import { ENEMIES } from '../config/enemies.js';
+import { ENEMIES, NORMAL_ENEMY_PROFILES } from '../config/enemies.js';
 import { TUNING } from '../config/tuning.js';
 import { CombatEvents, RunStates } from '../core/CombatEvents.js';
 import createEnemy, { syncEnemyUi } from '../entities/createEnemy.js';
@@ -39,7 +39,24 @@ export default class StageSystem{
   activeEnemyCount(){ const refining=this.scene.skillSystem?.passiveState?.mantraHeavenlyBook?.absorb?.phase==='refining'?1:0; return this.scene.enemies.filter(e=>e.active&&!e.isDefeated).length+refining; }
   progressionWaveIndex(){ return Math.max(0,this.groupIndex*TUNING.leveling.wavesPerLevel+Math.max(0,this.currentWave-1)); }
   enemyLevelForCompletedWaves(completedWaveCount=this.completedWaveCount){ return Math.floor(Math.max(0,completedWaveCount)/TUNING.leveling.wavesPerLevel)+1; }
-  tunedEnemy(id,overrides=null){ const base={...ENEMIES[id],...(overrides||{})}; const key=base.kind; const difficulty=TUNING.difficulty; const leveling=TUNING.leveling; const enemyLevel=this.currentEnemyLevel||1; const levelOffset=Math.max(0,enemyLevel-1); const enemyLevelHpMultiplier=1+levelOffset*(leveling.enemyHpGrowthPerLevel||0); const enemyLevelDamageMultiplier=1+levelOffset*(leveling.enemyDamageGrowthPerLevel||0); return { ...base, level:enemyLevel, hp:Math.round(base.hp*(difficulty[`${key}HpMultiplier`]||1)*enemyLevelHpMultiplier), damage:Math.max(1,Math.round(base.damage*(difficulty[`${key}DamageMultiplier`]||1)*enemyLevelDamageMultiplier)), xp:0 }; }
+  tunedEnemy(id,overrides=null){
+    const enemyLevel=this.currentEnemyLevel||1, levelOffset=Math.max(0,enemyLevel-1);
+    const profile=this.scene.runMode==='normal'?NORMAL_ENEMY_PROFILES[id]:null;
+    if(profile){
+      const {hpGrowth,damageGrowth,attackSpeedGrowth,maxAttackSpeedBonus,...stats}=profile;
+      const base={...ENEMIES[id],...stats,...(overrides||{})};
+      const attackSpeedBonus=Math.min(maxAttackSpeedBonus,levelOffset*attackSpeedGrowth);
+      return {...base,level:enemyLevel,hp:Math.round(base.hp*(1+levelOffset*hpGrowth)),
+        damage:Math.max(1,Math.round(base.damage*(1+levelOffset*damageGrowth))),
+        attackIntervalMs:Math.round(base.attackIntervalMs/(1+attackSpeedBonus)),xp:0};
+    }
+    const base={...ENEMIES[id],...(overrides||{})}, key=base.kind;
+    const difficulty=TUNING.difficulty, leveling=TUNING.leveling;
+    const enemyLevelHpMultiplier=1+levelOffset*(leveling.enemyHpGrowthPerLevel||0);
+    const enemyLevelDamageMultiplier=1+levelOffset*(leveling.enemyDamageGrowthPerLevel||0);
+    return {...base,level:enemyLevel,hp:Math.round(base.hp*(difficulty[`${key}HpMultiplier`]||1)*enemyLevelHpMultiplier),
+      damage:Math.max(1,Math.round(base.damage*(difficulty[`${key}DamageMultiplier`]||1)*enemyLevelDamageMultiplier)),xp:0};
+  }
   spawnXFor(id){ const cfg=ENEMIES[id]||ENEMIES.grunt, cam=this.scene.cameras?.main, right=cam?.worldView?.right ?? ((cam?.scrollX||0)+(cam?.width||720)); return Math.min(this.scene.balance.stageWorldWidth-cfg.width/2-8, right+cfg.width+(this.scene.balance.enemies?.respawnPadding??96)); }
   spawn(id,x,overrides=null){ if(this.activeEnemyCount()>=this.scene.balance.enemyPopulation.hardCap) return null; const e=createEnemy(this.scene,this.tunedEnemy(id,overrides),x??this.spawnXFor(id),this.scene.balance.groundTopY); this.scene.enemies.push(e); this.scene.enemyBehaviors?.attach(e); if(e.isElite) this.scene.eventBus.emit(CombatEvents.ELITE_SPAWNED,{enemy:e}); return e; }
   update(time){ if(this.scene.isGameplayPaused?.()) return; this.drainWaveQueue(time); this.scene.enemyBehaviors?.update(time); this.updateBossKnockbackCounterattacks(time); this.scene.enemies.forEach(syncEnemyUi); if(this.flowState===LevelFlowStates.GROUP_COMBAT) this.updateGroup(time); else if(this.flowState===LevelFlowStates.BOSS_RUSH) this.updateRush(time); }

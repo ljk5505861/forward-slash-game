@@ -131,6 +131,7 @@
     "validate:01115-game-speed": "node scripts/validate-01115-game-speed.mjs",
     "validate:lightning-enchant": "npm run validate:01082-lightning-enchant",
     "validate:01125-replacement-cancel": "node scripts/validate-01125-replacement-cancel.mjs",
+    "validate:01126-normal-enemies": "node scripts/validate-01126-normal-enemies.mjs",
     "validate:01124-growth-shop": "node scripts/validate-01124-growth-shop.mjs"
   },
   "dependencies": {
@@ -138,5 +139,5 @@
     "vite": "latest"
   },
   "devDependencies": {},
-  "version": "0.11.25"
+  "version": "0.11.26"
 }
