@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { spawn } from 'node:child_process';
+import { runNormalEnemyChecks } from './normal-enemy-browser-checks.mjs';
 const {chromium,webkit}=await import(process.env.PLAYWRIGHT_MODULE);
 fs.mkdirSync('test-artifacts/shop',{recursive:true});
 const entry='src/shop-smoke-entry.js',html='shop-smoke.html';
@@ -19,6 +20,7 @@ try {
       const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
       const errors=[];page.on('pageerror',error=>errors.push(error.message));
       await page.goto('http://127.0.0.1:4173/shop-smoke.html');
+      await runNormalEnemyChecks(page,name,assert);
       await page.waitForFunction(()=>window.__shopGame?.scene.getScene('GameScene')?.startMenu);
       await page.evaluate(()=>{window.s=window.__shopGame.scene.getScene('GameScene');s.startRun('normal');});
       // Reproduce the full reward UI path: selecting a new skill must not overwrite replacement UI.
