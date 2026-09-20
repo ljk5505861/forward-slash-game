@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { spawn } from 'node:child_process';
 import { runNormalEnemyChecks } from './normal-enemy-browser-checks.mjs';
+import { runThreeWaveChecks } from './three-wave-browser-checks.mjs';
 const {chromium,webkit}=await import(process.env.PLAYWRIGHT_MODULE);
 fs.mkdirSync('test-artifacts/shop',{recursive:true});
 const entry='src/shop-smoke-entry.js',html='shop-smoke.html';
@@ -21,12 +22,14 @@ try {
       const errors=[];page.on('pageerror',error=>errors.push(error.message));
       await page.goto('http://127.0.0.1:4173/shop-smoke.html');
       await runNormalEnemyChecks(page,name,assert);
+      await runThreeWaveChecks(page,name,assert);
       await page.waitForFunction(()=>window.__shopGame?.scene.getScene('GameScene')?.startMenu);
       await page.evaluate(()=>{window.s=window.__shopGame.scene.getScene('GameScene');s.startRun('normal');});
       // Reproduce the full reward UI path: selecting a new skill must not overwrite replacement UI.
       for(const mode of ['normal','test']) for(const slot of [4,5]){
         await page.evaluate(({mode})=>{
-          s.runMode=mode;s.skillSystem.reset();
+          s.runMode=mode;s.skillSystem.reset();s.stageSystem.clearEnemies();s.stageSystem.reset();s.shopSystem.reset();
+          s.stageSystem.currentWave=mode==='normal'?3:2;
           s.playerData.skills=['fireball','poison_cloud','shadow_fist','spinning_blade','healing','parasitic_gu'].map(id=>({id,level:1}));
           s.stageSystem.flowState='SKILL_REWARD';s.stageSystem.awaitingSkillRewardClose=true;
           s.upgradeSystem.pending=0;s.upgradeSystem.panelOpen=false;
@@ -41,11 +44,12 @@ try {
           assert(await page.evaluate(()=>s.upgradePanel.nodes.some(n=>n.text==='取消 / 返回')),'real reward confirmation keeps replacement cancel visible');
           await page.screenshot({path:'test-artifacts/shop/'+name+'-'+mode+'-reward-replace.png'});
           await rewardTap(360,260);
-          assert(await page.evaluate(()=>!s.upgradeSystem.pendingReplacement&&s.upgradeSystem.pending===1&&s.upgradePanel.options.length===3&&s.isGameplayPaused()&&window.beforeCancel===JSON.stringify({skills:s.playerData.skills,gold:s.playerData.gold,choices:s.playerData.upgradesChosen})),'touch cancel restores same rewards without consuming resources or resuming');
+          assert(await page.evaluate(()=>!s.upgradeSystem.pendingReplacement&&s.upgradeSystem.pending===1&&s.upgradePanel.options.length===3&&s.isGameplayPaused()&&!s.shopPanel.isOpen&&s.shopSystem.visits===0&&window.beforeCancel===JSON.stringify({skills:s.playerData.skills,gold:s.playerData.gold,choices:s.playerData.upgradesChosen})),'touch cancel restores same rewards without consuming resources, opening shop or resuming');
         }
         await page.screenshot({path:'test-artifacts/shop/'+name+'-'+mode+'-reward-cancel.png'});
         await rewardTap(170,294);await rewardTap(170,294);await rewardTap(140+(slot%3)*220,604);
-        assert(await page.evaluate(slot=>s.playerData.skills[slot].id==='sword_wave'&&s.upgradeSystem.pending===0&&!s.upgradePanel.isOpen&&!s.isGameplayPaused(),slot),'fifth/sixth slot completes and resumes once');
+        assert(await page.evaluate(({slot,mode})=>s.playerData.skills[slot].id==='sword_wave'&&s.upgradeSystem.pending===0&&!s.upgradePanel.isOpen&&(mode==='normal'?(s.shopPanel.isOpen&&s.isGameplayPaused()&&s.shopSystem.visits===1):!s.isGameplayPaused()),{slot,mode}),'fifth/sixth slot opens normal shop once; test mode resumes combat');
+        if(mode==='normal') await rewardTap(537,1022);
       }
       await page.evaluate(()=>{s.runMode='normal';s.skillSystem.reset();s.playerData.skills=[];});
       await page.evaluate(async()=>{
