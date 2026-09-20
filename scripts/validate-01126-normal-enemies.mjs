@@ -26,7 +26,7 @@ for(const level of [1,2,4,10,19,21,99]){
   assert.equal(warrior.name,'战士');assert.equal(warrior.id,'grunt');
   assert.equal(warrior.hp,Math.round(64*(1+offset*0.18)));
   assert.equal(warrior.damage,Math.round(2*(1+offset*0.03)));
-  assert.equal(warrior.attackIntervalMs,1650);
+  assert.equal(warrior.attackIntervalMs,2800);
   assert.equal(archer.hp,Math.round(30*(1+offset*0.04)));
   assert.equal(archer.damage,Math.round(6*(1+offset*0.12)));
   assert.equal(archer.attackIntervalMs,Math.round(2000/(1+Math.min(0.2,offset*0.01))));
@@ -36,6 +36,7 @@ for(const level of [1,2,4,10,19,21,99]){
   assert(warrior.hp>archer.hp);assert(archer.damage>warrior.damage);
 }
 assert.equal(tune('grunt',1).hp,64,'no legacy x2 multiplier');
+assert.equal(tune('grunt',1,'test').attackIntervalMs,1650,'test mode retains original warrior cadence');
 assert.equal(tune('archer',1).damage,6,'no legacy x0.75 damage multiplier');
 assert.equal(tune('archer',200).attackIntervalMs,1667,'20% attack SPEED cap, not 20% interval reduction');
 assert.equal(tune('grunt',1,'normal',{hp:100,damage:5}).hp,100,'explicit overrides remain supported');
