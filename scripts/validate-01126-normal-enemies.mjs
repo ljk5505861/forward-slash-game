@@ -27,7 +27,7 @@ for(const level of [1,2,4,10,19,21,99]){
   assert.equal(warrior.hp,Math.round(64*(1+offset*0.18)));
   assert.equal(warrior.damage,Math.round(2*(1+offset*0.03)));
   assert.equal(warrior.attackIntervalMs,2800);
-  assert.equal(warrior.speed,44,'normal warrior slows approach; knockback is unchanged');
+  assert.equal(warrior.speed,38,'normal warrior slows approach; knockback is unchanged');
   assert.equal(archer.hp,Math.round(30*(1+offset*0.04)));
   assert.equal(archer.damage,Math.round(6*(1+offset*0.12)));
   assert.equal(archer.attackIntervalMs,Math.round(2000/(1+Math.min(0.2,offset*0.01))));

@@ -49,7 +49,7 @@ export async function runWarriorHalfPressureChecks(page,engine,assert){
     // Save even on a later failed assertion, for diagnosis rather than rerolling.
     fs.writeFileSync(`test-artifacts/shop/${engine}-warrior-half-pressure.json`,JSON.stringify(results,null,2));
     assert.equal(result.initial.length,count);assert(result.initial[0].x>=800);
-    assert(result.initial.every(e=>e.id==='grunt'&&e.speed===(baseline?216:44)&&e.hp===64&&e.damage===2&&e.range===86&&e.interval===2800));
+    assert(result.initial.every(e=>e.id==='grunt'&&e.speed===(baseline?216:38)&&e.hp===64&&e.damage===2&&e.range===86&&e.interval===2800));
     assert.equal(result.remaining,0,'both sides finish the fight');
     assert(result.firstAttack!==null&&result.combatMs>0);
     assert(result.hits.every(h=>!h.knockback&&h.damage===2),'no attacks while under knockback control, unchanged per-hit damage');
