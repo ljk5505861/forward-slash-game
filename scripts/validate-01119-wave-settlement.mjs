@@ -4,10 +4,10 @@ import CombatSystem from '../src/systems/CombatSystem.js';
 import GameSpeedSystem, { GAME_SPEEDS } from '../src/systems/GameSpeedSystem.js';
 import { BALANCE, createPlayerRuntime } from '../src/config/balance.js';
 
-function harness(wave=4,speed=1){
+function harness(wave=4,speed=1,runMode='test'){
   const modals=[],tweens=[];
   let paused=false;
-  const scene={balance:BALANCE,enemies:[],killCount:0,playerData:createPlayerRuntime(),
+  const scene={runMode,balance:BALANCE,enemies:[],killCount:0,playerData:createPlayerRuntime(),
     eventBus:{emit(){}},hud:{setStage(){},setStatus(){},update(){}},
     isGameplayPaused:()=>paused,
     queueShop(reason){modals.push(reason);paused=true;},
@@ -37,6 +37,14 @@ function harness(wave=4,speed=1){
 }
 
 // Reproduce the real kill path: it removes the enemy immediately, but schedules corpse destruction later.
+for(const speed of GAME_SPEEDS){
+  const h=harness(3,speed,'normal'),corpse=h.enemy();
+  h.combat.killEnemy(corpse);h.tick(0);h.tick((WAVE_SETTLEMENT_MS-1)/speed);
+  assert.equal(corpse.destroyed,true);assert.equal(h.modals.length,0);
+  h.tick(1/speed);assert.deepEqual(h.modals,['skill']);
+  assert.equal(h.stage.onSkillRewardClosed(),true);assert.deepEqual(h.modals,['skill','group_1']);
+  assert.equal(h.stage.onSkillRewardClosed(),false);h.tick(10000);assert.equal(h.modals.length,2);
+}
 for(const speed of GAME_SPEEDS) for(const wave of [2,4]) for(const isElite of [false,true]){
   const h=harness(wave,speed),corpse=h.enemy({isElite});
   h.combat.killEnemy(corpse);h.tick(0);

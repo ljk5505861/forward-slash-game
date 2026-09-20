@@ -12,7 +12,7 @@ globalThis.Image??=class { set src(_value){setTimeout(()=>this.onload?.(),0);} }
 const {default:ShopSystem}=await import('../src/systems/ShopSystem.js');
 let time=0,paused=false;
 const events=[],shops=[],rewards=[],artifacts=[],campfires=[];
-const scene={balance:BALANCE,playerData:createPlayerRuntime(),player:{x:220,y:850},enemies:[],
+const scene={runMode:'test',balance:BALANCE,playerData:createPlayerRuntime(),player:{x:220,y:850},enemies:[],
  cameras:{main:{worldView:{right:720}}},eventBus:{emit(type,payload){events.push({type,payload});}},
  hud:{setStage(t){this.stage=t;},setStatus(){},update(){}},
  getGameplayTime:()=>time,isGameplayPaused:()=>paused,endGameplayPause(){paused=false;},
