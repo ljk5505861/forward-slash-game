@@ -9,6 +9,8 @@ export async function runNormalEnemyChecks(page, engine, assert){
     {label:'ten-warriors',count:10,speed:1},
     {label:'ten-warriors-fast-attack',count:10,speed:2},
     {label:'warriors-and-archers',count:10,archers:2,speed:1},
+    // Same seed, stats and real combat; only restore the pre-v0.11.27 interval.
+    {label:'ten-warriors-old-interval',count:10,speed:1,warriorInterval:1650},
   ]){
     await page.reload();
     await page.waitForFunction(()=>window.__shopGame?.scene.getScene('GameScene')?.startMenu);
@@ -25,6 +27,9 @@ export async function runNormalEnemyChecks(page, engine, assert){
       window.enemyCheck={label:config.label,start:s.getGameplayTime(),hits:[],initial:[],samples:[],maxInMelee:0,finished:false};
       positions.forEach(({id,x},i)=>{
         const e=s.stageSystem.spawn(id,x);e.fixtureId=i;
+        if(id==='grunt'&&config.warriorInterval){
+          e.attackIntervalMs=e.baseAttackIntervalMs=config.warriorInterval;
+        }
         window.enemyCheck.initial.push({id:e.enemyId,name:e.name,hp:e.hp,damage:e.damage,interval:e.attackIntervalMs,speed:e.speed});
       });
       const off=s.eventBus.on('PLAYER_DAMAGED',p=>{
@@ -47,14 +52,24 @@ export async function runNormalEnemyChecks(page, engine, assert){
     await page.screenshot({path:'test-artifacts/shop/'+engine+'-'+config.label+'.png'});
     await page.waitForFunction(()=>window.enemyCheck?.finished,{},{timeout:35000});
     const result=await page.evaluate(()=>window.enemyCheck);results.push(result);
-    assert(result.initial.filter(e=>e.id==='grunt').every(e=>e.name==='战士'&&e.hp===64&&e.damage===2));
+    assert(result.initial.filter(e=>e.id==='grunt').every(e=>e.name==='战士'&&e.hp===64&&e.damage===2&&e.interval===(config.warriorInterval||2800)));
+    // Verify the live melee cooldown, not just the configured number.
+    const previousHit=new Map();
+    for(const hit of result.hits.filter(h=>h.id==='grunt')){
+      if(previousHit.has(hit.unit)) assert(hit.at-previousHit.get(hit.unit)>=(config.warriorInterval||2800)-1,'individual warrior respects its attack interval');
+      previousHit.set(hit.unit,hit.at);
+    }
     assert.equal(await page.locator('#global-error-panel').count(),0);
   }
-  const [single,ten,fast,mixed]=results;
+  const [single,ten,fast,mixed,oldTen]=results;
   assert.equal(single.hits.length,0,'one warrior can be suppressed by base normal attacks');
   assert(ten.hits.length>0,'ten warriors naturally hit the player without a special counterattack rule');
   assert(new Set(ten.hits.map(h=>h.unit)).size>=2,'multiple surviving warriors find attack gaps');
   assert(ten.hits.every(h=>h.damage===2),'crowd pressure remains low per-hit damage');
+  assert(ten.hits.length<oldTen.hits.length,'longer interval reduces actual crowd hits against the old-interval control');
+  assert(ten.hp>oldTen.hp,'longer interval reduces total crowd damage');
+  assert.equal(ten.remaining,0,'base character can still clear ten warriors');
+  assert.equal(oldTen.remaining,0,'old-interval control also clears, allowing a whole-fight comparison');
   assert(fast.hits.length<=ten.hits.length,'faster attacks do not make a scripted counterattack more frequent');
   assert(mixed.hits.some(h=>h.id==='archer'&&h.damage===6),'archer supplies ranged damage in actual combat');
   assert(mixed.initial.filter(e=>e.id==='archer').every(e=>e.hp===30&&e.interval===2000&&e.speed===360),'archer movement speed retained');

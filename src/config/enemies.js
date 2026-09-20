@@ -14,7 +14,7 @@ export const ENEMIES = {
 // Effective Lv1 stats, exclusive to normal mode. Do not apply the legacy global
 // difficulty multipliers again. Movement, range and attack behavior stay inherited.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
-  grunt: Object.freeze({ name:'战士', hp:64, damage:2, attackIntervalMs:1650,
+  grunt: Object.freeze({ name:'战士', hp:64, damage:2, attackIntervalMs:2800,
     hpGrowth:0.18, damageGrowth:0.03, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   archer: Object.freeze({ name:'弓箭手', hp:30, damage:6, attackIntervalMs:2000,
     hpGrowth:0.04, damageGrowth:0.12, attackSpeedGrowth:0.01, maxAttackSpeedBonus:0.20 }),
