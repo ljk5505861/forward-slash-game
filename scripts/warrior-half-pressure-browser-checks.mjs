@@ -41,7 +41,7 @@ export async function runWarriorHalfPressureChecks(page,engine,assert){
     const result=await page.evaluate(()=>window.warriorPressure);results.push(result);
     fs.writeFileSync(`test-artifacts/shop/${engine}-warrior-three.json`,JSON.stringify(results,null,2));
     assert.equal(result.initial.length,count);assert(result.initial[0].x>=800);
-    assert(result.initial.every(e=>e.id==='grunt'&&e.speed===120&&e.hp===64&&e.damage===2&&e.range===86&&e.interval===2800));
+    assert(result.initial.every(e=>e.id==='grunt'&&e.speed===216&&e.hp===64&&e.damage===2&&e.range===86&&e.interval===2800));
     assert.equal(result.remaining,0,'all three warriors are defeated');
     assert(result.firstAttack!==null&&result.combatMs>0);
     assert(result.hits.every(h=>!h.knockback&&h.damage===2),'no attacks while under knockback control, unchanged per-hit damage');
