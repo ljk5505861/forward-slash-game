@@ -11,7 +11,7 @@ const { approach, entryMove }=await import('../src/enemies/behaviors/EnemyBehavi
 
 assert.equal(ENEMIES.grunt.speed,216);
 assert.equal(NORMAL_ENEMY_PROFILES.grunt.speed,undefined,'normal warrior inherits original speed');
-assert.equal(WARRIOR_LANDING_RECOVERY_MS,380);
+assert.equal(WARRIOR_LANDING_RECOVERY_MS,520);
 
 let now=0, tween;
 const scene={runMode:'normal',playerData:{hp:500},player:{x:220,y:0},balance:{stageWorldWidth:15000,enemies:{}},
