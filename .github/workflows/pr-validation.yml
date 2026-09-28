@@ -13,8 +13,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  change-scope:
+    name: Determine PR validation scope
+    runs-on: ubuntu-latest
+    outputs:
+      game: ${{ steps.scope.outputs.game }}
+    steps:
+      - name: Checkout pull request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Check patch whitespace
+        run: git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+
+      - name: Determine whether game validation is needed
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if git diff --name-only "$BASE_SHA...$HEAD_SHA" | grep -Eqv '(^\.agents/skills/|\.md$|^\.github/workflows/pr-validation\.yml$)'; then
+            echo "game=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "game=false" >> "$GITHUB_OUTPUT"
+          fi
+
   v01115-full-pr-validation:
     name: v0.11.15 full PR validation
+    needs: change-scope
+    if: needs.change-scope.outputs.game == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -30,9 +59,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-
-      - name: Check patch whitespace
-        run: git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
 
       - name: Install dependencies
         run: npm ci
