@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import { runNormalEnemyChecks } from './normal-enemy-browser-checks.mjs';
 import { runThreeWaveChecks } from './three-wave-browser-checks.mjs';
 import { runWarriorHalfPressureChecks } from './warrior-half-pressure-browser-checks.mjs';
+import { runMeatChecks } from './meat-monster-browser-checks.mjs';
 const {chromium,webkit}=await import(process.env.PLAYWRIGHT_MODULE);
 fs.mkdirSync('test-artifacts/shop',{recursive:true});
 const entry='src/shop-smoke-entry.js',html='shop-smoke.html';
@@ -22,6 +23,7 @@ try {
       const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
       const errors=[];page.on('pageerror',error=>errors.push(error.message));
       await page.goto('http://127.0.0.1:4173/shop-smoke.html');
+      await runMeatChecks(page,name,assert);
       await runNormalEnemyChecks(page,name,assert);
       await runWarriorHalfPressureChecks(page,name,assert);
       await runThreeWaveChecks(page,name,assert);

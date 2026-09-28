@@ -19,4 +19,7 @@ export const NORMAL_ENEMY_PROFILES = Object.freeze({
     hpGrowth:0.18, damageGrowth:0.03, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   archer: Object.freeze({ name:'弓箭手', hp:30, damage:6, attackIntervalMs:2000,
     hpGrowth:0.04, damageGrowth:0.12, attackSpeedGrowth:0.01, maxAttackSpeedBonus:0.20 }),
+  armored_guard: Object.freeze({ name:'肉怪', behavior:'meat', width:90, height:116, bodyWidth:78, bodyHeight:106,
+    hp:128, defense:0, damageReduction:0, damage:3, attackIntervalMs:2400, color:0x98584e, stroke:0x462721,
+    hpGrowth:0.18, damageGrowth:0.03, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
 });
