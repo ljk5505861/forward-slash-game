@@ -11,7 +11,7 @@ import { TUNING } from '../config/tuning.js';
 import { getEffectiveAttack, getEffectiveDefense, getEffectiveDamageReduction, getEffectiveCritMultiplier, sumRuntimeBonuses } from '../config/balance.js';
 const Phaser = globalThis.Phaser || { Math:{ Distance:{ Between:(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1) } } };
 
-const BEHAVIOR_ATTACKERS = new Set(['charger', 'archer', 'bomber', 'healer', 'midBoss', 'berserkerBoss']);
+const BEHAVIOR_ATTACKERS = new Set(['meat', 'charger', 'archer', 'bomber', 'healer', 'midBoss', 'berserkerBoss']);
 const NON_LIFESTEAL_SOURCES = new Set(['burn','poison','burn_burst','reflect','shield_break','afterimage']);
 const NON_DIRECT_PLAYER_DAMAGE_TYPES = new Set(['dot','ground','environment','burn','poison','bomb']);
 const sumBonuses = sumRuntimeBonuses;
@@ -121,6 +121,14 @@ export default class CombatSystem {
       hpDmg=Math.max(0,Math.min(hpDmg,hpIntercept.hpDamage??hpDmg));
     }
     s.playerData.hp=Math.max(0,s.playerData.hp-hpDmg);
+    // Only the new chain cleaver displaces the player; existing ranged attacks
+    // and warrior knockback behavior are deliberately unchanged.
+    if(meta.source==='meatKnife'&&s.playerData.hp>0&&meta.knockbackDistance>0){
+      const half=(s.player.body?.width||s.player.width||0)/2;
+      const direction=Math.sign(s.player.x-(enemy?.x??s.player.x+1))||-1;
+      const x=Math.max(half+8,Math.min(s.balance.stageWorldWidth-half-8,s.player.x+direction*meta.knockbackDistance));
+      s.player.setX(x); s.player.body?.reset?.(x,s.player.y);
+    }
     const totalShieldAfter=Math.max(0,s.playerData.shield||0);
     const shieldDepleted=totalShieldBefore>0&&totalShieldAfter<=0;
     s.floatText(s.player.x,s.player.y-80,absorbed&&hpDmg?`盾-${absorbed} -${hpDmg}`:absorbed?`盾-${absorbed}`:`-${hpDmg}`,absorbed?'#8fd7ff':'#ff7777');
