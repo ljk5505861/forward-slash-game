@@ -15,6 +15,9 @@ export const ENEMIES = {
 // difficulty multipliers again. Only normal warriors override movement speed;
 // range, attack behavior and knockback remain inherited.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
+  charger: Object.freeze({ name:'大师', hp:44, damage:7, speed:360, attackRange:110, attackIntervalMs:1500,
+    width:56, height:92, bodyWidth:48, bodyHeight:84, color:0x774e95, stroke:0x382246,
+    hpGrowth:0.06, damageGrowth:0.12, attackSpeedGrowth:0.01, maxAttackSpeedBonus:0.15 }),
   healer: Object.freeze({ name:'医师', hp:36, damage:2, healAmount:12, attackIntervalMs:2800,
     hpGrowth:0.06, damageGrowth:0.02, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   grunt: Object.freeze({ name:'战士', hp:64, damage:2, attackIntervalMs:2800, speed:120,
@@ -27,3 +30,5 @@ export const NORMAL_ENEMY_PROFILES = Object.freeze({
 });
 
 export const DOCTOR_TUNING = Object.freeze({ healGrowth:0.10, healRange:520, meleeRange:86, effectMs:360 });
+
+export const MASTER_TIMING = Object.freeze({ first:3500, cooldown:5000, windup:400, flight:450, range:400, damageMultiplier:1.5 });
