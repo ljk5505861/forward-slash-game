@@ -15,7 +15,7 @@ const legacy=(id,level,overrides=null)=>{
   return {...base,level,hp:Math.round(base.hp*(TUNING.difficulty[base.kind+'HpMultiplier']||1)*(1+offset*TUNING.leveling.enemyHpGrowthPerLevel)),
     damage:Math.max(1,Math.round(base.damage*(TUNING.difficulty[base.kind+'DamageMultiplier']||1)*(1+offset*TUNING.leveling.enemyDamageGrowthPerLevel))),xp:0};
 };
-assert.deepEqual(Object.keys(NORMAL_ENEMY_PROFILES),['grunt','archer','armored_guard']);
+assert.deepEqual(Object.keys(NORMAL_ENEMY_PROFILES),['healer','grunt','archer','armored_guard']);
 for(const level of [1,2,4,10,19,21,99]){
   for(const id of Object.keys(ENEMIES)){
     assert.deepEqual(tune(id,level,'test'),legacy(id,level),'test mode keeps exact original stats: '+id);
