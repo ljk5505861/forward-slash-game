@@ -31,21 +31,25 @@ export async function runThreeWaveChecks(page,engine,assert){
       });
       assert(await page.evaluate(()=>!s.upgradePanel.isOpen&&!s.shopPanel.isOpen),'corpse settlement does not immediately open a modal');
     }
-    await page.waitForFunction(()=>s.upgradePanel.isOpen);
-    assert(await page.evaluate(()=>s.stageSystem.currentWave===3&&s.stageSystem.flowState==='SKILL_REWARD'&&s.shopSystem.visits===0));
-    await page.screenshot({path:`test-artifacts/shop/${engine}-group-${group}-third-wave-reward.png`});
-    await tap(170,294);await tap(170,294);
-    await page.waitForFunction(()=>s.shopPanel.isOpen);
-    assert(await page.evaluate(group=>s.playerData.skills.some(x=>x.id==='fireball')&&!s.upgradePanel.isOpen&&s.isGameplayPaused()&&s.stageSystem.flowState==='SHOP'&&s.shopSystem.visits===1&&s.playerData.level===group,group),'skill selection directly hands paused control to the shop');
-    await page.screenshot({path:`test-artifacts/shop/${engine}-group-${group}-after-skill-shop.png`});
-    await tap(537,1022);
-    assert(await page.evaluate(group=>!s.shopPanel.isOpen&&!s.isGameplayPaused()&&s.playerData.level===group+1&&s.stageSystem.currentEnemyLevel===group+1&&s.shopSystem.visits===1&&(group===1?s.stageSystem.groupIndex===1:s.stageSystem.flowState==='BOSS_RUSH'),group),'leave advances once, retaining pre-boss rush');
+    if(group===1){
+      await page.waitForFunction(()=>s.upgradePanel.isOpen);
+      assert(await page.evaluate(()=>s.stageSystem.currentWave===3&&s.stageSystem.flowState==='SKILL_REWARD'&&s.shopSystem.visits===0));
+      await page.screenshot({path:`test-artifacts/shop/${engine}-group-${group}-third-wave-reward.png`});
+      await tap(170,294);await tap(170,294);
+      assert(await page.evaluate(()=>s.playerData.skills.some(x=>x.id==='fireball')&&!s.upgradePanel.isOpen&&!s.shopPanel.isOpen&&!s.isGameplayPaused()&&s.stageSystem.groupIndex===1&&s.shopSystem.visits===0&&s.playerData.level===2),'skill-only group resumes without shop');
+    }else{
+      await page.waitForFunction(()=>s.shopPanel.isOpen);
+      assert(await page.evaluate(()=>!s.upgradePanel.isOpen&&s.playerData.skills.length===0&&s.isGameplayPaused()&&s.stageSystem.flowState==='SHOP'&&s.shopSystem.visits===1&&s.playerData.level===3),'boss prep opens shop instead of skill selection');
+      await page.screenshot({path:`test-artifacts/shop/${engine}-group-${group}-boss-prep-shop.png`});
+      await tap(537,1022);
+      assert(await page.evaluate(()=>!s.shopPanel.isOpen&&!s.isGameplayPaused()&&s.playerData.level===4&&s.stageSystem.currentEnemyLevel===4&&s.shopSystem.visits===1&&s.stageSystem.flowState==='BOSS_RUSH'),'shop leave advances once to retained boss rush');
+    }
     if(group===3){
       await page.waitForFunction(()=>s.stageSystem.rushSpawned&&s.enemies.length>0);
       await page.screenshot({path:`test-artifacts/shop/${engine}-retained-boss-rush.png`});
     }
   }
-  console.log(engine+' PASS three-wave reward→shop touch flow, per-group levels and retained boss rush');
+  console.log(engine+' PASS three-wave skill-only / boss-prep shop touch flow, per-group levels and retained boss rush');
   await page.reload();
   await page.waitForFunction(()=>window.__shopGame?.scene.getScene('GameScene')?.startMenu);
 }
