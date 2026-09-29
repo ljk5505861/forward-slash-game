@@ -1,170 +1,65 @@
 name: PR Validation
-
 on:
   pull_request:
-    branches:
-      - main
-
+    branches: [main]
+  workflow_dispatch:
 permissions:
   contents: read
-
 concurrency:
-  group: pr-validation-${{ github.event.pull_request.number }}
+  group: pr-validation-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
-
 jobs:
-  v01115-full-pr-validation:
+  validation:
+    # Keep the historical check name for branch protection compatibility.
     name: v0.11.15 full PR validation
     runs-on: ubuntu-latest
     timeout-minutes: 25
-
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha || 'HEAD^' }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
-      - name: Checkout pull request head
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-
       - name: Check patch whitespace
-        run: git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Validate growth shop behavior
-        run: npm run validate:01124-growth-shop
-
-      - name: Run every regression against PR base
+        run: git diff --check "$BASE_SHA...$HEAD_SHA"
+      - name: Test validation scope rules
+        run: node --test scripts/test-pr-validation-scope.mjs
+      - name: Select task checks (manual dispatch runs full suite)
+        id: scope
         env:
-          VALIDATION_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node scripts/run-validation-suite.mjs
-
-      - name: Validate wave settlement pacing
-        run: npm run validate:01119-wave-settlement
-
-      - name: Validate two-wave shop loop
-        run: npm run validate:01118-two-wave-shop-loop
-
-      - name: Validate game speed
-        run: npm run validate:01115-game-speed
-
-      - name: Validate summon creature contracts
-        run: npm run validate:01114-summon-creature-contracts
-
-      - name: Validate profession rework
-        run: npm run validate:01113-profession-rework
-
-      - name: Validate mech flow
-        run: npm run validate:01112-mech-flow
-
-      - name: Validate spell tide
-        run: npm run validate:01111-spell-tide
-
-      - name: Validate kinetic release
-        run: npm run validate:01110-kinetic-release
-
-      - name: Validate charged slam
-        run: npm run validate:01109-charged-slam
-
-      - name: Validate human god
-        run: npm run validate:01108-human-god
-
-      - name: Validate superhero flow
-        run: npm run validate:01098-superhero-flow
-
-      - name: Validate superhero kinetic enhancement
-        run: npm run validate:01100-superhero-kinetic
-
-      - name: Validate strength flow
-        run: npm run validate:01060-strength-balance
-
-      - name: Validate defense flow
-        run: npm run validate:01062-defense-rework
-
-      - name: Validate flame and solar flow
-        run: npm run validate:01044-flame-rework
-
-      - name: Validate start menu and game modes
-        run: npm run validate:01121-start-menu
-
-      - name: Validate normal skill rarity progression
-        run: npm run validate:01122-normal-rarity
-
-      - name: Validate restart HUD lifecycle
-        run: npm run validate:01123-restart-hud
-
-      - name: Validate skill pool
-        run: npm run validate:01056-open-skill-pool
-
-      - name: Validate selection and replacement flow
-        run: npm run validate:01105-full-slot-upgrade-guarantee
-
-      - name: Validate reward build bias
-        run: npm run validate:reward-bias
-
-      - name: Validate sky covering palm
-        run: npm run validate:01104-sky-covering-palm
-
-      - name: Validate mantra heavenly book
-        run: npm run validate:01107-mantra-heavenly-book
-
-      - name: Validate soul destroying needle
-        run: npm run validate:01106-soul-destroying-needle
-
-      - name: Validate full skill slot upgrade guarantee
-        run: npm run validate:01105-full-slot-upgrade-guarantee
-
-      - name: Validate active skill modifiers
-        run: npm run validate:01103-active-skill-modifiers
-
-      - name: Validate alchemy
-        run: npm run validate:01102-alchemy
-
-      - name: Validate ninefold dao
-        run: npm run validate:01101-ninefold-dao
-
-      - name: Validate full v0.11.11 playtest regression chain
-        run: npm run validate:01107-playtest-fixes
-
-      - name: Validate gravity runtime directly
-        run: node scripts/validate-01087-gravity-flow-runtime.mjs
-
-      - name: Validate gravity flow
-        run: npm run validate:01087-gravity-flow
-
-      - name: Validate black hole gravity rework
-        run: npm run validate:01094-black-hole-gravity-rework
-
-      - name: Validate black hole no-collapse behavior
-        run: npm run validate:01095-black-hole-no-collapse
-
-      - name: Validate gravity crush column
-        run: npm run validate:01096-gravity-crush-column
-
-      - name: Validate skill damage
-        run: npm run validate:01040-skill-damage
-
+          FULL_VALIDATION: ${{ github.event_name == 'workflow_dispatch' }}
+        run: node scripts/pr-validation-scope.mjs select "$BASE_SHA" "$HEAD_SHA"
+      - name: Install dependencies
+        if: steps.scope.outputs.mode != 'none'
+        run: npm ci
       - name: Build production bundle
+        if: steps.scope.outputs.mode != 'none'
         run: npm run build
-
-      - name: Install browser smoke runtime
+      - name: Run declared task checks
+        if: steps.scope.outputs.mode == 'task'
+        run: node scripts/pr-validation-scope.mjs run "$BASE_SHA" "$HEAD_SHA"
+      - name: Run full regression against base (manual only)
+        if: steps.scope.outputs.mode == 'full'
+        env:
+          VALIDATION_BASE_SHA: ${{ env.BASE_SHA }}
+        run: node scripts/run-validation-suite.mjs
+      - name: Install browser runtime (manual full validation only)
+        if: steps.scope.outputs.mode == 'full'
         run: |
           npm install --prefix /tmp/game-shop-browser playwright@1.55.1
           node /tmp/game-shop-browser/node_modules/playwright/cli.js install --with-deps chromium webkit
-
-      - name: Exercise shop in Chromium and WebKit
+      - name: Run full browser checks (manual only)
+        if: steps.scope.outputs.mode == 'full'
         env:
           PLAYWRIGHT_MODULE: /tmp/game-shop-browser/node_modules/playwright/index.mjs
         run: node scripts/shop-browser-smoke.mjs
-
-      - name: Upload shop browser screenshots
-        if: always()
+      - name: Upload full browser screenshots
+        if: always() && steps.scope.outputs.mode == 'full'
         uses: actions/upload-artifact@v4
         with:
           name: shop-browser-screenshots
