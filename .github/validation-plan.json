@@ -1,5 +1,5 @@
 {
-  "reason": "医师专项覆盖治疗时序/选目标/上限/模式隔离/控制与清理；普通怪回归检查属性隔离，肉怪回归检查共用行为管理器。只构建及这3项，不运行浏览器或整套回归。",
+  "reason": "大师专项验证刀气单次命中/不击退/控制清理/模式隔离；普通怪属性回归及肉怪、医师回归覆盖共用行为管理器。仅构建与这4项，不运行浏览器和整套回归。",
   "files": [
     "package-lock.json",
     "package.json",
@@ -74,15 +74,16 @@
     "scripts/validate-01115-game-speed.mjs",
     "scripts/validate-01121-start-menu.mjs",
     "scripts/validate-01126-normal-enemies.mjs",
-    "scripts/validate-01132-doctor-monster.mjs",
+    "scripts/validate-01133-master-monster.mjs",
     "src/config/enemies.js",
     "src/config/version.js",
-    "src/enemies/behaviors/DoctorBehavior.js",
-    "src/enemies/behaviors/EnemyBehaviorManager.js"
+    "src/enemies/behaviors/EnemyBehaviorManager.js",
+    "src/enemies/behaviors/MasterBehavior.js"
   ],
   "tests": [
-    "scripts/validate-01132-doctor-monster.mjs",
+    "scripts/validate-01133-master-monster.mjs",
     "scripts/validate-01126-normal-enemies.mjs",
-    "scripts/validate-01131-meat-monster.mjs"
+    "scripts/validate-01131-meat-monster.mjs",
+    "scripts/validate-01132-doctor-monster.mjs"
   ]
 }
