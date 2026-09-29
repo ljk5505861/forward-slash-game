@@ -49,6 +49,7 @@ function fixture(){
 {
   const f=fixture();f.b.update(0);f.b.update(3500);f.target.live=false;f.b.update(3900);
   assert.equal(f.hits.length,0);assert.equal(f.b.state,'idle','dead aim target cancels');
+  assert.equal(f.b.nextWave,3500,'failed windup does not spend skill cooldown');
 }
 {
   const f=fixture();f.b.update(0);f.b.update(3500);f.b.update(3900);
@@ -57,6 +58,7 @@ function fixture(){
 for(const state of ['windup','wave']){
   const f=fixture();f.b.update(0);f.b.update(3500);if(state==='wave')f.b.update(3900);
   f.b.interrupt(3950);assert.equal(f.b.state,'idle');assert.equal(f.b.wave,null);
+  if(state==='windup')assert.equal(f.b.nextWave,3500,'control before release preserves cooldown');
   f.b.update(4350);assert.equal(f.hits.length,0);
   f.b.onRecycle();assert.equal(f.b.nextWave,null);assert.equal(f.b.target,null);
   f.b.destroy();f.b.destroy();assert(f.g.destroyed);

@@ -32,7 +32,13 @@ export default class MasterBehavior {
     this.nextWave=t+this.delay(MASTER_TIMING.cooldown,t);
     this.nextMelee=t+this.delay(this.e.attackIntervalMs,t);
   }
-  interrupt(t) { if(this.state!=='idle'){this.finish(t);this.syncVisual();} }
+  interrupt(t) {
+    if(this.state==='windup'){
+      // No projectile was released: cancellation must not spend its cooldown.
+      this.state='idle';this.target=null;
+    }else if(this.state==='wave')this.finish(t);
+    this.syncVisual();
+  }
   update(t) {
     if(!alive(this.e)||!this.graphics)return;
     const e=this.e,s=this.scene;
@@ -52,7 +58,7 @@ export default class MasterBehavior {
     }else{
       e.body?.setVelocityX?.(0);
       if(this.state==='windup'&&t>=this.until){
-        if(!this.target?.isAlive?.()){this.finish(t);return;}
+        if(!this.target?.isAlive?.()){this.interrupt(t);return;}
         const from=this.hand(),dx=this.target.x-from.x,dy=this.target.y-from.y,length=Math.hypot(dx,dy)||1;
         this.from=from;this.to={x:from.x+dx/length*MASTER_TIMING.range,y:from.y+dy/length*MASTER_TIMING.range};
         this.wave={...from};this.target=null;this.started=t;this.state='wave';

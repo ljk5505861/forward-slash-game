@@ -12,8 +12,8 @@ export const ENEMIES = {
 };
 
 // Effective Lv1 stats, exclusive to normal mode. Do not apply the legacy global
-// difficulty multipliers again. Only normal warriors override movement speed;
-// range, attack behavior and knockback remain inherited.
+// difficulty multipliers again. Each profile overrides only its declared fields;
+// remaining movement/visual/attack settings inherit the legacy catalog.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
   charger: Object.freeze({ name:'大师', hp:44, damage:7, speed:360, attackRange:110, attackIntervalMs:1500,
     width:56, height:92, bodyWidth:48, bodyHeight:84, color:0x774e95, stroke:0x382246,
