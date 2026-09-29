@@ -1,10 +1,8 @@
 {
-  "reason": "用户明确授权暂停战士命中率验收。本任务仅肉怪：专项覆盖链刀、共享伤害/击退、生命周期；普通怪回归验证模式隔离及属性。其余旧测试文件仅版本断言同步，不运行整套浏览器。",
+  "reason": "医师专项覆盖治疗时序/选目标/上限/模式隔离/控制与清理；普通怪回归检查属性隔离，肉怪回归检查共用行为管理器。只构建及这3项，不运行浏览器或整套回归。",
   "files": [
     "package-lock.json",
     "package.json",
-    "scripts/meat-monster-browser-checks.mjs",
-    "scripts/shop-browser-smoke.mjs",
     "scripts/validate-010-gameplay-loop.mjs",
     "scripts/validate-01040-skill-damage.mjs",
     "scripts/validate-01042-level-system.mjs",
@@ -76,15 +74,15 @@
     "scripts/validate-01115-game-speed.mjs",
     "scripts/validate-01121-start-menu.mjs",
     "scripts/validate-01126-normal-enemies.mjs",
-    "scripts/validate-01131-meat-monster.mjs",
+    "scripts/validate-01132-doctor-monster.mjs",
     "src/config/enemies.js",
     "src/config/version.js",
-    "src/enemies/behaviors/EnemyBehaviorManager.js",
-    "src/enemies/behaviors/MeatBehavior.js",
-    "src/systems/CombatSystem.js"
+    "src/enemies/behaviors/DoctorBehavior.js",
+    "src/enemies/behaviors/EnemyBehaviorManager.js"
   ],
   "tests": [
-    "scripts/validate-01131-meat-monster.mjs",
-    "scripts/validate-01126-normal-enemies.mjs"
+    "scripts/validate-01132-doctor-monster.mjs",
+    "scripts/validate-01126-normal-enemies.mjs",
+    "scripts/validate-01131-meat-monster.mjs"
   ]
 }
