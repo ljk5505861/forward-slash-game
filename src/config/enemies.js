@@ -1,4 +1,5 @@
 export const ENEMIES = {
+  elite_war_drum_priest: { id:'elite_war_drum_priest', name:'战鼓祭司', kind:'elite', behavior:'healer', width:60, height:94, bodyWidth:52, bodyHeight:86, hp:68, damage:3, attackIntervalMs:2600, attackRange:480, speed:360, color:0xaa7242, stroke:0x50301d },
   elite_sharpshooter: { id:'elite_sharpshooter', name:'神射手', kind:'elite', behavior:'archer', width:58, height:92, bodyWidth:50, bodyHeight:84, hp:56, damage:8, attackIntervalMs:2200, attackRange:500, speed:360, color:0x367b7d, stroke:0x163a43 },
   grunt: { id:'grunt', name:'训练傀儡', kind:'normal', width:52, height:83, bodyWidth:45, bodyHeight:76, hp:16, damage:3, attackIntervalMs:1650, attackRange:86, speed:216, color:0xe84343, stroke:0x4b0000 },
   elite: { id:'elite', name:'精英傀儡', kind:'elite', width:74, height:105, bodyWidth:64, bodyHeight:97, hp:77, damage:8, attackIntervalMs:1450, attackRange:96, speed:216, color:0xcc7832, stroke:0x5a2600 },
@@ -16,6 +17,8 @@ export const ENEMIES = {
 // difficulty multipliers again. Each profile overrides only its declared fields;
 // remaining movement/visual/attack settings inherit the legacy catalog.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
+  elite_war_drum_priest: Object.freeze({ hp:68, damage:3, attackIntervalMs:2600,
+    hpGrowth:0.08, damageGrowth:0.03, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   elite_sharpshooter: Object.freeze({ hp:56, damage:8, attackIntervalMs:2200,
     hpGrowth:0.05, damageGrowth:0.12, attackSpeedGrowth:0.01, maxAttackSpeedBonus:0.15 }),
   elite: Object.freeze({ name:'盾卫', behavior:'shieldGuard', hp:150, damage:6, attackIntervalMs:2000,
@@ -44,3 +47,6 @@ export const SHIELD_GUARD_TUNING = Object.freeze({ first:3000, duration:1800, co
 
 export const SHARPSHOOTER_TUNING = Object.freeze({ first:3500, cooldown:6000, windup:700,
   shotGap:200, flight:350, recovery:650, burstDamageMultiplier:0.75 });
+
+export const WAR_DRUM_TUNING = Object.freeze({ first:3500, cooldown:6000, windup:600,
+  duration:3000, recovery:400, range:520, attackSpeedBonus:0.20, meleeRange:86 });
