@@ -1,9 +1,8 @@
 {
-  "reason": "只调整普通模式组奖励位置。18组流程专项覆盖技能/商店互斥、6个Boss和特殊节点、重复回调；清波等待、测试模式原循环、商店交易作为直接回归。不启动浏览器或全量回归。",
+  "reason": "普通模式单怪盾卫：专项验证真实出场/注册、临时减伤与恢复、举盾/收招不普攻、原击退、控制和生命周期；普通/测试配置、肉怪/医师/大师共享注册以及版本断言为直接回归。其余脚本仅机械同步版本，不运行整套或浏览器。",
   "files": [
     "package-lock.json",
     "package.json",
-    "scripts/three-wave-browser-checks.mjs",
     "scripts/validate-010-gameplay-loop.mjs",
     "scripts/validate-01040-skill-damage.mjs",
     "scripts/validate-01042-level-system.mjs",
@@ -73,16 +72,24 @@
     "scripts/validate-01113-profession-rework.mjs",
     "scripts/validate-01114-summon-creature-contracts.mjs",
     "scripts/validate-01115-game-speed.mjs",
-    "scripts/validate-01119-wave-settlement.mjs",
     "scripts/validate-01121-start-menu.mjs",
-    "scripts/validate-01128-three-wave-growth.mjs",
+    "scripts/validate-01126-normal-enemies.mjs",
+    "scripts/validate-01131-meat-monster.mjs",
+    "scripts/validate-01132-doctor-monster.mjs",
+    "scripts/validate-01133-master-monster.mjs",
+    "scripts/validate-01135-shield-guard.mjs",
+    "src/config/enemies.js",
     "src/config/version.js",
-    "src/systems/StageSystem.js"
+    "src/enemies/behaviors/EnemyBehaviorManager.js",
+    "src/enemies/behaviors/ShieldGuardBehavior.js",
+    "src/systems/CombatSystem.js"
   ],
   "tests": [
-    "scripts/validate-01128-three-wave-growth.mjs",
-    "scripts/validate-01119-wave-settlement.mjs",
-    "scripts/validate-01118-two-wave-shop-loop.mjs",
-    "scripts/validate-01124-growth-shop.mjs"
+    "scripts/validate-01135-shield-guard.mjs",
+    "scripts/validate-01126-normal-enemies.mjs",
+    "scripts/validate-01131-meat-monster.mjs",
+    "scripts/validate-01132-doctor-monster.mjs",
+    "scripts/validate-01133-master-monster.mjs",
+    "scripts/validate-01100-version.mjs"
   ]
 }

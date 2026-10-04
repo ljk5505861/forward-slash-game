@@ -11,7 +11,7 @@ import { TUNING } from '../config/tuning.js';
 import { getEffectiveAttack, getEffectiveDefense, getEffectiveDamageReduction, getEffectiveCritMultiplier, sumRuntimeBonuses } from '../config/balance.js';
 const Phaser = globalThis.Phaser || { Math:{ Distance:{ Between:(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1) } } };
 
-const BEHAVIOR_ATTACKERS = new Set(['meat', 'charger', 'archer', 'bomber', 'healer', 'midBoss', 'berserkerBoss']);
+const BEHAVIOR_ATTACKERS = new Set(['shieldGuard', 'meat', 'charger', 'archer', 'bomber', 'healer', 'midBoss', 'berserkerBoss']);
 const NON_LIFESTEAL_SOURCES = new Set(['burn','poison','burn_burst','reflect','shield_break','afterimage']);
 const NON_DIRECT_PLAYER_DAMAGE_TYPES = new Set(['dot','ground','environment','burn','poison','bomb']);
 const sumBonuses = sumRuntimeBonuses;

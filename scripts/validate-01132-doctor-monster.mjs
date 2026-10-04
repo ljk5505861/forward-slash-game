@@ -63,7 +63,7 @@ function fixture() {
 const code=fs.readFileSync('src/enemies/behaviors/EnemyBehaviorManager.js','utf8')
   .replace(/^import .*;\n/gm,'').replace(/export const /g,'const ').replace('export default class EnemyBehaviorManager','class EnemyBehaviorManager');
 const Manager=vm.runInNewContext(code+'\nEnemyBehaviorManager',{
-  DoctorBehavior,MeatBehavior:class {},Phaser:{},
+  DoctorBehavior,MeatBehavior:class {},ShieldGuardBehavior:class {},Phaser:{},
   getEnemyMoveSpeed:(_e,v)=>v,getEnemyAttackDelay:(_e,v)=>v,updateGravityPull:()=>false,
   isGravityReversalControlled:e=>!!e.reversed,isEnemyFrozen:e=>!!e.frozen,shiftEnemyColdTimers(){}
 });

@@ -73,7 +73,7 @@ for(const state of ['windup','wave']){
 const source=fs.readFileSync('src/enemies/behaviors/EnemyBehaviorManager.js','utf8').replace(/^import .*;\n/gm,'')
   .replace(/export const /g,'const ').replace('export default class EnemyBehaviorManager','class EnemyBehaviorManager');
 const Manager=vm.runInNewContext(source+'\nEnemyBehaviorManager',{
-  MasterBehavior,MeatBehavior:class {},DoctorBehavior:class {},Phaser:{},
+  MasterBehavior,MeatBehavior:class {},DoctorBehavior:class {},ShieldGuardBehavior:class {},Phaser:{},
   getEnemyMoveSpeed:(_e,v)=>v,getEnemyAttackDelay:(_e,v)=>v,updateGravityPull:()=>false,
   isGravityReversalControlled:e=>!!e.reversed,isEnemyFrozen:e=>!!e.frozen,shiftEnemyColdTimers(){}
 });
