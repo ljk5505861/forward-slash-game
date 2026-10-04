@@ -77,7 +77,7 @@ console.log('PASS meat profile/growth/mode isolation, melee, windup, swept hit, 
 const managerSource=fs.readFileSync('src/enemies/behaviors/EnemyBehaviorManager.js','utf8')
   .replace(/^import .*;\n/gm,'').replace(/export const /g,'const ').replace('export default class EnemyBehaviorManager','class EnemyBehaviorManager');
 const Manager=vm.runInNewContext(managerSource+'\nEnemyBehaviorManager',{
-  MeatBehavior,Phaser:{},getEnemyMoveSpeed:(_e,v)=>v,getEnemyAttackDelay:(_e,v)=>v,
+  MeatBehavior,ShieldGuardBehavior:class {},Phaser:{},getEnemyMoveSpeed:(_e,v)=>v,getEnemyAttackDelay:(_e,v)=>v,
   updateGravityPull:()=>false,isGravityReversalControlled:()=>false,isEnemyFrozen:(_e)=>!!_e.frozen,shiftEnemyColdTimers(){}
 });
 {

@@ -15,6 +15,9 @@ export const ENEMIES = {
 // difficulty multipliers again. Each profile overrides only its declared fields;
 // remaining movement/visual/attack settings inherit the legacy catalog.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
+  elite: Object.freeze({ name:'盾卫', behavior:'shieldGuard', hp:150, damage:6, attackIntervalMs:2000,
+    color:0x587087, stroke:0x263848,
+    hpGrowth:0.18, damageGrowth:0.03, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   charger: Object.freeze({ name:'大师', hp:44, damage:7, speed:360, attackRange:110, attackIntervalMs:1500,
     width:56, height:92, bodyWidth:48, bodyHeight:84, color:0x774e95, stroke:0x382246,
     hpGrowth:0.06, damageGrowth:0.12, attackSpeedGrowth:0.01, maxAttackSpeedBonus:0.15 }),
@@ -32,3 +35,6 @@ export const NORMAL_ENEMY_PROFILES = Object.freeze({
 export const DOCTOR_TUNING = Object.freeze({ healGrowth:0.10, healRange:520, meleeRange:86, effectMs:360 });
 
 export const MASTER_TIMING = Object.freeze({ first:3500, cooldown:5000, windup:400, flight:450, range:400, damageMultiplier:1.5 });
+
+export const SHIELD_GUARD_TUNING = Object.freeze({ first:3000, duration:1800, cooldown:5200,
+  reduction:0.5, moveMultiplier:0.45, recovery:350 });
