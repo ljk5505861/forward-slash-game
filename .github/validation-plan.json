@@ -1,5 +1,5 @@
 {
-  "reason": "普通模式单怪盾卫：专项验证真实出场/注册、临时减伤与恢复、举盾/收招不普攻、原击退、控制和生命周期；普通/测试配置、肉怪/医师/大师共享注册以及版本断言为直接回归。其余脚本仅机械同步版本，不运行整套或浏览器。",
+  "reason": "单怪神射手：专项覆盖三连射/收招互斥、飞箭单次扫掠、无击退、目标死亡及中断清理、普通模式精英后排轮换与数量/金币不变；盾卫、普通弓箭手、模式配置、三波流程和版本为直接回归。旧脚本只机械同步版本，不跑整套或浏览器。",
   "files": [
     "package-lock.json",
     "package.json",
@@ -74,22 +74,19 @@
     "scripts/validate-01115-game-speed.mjs",
     "scripts/validate-01121-start-menu.mjs",
     "scripts/validate-01126-normal-enemies.mjs",
-    "scripts/validate-01131-meat-monster.mjs",
-    "scripts/validate-01132-doctor-monster.mjs",
-    "scripts/validate-01133-master-monster.mjs",
-    "scripts/validate-01135-shield-guard.mjs",
+    "scripts/validate-01136-sharpshooter.mjs",
     "src/config/enemies.js",
     "src/config/version.js",
     "src/enemies/behaviors/EnemyBehaviorManager.js",
-    "src/enemies/behaviors/ShieldGuardBehavior.js",
-    "src/systems/CombatSystem.js"
+    "src/enemies/behaviors/SharpshooterBehavior.js",
+    "src/systems/StageSystem.js"
   ],
   "tests": [
+    "scripts/validate-01136-sharpshooter.mjs",
     "scripts/validate-01135-shield-guard.mjs",
+    "scripts/validate-01073-archer-enemy.mjs",
     "scripts/validate-01126-normal-enemies.mjs",
-    "scripts/validate-01131-meat-monster.mjs",
-    "scripts/validate-01132-doctor-monster.mjs",
-    "scripts/validate-01133-master-monster.mjs",
+    "scripts/validate-01128-three-wave-growth.mjs",
     "scripts/validate-01100-version.mjs"
   ]
 }

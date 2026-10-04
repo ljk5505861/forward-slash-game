@@ -1,4 +1,5 @@
 export const ENEMIES = {
+  elite_sharpshooter: { id:'elite_sharpshooter', name:'神射手', kind:'elite', behavior:'archer', width:58, height:92, bodyWidth:50, bodyHeight:84, hp:56, damage:8, attackIntervalMs:2200, attackRange:500, speed:360, color:0x367b7d, stroke:0x163a43 },
   grunt: { id:'grunt', name:'训练傀儡', kind:'normal', width:52, height:83, bodyWidth:45, bodyHeight:76, hp:16, damage:3, attackIntervalMs:1650, attackRange:86, speed:216, color:0xe84343, stroke:0x4b0000 },
   elite: { id:'elite', name:'精英傀儡', kind:'elite', width:74, height:105, bodyWidth:64, bodyHeight:97, hp:77, damage:8, attackIntervalMs:1450, attackRange:96, speed:216, color:0xcc7832, stroke:0x5a2600 },
   armored_guard: { id:'armored_guard', name:'重甲守卫', kind:'normal', behavior:'armored', width:69, height:104, bodyWidth:60, bodyHeight:95, hp:24, defense:1, damageReduction:0.08, damage:2, attackIntervalMs:1800, attackRange:112, speed:216, color:0x667085, stroke:0x1f2937 },
@@ -15,6 +16,8 @@ export const ENEMIES = {
 // difficulty multipliers again. Each profile overrides only its declared fields;
 // remaining movement/visual/attack settings inherit the legacy catalog.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
+  elite_sharpshooter: Object.freeze({ hp:56, damage:8, attackIntervalMs:2200,
+    hpGrowth:0.05, damageGrowth:0.12, attackSpeedGrowth:0.01, maxAttackSpeedBonus:0.15 }),
   elite: Object.freeze({ name:'盾卫', behavior:'shieldGuard', hp:150, damage:6, attackIntervalMs:2000,
     color:0x587087, stroke:0x263848,
     hpGrowth:0.18, damageGrowth:0.03, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
@@ -38,3 +41,6 @@ export const MASTER_TIMING = Object.freeze({ first:3500, cooldown:5000, windup:4
 
 export const SHIELD_GUARD_TUNING = Object.freeze({ first:3000, duration:1800, cooldown:5200,
   reduction:0.5, moveMultiplier:0.45, recovery:350 });
+
+export const SHARPSHOOTER_TUNING = Object.freeze({ first:3500, cooldown:6000, windup:700,
+  shotGap:200, flight:350, recovery:650, burstDamageMultiplier:0.75 });
