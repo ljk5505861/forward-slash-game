@@ -1,5 +1,5 @@
 {
-  "reason": "普通模式Boss3无冕之王：实际spawn/首战数值/模式/奖励、独立四技能时钟及普通击退压制、逐枪判定突刺/换目标/落空/低帧率、前方重劈伤害击退、固定区域分批枪雨预警/逐枪一次结算、阴影移动和普通攻击/所有伤害路径及真实DOT免伤/精确到期解除、回调/暂停/回收/死亡/结束清理。直接回归无刺蔷薇、撼山将军、旧Boss击退、共享管理器与Combat的八种已改精英、普通配置、三波流程、Boss奖励及版本；69个旧脚本仅机械版本同步，旧Boss检查另保留全部16条安全断言并适配新增时间参数，另更新普通配置名单和撼山将军Boss3旧边界断言（由本专项真实spawn覆盖替代）。不执行整套回归、浏览器或暂停的战士命中手感。",
+  "reason": "普通模式Boss4预事者：真实spawn/原首战生命攻击/测试模式隔离、锁方向预警光束、独立捆绑/分裂/瞬移时钟、真实玩家及狼/鸟/毒王/天书盟友仅限制移动但保留普攻/施法/治疗、稳定单位引用与精确束缚到期、两只可击毁/有期限的小肉球及上限/预警光束/不额外奖励、右侧合法位置瞬移且不免伤、技能免击退/恢复期击退、寒冷/暂停/回收/计时/死亡/结束清理。直接回归前三Boss、旧Boss击退、管理器和Combat的八种已改精英、配置/三波/奖励/版本及四类召唤物的移动和行动。70个旧脚本仅机械版本同步，另更新配置名单与撼山将军的旧Boss4断言（以本专项真实spawn/事件/奖励检查覆盖替代），保留Boss5-6。只跑声明的22项，不执行全套、浏览器或战士命中手感。",
   "files": [
     "package-lock.json",
     "package.json",
@@ -75,15 +75,22 @@
     "scripts/validate-01121-start-menu.mjs",
     "scripts/validate-01126-normal-enemies.mjs",
     "scripts/validate-01143-mountain-general.mjs",
-    "scripts/validate-01145-uncrowned-king.mjs",
+    "scripts/validate-01146-foreseer.mjs",
     "src/config/enemies.js",
     "src/config/version.js",
     "src/enemies/behaviors/EnemyBehaviorManager.js",
-    "src/enemies/behaviors/UncrownedKingBehavior.js",
+    "src/enemies/behaviors/ForeseerBehavior.js",
+    "src/skills/handlers/MantraHeavenlyBookSkill.js",
+    "src/skills/handlers/PoisonSummonAdvancedSkills.js",
+    "src/skills/handlers/SpiritBirdSkill.js",
+    "src/skills/handlers/SpiritWolvesSkill.js",
     "src/systems/CombatSystem.js",
+    "src/systems/ForeseerBindingControl.js",
+    "src/systems/MovementSystem.js",
     "src/systems/StageSystem.js"
   ],
   "tests": [
+    "scripts/validate-01146-foreseer.mjs",
     "scripts/validate-01145-uncrowned-king.mjs",
     "scripts/validate-01144-thornless-rose.mjs",
     "scripts/validate-01143-mountain-general.mjs",
@@ -99,6 +106,11 @@
     "scripts/validate-01126-normal-enemies.mjs",
     "scripts/validate-01128-three-wave-growth.mjs",
     "scripts/validate-midboss-reward-flow.mjs",
-    "scripts/validate-01100-version.mjs"
+    "scripts/validate-01100-version.mjs",
+    "scripts/validate-01071-spirit-wolves.mjs",
+    "scripts/validate-01075-wolf-knockback-target-lock.mjs",
+    "scripts/validate-01080-spirit-bird-chase-balance.mjs",
+    "scripts/validate-01053-poison-summon-regressions.mjs",
+    "scripts/validate-01107-mantra-heavenly-book.mjs"
   ]
 }

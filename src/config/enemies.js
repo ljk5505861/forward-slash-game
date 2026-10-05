@@ -1,4 +1,6 @@
 export const ENEMIES = {
+  foreseer: { id:'foreseer', name:'预事者', kind:'boss', bossType:'boss4', behavior:'foreseer', width:84, height:116, bodyWidth:72, bodyHeight:106, hp:2300, damage:19, attackIntervalMs:2600, attackRange:520, preferredRange:380, speed:286, color:0x756079, stroke:0x302438 },
+  foreseer_orb: { id:'foreseer_orb', name:'分裂肉球', kind:'summon', behavior:'foreseerOrb', width:36, height:36, bodyWidth:32, bodyHeight:32, hp:54, damage:7, attackIntervalMs:1800, attackRange:460, preferredRange:320, speed:180, color:0xa96678, stroke:0x522c44 },
   uncrowned_king: { id:'uncrowned_king', name:'无冕之王', kind:'boss', bossType:'boss3', behavior:'uncrownedKing', width:88, height:126, bodyWidth:78, bodyHeight:116, hp:1408, damage:16, attackIntervalMs:2400, attackRange:175, speed:272, color:0x252934, stroke:0x090d16 },
   thornless_rose: { id:'thornless_rose', name:'无刺蔷薇', kind:'boss', bossType:'mid', behavior:'thornlessRose', width:70, height:118, bodyWidth:60, bodyHeight:108, hp:960, damage:11, attackIntervalMs:2000, attackRange:150, speed:300, color:0xb83355, stroke:0x48152b },
   mountain_general: { id:'mountain_general', name:'撼山将军', kind:'boss', bossType:'boss1', behavior:'mountainGeneral', width:97, height:129, bodyWidth:85, bodyHeight:119, hp:640, damage:8, attackIntervalMs:2200, attackRange:155, speed:272, color:0x8c4634, stroke:0x3c211d },
@@ -27,6 +29,10 @@ export const ENEMIES = {
 // difficulty multipliers again. Each profile overrides only its declared fields;
 // remaining movement/visual/attack settings inherit the legacy catalog.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
+  foreseer: Object.freeze({ hp:2300, damage:19, attackIntervalMs:2600,
+    hpGrowth:0.12, damageGrowth:0.04, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
+  foreseer_orb: Object.freeze({ hp:54, damage:7, attackIntervalMs:1800,
+    hpGrowth:0.06, damageGrowth:0.04, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   uncrowned_king: Object.freeze({ hp:1408, damage:16, attackIntervalMs:2400,
     hpGrowth:0.12, damageGrowth:0.035, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   thornless_rose: Object.freeze({ hp:960, damage:11, attackIntervalMs:2000,
@@ -118,3 +124,11 @@ export const UNCROWNED_KING_TUNING = Object.freeze({ thrustFirst:3000, thrustCoo
   rainRadius:32, rainDamageMultiplier:0.65, rainRecovery:650,
   shadowFirst:12000, shadowCooldown:12500, shadowWindup:350, shadowDuration:3000, shadowRecovery:600,
   attackWindup:110, attackRecovery:250, knockbackDuration:150, effectMs:180 });
+
+export const FORESEER_TUNING = Object.freeze({ bindFirst:3000, bindCooldown:7000, bindWindup:500,
+  bindRange:480, bindDuration:1800, bindDamageMultiplier:0.35, bindRecovery:600,
+  splitFirst:6000, splitCooldown:9500, splitWindup:650, splitRecovery:650,
+  orbCap:2, orbDuration:8500, orbFirst:600,
+  teleportFirst:9000, teleportCooldown:10000, teleportWindup:400, teleportRecovery:650,
+  teleportPlayerGap:100, teleportMinDistance:80,
+  beamWindup:350, beamRadius:16, attackRecovery:280, knockbackDuration:150, flash:180 });

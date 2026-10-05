@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { GAME_VERSION } from '../src/config/version.js';
 
-assert.equal(GAME_VERSION, '0.11.45');
+assert.equal(GAME_VERSION, '0.11.46');
 
 const png = readFileSync(new URL('../src/player_idle.png', import.meta.url));
 assert.deepEqual(

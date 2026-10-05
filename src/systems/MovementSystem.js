@@ -1,4 +1,5 @@
 import { getWeapon } from '../config/weapons.js';
+import { isForeseerBound } from './ForeseerBindingControl.js';
 
 const sumBonuses = bonuses => Object.values(bonuses||{}).reduce((sum,value)=>sum+(Number(value)||0),0);
 
@@ -27,6 +28,7 @@ export default class MovementSystem {
     if(s.stageSystem?.shouldHoldPlayerForBossIntro?.()){ s.player.body.setVelocityX(0); this.clampPlayerToCameraRight(); return; }
     const target=s.targeting.nearestAhead(s.balance.player.encounterDistance);
     s.currentTarget=target;
+    if(isForeseerBound(s.player,s.getGameplayTime?.()||0)){ s.player.body.setVelocityX(0); return; }
     const weapon=getWeapon(s.playerData.weaponId);
     if(target){
       const d=target.x-s.player.x;

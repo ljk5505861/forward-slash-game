@@ -2,6 +2,7 @@ import { SKILLS } from '../../config/skills.js';
 import { TAGS } from '../../config/tags.js';
 import { CombatEvents } from '../../core/CombatEvents.js';
 import { StatusEffects } from '../../systems/StatusEffectSystem.js';
+import { isForeseerBound } from '../../systems/ForeseerBindingControl.js';
 
 export const POISON_ADVANCED_TUNING=Object.freeze({
   chain:{
@@ -685,8 +686,10 @@ export const PoisonKingSkill={
           x:s.player.x+95,
           y:s.player.y-55
         };
-      king.view.x+=(goal.x-king.view.x)*0.1;
-      king.view.y+=(goal.y-king.view.y)*0.1;
+      if(!isForeseerBound(king,now)){
+        king.view.x+=(goal.x-king.view.x)*0.1;
+        king.view.y+=(goal.y-king.view.y)*0.1;
+      }
       if(target&&now>=king.nextBiteAt){
         king.nextBiteAt=now+Math.max(1,s.professionSystem?.summonActionInterval?.('poison_king',data.biteIntervalMs/(1+((s.spiritSlimeRuntime?.getModifier?.(king)||{}).actionSpeedBonus||0)),king)??Math.round(data.biteIntervalMs/(1+((s.spiritSlimeRuntime?.getModifier?.(king)||{}).actionSpeedBonus||0))));
         bite(target,data);
