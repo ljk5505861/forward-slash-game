@@ -29,8 +29,8 @@ for(const group of FLOW_GROUPS)for(let wave=0;wave<3;wave+=1) {
   const berserkerGroup=group.group>=11&&group.group%3===2;
   const mageWave=wave===2&&group.group>=10&&group.group%3===1;
   assert.equal(newCount,!mageWave&&!priestGroup&&!berserkerGroup&&group.group>=8&&group.group%2===0&&group.ids[wave].includes('elite')?1:0);
-  assert.deepEqual(items.map(e=>['elite_sharpshooter','elite_war_drum_priest','elite_berserker','elite_thunder_mage'].includes(e.id)?'elite':e.id).sort(),legacy.map(e=>e.id).sort(),'only existing elite slot changes');
-  assert(!legacy.some(e=>['elite_sharpshooter','elite_war_drum_priest','elite_berserker','elite_thunder_mage'].includes(e.id)),'test mode never receives new elites');
+  assert.deepEqual(items.map(e=>['elite_sharpshooter','elite_war_drum_priest','elite_berserker','elite_thunder_mage','elite_hell_envoy'].includes(e.id)?'elite':e.id).sort(),legacy.map(e=>e.id).sort(),'only existing elite slot changes');
+  assert(!legacy.some(e=>['elite_sharpshooter','elite_war_drum_priest','elite_berserker','elite_thunder_mage','elite_hell_envoy'].includes(e.id)),'test mode never receives new elites');
   const index=items.findIndex(e=>e.id==='elite_sharpshooter');
   if(index>=0){first??=`${group.group}-${wave+1}`;assert.equal(items[index].role,'back');assert(items.slice(index+1).every(e=>e.role==='back'),'ranged elite is behind all front units');}
   const gold=ids=>ids.reduce((sum,e)=>sum+(ENEMIES[e.id].kind==='elite'?15:1),0);

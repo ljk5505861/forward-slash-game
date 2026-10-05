@@ -1,4 +1,7 @@
 export const ENEMIES = {
+  elite_hell_envoy: { id:'elite_hell_envoy', name:'地狱使', kind:'elite', behavior:'hellEnvoy', width:60, height:98, bodyWidth:52, bodyHeight:90, hp:76, damage:3, attackIntervalMs:2600, attackRange:420, preferredRange:420, speed:300, color:0x6c354e, stroke:0x2d1424 },
+  hell_head: { id:'hell_head', name:'头魔', kind:'summon', width:64, height:64, bodyWidth:56, bodyHeight:56, hp:38, damage:4, attackIntervalMs:2300, attackRange:86, speed:216, color:0xa1444a, stroke:0x471b25 },
+  hell_small: { id:'hell_small', name:'小魔', kind:'summon', width:32, height:44, bodyWidth:28, bodyHeight:38, hp:16, damage:2, attackIntervalMs:2000, attackRange:72, speed:250, color:0xa86875, stroke:0x4e2937 },
   elite_thunder_mage: { id:'elite_thunder_mage', name:'雷法师', kind:'elite', behavior:'archer', width:58, height:94, bodyWidth:50, bodyHeight:86, hp:62, damage:8, attackIntervalMs:2400, attackRange:480, speed:360, color:0x4776a8, stroke:0x173858 },
   elite_berserker: { id:'elite_berserker', name:'狂战士', kind:'elite', behavior:'eliteBerserker', width:64, height:96, bodyWidth:56, bodyHeight:88, hp:104, damage:10, attackIntervalMs:1800, attackRange:110, speed:300, color:0xa83b36, stroke:0x4a181b },
   elite_war_drum_priest: { id:'elite_war_drum_priest', name:'战鼓祭司', kind:'elite', behavior:'healer', width:60, height:94, bodyWidth:52, bodyHeight:86, hp:68, damage:3, attackIntervalMs:2600, attackRange:480, speed:360, color:0xaa7242, stroke:0x50301d },
@@ -19,6 +22,12 @@ export const ENEMIES = {
 // difficulty multipliers again. Each profile overrides only its declared fields;
 // remaining movement/visual/attack settings inherit the legacy catalog.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
+  elite_hell_envoy: Object.freeze({ hp:76, damage:3, attackIntervalMs:2600,
+    hpGrowth:0.08, damageGrowth:0.03, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
+  hell_head: Object.freeze({ hp:38, damage:4, attackIntervalMs:2300,
+    hpGrowth:0.08, damageGrowth:0.05, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
+  hell_small: Object.freeze({ hp:16, damage:2, attackIntervalMs:2000,
+    hpGrowth:0.06, damageGrowth:0.05, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   elite_thunder_mage: Object.freeze({ hp:62, damage:8, attackIntervalMs:2400,
     hpGrowth:0.06, damageGrowth:0.11, attackSpeedGrowth:0.01, maxAttackSpeedBonus:0.10 }),
   elite_berserker: Object.freeze({ hp:104, damage:10, attackIntervalMs:1800,
@@ -62,3 +71,6 @@ export const ELITE_BERSERKER_TUNING = Object.freeze({ first:3200, cooldown:6200,
 
 export const THUNDER_MAGE_TUNING = Object.freeze({ first:4000, cooldown:6500, warning:900,
   recovery:650, radius:70, damageMultiplier:1.5, flight:400, boltRadius:18, flash:160 });
+
+export const HELL_ENVOY_TUNING = Object.freeze({ first:3200, cooldown:5500, windup:650,
+  recovery:400, headCap:2, smallCap:4, meleeRange:86 });

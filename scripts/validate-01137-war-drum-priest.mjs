@@ -22,11 +22,11 @@ for(const group of FLOW_GROUPS)for(let wave=0;wave<4;wave+=1) {
   stage.currentGroup=group.group;stage.currentWave=wave+1;scene.runMode='normal';
   const items=stage.makeWaveIds(group.ids[wave],group.waves[wave],group.rangedCounts[wave]);
   scene.runMode='test';const legacy=stage.makeWaveIds(group.ids[wave],group.waves[wave],group.rangedCounts[wave]);
-  const expected=group.group>=9&&group.group%3===0&&group.ids[wave].includes('elite')?1:0;
+  const expected=!(wave===1&&group.group>=12&&group.group%3===0)&&group.group>=9&&group.group%3===0&&group.ids[wave].includes('elite')?1:0;
   assert.equal(items.filter(v=>v.id==='elite_war_drum_priest').length,expected);
   assert.equal(items.length,group.waves[wave]);assert.equal(items.length,legacy.length);
-  assert.deepEqual(items.map(v=>['elite_sharpshooter','elite_war_drum_priest','elite_berserker','elite_thunder_mage'].includes(v.id)?'elite':v.id).sort(),legacy.map(v=>v.id).sort());
-  assert(!legacy.some(v=>['elite_sharpshooter','elite_war_drum_priest','elite_berserker','elite_thunder_mage'].includes(v.id)));
+  assert.deepEqual(items.map(v=>['elite_sharpshooter','elite_war_drum_priest','elite_berserker','elite_thunder_mage','elite_hell_envoy'].includes(v.id)?'elite':v.id).sort(),legacy.map(v=>v.id).sort());
+  assert(!legacy.some(v=>['elite_sharpshooter','elite_war_drum_priest','elite_berserker','elite_thunder_mage','elite_hell_envoy'].includes(v.id)));
   const index=items.findIndex(v=>v.id==='elite_war_drum_priest');
   if(index>=0){first??=`${group.group}-${wave+1}`;assert.equal(items[index].role,'back');assert(items.slice(index+1).every(v=>v.role==='back'));}
   if(wave<3) {
