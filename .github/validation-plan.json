@@ -1,5 +1,5 @@
 {
-  "reason": "单怪战鼓祭司：专项验证普通怪攻速鼓舞、不叠加、独立来源/到期恢复、控制/死亡/回收/场景清理、医师不加快治疗及原精英位置后排轮换与数量/金币不变。行为管理器、受鼓舞普通怪、精英轮换、三波流程和版本为直接回归。旧脚本仅机械同步版本，不跑战士命中手感、整套或浏览器。",
+  "reason": "单怪狂战士：专项覆盖双斧蓄力三连斩、逐次选目标/距离/打空、普攻互斥、零击退、控制打断、回收/场景/同步反伤死亡清理、真实spawn及原精英位置轮换与数量/金币不变。已有三种精英行为管理器/轮换、普通配置、三波流程、版本为直接回归。旧脚本仅机械同步版本；不跑整套、浏览器或战士命中手感。",
   "files": [
     "package-lock.json",
     "package.json",
@@ -76,21 +76,19 @@
     "scripts/validate-01126-normal-enemies.mjs",
     "scripts/validate-01136-sharpshooter.mjs",
     "scripts/validate-01137-war-drum-priest.mjs",
+    "scripts/validate-01138-elite-berserker.mjs",
     "src/config/enemies.js",
     "src/config/version.js",
-    "src/enemies/behaviors/DoctorBehavior.js",
+    "src/enemies/behaviors/EliteBerserkerBehavior.js",
     "src/enemies/behaviors/EnemyBehaviorManager.js",
-    "src/enemies/behaviors/WarDrumPriestBehavior.js",
+    "src/systems/CombatSystem.js",
     "src/systems/StageSystem.js"
   ],
   "tests": [
+    "scripts/validate-01138-elite-berserker.mjs",
     "scripts/validate-01137-war-drum-priest.mjs",
     "scripts/validate-01136-sharpshooter.mjs",
     "scripts/validate-01135-shield-guard.mjs",
-    "scripts/validate-01132-doctor-monster.mjs",
-    "scripts/validate-01133-master-monster.mjs",
-    "scripts/validate-01131-meat-monster.mjs",
-    "scripts/validate-01073-archer-enemy.mjs",
     "scripts/validate-01126-normal-enemies.mjs",
     "scripts/validate-01128-three-wave-growth.mjs",
     "scripts/validate-01100-version.mjs"
