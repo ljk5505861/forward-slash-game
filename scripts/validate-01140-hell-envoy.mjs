@@ -131,7 +131,7 @@ for(const removal of ['bossCleanup','endRun','statusCallback']) {
 }
 
 const scene={runMode:'normal'},stage=new StageSystem(scene),catalog=JSON.stringify(FLOW_GROUPS);
-const newIds=['elite_hell_envoy','elite_thunder_mage','elite_berserker','elite_war_drum_priest','elite_sharpshooter','elite_gambler'];
+const newIds=['elite_hell_envoy','elite_thunder_mage','elite_berserker','elite_war_drum_priest','elite_sharpshooter','elite_gambler','elite_golden_guard'];
 let first=null;
 for(const group of FLOW_GROUPS)for(let wave=0;wave<4;wave++) {
   stage.currentGroup=group.group;stage.currentWave=wave+1;scene.runMode='normal';

@@ -111,7 +111,7 @@ for(const control of ['knockback','freeze','gravity'])for(const phase of ['windu
 }
 
 const scene={runMode:'normal'},stage=new StageSystem(scene),catalog=JSON.stringify(FLOW_GROUPS);
-const newIds=['elite_gambler','elite_hell_envoy','elite_thunder_mage','elite_berserker','elite_war_drum_priest','elite_sharpshooter'];
+const newIds=['elite_gambler','elite_golden_guard','elite_hell_envoy','elite_thunder_mage','elite_berserker','elite_war_drum_priest','elite_sharpshooter'];
 for(const level of [1,13,19,100]) {
   stage.currentEnemyLevel=level;const e=stage.tunedEnemy('elite_gambler'),offset=level-1;
   assert.equal(e.hp,Math.round(60*(1+offset*.05)));assert.equal(e.damage,Math.round(7*(1+offset*.11)));
