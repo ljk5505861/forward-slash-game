@@ -1,5 +1,5 @@
 {
-  "reason": "单怪赌师：专项检查真实spawn/行为接入、四张循环、未出手不消耗计数/间隔、普通牌单体与第4张爆炸互斥、真实扫掠首碰撞、固定轨迹/末端爆炸、逐目标重验与同步死亡/清场、无击退/眩晕/地面残留、控制/暂停/回收/清理、实际玩家和召唤物伤害。已有精英管理器及轮换、普通配置、三波流程、版本为直接回归。旧脚本仅机械同步版本；不跑整套、浏览器或战士命中手感。",
+  "reason": "单怪黄金殿卫：专项走真实spawn/行为注册和Combat伤害，检查长枪范围、两次普通刺击/第三次蓄力重刺、前摇/收招/普攻互斥、目标死亡/替换/离开范围失败不消耗、低帧不补多次、无击退/眩晕/免控、同步反伤死亡/结束/控制/暂停/回收清理；全部已有精英的轮换/管理器、普通配置、三波流程、版本为直接回归。旧脚本仅机械同步版本；不跑整套、浏览器或暂停的战士命中手感。",
   "files": [
     "package-lock.json",
     "package.json",
@@ -80,13 +80,16 @@
     "scripts/validate-01139-thunder-mage.mjs",
     "scripts/validate-01140-hell-envoy.mjs",
     "scripts/validate-01141-gambler.mjs",
+    "scripts/validate-01142-golden-hall-guard.mjs",
     "src/config/enemies.js",
     "src/config/version.js",
     "src/enemies/behaviors/EnemyBehaviorManager.js",
-    "src/enemies/behaviors/GamblerBehavior.js",
+    "src/enemies/behaviors/GoldenHallGuardBehavior.js",
+    "src/systems/CombatSystem.js",
     "src/systems/StageSystem.js"
   ],
   "tests": [
+    "scripts/validate-01142-golden-hall-guard.mjs",
     "scripts/validate-01141-gambler.mjs",
     "scripts/validate-01140-hell-envoy.mjs",
     "scripts/validate-01139-thunder-mage.mjs",
