@@ -10,7 +10,7 @@ import { getEnemyMoveSpeed,getEnemyAttackDelay,isGravityReversalControlled,updat
 import { isEnemyFrozen,shiftEnemyColdTimers } from '../src/systems/EnemyColdControl.js';
 
 const scene={runMode:'normal'},stage=new StageSystem(scene),catalog=JSON.stringify(FLOW_GROUPS);
-const newIds=['elite_berserker','elite_war_drum_priest','elite_sharpshooter','elite_thunder_mage'];
+const newIds=['elite_berserker','elite_war_drum_priest','elite_sharpshooter','elite_thunder_mage','elite_hell_envoy'];
 for(const level of [1,11,19,100]) {
   stage.currentEnemyLevel=level;const e=stage.tunedEnemy('elite_berserker'),offset=level-1;
   assert.equal(e.name,'狂战士');assert.equal(e.kind,'elite');assert.equal(e.behavior,'eliteBerserker');

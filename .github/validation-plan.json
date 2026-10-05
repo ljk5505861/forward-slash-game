@@ -1,5 +1,5 @@
 {
-  "reason": "单怪雷法师：专项覆盖真实雷电弹首个扫掠命中、固定预警落雷/目标离圈打空、逐个重验AoE与同步反伤死亡、无击退/眩晕、控制/回收/暂停/场景清理、真实spawn与按组/波精英轮换和数量/金币不变。已有精英行为管理器/轮换、普通配置、三波流程、版本为直接回归。旧脚本仅机械同步版本；不跑整套、浏览器或战士命中手感。",
+  "reason": "单怪地狱使：专项通过真实Stage.spawn/行为管理器/Combat死亡结算检查召唤、头魔分裂、小魔不分裂、每主人数量上限、全局人口上限、延迟首击、零金币并保留真实血玉击杀联动、主人死亡后召唤物阻塞过波、控制/回收/暂停/结束/清场清理。既有精英轮换与管理器、普通配置、三波流程、版本为直接回归。旧脚本仅机械同步版本；不跑整套、浏览器或战士命中手感。",
   "files": [
     "package-lock.json",
     "package.json",
@@ -78,13 +78,16 @@
     "scripts/validate-01137-war-drum-priest.mjs",
     "scripts/validate-01138-elite-berserker.mjs",
     "scripts/validate-01139-thunder-mage.mjs",
+    "scripts/validate-01140-hell-envoy.mjs",
     "src/config/enemies.js",
     "src/config/version.js",
     "src/enemies/behaviors/EnemyBehaviorManager.js",
-    "src/enemies/behaviors/ThunderMageBehavior.js",
+    "src/enemies/behaviors/HellEnvoyBehavior.js",
+    "src/systems/CombatSystem.js",
     "src/systems/StageSystem.js"
   ],
   "tests": [
+    "scripts/validate-01140-hell-envoy.mjs",
     "scripts/validate-01139-thunder-mage.mjs",
     "scripts/validate-01138-elite-berserker.mjs",
     "scripts/validate-01137-war-drum-priest.mjs",
