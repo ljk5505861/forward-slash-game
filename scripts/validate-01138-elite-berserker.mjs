@@ -10,7 +10,7 @@ import { getEnemyMoveSpeed,getEnemyAttackDelay,isGravityReversalControlled,updat
 import { isEnemyFrozen,shiftEnemyColdTimers } from '../src/systems/EnemyColdControl.js';
 
 const scene={runMode:'normal'},stage=new StageSystem(scene),catalog=JSON.stringify(FLOW_GROUPS);
-const newIds=['elite_berserker','elite_war_drum_priest','elite_sharpshooter'];
+const newIds=['elite_berserker','elite_war_drum_priest','elite_sharpshooter','elite_thunder_mage'];
 for(const level of [1,11,19,100]) {
   stage.currentEnemyLevel=level;const e=stage.tunedEnemy('elite_berserker'),offset=level-1;
   assert.equal(e.name,'狂战士');assert.equal(e.kind,'elite');assert.equal(e.behavior,'eliteBerserker');
@@ -20,7 +20,7 @@ for(const level of [1,11,19,100]) {
 }
 let first=null,gold=0,oldGold=0;
 for(const group of FLOW_GROUPS)for(let wave=0;wave<4;wave+=1) {
-  stage.currentGroup=group.group;scene.runMode='normal';
+  stage.currentGroup=group.group;stage.currentWave=wave+1;scene.runMode='normal';
   const items=stage.makeWaveIds(group.ids[wave],group.waves[wave],group.rangedCounts[wave]);
   scene.runMode='test';const legacy=stage.makeWaveIds(group.ids[wave],group.waves[wave],group.rangedCounts[wave]);
   const expected=group.group>=11&&group.group%3===2&&group.ids[wave].includes('elite')?1:0;
