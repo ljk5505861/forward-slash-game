@@ -77,8 +77,8 @@ for(const mode of ['normal','test']) {
   assert.equal(f.events.find(v=>v.meta?.kind==='boss').meta.bossId,e.enemyId);
   f.destroy();
 }
-// Boss 2/3/4's intentional normal-mode migrations have actual spawn coverage in their own specialty checks.
-for(const id of ['boss5','boss6']) {
+// Boss 2/3/4/5's intentional normal-mode migrations have actual spawn coverage in their own specialty checks.
+for(const id of ['boss6']) {
   const f=fixture();f.destroy();const spawned=[];
   f.stage.spawn=(...args)=>{spawned.push(args);return {};};
   f.stage.spawnBoss(id);const expected=spawned[0];

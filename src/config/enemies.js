@@ -1,4 +1,5 @@
 export const ENEMIES = {
+  emperor: { id:'emperor', name:'皇者', kind:'boss', bossType:'boss5', behavior:'emperor', width:92, height:128, bodyWidth:82, bodyHeight:118, hp:3300, damage:24, attackIntervalMs:2400, attackRange:165, speed:296, color:0xb59654, stroke:0x4b351b },
   foreseer: { id:'foreseer', name:'预事者', kind:'boss', bossType:'boss4', behavior:'foreseer', width:84, height:116, bodyWidth:72, bodyHeight:106, hp:2300, damage:19, attackIntervalMs:2600, attackRange:520, preferredRange:380, speed:286, color:0x756079, stroke:0x302438 },
   foreseer_orb: { id:'foreseer_orb', name:'分裂肉球', kind:'summon', behavior:'foreseerOrb', width:36, height:36, bodyWidth:32, bodyHeight:32, hp:54, damage:7, attackIntervalMs:1800, attackRange:460, preferredRange:320, speed:180, color:0xa96678, stroke:0x522c44 },
   uncrowned_king: { id:'uncrowned_king', name:'无冕之王', kind:'boss', bossType:'boss3', behavior:'uncrownedKing', width:88, height:126, bodyWidth:78, bodyHeight:116, hp:1408, damage:16, attackIntervalMs:2400, attackRange:175, speed:272, color:0x252934, stroke:0x090d16 },
@@ -29,6 +30,8 @@ export const ENEMIES = {
 // difficulty multipliers again. Each profile overrides only its declared fields;
 // remaining movement/visual/attack settings inherit the legacy catalog.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
+  emperor: Object.freeze({ hp:3300, damage:24, attackIntervalMs:2400,
+    hpGrowth:0.12, damageGrowth:0.04, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   foreseer: Object.freeze({ hp:2300, damage:19, attackIntervalMs:2600,
     hpGrowth:0.12, damageGrowth:0.04, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   foreseer_orb: Object.freeze({ hp:54, damage:7, attackIntervalMs:1800,
@@ -132,3 +135,11 @@ export const FORESEER_TUNING = Object.freeze({ bindFirst:3000, bindCooldown:7000
   teleportFirst:9000, teleportCooldown:10000, teleportWindup:400, teleportRecovery:650,
   teleportPlayerGap:100, teleportMinDistance:80,
   beamWindup:350, beamRadius:16, attackRecovery:280, knockbackDuration:150, flash:180 });
+
+export const EMPEROR_TUNING = Object.freeze({ stabFirst:3000, stabCooldown:7000, stabWindup:900,
+  stabRange:200, stabHeight:90, stabDamageMultiplier:3, stabRecovery:1400,
+  kickFirst:6000, kickCooldown:6500, kickWindup:350, kickRange:125, kickHeight:70,
+  kickDamageMultiplier:1.1, kickKnockback:96, kickRecovery:650,
+  enchantFirst:9000, enchantCooldown:14000, enchantWindup:650, enchantDuration:4500,
+  enchantSwordMultiplier:1.5, enchantRecovery:550, enchantEndRecovery:700,
+  attackWindup:220, attackRecovery:320, flash:180 });
