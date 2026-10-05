@@ -1,4 +1,5 @@
 export const ENEMIES = {
+  uncrowned_king: { id:'uncrowned_king', name:'无冕之王', kind:'boss', bossType:'boss3', behavior:'uncrownedKing', width:88, height:126, bodyWidth:78, bodyHeight:116, hp:1408, damage:16, attackIntervalMs:2400, attackRange:175, speed:272, color:0x252934, stroke:0x090d16 },
   thornless_rose: { id:'thornless_rose', name:'无刺蔷薇', kind:'boss', bossType:'mid', behavior:'thornlessRose', width:70, height:118, bodyWidth:60, bodyHeight:108, hp:960, damage:11, attackIntervalMs:2000, attackRange:150, speed:300, color:0xb83355, stroke:0x48152b },
   mountain_general: { id:'mountain_general', name:'撼山将军', kind:'boss', bossType:'boss1', behavior:'mountainGeneral', width:97, height:129, bodyWidth:85, bodyHeight:119, hp:640, damage:8, attackIntervalMs:2200, attackRange:155, speed:272, color:0x8c4634, stroke:0x3c211d },
   elite_golden_guard: { id:'elite_golden_guard', name:'黄金殿卫', kind:'elite', behavior:'goldenHallGuard', width:68, height:102, bodyWidth:60, bodyHeight:94, hp:112, damage:9, attackIntervalMs:2200, attackRange:165, speed:160, color:0xb49246, stroke:0x59431c },
@@ -26,6 +27,8 @@ export const ENEMIES = {
 // difficulty multipliers again. Each profile overrides only its declared fields;
 // remaining movement/visual/attack settings inherit the legacy catalog.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
+  uncrowned_king: Object.freeze({ hp:1408, damage:16, attackIntervalMs:2400,
+    hpGrowth:0.12, damageGrowth:0.035, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   thornless_rose: Object.freeze({ hp:960, damage:11, attackIntervalMs:2000,
     hpGrowth:0.12, damageGrowth:0.04, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   mountain_general: Object.freeze({ hp:640, damage:8, attackIntervalMs:2200,
@@ -105,3 +108,13 @@ export const THORNLESS_ROSE_TUNING = Object.freeze({ dashFirst:3000, dashCooldow
   drainFirst:9000, drainCooldown:7800, drainWindup:550, drainRange:165,
   drainDamageMultiplier:1.3, drainHealMultiplier:1, drainRecovery:600,
   attackWindup:100, attackRecovery:220, knockbackDuration:140, effectMs:180 });
+
+export const UNCROWNED_KING_TUNING = Object.freeze({ thrustFirst:3000, thrustCooldown:6500, thrustWindup:420,
+  thrustCount:3, thrustInterval:220, thrustRange:220, thrustDamageMultiplier:0.8, thrustRecovery:650,
+  cleaveFirst:6000, cleaveCooldown:8000, cleaveWindup:700, cleaveRange:205, cleaveHeight:95,
+  cleaveDamageMultiplier:2.2, cleaveKnockback:80, cleaveRecovery:850,
+  rainFirst:9000, rainCooldown:10000, rainWindup:500, rainBatches:3,
+  rainOffsets:Object.freeze([-90,0,90]), rainBatchInterval:450, rainWarning:600, rainFall:220,
+  rainRadius:32, rainDamageMultiplier:0.65, rainRecovery:650,
+  shadowFirst:12000, shadowCooldown:12500, shadowWindup:350, shadowDuration:3000, shadowRecovery:600,
+  attackWindup:110, attackRecovery:250, knockbackDuration:150, effectMs:180 });
