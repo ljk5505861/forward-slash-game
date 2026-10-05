@@ -11,7 +11,7 @@ const files = {
 const checks = [];
 const check = (name, ok) => checks.push({ name, ok: !!ok });
 
-check('version is 0.11.44', /GAME_VERSION\s*=\s*['"]0.11.44['"]/.test(files.version));
+check('version is 0.11.45', /GAME_VERSION\s*=\s*['"]0.11.45['"]/.test(files.version));
 check('unified boss knockback distance config exists', /bossKnockbackDistance\s*:\s*10/.test(files.tuning) && /export const bossKnockbackDistance/.test(files.combat));
 check('boss knockback is capped at configured distance', /enemy\.isBoss\s*\?\s*Math\.min\(requestedDistance\s*,\s*bossKnockbackDistance\)/.test(files.combat));
 check('boss vertical knockback lift is zero', /const lift\s*=\s*enemy\.isBoss\s*\?\s*0\s*:\s*NORMAL_ATTACK_KNOCKBACK_LIFT_PX/.test(files.combat));
@@ -20,8 +20,9 @@ check('normal enemy knockback is not globally capped to 10', /enemy\.isBoss\s*\?
 check('elite knockback multiplier remains unchanged', /enemy\.isElite\s*\?\s*0\.35/.test(files.combat));
 check('unified boss skill-state predicate exists', /export const isBossUsingSkill\s*=/.test(files.combat));
 const apply = files.combat.slice(files.combat.indexOf('applyKnockback'));
-check('boss skill check happens before knockback state/tween creation', apply.indexOf('isBossUsingSkill(enemy)') > -1 && apply.indexOf('isBossUsingSkill(enemy)') < apply.indexOf('enemy.isKnockbackActive=true') && apply.indexOf('isBossUsingSkill(enemy)') < apply.indexOf('this.scene.tweens.add'));
-check('casting knockback returns not applied', /if\(isBossUsingSkill\(enemy\)\)\{ this\.clearKnockback\(enemy\); return false; \}/.test(files.combat));
+const skillGuard='isBossUsingSkill(enemy,this.scene.getGameplayTime?.()||0)';
+check('boss skill check happens before knockback state/tween creation', apply.indexOf(skillGuard) > -1 && apply.indexOf(skillGuard) < apply.indexOf('enemy.isKnockbackActive=true') && apply.indexOf(skillGuard) < apply.indexOf('this.scene.tweens.add'));
+check('casting knockback returns not applied', files.combat.includes('if('+skillGuard+'){ this.clearKnockback(enemy); return false; }'));
 check('casting path cannot create tween', apply.indexOf('return false') < apply.indexOf('this.scene.tweens.add'));
 check('casting path cannot write knockback velocity', apply.indexOf('return false') < apply.indexOf('setVelocityX'));
 check('casting path cannot write knockback target position', apply.indexOf('return false') < apply.indexOf('const endX='));
