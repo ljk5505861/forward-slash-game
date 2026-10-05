@@ -1,4 +1,5 @@
 export const ENEMIES = {
+  elite_thunder_mage: { id:'elite_thunder_mage', name:'雷法师', kind:'elite', behavior:'archer', width:58, height:94, bodyWidth:50, bodyHeight:86, hp:62, damage:8, attackIntervalMs:2400, attackRange:480, speed:360, color:0x4776a8, stroke:0x173858 },
   elite_berserker: { id:'elite_berserker', name:'狂战士', kind:'elite', behavior:'eliteBerserker', width:64, height:96, bodyWidth:56, bodyHeight:88, hp:104, damage:10, attackIntervalMs:1800, attackRange:110, speed:300, color:0xa83b36, stroke:0x4a181b },
   elite_war_drum_priest: { id:'elite_war_drum_priest', name:'战鼓祭司', kind:'elite', behavior:'healer', width:60, height:94, bodyWidth:52, bodyHeight:86, hp:68, damage:3, attackIntervalMs:2600, attackRange:480, speed:360, color:0xaa7242, stroke:0x50301d },
   elite_sharpshooter: { id:'elite_sharpshooter', name:'神射手', kind:'elite', behavior:'archer', width:58, height:92, bodyWidth:50, bodyHeight:84, hp:56, damage:8, attackIntervalMs:2200, attackRange:500, speed:360, color:0x367b7d, stroke:0x163a43 },
@@ -18,6 +19,8 @@ export const ENEMIES = {
 // difficulty multipliers again. Each profile overrides only its declared fields;
 // remaining movement/visual/attack settings inherit the legacy catalog.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
+  elite_thunder_mage: Object.freeze({ hp:62, damage:8, attackIntervalMs:2400,
+    hpGrowth:0.06, damageGrowth:0.11, attackSpeedGrowth:0.01, maxAttackSpeedBonus:0.10 }),
   elite_berserker: Object.freeze({ hp:104, damage:10, attackIntervalMs:1800,
     hpGrowth:0.06, damageGrowth:0.10, attackSpeedGrowth:0.01, maxAttackSpeedBonus:0.15 }),
   elite_war_drum_priest: Object.freeze({ hp:68, damage:3, attackIntervalMs:2600,
@@ -56,3 +59,6 @@ export const WAR_DRUM_TUNING = Object.freeze({ first:3500, cooldown:6000, windup
 
 export const ELITE_BERSERKER_TUNING = Object.freeze({ first:3200, cooldown:6200, windup:550,
   slashGap:250, recovery:900, range:130, effectMs:160 });
+
+export const THUNDER_MAGE_TUNING = Object.freeze({ first:4000, cooldown:6500, warning:900,
+  recovery:650, radius:70, damageMultiplier:1.5, flight:400, boltRadius:18, flash:160 });
