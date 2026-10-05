@@ -1,4 +1,5 @@
 export const ENEMIES = {
+  mountain_general: { id:'mountain_general', name:'撼山将军', kind:'boss', bossType:'boss1', behavior:'mountainGeneral', width:97, height:129, bodyWidth:85, bodyHeight:119, hp:640, damage:8, attackIntervalMs:2200, attackRange:155, speed:272, color:0x8c4634, stroke:0x3c211d },
   elite_golden_guard: { id:'elite_golden_guard', name:'黄金殿卫', kind:'elite', behavior:'goldenHallGuard', width:68, height:102, bodyWidth:60, bodyHeight:94, hp:112, damage:9, attackIntervalMs:2200, attackRange:165, speed:160, color:0xb49246, stroke:0x59431c },
   elite_gambler: { id:'elite_gambler', name:'赌师', kind:'elite', behavior:'archer', width:58, height:94, bodyWidth:50, bodyHeight:86, hp:60, damage:7, attackIntervalMs:2300, attackRange:480, speed:360, color:0x675184, stroke:0x30223f },
   elite_hell_envoy: { id:'elite_hell_envoy', name:'地狱使', kind:'elite', behavior:'hellEnvoy', width:60, height:98, bodyWidth:52, bodyHeight:90, hp:76, damage:3, attackIntervalMs:2600, attackRange:420, preferredRange:420, speed:300, color:0x6c354e, stroke:0x2d1424 },
@@ -24,6 +25,8 @@ export const ENEMIES = {
 // difficulty multipliers again. Each profile overrides only its declared fields;
 // remaining movement/visual/attack settings inherit the legacy catalog.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
+  mountain_general: Object.freeze({ hp:640, damage:8, attackIntervalMs:2200,
+    hpGrowth:0.12, damageGrowth:0.04, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   elite_golden_guard: Object.freeze({ hp:112, damage:9, attackIntervalMs:2200,
     hpGrowth:0.08, damageGrowth:0.11, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   elite_gambler: Object.freeze({ hp:60, damage:7, attackIntervalMs:2300,
@@ -86,3 +89,8 @@ export const GAMBLER_TUNING = Object.freeze({ explosiveEvery:4, windup:350, expl
 
 export const GOLDEN_HALL_GUARD_TUNING = Object.freeze({ heavyEvery:3, windup:250, heavyWindup:600,
   recovery:250, heavyRecovery:550, heavyDamageMultiplier:1.6, effectMs:180 });
+
+export const MOUNTAIN_GENERAL_TUNING = Object.freeze({ first:3200, cooldown:6000, windup:650,
+  sweepRange:180, sweepHeight:90, sweepDamageMultiplier:1.6, sweepKnockback:72,
+  pause:240, chargeSpeed:720, chargeDuration:480, chargeRadius:76, chargeDamageMultiplier:2,
+  recovery:900, punchWindup:110, punchRecovery:250, knockbackDuration:150, effectMs:180 });
