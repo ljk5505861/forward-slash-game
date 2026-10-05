@@ -77,7 +77,8 @@ for(const mode of ['normal','test']) {
   assert.equal(f.events.find(v=>v.meta?.kind==='boss').meta.bossId,e.enemyId);
   f.destroy();
 }
-for(const id of ['boss2','boss3','boss4','boss5','boss6']) {
+// Boss 2's intentional normal-mode migration is covered by validate-01144-thornless-rose.mjs.
+for(const id of ['boss3','boss4','boss5','boss6']) {
   const f=fixture();f.destroy();const spawned=[];
   f.stage.spawn=(...args)=>{spawned.push(args);return {};};
   f.stage.spawnBoss(id);const expected=spawned[0];

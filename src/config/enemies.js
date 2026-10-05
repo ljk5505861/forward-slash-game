@@ -1,4 +1,5 @@
 export const ENEMIES = {
+  thornless_rose: { id:'thornless_rose', name:'无刺蔷薇', kind:'boss', bossType:'mid', behavior:'thornlessRose', width:70, height:118, bodyWidth:60, bodyHeight:108, hp:960, damage:11, attackIntervalMs:2000, attackRange:150, speed:300, color:0xb83355, stroke:0x48152b },
   mountain_general: { id:'mountain_general', name:'撼山将军', kind:'boss', bossType:'boss1', behavior:'mountainGeneral', width:97, height:129, bodyWidth:85, bodyHeight:119, hp:640, damage:8, attackIntervalMs:2200, attackRange:155, speed:272, color:0x8c4634, stroke:0x3c211d },
   elite_golden_guard: { id:'elite_golden_guard', name:'黄金殿卫', kind:'elite', behavior:'goldenHallGuard', width:68, height:102, bodyWidth:60, bodyHeight:94, hp:112, damage:9, attackIntervalMs:2200, attackRange:165, speed:160, color:0xb49246, stroke:0x59431c },
   elite_gambler: { id:'elite_gambler', name:'赌师', kind:'elite', behavior:'archer', width:58, height:94, bodyWidth:50, bodyHeight:86, hp:60, damage:7, attackIntervalMs:2300, attackRange:480, speed:360, color:0x675184, stroke:0x30223f },
@@ -25,6 +26,8 @@ export const ENEMIES = {
 // difficulty multipliers again. Each profile overrides only its declared fields;
 // remaining movement/visual/attack settings inherit the legacy catalog.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
+  thornless_rose: Object.freeze({ hp:960, damage:11, attackIntervalMs:2000,
+    hpGrowth:0.12, damageGrowth:0.04, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   mountain_general: Object.freeze({ hp:640, damage:8, attackIntervalMs:2200,
     hpGrowth:0.12, damageGrowth:0.04, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   elite_golden_guard: Object.freeze({ hp:112, damage:9, attackIntervalMs:2200,
@@ -94,3 +97,11 @@ export const MOUNTAIN_GENERAL_TUNING = Object.freeze({ first:3200, cooldown:6000
   sweepRange:180, sweepHeight:90, sweepDamageMultiplier:1.6, sweepKnockback:72,
   pause:240, chargeSpeed:720, chargeDuration:480, chargeRadius:76, chargeDamageMultiplier:2,
   recovery:900, punchWindup:110, punchRecovery:250, knockbackDuration:150, effectMs:180 });
+
+export const THORNLESS_ROSE_TUNING = Object.freeze({ dashFirst:3000, dashCooldown:7000, dashWindup:450,
+  dashSpeed:760, dashRadius:70, dashKnockback:60, dashDamageMultiplier:1.6, dashRecovery:700,
+  roseFirst:6000, roseCooldown:8500, roseWindup:300, roseFlight:200, roseWarning:800,
+  roseRadius:80, roseDamageMultiplier:1.6, roseRecovery:550,
+  drainFirst:9000, drainCooldown:7800, drainWindup:550, drainRange:165,
+  drainDamageMultiplier:1.3, drainHealMultiplier:1, drainRecovery:600,
+  attackWindup:100, attackRecovery:220, knockbackDuration:140, effectMs:180 });

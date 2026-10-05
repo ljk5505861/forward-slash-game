@@ -1,5 +1,5 @@
 {
-  "reason": "普通模式Boss1撼山将军：实际spawn/行为注册、独立普攻与横扫停顿冲锋、角色/召唤物伤害与击退、连续碰撞逐目标去重、普攻击退压制与独立技能冷却/技能阶段免击退/恢复期可击退、同步死亡与暂停回收清理；直接回归旧Boss击退、共享管理器与Combat的已有怪物、普通配置、三波流程及版本。70个旧脚本仅机械版本同步（普通配置另加入Boss名单）。不执行整套回归、浏览器或暂停的战士命中手感。",
+  "reason": "普通模式Boss2无刺蔷薇：实际spawn/模式/奖励、独立普攻和三技能时钟、划斩连续碰撞及左侧离屏前最终线段/右侧回收、固定落点玫瑰投掷/预警/爆炸、吸血按实际HP扣除回血、技能阶段免击退与恢复期可击退、同步死亡和暂停清理。直接回归撼山将军、旧Boss击退、共享管理器与Combat的已改精英、普通配置、三波流程、Boss2奖励与版本；70个旧脚本仅机械版本同步，另更新普通配置名单及撼山将军的Boss2旧边界断言（由本专项实际spawn测试替代）。不执行整套回归、浏览器或暂停的战士命中手感。",
   "files": [
     "package-lock.json",
     "package.json",
@@ -75,14 +75,16 @@
     "scripts/validate-01121-start-menu.mjs",
     "scripts/validate-01126-normal-enemies.mjs",
     "scripts/validate-01143-mountain-general.mjs",
+    "scripts/validate-01144-thornless-rose.mjs",
     "src/config/enemies.js",
     "src/config/version.js",
     "src/enemies/behaviors/EnemyBehaviorManager.js",
-    "src/enemies/behaviors/MountainGeneralBehavior.js",
+    "src/enemies/behaviors/ThornlessRoseBehavior.js",
     "src/systems/CombatSystem.js",
     "src/systems/StageSystem.js"
   ],
   "tests": [
+    "scripts/validate-01144-thornless-rose.mjs",
     "scripts/validate-01143-mountain-general.mjs",
     "scripts/validate-01043-boss-knockback.mjs",
     "scripts/validate-01142-golden-hall-guard.mjs",
@@ -95,6 +97,7 @@
     "scripts/validate-01135-shield-guard.mjs",
     "scripts/validate-01126-normal-enemies.mjs",
     "scripts/validate-01128-three-wave-growth.mjs",
+    "scripts/validate-midboss-reward-flow.mjs",
     "scripts/validate-01100-version.mjs"
   ]
 }
