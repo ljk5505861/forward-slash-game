@@ -1,4 +1,5 @@
 export const ENEMIES = {
+  abyss_apostle: { id:'abyss_apostle', name:'深渊使徒', kind:'boss', bossType:'boss6', behavior:'abyssApostle', width:92, height:128, bodyWidth:82, bodyHeight:118, hp:4700, damage:30.4, attackIntervalMs:2600, attackRange:170, speed:308, color:0x49304f, stroke:0x211328 },
   emperor: { id:'emperor', name:'皇者', kind:'boss', bossType:'boss5', behavior:'emperor', width:92, height:128, bodyWidth:82, bodyHeight:118, hp:3300, damage:24, attackIntervalMs:2400, attackRange:165, speed:296, color:0xb59654, stroke:0x4b351b },
   foreseer: { id:'foreseer', name:'预事者', kind:'boss', bossType:'boss4', behavior:'foreseer', width:84, height:116, bodyWidth:72, bodyHeight:106, hp:2300, damage:19, attackIntervalMs:2600, attackRange:520, preferredRange:380, speed:286, color:0x756079, stroke:0x302438 },
   foreseer_orb: { id:'foreseer_orb', name:'分裂肉球', kind:'summon', behavior:'foreseerOrb', width:36, height:36, bodyWidth:32, bodyHeight:32, hp:54, damage:7, attackIntervalMs:1800, attackRange:460, preferredRange:320, speed:180, color:0xa96678, stroke:0x522c44 },
@@ -30,6 +31,8 @@ export const ENEMIES = {
 // difficulty multipliers again. Each profile overrides only its declared fields;
 // remaining movement/visual/attack settings inherit the legacy catalog.
 export const NORMAL_ENEMY_PROFILES = Object.freeze({
+  abyss_apostle: Object.freeze({ hp:4700, damage:30.4, attackIntervalMs:2600,
+    hpGrowth:0.12, damageGrowth:0.04, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   emperor: Object.freeze({ hp:3300, damage:24, attackIntervalMs:2400,
     hpGrowth:0.12, damageGrowth:0.04, attackSpeedGrowth:0, maxAttackSpeedBonus:0 }),
   foreseer: Object.freeze({ hp:2300, damage:19, attackIntervalMs:2600,
@@ -143,3 +146,15 @@ export const EMPEROR_TUNING = Object.freeze({ stabFirst:3000, stabCooldown:7000,
   enchantFirst:9000, enchantCooldown:14000, enchantWindup:650, enchantDuration:4500,
   enchantSwordMultiplier:1.5, enchantRecovery:550, enchantEndRecovery:700,
   attackWindup:220, attackRecovery:320, flash:180 });
+
+export const ABYSS_APOSTLE_TUNING = Object.freeze({ splitHpFraction:0.5, twinGap:110,
+  twinStagger:1100, splitRecovery:600,
+  releaseFirst:3000, releaseCooldown:11000, releaseWindup:500, releaseDuration:3000,
+  releaseInterval:650, releaseWarning:650, releaseRadius:52, releaseDamageMultiplier:0.75, releaseRecovery:650,
+  bloodFirst:6000, bloodCooldown:12500, bloodWindup:450, bloodDuration:3200,
+  bloodReduction:0.4, bloodAddedDamageMultiplier:0.3, bloodRecovery:550,
+  chainFirst:9000, chainCooldown:7000, chainWindup:500, chainCount:3, chainInterval:280,
+  chainRange:240, chainHeight:90, chainDamageMultiplier:0.7, chainRecovery:750,
+  slamFirst:12000, slamCooldown:9500, slamWindup:950, slamRange:420,
+  slamRadius:105, slamDamageMultiplier:2.1, slamRecovery:1000,
+  attackWindup:180, attackRecovery:280, knockbackDuration:150, flash:180 });
