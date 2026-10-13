@@ -179,7 +179,7 @@ function meat(f) {
   assert(f.e.hp<hp,'player can also hit at the shared distance');
   f.destroy();
 }
-// Only finished airborne lift starts exactly 100ms of control.
+// Only finished airborne lift starts exactly 200ms of normal-mode control.
 {
   const f=fixture(), manager=new EnemyBehaviorManager(f.s);f.s.enemyBehaviors=manager;manager.attach(f.e);
   f.s.now=200;assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
@@ -190,27 +190,27 @@ function meat(f) {
   f.s.player.x=400;
   manager.update(f.s.now);assert.equal(f.e.body.velocity.x,0);
   f.s.now+=ENEMY_LANDING_STUN_MS-1;
-  manager.update(f.s.now);assert.equal(f.e.body.velocity.x,0,'still frozen at 99ms');
+  manager.update(f.s.now);assert.equal(f.e.body.velocity.x,0,'still frozen at 199ms');
   f.s.player.x=f.e.x-40;f.s.player.y=f.e.y;
   const before=f.s.playerData.hp;f.e.nextAttackAt=0;
   f.s.combatSystem.updateEnemyAttack(f.e,f.s.now);
-  assert.equal(f.s.playerData.hp,before,'cannot attack during 100ms recovery');
+  assert.equal(f.s.playerData.hp,before,'cannot attack during 200ms recovery');
   f.s.now++;
   assert(!isEnemyLandingStunned(f.e,f.s.now));
-  f.s.combatSystem.updateEnemyAttack(f.e,f.s.now);
-  assert(f.s.playerData.hp<before,'can attack when 100ms expires');
   f.s.player.x=400;manager.update(f.s.now);
-  assert(f.e.body.velocity.x<0,'can move after 100ms');
+  assert(f.e.body.velocity.x<0,'can move after 200ms if no new attack starts');
+  f.s.player.x=f.e.x-40;f.s.combatSystem.updateEnemyAttack(f.e,f.s.now);
+  assert(f.s.playerData.hp<before,'can attack when 200ms expires');
   manager.destroy();f.destroy();
 }
 {
   const f=fixture();f.s.now=500;
   assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));f.finish();
-  assert.equal(f.e.landingRecoveryUntil,600);
+  assert.equal(f.e.landingRecoveryUntil,500+ENEMY_LANDING_STUN_MS);
   f.s.now=550;assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
   assert.equal(f.e.landingRecoveryUntil,0,'new launch cancels earlier landing stun');
   f.s.now=990;f.finish();
-  assert.equal(f.e.landingRecoveryUntil,1090);
+  assert.equal(f.e.landingRecoveryUntil,990+ENEMY_LANDING_STUN_MS);
   f.s.combatSystem.clearAllKnockbacks();
   assert.equal(f.e.landingRecoveryUntil,0,'reset clears completed landing stun');
   f.destroy();
@@ -229,5 +229,5 @@ function meat(f) {
   assert(f.e.isDefeated);assert.equal(f.e.landingRecoveryUntil,0,'death clears landing recovery');
   f.destroy();
 }
-console.log('PASS 01150: equal melee reach, 100ms landing freeze, recovery, repeated knockback, reset and death.');
+console.log('PASS 01151: equal melee reach, 200ms normal-mode landing freeze, recovery, repeated knockback, reset and death.');
 console.log('PASS 01149: actual normal-only doubled final distances; resistance/rounding/cap/bounds/direction/duration/lift/cleanup; real default attack, charged slam and kinetic release; no new sword/blade knockback; dead target safety; real meat chain/player/wolf damage without active knockback; other incoming displacement unchanged.');

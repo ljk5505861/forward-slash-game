@@ -22,13 +22,14 @@ export default class MovementSystem {
     const maxX=Math.min(worldWidth - half - 8, maxVisibleX);
     if(s.player.x>maxX){ s.player.x=maxX; body?.setVelocityX?.(Math.min(0, body.velocity?.x || 0)); }
   }
-  update(){
+  update(time=this.scene.getGameplayTime?.()??0){
     const s=this.scene;
     if(s.isGameplayPaused?.()||!s.player?.body){ s.player?.body?.setVelocityX(0); return; }
     if(s.stageSystem?.shouldHoldPlayerForBossIntro?.()){ s.player.body.setVelocityX(0); this.clampPlayerToCameraRight(); return; }
     const target=s.targeting.nearestAhead(s.balance.player.encounterDistance);
     s.currentTarget=target;
     if(isForeseerBound(s.player,s.getGameplayTime?.()||0)){ s.player.body.setVelocityX(0); return; }
+    if(s.combatSystem?.isPlayerAttackRecovering?.(time)){ s.player.body.setVelocityX(0); return; }
     const weapon=getWeapon(s.playerData.weaponId);
     if(target){
       const d=target.x-s.player.x;

@@ -1,21 +1,24 @@
 {
-  "reason": "v0.11.50 角色短剑普攻基础射程115→86px，匹配普通近战战士；实际抬升的击飞怪物落地后100ms无法移动或发起攻击。仅运行覆盖真实双方普攻命中/击退/落地僵直/恢复/再次击飞/死亡/肉怪旧规则的01149专项、版本同步01100和必要build。历史0104脚本在main已对深渊使徒速度持有失效断言(272而当前308)，不属于本次测试范围，不修改无关速度、不执行旧全量或浏览器。",
+  "reason": "v0.11.51 普通模式新增普攻后摇：实际攻击间隔的25%，已有精英/Boss普攻后摇保留基础时长并按攻速缩放；停止移动与下一次普攻，远程发射时开始而非命中时开始，弹体和技能效果继续推进。击飞落地僵直由100ms增加到200ms；测试模式保留旧规则。运行覆盖25种怪物实际出手、攻速/暂停/弹体/目标死亡/清理的01151，既有击退与落地01149及版本同步01100，再运行必要build与diff检查，不运行无关全套或浏览器场景。",
   "files": [
     ".github/validation-plan.json",
     "package-lock.json",
     "package.json",
-    "scripts/validate-0104-balance-knockback.mjs",
     "scripts/validate-01043-boss-knockback.mjs",
     "scripts/validate-01100-version.mjs",
     "scripts/validate-01115-game-speed.mjs",
     "scripts/validate-01149-knockback-distance.mjs",
-    "scripts/validate-enemy-population.mjs",
+    "scripts/validate-01151-attack-recovery.mjs",
     "src/config/version.js",
-    "src/config/weapons.js",
     "src/enemies/behaviors/EnemyBehaviorManager.js",
-    "src/systems/CombatSystem.js"
+    "src/enemies/behaviors/GamblerBehavior.js",
+    "src/enemies/behaviors/SharpshooterBehavior.js",
+    "src/enemies/behaviors/ThunderMageBehavior.js",
+    "src/systems/CombatSystem.js",
+    "src/systems/MovementSystem.js"
   ],
   "tests": [
+    "scripts/validate-01151-attack-recovery.mjs",
     "scripts/validate-01149-knockback-distance.mjs",
     "scripts/validate-01100-version.mjs"
   ]

@@ -23,6 +23,7 @@ export default class SharpshooterBehavior {
     const to={x:from.x+dx/length*this.e.attackRange,y:from.y+dy/length*this.e.attackRange};
     this.arrows.push({from,to,p:{...from},started:t,burst,
       damage:Math.max(1,Math.round(this.e.damage*(burst?SHOT.burstDamageMultiplier:1)))});
+    if(!burst)this.h.startAttackRecovery?.(this.scene,this.e,t);
     return true;
   }
   advanceArrows(t) {
