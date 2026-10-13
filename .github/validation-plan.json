@@ -1,5 +1,5 @@
 {
-  "reason": "v0.11.51 普通模式新增普攻后摇：实际攻击间隔的25%，已有精英/Boss普攻后摇保留基础时长并按攻速缩放；停止移动与下一次普攻，远程发射时开始而非命中时开始，弹体和技能效果继续推进。击飞落地僵直由100ms增加到200ms；测试模式保留旧规则。运行覆盖25种怪物实际出手、攻速/暂停/弹体/目标死亡/清理的01151，既有击退与落地01149及版本同步01100，再运行必要build与diff检查，不运行无关全套或浏览器场景。",
+  "reason": "v0.11.52 普通模式：角色开局攻击10→20且保留道具加法，所有怪物基础/专用攻击力×0.5，最终实际移动速度×0.5（含追击/冲锋/突进与减速），击退最终距离从原始2×改4×（在v0.11.51上再翻倍），保留Boss免疫/抗性/边界、攻击间隔、后摇与200ms落地僵直，测试模式不变。执行01152真实开始/攻击/104个生成组合/移动/Boss分裂、01149击退伤害回归、01151后摇回归、01121实际开始按钮及01100版本同步；必要build/diff和范围规则检查。不执行无关全量或浏览器。",
   "files": [
     ".github/validation-plan.json",
     "package-lock.json",
@@ -7,19 +7,21 @@
     "scripts/validate-01043-boss-knockback.mjs",
     "scripts/validate-01100-version.mjs",
     "scripts/validate-01115-game-speed.mjs",
+    "scripts/validate-01121-start-menu.mjs",
     "scripts/validate-01149-knockback-distance.mjs",
     "scripts/validate-01151-attack-recovery.mjs",
+    "scripts/validate-01152-normal-combat-balance.mjs",
     "src/config/version.js",
-    "src/enemies/behaviors/EnemyBehaviorManager.js",
-    "src/enemies/behaviors/GamblerBehavior.js",
-    "src/enemies/behaviors/SharpshooterBehavior.js",
-    "src/enemies/behaviors/ThunderMageBehavior.js",
+    "src/entities/createEnemy.js",
+    "src/scenes/GameScene.js",
     "src/systems/CombatSystem.js",
-    "src/systems/MovementSystem.js"
+    "src/systems/EnemyGravityControl.js"
   ],
   "tests": [
-    "scripts/validate-01151-attack-recovery.mjs",
+    "scripts/validate-01152-normal-combat-balance.mjs",
     "scripts/validate-01149-knockback-distance.mjs",
+    "scripts/validate-01151-attack-recovery.mjs",
+    "scripts/validate-01121-start-menu.mjs",
     "scripts/validate-01100-version.mjs"
   ]
 }

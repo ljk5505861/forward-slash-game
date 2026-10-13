@@ -54,10 +54,10 @@ function fixture(runMode='normal',id='grunt') {
     destroy(){s.skillSystem?.reset();s.combatSystem.clearAllKnockbacks();graphics.forEach(g=>g.destroy());}};
 }
 
-// Final rounded/resisted/capped distance doubles only in normal mode, not just the input stat.
-const cases=[['grunt',144,72],['armored_guard',86,43],['elite',50,25],['elite_golden_guard',50,25],
-  ['mountain_general',116,58],['thornless_rose',116,58],['uncrowned_king',116,58],
-  ['foreseer',116,58],['abyss_apostle',116,58],['boss',20,10]];
+// Final rounded/resisted/capped distance is 4x the original in normal mode (2x v0.11.51).
+const cases=[['grunt',288,72],['armored_guard',172,43],['elite',100,25],['elite_golden_guard',100,25],
+  ['mountain_general',232,58],['thornless_rose',232,58],['uncrowned_king',232,58],
+  ['foreseer',232,58],['abyss_apostle',232,58],['boss',40,10]];
 for(const [id,normal,test] of cases)for(const mode of ['normal','test',undefined]) {
   const f=fixture(mode,id);if(mode===undefined)f.s.runMode=undefined;
   const x=f.e.x,y=f.e.y,expected=mode==='normal'?normal:test;
@@ -72,14 +72,14 @@ for(const [id,normal,test] of cases)for(const mode of ['normal','test',undefined
 for(const mode of ['normal','test']) {
   const f=fixture(mode);f.s.combatSystem.performDefaultAttack(f.e,WEAPONS.short_sword);
   assert.equal(f.events.filter(v=>v.type===CombatEvents.ENEMY_HIT).length,1);assert(f.e.hp<f.e.maxHp);
-  f.finish();assert.equal(f.e.x,mode==='normal'?644:572);assert.equal(WEAPONS.short_sword.knockback,72,'shared weapon input stat is unchanged');f.destroy();
+  f.finish();assert.equal(f.e.x,mode==='normal'?788:572);assert.equal(WEAPONS.short_sword.knockback,72,'shared weapon input stat is unchanged');f.destroy();
 }
 for(const base of [0,-1]) {
   const f=fixture();assert.equal(f.s.combatSystem.applyKnockback(f.e,{knockback:base}),false);
   assert.equal(f.tweens.length,0);assert.equal(f.e.x,500);f.destroy();
 }
 {
-  const f=fixture();assert(f.s.combatSystem.applyKnockback(f.e,{knockback:1}));f.finish();assert.equal(f.e.x,504,'double after the old 2px minimum/rounding');f.destroy();
+  const f=fixture();assert(f.s.combatSystem.applyKnockback(f.e,{knockback:1}));f.finish();assert.equal(f.e.x,508,'scale after the old 2px minimum/rounding');f.destroy();
 }
 // Boss skill immunity/Emperor full immunity and gravity reversal cannot be bypassed by the multiplier.
 for(const kind of ['skill','emperor','gravity']) {
@@ -90,16 +90,16 @@ for(const kind of ['skill','emperor','gravity']) {
   assert.equal(f.e.hp,hp-2);assert.equal(f.e.x,500);assert.equal(f.e.isKnockbackActive,false);assert.equal(f.tweens.length,0);f.destroy();
 }
 // Directions, legal world bounds, repeated hit replacement, pause and disposal remain intact.
-for(const [x,playerX,end] of [[3950,3500,3966],[50,300,34],[300,600,156]]) {
+for(const [x,playerX,end] of [[3950,3500,3966],[50,300,34],[300,600,34]]) {
   const f=fixture();f.e.x=x;f.s.player.x=playerX;assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
   f.finish();assert.equal(f.e.x,end);f.destroy();
 }
 {
   const f=fixture();f.s.combatSystem.applyKnockback(f.e,{knockback:72});const first=f.e.knockbackTween;
-  first.config.targets.t=.5;first.config.onUpdate();assert.equal(f.e.x,572);
+  first.config.targets.t=.5;first.config.onUpdate();assert.equal(f.e.x,644);
   f.s.combatSystem.applyKnockback(f.e,{knockback:72});assert(first.stopped&&first.removed);
   f.s.combatSystem.pauseKnockbacks();assert(f.e.knockbackTween.paused);f.s.combatSystem.resumeKnockbacks();assert(!f.e.knockbackTween.paused);
-  f.finish();assert.equal(f.e.x,716);assert.equal(f.s.combatSystem.knockbackTargets.size,0);f.destroy();
+  f.finish();assert.equal(f.e.x,932);assert.equal(f.s.combatSystem.knockbackTargets.size,0);f.destroy();
 }
 {
   const f=fixture();f.e.hp=1;f.s.combatSystem.damageEnemy(f.e,5,{source:'attack',knockback:72});
@@ -122,7 +122,7 @@ for(const mode of ['normal','test'])for(const id of ['charged_slam','kinetic_rel
     f.s.eventBus.emit(CombatEvents.PLAYER_ATTACK_RESOLVED,{enemy:f.e,targets:[f.e],baseDamage:10});
   else {sys.passiveState.kineticRelease.kinetic=SKILLS[id].levels[2].kineticRequired;sys.passiveUpdaters.forEach(fn=>fn());}
   assert(f.e.knockbackTween,'real handler creates the real Combat knockback');f.finish();
-  const base=SKILLS[id].levels[2].knockback;assert.equal(f.e.x,500+base*(mode==='normal'?2:1));f.destroy();
+  const base=SKILLS[id].levels[2].knockback;assert.equal(f.e.x,500+base*(mode==='normal'?4:1));f.destroy();
 }
 for(const id of ['charged_slam','kinetic_release']) {
   const f=fixture();f.e.hp=1;f.s.player.y=f.e.y;f.s.playerData.skills=[{id,level:3}];
@@ -147,7 +147,7 @@ function meat(f) {
   const f=fixture('normal','armored_guard'),m=meat(f),hp=f.s.playerData.hp,x=f.s.player.x;
   for(const t of [0,4500,5150,5500])m.tick(t);
   assert.equal(f.hits.length,1);assert.equal(f.hits[0].meta.source,'meatKnife');assert.equal(f.hits[0].meta.knockbackDistance,0);
-  assert.equal(f.s.playerData.hp,hp-6);assert.equal(f.s.player.x,x);assert.equal(m.b.state,'recall');
+  assert.equal(f.s.playerData.hp,hp-3);assert.equal(f.s.player.x,x);assert.equal(m.b.state,'recall');
   m.tick(5500);m.tick(5850);assert.equal(f.hits.length,1);assert.equal(m.b.nextThrow,12350);m.destroy();
 }
 {
@@ -155,7 +155,7 @@ function meat(f) {
   const sys=new SkillSystem(f.s);f.s.skillSystem=sys;SpiritWolvesSkill.cast(sys,SKILLS.spirit_wolves,sys.getData('spirit_wolves'),1);
   const w=sys.passiveState.spiritWolves.wolves[0];w.x=300;w.y=f.e.y-8;w.hp=500;w.view.setPosition(w.x,w.y);
   for(const t of [0,4500,5150,5500])m.tick(t);
-  assert.equal(w.hp,494);assert.equal(w.x,300);assert.equal(w.pendingKnockbackDistance,0);
+  assert.equal(w.hp,497);assert.equal(w.x,300);assert.equal(w.pendingKnockbackDistance,0);
   assert.equal(f.s.playerData.hp,1000);assert.equal(f.s.player.x,260);m.destroy();
 }
 {
@@ -224,10 +224,10 @@ function meat(f) {
 }
 {
   const f=fixture();assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
-  f.s.now=440;f.finish();f.e.hp=1;
+  f.s.now=440;f.finish();f.s.cameras.main.worldView.x=Math.max(0,f.e.x-500);f.e.hp=1;
   f.s.combatSystem.damageEnemy(f.e,5,{source:'attack',knockback:72});
   assert(f.e.isDefeated);assert.equal(f.e.landingRecoveryUntil,0,'death clears landing recovery');
   f.destroy();
 }
 console.log('PASS 01151: equal melee reach, 200ms normal-mode landing freeze, recovery, repeated knockback, reset and death.');
-console.log('PASS 01149: actual normal-only doubled final distances; resistance/rounding/cap/bounds/direction/duration/lift/cleanup; real default attack, charged slam and kinetic release; no new sword/blade knockback; dead target safety; real meat chain/player/wolf damage without active knockback; other incoming displacement unchanged.');
+console.log('PASS 01149: actual normal-only 4x original final distances; resistance/rounding/cap/bounds/direction/duration/lift/cleanup; real default attack, charged slam and kinetic release; no new sword/blade knockback; dead target safety; real meat chain/player/wolf damage without active knockback; other incoming displacement unchanged.');
