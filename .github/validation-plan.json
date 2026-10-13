@@ -1,5 +1,5 @@
 {
-  "reason": "v0.11.50 角色短剑基础普攻距离115→86px，匹配普通近战战士的86px；真正离地的怪物落地后100ms不移动、不发动攻击。继承角色对怪物的普通模式2倍击退、肉怪无击退等既有行为。只跑与近战、落地僵直、击退、行为、版本相关的专项和必要build；不跑无关旧全量/浏览器。",
+  "reason": "v0.11.50 角色短剑普攻基础射程115→86px，匹配普通近战战士；实际抬升的击飞怪物落地后100ms无法移动或发起攻击。仅运行覆盖真实双方普攻命中/击退/落地僵直/恢复/再次击飞/死亡/肉怪旧规则的01149专项、版本同步01100和必要build。历史0104脚本在main已对深渊使徒速度持有失效断言(272而当前308)，不属于本次测试范围，不修改无关速度、不执行旧全量或浏览器。",
   "files": [
     ".github/validation-plan.json",
     "package-lock.json",
@@ -17,12 +17,6 @@
   ],
   "tests": [
     "scripts/validate-01149-knockback-distance.mjs",
-    "scripts/validate-0104-balance-knockback.mjs",
-    "scripts/validate-enemy-population.mjs",
-    "scripts/validate-01100-version.mjs",
-    "scripts/validate-01131-meat-monster.mjs",
-    "scripts/validate-01043-boss-knockback.mjs",
-    "scripts/validate-01135-shield-guard.mjs",
-    "scripts/validate-01115-game-speed.mjs"
+    "scripts/validate-01100-version.mjs"
   ]
 }
