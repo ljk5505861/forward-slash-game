@@ -92,7 +92,7 @@ for(const mode of ['normal','test'])for(const level of [1,8])for(const id of Obj
   assert.equal(getEnemyAttackDelay(f.e,f.e.attackIntervalMs,0),f.e.attackIntervalMs,'attack speed is unchanged');
   assert.equal(f.e.hp,config.hp,'enemy health is unchanged');
   assert.equal(f.e.speed,config.speed,'canonical movement input is not scaled twice');
-  assert.equal(getEnemyMoveSpeed(f.e,f.e.speed,0),f.e.speed*factor,`${mode}/${id}: real movement speed`);
+  assert.equal(getEnemyMoveSpeed(f.e,f.e.speed,0),f.e.speed*(mode==='normal'?.75:1),`${mode}/${id}: real movement speed`);
   spawns++;f.destroy();
 }
 
@@ -101,24 +101,24 @@ for(const mode of ['normal','test'])for(const level of [1,8])for(const id of Obj
   const f=fixture('normal','foreseer');f.s.player.x=f.e.x-45;f.s.player.y=f.e.y;
   f.s.enemyBehaviors.items.get(f.e).nextAttack=1000; // Retreat between beam casts, rather than during windup.
   f.s.enemyBehaviors.update(0);
-  assert.equal(f.e.body.velocity.x,f.e.speed*.5,'actual ranged retreat velocity is halved');f.destroy();
+  assert.equal(f.e.body.velocity.x,f.e.speed*.75,'actual ranged retreat uses current movement multiplier');f.destroy();
 }
 for(const mode of ['normal','test'])for(const id of ['grunt','archer','mountain_general']) {
   const f=fixture(mode,id);f.s.player.x=0;f.s.player.y=f.e.y;f.s.enemyBehaviors.update(0);
-  assert.equal(Math.abs(f.e.body.velocity.x),f.e.speed*(mode==='normal'?.5:1),`${mode}/${id}: actual pursuit velocity`);
+  assert.equal(Math.abs(f.e.body.velocity.x),f.e.speed*(mode==='normal'?.75:1),`${mode}/${id}: actual pursuit velocity`);
   f.destroy();
 }
 {
   const f=fixture('normal','mountain_general'),b=f.s.enemyBehaviors.items.get(f.e);b.startCharge(0);
-  assert.equal(Math.abs(f.e.body.velocity.x),MOUNTAIN_GENERAL_TUNING.chargeSpeed*.5,'actual boss charge velocity is halved');f.destroy();
+  assert.equal(Math.abs(f.e.body.velocity.x),MOUNTAIN_GENERAL_TUNING.chargeSpeed*.75,'actual boss charge velocity retains the current movement multiplier');f.destroy();
 }
 {
   const f=fixture('normal','thornless_rose'),b=f.s.enemyBehaviors.items.get(f.e);b.startDash(0);
-  assert.equal(Math.abs(f.e.body.velocity.x),THORNLESS_ROSE_TUNING.dashSpeed*.5,'actual boss dash velocity is halved');f.destroy();
+  assert.equal(Math.abs(f.e.body.velocity.x),THORNLESS_ROSE_TUNING.dashSpeed*.75,'actual boss dash velocity retains the current movement multiplier');f.destroy();
 }
 {
   const f=fixture();applyEnemyGravity(f.e,{sourceId:'move-test',expiresAt:Infinity,moveSlow:.5});
-  assert.equal(getEnemyMoveSpeed(f.e,f.e.speed,0),f.e.speed*.25,'existing movement slow combines once with balance reduction');f.destroy();
+  assert.equal(getEnemyMoveSpeed(f.e,f.e.speed,0),f.e.speed*.375,'existing movement slow combines once with balance reduction');f.destroy();
 }
 for(const mode of ['normal','test']) {
   const f=fixture(mode);f.s.player.x=f.e.x-45;f.s.player.y=f.e.y;
@@ -133,7 +133,7 @@ for(const mode of ['normal','test']) {
 // Extra outgoing distance is applied after resistance/caps, and never to incoming displacement.
 for(const mode of ['normal','test']) {
   const f=fixture(mode);f.s.combatSystem.applyKnockback(f.e,{knockback:72});
-  assert.equal(f.e.knockbackTween.config.duration,NORMAL_ATTACK_KNOCKBACK_DURATION_MS);
+  assert.equal(f.e.knockbackTween.config.duration,mode==='normal'?288*1000/getEnemyMoveSpeed(f.e,f.e.speed,0):NORMAL_ATTACK_KNOCKBACK_DURATION_MS);
   f.finish();assert.equal(f.e.x,500+(mode==='normal'?288:72));
   assert.equal(f.e.landingRecoveryUntil,mode==='normal'?200:100);
   const x=f.s.player.x;f.s.combatSystem.damagePlayer({x:500},6,{source:'emperorKick',knockbackDistance:96});
@@ -152,4 +152,4 @@ for(const mode of ['normal','test']) {
   b.releaseSplit(0);const orbs=f.s.enemies.filter(e=>e.enemyId==='foreseer_orb');assert.equal(orbs.length,2);
   for(const orb of orbs)assert.equal(orb.damage,f.s.stageSystem.tunedEnemy('foreseer_orb').damage*.5);f.destroy();
 }
-console.log(`PASS 01152: 10→20 player entry/real attacks/restart; ${spawns} enemy spawn cases; normal-only halved attack and movement, unchanged attack clocks/HP, real pursuit/ally damage, 4x original outgoing knockback, incoming displacement/landing preserved, boss offspring scaling once.`);
+console.log(`PASS 01152: 10→20 player entry/real attacks/restart; ${spawns} enemy spawn cases; normal-only halved attack and current movement multiplier, unchanged attack clocks/HP, real pursuit/ally damage, 4x original outgoing knockback, incoming displacement/landing preserved, boss offspring scaling once.`);
