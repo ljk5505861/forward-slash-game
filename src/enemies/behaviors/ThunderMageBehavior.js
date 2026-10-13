@@ -22,7 +22,8 @@ export default class ThunderMageBehavior {
     if(!target?.isAlive?.()||this.bolt)return false;
     const from=this.hand(),dx=target.x-from.x,dy=target.y-from.y,length=Math.hypot(dx,dy)||1;
     const to={x:from.x+dx/length*this.e.attackRange,y:from.y+dy/length*this.e.attackRange};
-    this.bolt={from,to,p:{...from},started:t,damage:this.e.damage}; return true;
+    this.bolt={from,to,p:{...from},started:t,damage:this.e.damage};
+    this.h.startAttackRecovery?.(this.scene,this.e,t); return true;
   }
   advanceBolt(t) {
     const bolt=this.bolt;

@@ -31,6 +31,7 @@ export default class GamblerBehavior {
     const explosive=this.nextIsExplosive(); this.cardsThrown=(this.cardsThrown+1)%CARD.explosiveEvery;
     this.card={from,to,p:{...from},started:t,damage:e.damage,explosive};
     this.nextThrow=t+this.h.getEnemyAttackDelay(e,e.attackIntervalMs,t);
+    this.h.startAttackRecovery?.(this.scene,e,t);
     return true;
   }
   explode(point,damage,t) {
