@@ -7,12 +7,20 @@ import MeatBehavior from '../src/enemies/behaviors/MeatBehavior.js';
 import {BALANCE} from '../src/config/balance.js';
 import {ENEMIES} from '../src/config/enemies.js';
 import MovementSystem from '../src/systems/MovementSystem.js';
-import EnemyBehaviorManager from '../src/enemies/behaviors/EnemyBehaviorManager.js';
+
 import {WEAPONS} from '../src/config/weapons.js';
 import {SKILLS} from '../src/config/skills.js';
 import {CombatEvents} from '../src/core/CombatEvents.js';
 import {SKILL_HANDLERS} from '../src/skills/handlers/index.js';
 import {SpiritWolvesSkill} from '../src/skills/handlers/SpiritWolvesSkill.js';
+
+// The behavior manager loads Phaser in Node: use the same DOM shims as the existing combat regression.
+global.window={cordova:undefined,navigator:{userAgent:''},addEventListener(){},removeEventListener(){}};
+global.document={documentElement:{style:{}},createElement(){return {getContext(){return new Proxy({},{get(_,k){ if(k==='getImageData') return ()=>({data:[0,0,0,0]}); return ()=>{}; }});},style:{}};},addEventListener(){},removeEventListener(){}};
+Object.defineProperty(globalThis,'navigator',{value:global.window.navigator,configurable:true});
+global.Image=class { set src(v){ setTimeout(()=>this.onload?.(),0); } };
+global.HTMLCanvasElement=class {};
+const {default:EnemyBehaviorManager}=await import('../src/enemies/behaviors/EnemyBehaviorManager.js');
 
 function node(x=0,y=0,width=0,height=0) {
   const n={x,y,width,height,active:true,alpha:1,destroy(){this.active=false;},
