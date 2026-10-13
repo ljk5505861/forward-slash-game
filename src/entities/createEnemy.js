@@ -8,7 +8,8 @@ export default function createEnemy(scene, config, x, groundTopY) {
   scene.physics.add.existing(enemy); enemy.body.setAllowGravity(false); enemy.body.setImmovable(true); enemy.body.setSize(config.bodyWidth || Math.round(config.width * 0.86), config.bodyHeight || Math.round(config.height * 0.92)); enemy.body.setOffset((config.width - enemy.body.width) / 2, config.height - enemy.body.height);
   const baseConfig=ENEMIES[config.id]||config;
   const specialDamageScale=(config.damage||1)/(baseConfig.damage||1);
-  const scaledSpecialDamage=value=>value===undefined?undefined:Math.max(1,Math.round(value*specialDamageScale));
+  const normalDamageMultiplier=scene.runMode==='normal'?0.5:1;
+  const scaledSpecialDamage=value=>value===undefined?undefined:Math.max(1,Math.round(value*specialDamageScale))*normalDamageMultiplier;
   Object.assign(enemy, {
     enemyId:config.id,
     name:config.name,
@@ -25,7 +26,7 @@ export default function createEnemy(scene, config, x, groundTopY) {
     isDefeated:false,
     hp:config.hp,
     maxHp:config.hp,
-    damage:config.damage,
+    damage:config.damage*normalDamageMultiplier,
     chargeDamage:scaledSpecialDamage(config.chargeDamage),
     bombDamage:scaledSpecialDamage(config.bombDamage),
     slamDamage:scaledSpecialDamage(config.slamDamage),

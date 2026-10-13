@@ -69,7 +69,7 @@ for(const multiplier of [.5,1,1.5,1000]) {
   f.finish();const movement=new MovementSystem(f.s);
   f.s.now=c.playerAttackRecoveryUntil-.01;movement.update(f.s.now);assert.equal(f.s.player.body.velocity.x,0);
   f.s.now=c.playerAttackRecoveryUntil;movement.update(f.s.now);assert(f.s.player.body.velocity.x>0);
-  closeToEnemy(f);f.s.now=interval-.01;c.update(f.s.now);assert.equal(playerHits(f),1);
+  f.s.cameras.main.worldView.x=Math.max(0,f.e.x-500);closeToEnemy(f);f.s.now=interval-.01;c.update(f.s.now);assert.equal(playerHits(f),1);
   f.s.now=interval;c.update(f.s.now);assert.equal(playerHits(f),2,'no additional recovery added to next attack');
   f.destroy();
 }
