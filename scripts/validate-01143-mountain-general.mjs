@@ -161,9 +161,9 @@ for(const replacement of [false,true]) {
 {
   const f=fixture();f.tick(0);assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
   const tween=f.tweens.at(-1);assert.equal(tween.config.duration,G.knockbackDuration);
-  tween.config.targets.t=1;tween.config.onUpdate();assert.equal(f.e.x,558);tween.config.onComplete();
+  tween.config.targets.t=1;tween.config.onUpdate();assert.equal(f.e.x,616);tween.config.onComplete();
   assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));const second=f.tweens.at(-1);second.config.targets.t=1;second.config.onComplete();
-  assert.equal(f.e.x,616,'consecutive displacement is not accumulated/capped at old Boss 10px');
+  assert.equal(f.e.x,732,'two 116px displacements remain independent and uncapped');
   const deadline=f.b.nextSkill;f.tick(G.first-1);assert.equal(f.b.nextSkill,deadline);assert.equal(f.hits.length,0);
   f.s.combatSystem.applyKnockback(f.e,{knockback:72});f.tick(G.first);
   assert.equal(f.b.state,'windup');assert(!f.e.isKnockbackActive);assert.equal(f.b.nextSkill,deadline);
@@ -172,9 +172,9 @@ for(const replacement of [false,true]) {
   assert(!f.s.combatSystem.applyKnockback(f.e,{knockback:72}));f.tick(G.first+G.windup+G.pause+G.chargeDuration);
   assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));f.destroy();
 }
-// Small deterministic Boss-only timing sample: ordinary attack cadence permits a punch,
-// faster cadence suppresses punches, and neither can delay the independent skill start.
-for(const cadence of [333,180]) {
+// Doubled distance naturally suppresses punches at 333/180ms; slower 650ms still allows them.
+// No cadence can postpone the independent skill clock or introduce a forced counterattack.
+for(const cadence of [650,333,180]) {
   const f=fixture();f.e.x=460;f.b.nextSkill=3000;
   let nextHit=0,started=null;
   for(let t=0;t<=3000;t+=5) {
@@ -193,16 +193,16 @@ for(const cadence of [333,180]) {
     if(f.b.state==='windup'){started=t;break;}
   }
   const punches=sources(f).filter(v=>v==='mountainGeneralPunch').length;
-  if(cadence===333)assert(punches>0,'base attack cadence leaves a natural normal punch opportunity');
-  else assert.equal(punches,0,'fast attacks can completely suppress normal punches');
+  if(cadence===650)assert(punches>0,'slower attacks still leave a natural normal punch opportunity');
+  else assert.equal(punches,0,'doubled knockback naturally suppresses punches at base/fast attack cadence');
   assert.equal(started,3000,'skill starts on time even during uninterrupted ordinary hit pressure');f.destroy();
 }
-// Other Bosses retain their legacy displacement duration, cap and skill immunity.
+// Legacy Boss duration/base cap/immunity remain; normal mode doubles only the final distance.
 {
   const f=fixture(),legacy={...f.e,behavior:'berserkerBoss',behaviorState:'idle',attackState:'idle'};
   assert(f.s.combatSystem.applyKnockback(legacy,{knockback:72}));const tw=f.tweens.at(-1);
   assert.equal(tw.config.duration,NORMAL_ATTACK_KNOCKBACK_DURATION_MS);tw.config.targets.t=1;tw.config.onComplete();
-  assert.equal(legacy.x,510);legacy.behaviorState='windup';assert(!f.s.combatSystem.applyKnockback(legacy,{knockback:72}));f.destroy();
+  assert.equal(legacy.x,520);legacy.behaviorState='windup';assert(!f.s.combatSystem.applyKnockback(legacy,{knockback:72}));f.destroy();
 }
 for(const phase of ['punchWindup','windup','sweepPause','charge','recovery']) {
   const f=fixture();

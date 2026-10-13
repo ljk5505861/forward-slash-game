@@ -294,7 +294,7 @@ for(const end of ['caster','scene','target']) {
   const f=fixture();applyEnemyCold(f.e,{now:0,stacks:4,data:{maxStacks:8,slowPerStack:.04,attackSlowPerStack:.03}});
   assert(getEnemyMoveSpeed(f.e,286,0)<286);assert(getEnemyAttackDelay(f.e,2600,0)>2600);
   assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));const tw=f.tweens.at(-1);
-  assert.equal(tw.config.duration,150);tw.config.targets.t=1;tw.config.onComplete();assert.equal(f.e.x,558);
+  assert.equal(tw.config.duration,150);tw.config.targets.t=1;tw.config.onComplete();assert.equal(f.e.x,616);
   f.tick(0);assert.equal(f.b.state,'attackWindup');assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));f.tick(1);
   assert.equal(f.b.state,'idle');assert.equal(f.b.beam,null);assert.equal(f.b.nextBind,3000);f.destroy();
 }

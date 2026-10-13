@@ -233,7 +233,7 @@ for(const replacement of [false,true]){
   applyEnemyCold(f.e,{now:f.s.now,stacks:4,data:{maxStacks:8,slowPerStack:.04,attackSlowPerStack:.03}});
   assert(getEnemyMoveSpeed(f.e,272,f.s.now)<272);assert(getEnemyAttackDelay(f.e,2400,f.s.now)>2400);f.destroy();
 }
-for(const cadence of [333,180]){
+for(const cadence of [650,333,180]){
   const f=fixture();f.e.x=460;isolate(f,'thrust');let nextHit=0,started=null;
   for(let t=0;t<=3000;t+=5){
     f.s.now=t;
@@ -242,22 +242,24 @@ for(const cadence of [333,180]){
       if(p===1){tw.stopped=true;tw.config.onComplete?.();}
     }
     f.e.x+=f.e.body.velocity.x*.005;
-    if(t>=nextHit){f.s.player.x=f.e.x-110;f.s.cameras.main.worldView.x=Math.max(0,f.s.player.x-280);
+    // 100px attack gap + 116px final knockback remains inside the unchanged 220px thrust range.
+    if(t>=nextHit){f.s.player.x=f.e.x-100;f.s.cameras.main.worldView.x=Math.max(0,f.s.player.x-280);
       f.s.combatSystem.applyKnockback(f.e,{knockback:72});f.tweens.at(-1).started=t;nextHit+=cadence;}
+    if(t===3000){assert(Math.hypot(f.e.x-f.s.player.x,f.e.y-f.s.player.y)<=K.thrustRange);assert(f.s.targeting.isEnemyFullyInsideViewport(f.e));}
     f.tick(t);if(f.b.state==='thrustWindup'){started=t;break;}
   }
   const stabs=sources(f).filter(v=>v==='uncrownedKingStab').length;
-  if(cadence===333)assert(stabs>0);else assert.equal(stabs,0);
+  if(cadence===650)assert(stabs>0,'slow attacks still allow natural stabs');else assert.equal(stabs,0,'doubled distance suppresses base/fast attack cadence');
   assert.equal(started,3000,'independent skill starts on time under ordinary hit pressure');f.destroy();
 }
 {
   const f=fixture();assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
-  const tw=f.tweens.at(-1);assert.equal(tw.config.duration,150);tw.config.targets.t=1;tw.config.onComplete();assert.equal(f.e.x,558);
-  assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));const second=f.tweens.at(-1);second.config.targets.t=1;second.config.onComplete();assert.equal(f.e.x,616);
+  const tw=f.tweens.at(-1);assert.equal(tw.config.duration,150);tw.config.targets.t=1;tw.config.onComplete();assert.equal(f.e.x,616);
+  assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));const second=f.tweens.at(-1);second.config.targets.t=1;second.config.onComplete();assert.equal(f.e.x,732);
   const old={...f.e,x:500,behavior:'midBoss',attackState:'idle',behaviorState:'idle',uncrownedShadowUntil:99999};
   assert(!isUncrownedShadowActive(old,0));assert(f.s.combatSystem.applyKnockback(old,{knockback:72}));
   const legacy=f.tweens.at(-1);assert.equal(legacy.config.duration,NORMAL_ATTACK_KNOCKBACK_DURATION_MS);
-  legacy.config.targets.t=1;legacy.config.onComplete();assert.equal(old.x,510);f.destroy();
+  legacy.config.targets.t=1;legacy.config.onComplete();assert.equal(old.x,520);f.destroy();
 }
 // Pause/recycle/death cleanup in every meaningful phase, with released rain/shadow duration preserved.
 for(const phase of ['attackWindup','thrustWindup','thrust','thrustEnd','cleaveWindup','cleaveStrike','rainWindup','rain','shadowWindup','shadow','shadowAttackWindup','recovery']){

@@ -222,8 +222,10 @@ for(const skill of ['dash','rose','normal']) {
 {
   const f=fixture();f.tick(0);assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
   const tw=f.tweens.at(-1);assert.equal(tw.config.duration,140);tw.config.targets.t=1;tw.config.onComplete();
-  assert.equal(f.e.x,558);assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
-  const second=f.tweens.at(-1);second.config.targets.t=1;second.config.onComplete();assert.equal(f.e.x,616);
+  assert.equal(f.e.x,616);assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
+  const second=f.tweens.at(-1);second.config.targets.t=1;second.config.onComplete();assert.equal(f.e.x,732);
+  f.s.cameras.main.worldView.x=200; // Follow the longer displacement so skill readiness is tested inside the arena.
+  assert(f.s.targeting.isEnemyFullyInsideViewport(f.e));
   f.tick(3000);assert.equal(f.b.state,'dashWindup');const before=f.e.hp;
   f.s.combatSystem.damageEnemy(f.e,20,{source:'attack',knockback:72});assert.equal(f.e.hp,before-20);assert(!f.e.isKnockbackActive);
   f.tick(3450);f.e.x=-40;f.tick(4000);f.e.x=600;
@@ -231,7 +233,7 @@ for(const skill of ['dash','rose','normal']) {
   assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));f.tick(until-1);
   assert.equal(f.b.until,until);assert.deepEqual([f.b.nextDash,f.b.nextRose,f.b.nextDrain],clocks);f.destroy();
 }
-for(const cadence of [333,180]) {
+for(const cadence of [650,333,180]) {
   const f=fixture();f.e.x=460;isolate(f,'dash');let nextHit=0,started=null;
   for(let t=0;t<=3000;t+=5) {
     f.s.now=t;
@@ -248,14 +250,14 @@ for(const cadence of [333,180]) {
     f.tick(t);if(f.b.state==='dashWindup'){started=t;break;}
   }
   const stabs=sources(f).filter(v=>v==='thornlessRoseStab').length;
-  if(cadence===333)assert(stabs>0,'base cadence leaves a natural normal stab opportunity');
-  else assert.equal(stabs,0,'fast attacks can suppress normal stabs');
+  if(cadence===650)assert(stabs>0,'slow attacks leave a natural normal stab opportunity');
+  else assert.equal(stabs,0,'doubled knockback lets base/fast attacks naturally suppress normal stabs');
   assert.equal(started,3000,'ordinary knockback never resets/delays skill readiness');f.destroy();
 }
 {
   const f=fixture(),legacy={...f.e,behavior:'midBoss',behaviorState:'idle',attackState:'idle',bossSkillKnockbackImmune:false};
   assert(f.s.combatSystem.applyKnockback(legacy,{knockback:72}));const tw=f.tweens.at(-1);
-  assert.equal(tw.config.duration,NORMAL_ATTACK_KNOCKBACK_DURATION_MS);tw.config.targets.t=1;tw.config.onComplete();assert.equal(legacy.x,510);
+  assert.equal(tw.config.duration,NORMAL_ATTACK_KNOCKBACK_DURATION_MS);tw.config.targets.t=1;tw.config.onComplete();assert.equal(legacy.x,520);
   legacy.behaviorState='windup';assert(!f.s.combatSystem.applyKnockback(legacy,{knockback:72}));f.destroy();
 }
 for(const phase of ['attackWindup','dashWindup','dash','roseWindup','roseThrow','roseWait','drainWindup','drainThrust','recovery']) {

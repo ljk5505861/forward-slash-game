@@ -90,7 +90,7 @@ function fixture() {
   const tween=f.s.tweens.items.at(-1);tween.targets.t=0.5;tween.onUpdate();
   assert.equal(tween.duration,440);assert.equal(f.e.y,376,'original lifted knockback arc');
   f.s.now=3500;f.b.interrupt(3500);assert.equal(f.b.state,'guard');assert.equal(f.b.until,4800,'hit never refreshes defense');
-  tween.onComplete();assert.equal(f.e.x,525,'original elite knockback scale');assert.equal(f.e.y,400);
+  tween.onComplete();assert.equal(f.e.x,550,'elite resistance is retained before normal-mode distance doubles');assert.equal(f.e.y,400);
   f.s.now=4800;f.b.syncVisual();assert.equal(f.e.damageReduction,0,'expires even when only visual sync runs');
   f.combat.damageEnemy(f.e,20,{source:'skill',noKnockback:true});assert.equal(f.e.hp,90);
 }

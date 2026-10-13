@@ -65,7 +65,7 @@ export default class MeatBehavior {
         if(targets.length||fraction>=1){
           // Switch state before damage: reflected damage may synchronously kill us.
           this.state='recall'; this.started=t; this.from={...this.knife};
-          if(targets.length) this.h.targetDamage(s,targets[0],e,e.damage*2,{source:'meatKnife',attackType:'projectile',knockbackDistance:36});
+          if(targets.length) this.h.targetDamage(s,targets[0],e,e.damage*2,{source:'meatKnife',attackType:'projectile',knockbackDistance:0});
         }
       } else if(this.state==='recall'){
         const fraction=Math.min(1,(t-this.started)/MEAT_TIMING.recall), hand=this.hand();
