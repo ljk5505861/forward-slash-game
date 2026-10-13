@@ -24,7 +24,7 @@ assert.equal(ENEMIES.berserker_boss.chargeSpeed,240);
 assert.equal(ENEMIES.healer.healAmount,18);
 ['berserker_boss','mid_boss','boss'].forEach(id=>assert.equal(ENEMIES[id].attackRange,155,`${id} boss melee range`));
 assert.equal(WEAPONS.short_sword.attackIntervalMs,333);
-assert.equal(WEAPONS.short_sword.attackRange,115);
+assert.equal(WEAPONS.short_sword.attackRange,86);
 assert.equal(WEAPONS.short_sword.knockback,72);
 
 const player={x:100,y:200,width:BALANCE.player.width,height:BALANCE.player.height,displayWidth:90,displayHeight:156,body:{width:BALANCE.player.bodyWidth,height:BALANCE.player.bodyHeight,center:{x:102},top:160}};

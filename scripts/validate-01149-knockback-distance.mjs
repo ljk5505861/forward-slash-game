@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
-import CombatSystem,{NORMAL_ATTACK_KNOCKBACK_DURATION_MS,NORMAL_ATTACK_KNOCKBACK_LIFT_PX} from '../src/systems/CombatSystem.js';
+import CombatSystem,{NORMAL_ATTACK_KNOCKBACK_DURATION_MS,NORMAL_ATTACK_KNOCKBACK_LIFT_PX,ENEMY_LANDING_STUN_MS,isEnemyLandingStunned} from '../src/systems/CombatSystem.js';
 import StageSystem from '../src/systems/StageSystem.js';
 import TargetingSystem from '../src/systems/TargetingSystem.js';
 import SkillSystem from '../src/systems/SkillSystem.js';
 import MeatBehavior from '../src/enemies/behaviors/MeatBehavior.js';
 import {BALANCE} from '../src/config/balance.js';
+import {ENEMIES} from '../src/config/enemies.js';
+import MovementSystem from '../src/systems/MovementSystem.js';
+import EnemyBehaviorManager from '../src/enemies/behaviors/EnemyBehaviorManager.js';
 import {WEAPONS} from '../src/config/weapons.js';
 import {SKILLS} from '../src/config/skills.js';
 import {CombatEvents} from '../src/core/CombatEvents.js';
@@ -153,4 +156,70 @@ function meat(f) {
   f.s.combatSystem.damagePlayer({x:500},6,{source:'emperorKick',knockbackDistance:96});
   assert.equal(f.s.player.x,x-96,'other enemy-to-player knockback is neither removed nor doubled');f.destroy();
 }
+// v0.11.50: equal baseline melee reach, with no longer-range free player hits.
+{
+  const f=fixture();
+  assert.equal(WEAPONS.short_sword.attackRange,ENEMIES.grunt.attackRange);
+  f.s.player.x=f.e.x-ENEMIES.grunt.attackRange;f.s.player.y=f.e.y;
+  new MovementSystem(f.s).update();
+  assert.equal(f.s.player.body.velocity.x,0,'player stops within the shared melee reach');
+  const before=f.s.playerData.hp;
+  f.s.combatSystem.updateEnemyAttack(f.e,0);
+  assert(f.s.playerData.hp<before,'grunt can hit at the same distance as the player');
+  const hp=f.e.hp;
+  f.s.combatSystem.update(0);
+  assert(f.e.hp<hp,'player can also hit at the shared distance');
+  f.destroy();
+}
+// Only finished airborne lift starts exactly 100ms of control.
+{
+  const f=fixture(), manager=new EnemyBehaviorManager(f.s);f.s.enemyBehaviors=manager;manager.attach(f.e);
+  f.s.now=200;assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
+  assert.equal(f.e.landingRecoveryUntil||0,0,'no landing recovery in midair');
+  f.s.now+=NORMAL_ATTACK_KNOCKBACK_DURATION_MS;f.finish();
+  assert.equal(f.e.isKnockbackActive,false);
+  assert.equal(f.e.landingRecoveryUntil,f.s.now+ENEMY_LANDING_STUN_MS);
+  f.s.player.x=400;
+  manager.update(f.s.now);assert.equal(f.e.body.velocity.x,0);
+  f.s.now+=ENEMY_LANDING_STUN_MS-1;
+  manager.update(f.s.now);assert.equal(f.e.body.velocity.x,0,'still frozen at 99ms');
+  f.s.player.x=f.e.x-40;f.s.player.y=f.e.y;
+  const before=f.s.playerData.hp;f.e.nextAttackAt=0;
+  f.s.combatSystem.updateEnemyAttack(f.e,f.s.now);
+  assert.equal(f.s.playerData.hp,before,'cannot attack during 100ms recovery');
+  f.s.now++;
+  assert(!isEnemyLandingStunned(f.e,f.s.now));
+  f.s.combatSystem.updateEnemyAttack(f.e,f.s.now);
+  assert(f.s.playerData.hp<before,'can attack when 100ms expires');
+  f.s.player.x=400;manager.update(f.s.now);
+  assert(f.e.body.velocity.x<0,'can move after 100ms');
+  manager.destroy();f.destroy();
+}
+{
+  const f=fixture();f.s.now=500;
+  assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));f.finish();
+  assert.equal(f.e.landingRecoveryUntil,600);
+  f.s.now=550;assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
+  assert.equal(f.e.landingRecoveryUntil,0,'new launch cancels earlier landing stun');
+  f.s.now=990;f.finish();
+  assert.equal(f.e.landingRecoveryUntil,1090);
+  f.s.combatSystem.clearAllKnockbacks();
+  assert.equal(f.e.landingRecoveryUntil,0,'reset clears completed landing stun');
+  f.destroy();
+}
+{
+  const f=fixture('normal','mountain_general');
+  assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
+  f.s.now=150;f.finish();
+  assert.equal(f.e.landingRecoveryUntil||0,0,'boss without vertical lift does not enter landing stun');
+  f.destroy();
+}
+{
+  const f=fixture();assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
+  f.s.now=440;f.finish();f.e.hp=1;
+  f.s.combatSystem.damageEnemy(f.e,5,{source:'attack',knockback:72});
+  assert(f.e.isDefeated);assert.equal(f.e.landingRecoveryUntil,0,'death clears landing recovery');
+  f.destroy();
+}
+console.log('PASS 01150: equal melee reach, 100ms landing freeze, recovery, repeated knockback, reset and death.');
 console.log('PASS 01149: actual normal-only doubled final distances; resistance/rounding/cap/bounds/direction/duration/lift/cleanup; real default attack, charged slam and kinetic release; no new sword/blade knockback; dead target safety; real meat chain/player/wolf damage without active knockback; other incoming displacement unchanged.');
