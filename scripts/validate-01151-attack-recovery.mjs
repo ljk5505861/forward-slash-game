@@ -214,7 +214,7 @@ for(const id of ['elite_sharpshooter','elite_thunder_mage','elite_gambler']) {
 // Landing recovery is a fixed 200ms in normal mode and remains 100ms in test mode.
 for(const mode of ['normal','test']) {
   const f=fixture(mode);f.s.now=500;f.s.combatSystem.applyKnockback(f.e,{knockback:72});
-  f.s.now+=NORMAL_ATTACK_KNOCKBACK_DURATION_MS;f.finish();
+  f.s.now+=f.e.knockbackTween.config.duration;f.finish();
   const duration=mode==='normal'?ENEMY_LANDING_STUN_MS:TEST_ENEMY_LANDING_STUN_MS;
   assert.equal(duration,mode==='normal'?200:100);assert.equal(f.e.landingRecoveryUntil,f.s.now+duration);
   closeToEnemy(f);f.s.now+=duration-1;const hp=f.s.playerData.hp;

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import CombatSystem,{NORMAL_ATTACK_KNOCKBACK_DURATION_MS,NORMAL_ATTACK_KNOCKBACK_LIFT_PX,ENEMY_LANDING_STUN_MS,isEnemyLandingStunned} from '../src/systems/CombatSystem.js';
+import {getEnemyMoveSpeed} from '../src/systems/EnemyGravityControl.js';
 import StageSystem from '../src/systems/StageSystem.js';
 import TargetingSystem from '../src/systems/TargetingSystem.js';
 import SkillSystem from '../src/systems/SkillSystem.js';
@@ -62,7 +63,7 @@ for(const [id,normal,test] of cases)for(const mode of ['normal','test',undefined
   const f=fixture(mode,id);if(mode===undefined)f.s.runMode=undefined;
   const x=f.e.x,y=f.e.y,expected=mode==='normal'?normal:test;
   assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));const tween=f.e.knockbackTween;
-  const duration=['mountain_general','thornless_rose','uncrowned_king','foreseer','abyss_apostle'].includes(id)
+  const duration=mode==='normal'?expected*1000/getEnemyMoveSpeed(f.e,f.e.speed,f.s.now):['mountain_general','thornless_rose','uncrowned_king','foreseer','abyss_apostle'].includes(id)
     ?(id==='thornless_rose'?140:150):NORMAL_ATTACK_KNOCKBACK_DURATION_MS;
   assert.equal(tween.config.duration,duration);tween.config.targets.t=.5;tween.config.onUpdate();
   assert.equal(f.e.x,x+expected/2);assert(Math.abs(f.e.y-(y-(f.e.isBoss?0:NORMAL_ATTACK_KNOCKBACK_LIFT_PX)))<1e-8);
@@ -184,7 +185,7 @@ function meat(f) {
   const f=fixture(), manager=new EnemyBehaviorManager(f.s);f.s.enemyBehaviors=manager;manager.attach(f.e);
   f.s.now=200;assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));
   assert.equal(f.e.landingRecoveryUntil||0,0,'no landing recovery in midair');
-  f.s.now+=NORMAL_ATTACK_KNOCKBACK_DURATION_MS;f.finish();
+  f.s.now+=f.e.knockbackTween.config.duration;f.finish();
   assert.equal(f.e.isKnockbackActive,false);
   assert.equal(f.e.landingRecoveryUntil,f.s.now+ENEMY_LANDING_STUN_MS);
   f.s.player.x=400;
