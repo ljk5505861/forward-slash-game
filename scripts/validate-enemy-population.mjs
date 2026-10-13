@@ -74,5 +74,9 @@ const waitScene = makeScene(); const waitStage = new StageSystem(waitScene); wai
 Object.values(WEAPONS).forEach(w => assert(Number.isFinite(w.knockback) && w.knockback >= 0, `${w.id} has valid knockback`)); assert.equal(WEAPONS.short_sword.knockback, 72); assert.equal(WEAPONS.short_sword.attackRange, 115); assert.equal(WEAPONS.short_sword.attackRange, 115);
 const combatScene = makeScene(); const combat = new CombatSystem(combatScene); let seenMeta; combat.damageEnemy = (_enemy,_damage,meta) => { seenMeta=meta; return true; }; const enemy = { active:true, isDefeated:false, body:{}, x:300, y:850, hp:10, width:74 }; combatScene.playerData.attack=1; combat.performDefaultAttack(enemy, WEAPONS.short_sword); assert.equal(seenMeta.knockback, WEAPONS.short_sword.knockback, 'normal attack reads weapon config knockback');
 assert.equal(SKILLS.spinning_blade.levels[8].knockback, undefined, 'spinning blade no longer has skill knockback');
-const applyText = CombatSystem.prototype.applyKnockback.toString(); assert(!/base\s*\*\s*2|2\s*\*\s*base|knockback\s*\*\s*2|2\s*\*\s*knockback/.test(applyText), 'attack knockback logic does not multiply by 2');
+for(const runMode of ['normal','test']){
+  const s=makeScene();s.runMode=runMode;const e=createEnemy(s,ENEMIES.grunt,500,BALANCE.groundTopY);
+  assert(new CombatSystem(s).applyKnockback(e,{knockback:72}));
+  assert.equal(e.x,runMode==='normal'?644:572,'actual normal knockback doubles while test mode retains the original distance');
+}
 console.log('[validate:enemy-population] PASS pre-boss melee-only pools, fixed boss1 rush count, formal spawn spacing, wave delay, weapon knockback config');

@@ -37,7 +37,7 @@ function fixture(){
   b.update(4500); assert.equal(b.state,'windup'); assert.equal(hits.length,0);
   b.update(5150); assert.equal(b.state,'outbound');
   b.update(5500); assert.equal(hits.length,1); assert.equal(b.state,'recall');
-  assert.equal(hits[0].damage,6); assert.equal(hits[0].meta.knockbackDistance,36);
+  assert.equal(hits[0].damage,6); assert.equal(hits[0].meta.knockbackDistance,0);
   b.update(5650); b.update(5850); assert.equal(hits.length,1,'recall never deals damage');
   assert.equal(b.state,'idle'); assert.equal(b.nextThrow,12350);
 }
@@ -105,10 +105,10 @@ const Damage=vm.runInNewContext('(class {'+damageMethod+'})',{
   const p={x:200,y:400,width:40,setX(x){this.x=x;},body:{width:40,reset(x){p.x=x;}}};
   combat.scene={player:p,playerData:{hp:100,maxHp:100},balance:{stageWorldWidth:1000},floatText(){},eventBus:{emit(){}},finishRun(){}};
   combat.damagePlayer({x:400},6,{source:'meatKnife',knockbackDistance:36});
-  assert.equal(p.x,164);assert.equal(combat.scene.playerData.hp,94);
+  assert.equal(p.x,200);assert.equal(combat.scene.playerData.hp,94);
   combat.damagePlayer({x:400},6,{source:'archerArrow',knockbackDistance:12});
-  assert.equal(p.x,164,'existing arrows do not gain player knockback');
-  p.x=35;combat.damagePlayer({x:400},6,{source:'meatKnife',knockbackDistance:36});assert.equal(p.x,28,'world boundary clamp');
+  assert.equal(p.x,200,'existing arrows do not gain player knockback');
+  p.x=35;combat.damagePlayer({x:400},6,{source:'meatKnife',knockbackDistance:36});assert.equal(p.x,35,'retired meat knockback cannot move the player even near a world boundary');
   // Use certain skill blocking rather than probabilistic dodge to verify no displacement.
   combat.canDodge=()=>false;combat.scene.skillSystem={beforePlayerDamage:()=>({blocked:true})};
   p.x=200;combat.damagePlayer({x:400},6,{source:'meatKnife',knockbackDistance:36});assert.equal(p.x,200);
@@ -120,4 +120,4 @@ const Generic=vm.runInNewContext('(class {'+genericMethod+'})',{
 const generic=new Generic();generic.scene={targeting:{valid:()=>true}};
 generic.chooseEnemyAttackTarget=()=>assert.fail('generic melee must not execute for meat');
 generic.updateEnemyAttack({behavior:'meat'},1);
-console.log('PASS manager wiring/control/death, actual player knockback, world bounds, blocking, and no duplicate generic melee');
+console.log('PASS manager wiring/control/death, meat damage without player displacement, blocking, and no duplicate generic melee');

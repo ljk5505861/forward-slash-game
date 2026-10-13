@@ -314,7 +314,7 @@ for(const state of ['idle','attackWindup','attackRecovery','recovery']) {
   assert(!isBossUsingSkill(f.e));assert(f.s.combatSystem.applyKnockback(f.e,{knockback:250}));
   assert.equal(f.tweens[0].config.duration,150);assert(f.e.isKnockbackActive);
   f.stage.updateBossKnockbackCounterattacks(99999);assert.equal(f.hits.length,0,'no forced knockback counter');
-  f.tweens[0].config.onComplete();assert.equal(f.e.x,700);assert.equal(f.e.y,400);
+  f.tweens[0].config.onComplete();assert.equal(f.e.x,900);assert.equal(f.e.y,400);
   assert.deepEqual([f.b.nextRelease,f.b.nextBlood,f.b.nextChain,f.b.nextSlam],clocks);f.destroy();
 }
 for(const state of ['releaseWindup','releaseChannel','bloodWindup','bloodRelease','chainWindup','chain','slamWindup','slamRelease']) {
