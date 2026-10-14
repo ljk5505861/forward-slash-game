@@ -20,7 +20,7 @@ const NON_DIRECT_PLAYER_DAMAGE_TYPES = new Set(['dot','ground','environment','bu
 const sumBonuses = sumRuntimeBonuses;
 const PHYSICAL_DAMAGE_TAKEN_BONUS_CAP = 1;
 export const MIN_PLAYER_ATTACK_INTERVAL_MS = 180;
-export const PLAYER_BASE_ATTACK_RECOVERY_MS = 1000;
+export const PLAYER_BASE_ATTACK_RECOVERY_MS = 500;
 export const NORMAL_ATTACK_KNOCKBACK_DURATION_MS = 440;
 export const NORMAL_MODE_KNOCKBACK_DURATION_MS = 500;
 export const NORMAL_ATTACK_KNOCKBACK_LIFT_PX = 24;
@@ -64,7 +64,7 @@ export default class CombatSystem {
   prepareHeavyHit(){ const p=this.scene.playerData; const every=Math.max(0,Math.floor(p.heavyHitEvery||0)); p.nextAttackIsHeavy=false; if(every<=0) return false; p.heavyHitCounter=(p.heavyHitCounter||0)+1; if(p.heavyHitCounter<every) return false; p.heavyHitCounter=0; p.nextAttackIsHeavy=true; return true; }
   consumeHeavyHit(){ const p=this.scene.playerData; const heavy=!!p.nextAttackIsHeavy; p.nextAttackIsHeavy=false; return heavy; }
   getPlayerAttackSpeedMultiplier(){ const p=this.scene.playerData; return Math.max(0.2,(p.attackSpeedMultiplier||1)+sumBonuses(p.attackSpeedMultiplierBonuses)); }
-  // Normal-mode player recovery has its own one-second opening baseline, independent of enemy recovery.
+  // Normal-mode player recovery has its own half-second opening baseline, independent of enemy recovery.
   getPlayerAttackRecoveryDuration(){ return PLAYER_BASE_ATTACK_RECOVERY_MS/this.getPlayerAttackSpeedMultiplier(); }
   getPlayerAttackInterval(weapon){ const interval=weapon.attackIntervalMs/this.getPlayerAttackSpeedMultiplier(); return Math.max(MIN_PLAYER_ATTACK_INTERVAL_MS, interval); }
   performAttack(target, weapon){ return this.performDefaultAttack(target, weapon); }
