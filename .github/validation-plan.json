@@ -1,5 +1,5 @@
 {
-  "reason": "v0.11.54 普通模式击飞固定1000ms，与移速、减速、冻结、击退距离和边界无关；保留Linear缓动、原距离/抗性/免疫/抬升及200ms落地僵直，移速倍率仍0.75。执行01153真实Phaser缓动、20种模式路径和固定时长/重复击飞回归，01149击退、01151后摇/暂停、01152既有伤害/移速平衡及01100版本，build/diff与范围规则。测试模式旧时长和缓动不变，不运行无关全量/浏览器。",
+  "reason": "v0.11.55 普通模式角色普攻后摇改为1000ms/当前攻速倍率，开局完整停1秒，期间禁止追击与再次普攻，保留原180ms攻击频率下限、暂停/倍速/死亡/重置安全；怪物固定飞行500ms，击退最终距离从4倍原值减为2倍，落地仍200ms。执行01151真实开局/帧序/攻速/死亡换目标/25种敌人/暂停回归、01153真实Phaser缓动和固定500ms、01149距离/抗性/免疫/边界/技能/清理、01152未变伤害移速平衡及01100版本，build/diff与范围规则。测试模式及怪物后摇、移速、伤害不变；不运行无关全量/浏览器。",
   "files": [
     ".github/validation-plan.json",
     "package-lock.json",
@@ -8,6 +8,7 @@
     "scripts/validate-01100-version.mjs",
     "scripts/validate-01115-game-speed.mjs",
     "scripts/validate-01149-knockback-distance.mjs",
+    "scripts/validate-01151-attack-recovery.mjs",
     "scripts/validate-01152-normal-combat-balance.mjs",
     "scripts/validate-01153-knockback-flight.mjs",
     "src/config/version.js",

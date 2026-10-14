@@ -134,7 +134,7 @@ for(const mode of ['normal','test']) {
 for(const mode of ['normal','test']) {
   const f=fixture(mode);f.s.combatSystem.applyKnockback(f.e,{knockback:72});
   assert.equal(f.e.knockbackTween.config.duration,mode==='normal'?NORMAL_MODE_KNOCKBACK_DURATION_MS:NORMAL_ATTACK_KNOCKBACK_DURATION_MS);
-  f.finish();assert.equal(f.e.x,500+(mode==='normal'?288:72));
+  f.finish();assert.equal(f.e.x,500+(mode==='normal'?144:72));
   assert.equal(f.e.landingRecoveryUntil,mode==='normal'?200:100);
   const x=f.s.player.x;f.s.combatSystem.damagePlayer({x:500},6,{source:'emperorKick',knockbackDistance:96});
   assert.equal(f.s.player.x,x-96,'incoming knockback is not doubled');f.destroy();
@@ -152,4 +152,4 @@ for(const mode of ['normal','test']) {
   b.releaseSplit(0);const orbs=f.s.enemies.filter(e=>e.enemyId==='foreseer_orb');assert.equal(orbs.length,2);
   for(const orb of orbs)assert.equal(orb.damage,f.s.stageSystem.tunedEnemy('foreseer_orb').damage*.5);f.destroy();
 }
-console.log(`PASS 01152: 10→20 player entry/real attacks/restart; ${spawns} enemy spawn cases; normal-only halved attack and current movement multiplier, unchanged attack clocks/HP, real pursuit/ally damage, 4x original outgoing knockback, incoming displacement/landing preserved, boss offspring scaling once.`);
+console.log(`PASS 01152: 10→20 player entry/real attacks/restart; ${spawns} enemy spawn cases; normal-only halved attack and current movement multiplier, unchanged enemy attack clocks/HP, real pursuit/ally damage, 2x original outgoing knockback (half v0.11.54), incoming displacement/landing preserved, boss offspring scaling once.`);

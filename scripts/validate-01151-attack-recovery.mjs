@@ -59,18 +59,19 @@ const approx = (a,b,label) => assert(Math.abs(a-b)<1e-8,`${label}: ${a} !== ${b}
 const playerHits = f => f.events.filter(v=>v.type===CombatEvents.PLAYER_ATTACK_RESOLVED).length;
 
 // A real player release stops movement even after its target is knocked out of reach.
-for(const multiplier of [.5,1,1.5,1000]) {
+for(const multiplier of [.1,.5,1,1.5,2,1000]) {
   const f=fixture();closeToEnemy(f);f.s.playerData.attackSpeedMultiplier=multiplier;
   const c=f.s.combatSystem,interval=c.getPlayerAttackInterval(WEAPONS.short_sword);
+  const recovery=1000/Math.max(.2,multiplier),cycle=Math.max(interval,recovery);
   c.update(0);assert.equal(playerHits(f),1);assert.equal(f.s.player.body.velocity.x,0);
-  approx(c.playerAttackRecoveryUntil,interval*ATTACK_RECOVERY_RATIO,'player recovery');
-  assert.equal(c.nextPlayerAttackAt,interval,'recovery is part of the attack cycle');
+  approx(c.playerAttackRecoveryUntil,recovery,'one-second baseline / effective attack-speed multiplier');
+  assert.equal(c.nextPlayerAttackAt,cycle,'cannot attack again before recovery or the existing attack floor');
   if(multiplier===1000)assert.equal(interval,MIN_PLAYER_ATTACK_INTERVAL_MS,'existing attack-speed limit');
   f.finish();const movement=new MovementSystem(f.s);
   f.s.now=c.playerAttackRecoveryUntil-.01;movement.update(f.s.now);assert.equal(f.s.player.body.velocity.x,0);
   f.s.now=c.playerAttackRecoveryUntil;movement.update(f.s.now);assert(f.s.player.body.velocity.x>0);
-  f.s.cameras.main.worldView.x=Math.max(0,f.e.x-500);closeToEnemy(f);f.s.now=interval-.01;c.update(f.s.now);assert.equal(playerHits(f),1);
-  f.s.now=interval;c.update(f.s.now);assert.equal(playerHits(f),2,'no additional recovery added to next attack');
+  f.s.cameras.main.worldView.x=Math.max(0,f.e.x-500);closeToEnemy(f);f.s.now=cycle-.01;c.update(f.s.now);assert.equal(playerHits(f),1);
+  f.s.now=cycle;c.update(f.s.now);assert.equal(playerHits(f),2,'recovery overlaps the interval, not added a second time');
   f.destroy();
 }
 {
@@ -84,7 +85,32 @@ for(const multiplier of [.5,1,1.5,1000]) {
 {
   const f=fixture();closeToEnemy(f);f.s.playerData.attackSpeedMultiplierBonuses.item=.5;
   f.s.combatSystem.update(0);
-  approx(f.s.combatSystem.playerAttackRecoveryUntil,WEAPONS.short_sword.attackIntervalMs/1.5*ATTACK_RECOVERY_RATIO,'item attack speed also shortens recovery');f.destroy();
+  approx(f.s.combatSystem.playerAttackRecoveryUntil,1000/1.5,'item attack speed also shortens recovery');f.destroy();
+}
+// Actual opening runtime and the real frame order: flight/landing end before the player can chase or swing.
+{
+  const {createPlayerRuntime}=await import('../src/config/balance.js');
+  const f=fixture();f.s.playerData=createPlayerRuntime();closeToEnemy(f);
+  const c=f.s.combatSystem,movement=new MovementSystem(f.s);
+  c.update(0);assert.equal(playerHits(f),1);assert.equal(c.playerAttackRecoveryUntil,1000);
+  assert.equal(f.e.knockbackTween.config.duration,500);
+  f.s.now=500;f.finish();assert.equal(f.e.landingRecoveryUntil,700);
+  for(const t of [500,700,999]) {
+    f.s.now=t;movement.update(t);c.update(t);
+    assert.equal(f.s.player.body.velocity.x,0,`frame ${t}: no chasing before one second`);
+    assert.equal(playerHits(f),1,`frame ${t}: no repeated attack`);
+  }
+  closeToEnemy(f);c.nextPlayerAttackAt=0;c.update(999);
+  assert.equal(playerHits(f),1,'an early-ready clock cannot bypass recovery');
+  f.s.now=1000;c.update(1000);assert.equal(playerHits(f),2,'next attack allowed after one full second');f.destroy();
+}
+// Attack speed changes during recovery affect the next swing, not the already committed pause.
+{
+  const f=fixture();closeToEnemy(f);f.s.combatSystem.update(0);
+  f.s.playerData.attackSpeedMultiplier=2;f.finish();closeToEnemy(f);
+  f.s.now=999;f.s.combatSystem.update(999);assert.equal(playerHits(f),1);
+  f.s.now=1000;f.s.combatSystem.update(1000);assert.equal(playerHits(f),2);
+  assert.equal(f.s.combatSystem.playerAttackRecoveryUntil,1500);f.destroy();
 }
 // Synchronous target death, with or without a replacement, cannot cancel the player's recovery.
 for(const replacement of [false,true]) {
@@ -96,6 +122,9 @@ for(const replacement of [false,true]) {
   f.s.combatSystem.update(0);assert(f.e.isDefeated);
   new MovementSystem(f.s).update(1);assert.equal(f.s.player.body.velocity.x,0);
   assert(f.s.combatSystem.isPlayerAttackRecovering(1));assert.equal(playerHits(f),1);
+  f.s.now=999;new MovementSystem(f.s).update(999);f.s.combatSystem.update(999);
+  assert.equal(f.s.player.body.velocity.x,0);assert.equal(playerHits(f),1);
+  assert.equal(f.s.combatSystem.playerAttackRecoveryUntil,1000,'target death/replacement preserves the full pause');
   f.destroy();
 }
 // Missing targets spend neither an attack nor recovery; test mode retains its previous movement.
@@ -106,6 +135,8 @@ for(const mode of ['normal','test']) {
     closeToEnemy(f);f.s.combatSystem.update(0);f.finish();
     assert.equal(f.s.combatSystem.playerAttackRecoveryUntil,0);
     new MovementSystem(f.s).update(1);assert(f.s.player.body.velocity.x>0);
+    closeToEnemy(f);f.s.now=WEAPONS.short_sword.attackIntervalMs;
+    f.s.combatSystem.update(f.s.now);assert.equal(playerHits(f),2,'test mode retains its 333ms opening attack cycle');
   }
   f.destroy();
 }
@@ -208,8 +239,11 @@ for(const id of ['elite_sharpshooter','elite_thunder_mage','elite_gambler']) {
   new MovementSystem(f.s).update(f.s.now);c.update(f.s.now);
   assert.equal(f.s.now,0);assert.equal(c.playerAttackRecoveryUntil,playerUntil);assert.equal(f.e.attackRecoveryUntil,enemyUntil);
   f.s.paused=false;f.s.enemyBehaviors.resume();clock.setSpeed(2);
-  f.s.now=clock.advance(playerUntil/2);assert(!c.isPlayerAttackRecovering(f.s.now));
-  assert(isAttackRecovering(f.e,f.s.now));clock.destroy();f.destroy();
+  f.s.now=clock.advance(Math.min(playerUntil,enemyUntil)/4);
+  assert(c.isPlayerAttackRecovering(f.s.now));assert(isAttackRecovering(f.e,f.s.now));
+  const elapsed=f.s.now;
+  f.s.now=clock.advance((playerUntil-elapsed)/2);assert(!c.isPlayerAttackRecovering(f.s.now));
+  assert.equal(isAttackRecovering(f.e,f.s.now),enemyUntil>playerUntil);clock.destroy();f.destroy();
 }
 // Landing recovery is a fixed 200ms in normal mode and remains 100ms in test mode.
 for(const mode of ['normal','test']) {
@@ -234,4 +268,4 @@ for(const mode of ['normal','test']) {
   c.startEnemyAttackRecovery(f.e,0);f.s.enemyBehaviors.recycleEnemy(f.e);assert.equal(f.e.attackRecoveryUntil,0);
   f.destroy();
 }
-console.log(`PASS 01151: real player and ${ids.length} enemy paths; attack-speed scaling, movement lock, projectile flight, authored boss recovery, target death, dodge/reflect, pause/speed, 200ms landing, test-mode isolation and cleanup.`);
+console.log(`PASS 01151: opening player pauses 1000ms with no chase/repeated swing, inverse attack-speed scaling and existing attack floor; real player and ${ids.length} enemy paths; projectile flight, authored boss recovery, target death/replacement, dodge/reflect, pause/speed, 200ms landing, test-mode isolation and cleanup.`);
