@@ -69,7 +69,7 @@ for(const id of ids)for(const mode of ['normal','test']) {
     assert(f.e.isKnockbackActive);assert.equal(f.e.landingRecoveryUntil||0,0,'no landing stun while flying');
   }
   f.s.now=c.duration;f.finish();
-  if(mode==='normal')assert.equal(c.duration,1000,`${id}: fixed one-second flight`);
+  if(mode==='normal')assert.equal(c.duration,500,`${id}: fixed half-second flight`);
   else assert.equal(c.duration,['mountain_general','uncrowned_king','foreseer','abyss_apostle'].includes(id)?150:id==='thornless_rose'?140:440,'legacy test flight is unchanged');
   assert.equal(f.e.y,groundY);assert(!f.e.isKnockbackActive);
   assert.equal(f.e.landingRecoveryUntil||0,f.e.isBoss?0:f.s.now+(mode==='normal'?200:100));f.destroy();
@@ -80,9 +80,9 @@ for(const id of ids)for(const mode of ['normal','test']) {
   for(const distance of [36,72,144])for(const speed of [0,40,120,240]) {
     const f=fixture();f.e.speed=speed;f.s.combatSystem.applyKnockback(f.e,{knockback:distance});
     const c=f.e.knockbackTween.config;durations.push(c.duration);
-    f.s.now=1000;f.finish();near(f.e.x,500+distance*4,'requested distance preserved');f.destroy();
+    f.s.now=500;f.finish();near(f.e.x,500+distance*2,'requested distance preserved');f.destroy();
   }
-  assert(durations.every(duration=>duration===1000),'distance and speed do not change one-second duration');
+  assert(durations.every(duration=>duration===500),'distance and speed do not change half-second duration');
 }
 // Real movement increases from the last version's 60 to 90px/s for the ordinary warrior.
 {
@@ -93,12 +93,12 @@ for(const id of ids)for(const mode of ['normal','test']) {
 {
   const f=fixture();applyEnemyGravity(f.e,{sourceId:'flight-slow',moveSlow:.5,expiresAt:Infinity});
   assert.equal(getEnemyMoveSpeed(f.e,f.e.speed,0),45);
-  f.s.combatSystem.applyKnockback(f.e,{knockback:72});assert.equal(f.e.knockbackTween.config.duration,1000,'slowed flight');f.destroy();
+  f.s.combatSystem.applyKnockback(f.e,{knockback:72});assert.equal(f.e.knockbackTween.config.duration,500,'slowed flight');f.destroy();
 }
 for(const x of [3950,3966]) {
   const f=fixture();f.e.x=x;f.s.combatSystem.applyKnockback(f.e,{knockback:72});
   const c=f.e.knockbackTween.config;assert(Number.isFinite(c.duration)&&c.duration>0);
-  assert.equal(c.duration,1000,'boundary, including zero distance, preserves duration');
+  assert.equal(c.duration,500,'boundary, including zero distance, preserves duration');
   f.finish();assert.equal(f.e.x,3966);f.destroy();
 }
 // Zero-speed actors still finish rather than creating an infinite-duration tween.
@@ -106,21 +106,21 @@ for(const x of [3950,3966]) {
   const f=fixture();f.e.coldSources=new Map([['freeze',{expiresAt:Infinity,frozenUntil:5000}]]);
   assert.equal(getEnemyMoveSpeed(f.e,f.e.speed,0),0,'production cold control freezes movement');
   f.s.combatSystem.applyKnockback(f.e,{knockback:72});
-  assert.equal(f.e.knockbackTween.config.duration,1000,'frozen flight is independent of movement');
+  assert.equal(f.e.knockbackTween.config.duration,500,'frozen flight is independent of movement');
   f.finish();assert(!f.e.isKnockbackActive);f.destroy();
 }
 {
   const f=fixture();f.e.speed=0;f.s.combatSystem.applyKnockback(f.e,{knockback:72});
-  assert.equal(f.e.knockbackTween.config.duration,1000);f.finish();assert(!f.e.isKnockbackActive);f.destroy();
+  assert.equal(f.e.knockbackTween.config.duration,500);f.finish();assert(!f.e.isKnockbackActive);f.destroy();
 }
-// Repeated hits replace the old tween with a fresh one-second flight, retaining the landing ground.
+// Repeated hits replace the old tween with a fresh half-second flight, retaining the landing ground.
 {
   const f=fixture(),groundY=f.e.y;f.s.combatSystem.applyKnockback(f.e,{knockback:72});
-  const old=f.e.knockbackTween;old.config.targets.t=.5;f.s.now=500;old.config.onUpdate();
+  const old=f.e.knockbackTween;old.config.targets.t=.5;f.s.now=250;old.config.onUpdate();
   f.s.combatSystem.applyKnockback(f.e,{knockback:36});
-  assert(old.stopped&&old.removed);assert.equal(f.e.knockbackTween.config.duration,1000);
-  assert.equal(f.e.knockbackUntil,1500);assert.equal(f.e.landingRecoveryUntil||0,0);
-  f.s.now=1500;f.finish();assert.equal(f.e.y,groundY);assert.equal(f.e.landingRecoveryUntil,1700);f.destroy();
+  assert(old.stopped&&old.removed);assert.equal(f.e.knockbackTween.config.duration,500);
+  assert.equal(f.e.knockbackUntil,750);assert.equal(f.e.landingRecoveryUntil||0,0);
+  f.s.now=750;f.finish();assert.equal(f.e.y,groundY);assert.equal(f.e.landingRecoveryUntil,950);f.destroy();
 }
 // Airborne control lasts until the actual new landing time, then exactly 200ms more.
 {
@@ -131,4 +131,4 @@ for(const x of [3950,3966]) {
   f.s.combatSystem.updateEnemyAttack(f.e,f.s.now);assert.equal(f.s.playerData.hp,1000);
   f.s.now++;f.s.combatSystem.updateEnemyAttack(f.e,f.s.now);assert(f.s.playerData.hp<1000);f.destroy();
 }
-console.log('PASS fixed flight: real Phaser easing; 20 ordinary/elite/boss mode paths; fixed 1000ms across distance/speed/slow/freeze/boundary/relaunch; movement remains 90px/s; legacy test mode and 200ms landing control preserved.');
+console.log('PASS fixed flight: real Phaser easing; 20 ordinary/elite/boss mode paths; fixed 500ms across distance/speed/slow/freeze/boundary/relaunch; movement remains 90px/s; legacy test mode and 200ms landing control preserved.');
