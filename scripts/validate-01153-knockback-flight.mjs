@@ -58,46 +58,47 @@ const near=(a,b,label)=>assert(Math.abs(a-b)<1e-6,`${label}: ${a} != ${b}`);
 const ids=['grunt','elite','armored_guard','archer','mountain_general','thornless_rose',
   'uncrowned_king','foreseer','abyss_apostle','boss'];
 for(const id of ids)for(const mode of ['normal','test']) {
-  const f=fixture(mode,id),startX=f.e.x,groundY=f.e.y,speed=getEnemyMoveSpeed(f.e,f.e.speed,0);
+  const f=fixture(mode,id),startX=f.e.x,groundY=f.e.y;
   assert(f.s.combatSystem.applyKnockback(f.e,{knockback:72}));const c=f.e.knockbackTween.config;
   assert.equal(c.ease,mode==='normal'?'Linear':'Sine.easeOut');
   const easing=GetEaseFunction(c.ease);let previousX=startX,previousTime=0;
   for(const fraction of [.1,.3,.6,.9]) {
     const elapsed=fraction*c.duration;c.targets.t=easing(fraction);f.s.now=elapsed;c.onUpdate();
-    if(mode==='normal')near(Math.abs(f.e.x-previousX)*1000/(elapsed-previousTime),speed,`${id}: real eased horizontal speed`);
+    if(mode==='normal')near(Math.abs(f.e.x-previousX)/(elapsed-previousTime),Math.abs(f.e.x-startX)/elapsed,`${id}: constant horizontal speed`);
     previousX=f.e.x;previousTime=elapsed;
     assert(f.e.isKnockbackActive);assert.equal(f.e.landingRecoveryUntil||0,0,'no landing stun while flying');
   }
   f.s.now=c.duration;f.finish();
-  const distance=Math.abs(f.e.x-startX);
-  if(mode==='normal')near(c.duration,distance*1000/speed,`${id}: duration is distance / movement speed`);
+  if(mode==='normal')assert.equal(c.duration,1000,`${id}: fixed one-second flight`);
   else assert.equal(c.duration,['mountain_general','uncrowned_king','foreseer','abyss_apostle'].includes(id)?150:id==='thornless_rose'?140:440,'legacy test flight is unchanged');
   assert.equal(f.e.y,groundY);assert(!f.e.isKnockbackActive);
   assert.equal(f.e.landingRecoveryUntil||0,f.e.isBoss?0:f.s.now+(mode==='normal'?200:100));f.destroy();
 }
-// Longer distances take longer, rather than speeding up the same fixed-duration animation.
+// Different knockback distances and actor movement speeds must never change flight time.
 {
   const durations=[];
-  for(const distance of [36,72]) {
-    const f=fixture();f.s.combatSystem.applyKnockback(f.e,{knockback:distance});
-    durations.push(f.e.knockbackTween.config.duration);f.destroy();
+  for(const distance of [36,72,144])for(const speed of [0,40,120,240]) {
+    const f=fixture();f.e.speed=speed;f.s.combatSystem.applyKnockback(f.e,{knockback:distance});
+    const c=f.e.knockbackTween.config;durations.push(c.duration);
+    f.s.now=1000;f.finish();near(f.e.x,500+distance*4,'requested distance preserved');f.destroy();
   }
-  near(durations[1],durations[0]*2,'double distance doubles travel time');
+  assert(durations.every(duration=>duration===1000),'distance and speed do not change one-second duration');
 }
 // Real movement increases from the last version's 60 to 90px/s for the ordinary warrior.
 {
   const f=fixture();assert.equal(f.e.speed,120);assert.equal(getEnemyMoveSpeed(f.e,f.e.speed,0),90);
   f.s.player.x=0;f.s.player.y=f.e.y;f.s.enemyBehaviors.update(0);assert.equal(f.e.body.velocity.x,-90);f.destroy();
 }
-// Slowing sources are sampled at release; boundary-clamped travel uses its actual distance.
+// Slows and boundary-clamped distances also keep the same fixed flight time.
 {
   const f=fixture();applyEnemyGravity(f.e,{sourceId:'flight-slow',moveSlow:.5,expiresAt:Infinity});
-  f.s.combatSystem.applyKnockback(f.e,{knockback:72});near(f.e.knockbackTween.config.duration,288/45*1000,'slowed flight');f.destroy();
+  assert.equal(getEnemyMoveSpeed(f.e,f.e.speed,0),45);
+  f.s.combatSystem.applyKnockback(f.e,{knockback:72});assert.equal(f.e.knockbackTween.config.duration,1000,'slowed flight');f.destroy();
 }
 for(const x of [3950,3966]) {
   const f=fixture();f.e.x=x;f.s.combatSystem.applyKnockback(f.e,{knockback:72});
   const c=f.e.knockbackTween.config;assert(Number.isFinite(c.duration)&&c.duration>0);
-  if(x===3950)near(c.duration,16/90*1000,'bounded distance determines duration');
+  assert.equal(c.duration,1000,'boundary, including zero distance, preserves duration');
   f.finish();assert.equal(f.e.x,3966);f.destroy();
 }
 // Zero-speed actors still finish rather than creating an infinite-duration tween.
@@ -105,12 +106,21 @@ for(const x of [3950,3966]) {
   const f=fixture();f.e.coldSources=new Map([['freeze',{expiresAt:Infinity,frozenUntil:5000}]]);
   assert.equal(getEnemyMoveSpeed(f.e,f.e.speed,0),0,'production cold control freezes movement');
   f.s.combatSystem.applyKnockback(f.e,{knockback:72});
-  near(f.e.knockbackTween.config.duration,288/90*1000,'frozen release falls back to nominal movement speed');
+  assert.equal(f.e.knockbackTween.config.duration,1000,'frozen flight is independent of movement');
   f.finish();assert(!f.e.isKnockbackActive);f.destroy();
 }
 {
   const f=fixture();f.e.speed=0;f.s.combatSystem.applyKnockback(f.e,{knockback:72});
-  assert(Number.isFinite(f.e.knockbackTween.config.duration));f.finish();assert(!f.e.isKnockbackActive);f.destroy();
+  assert.equal(f.e.knockbackTween.config.duration,1000);f.finish();assert(!f.e.isKnockbackActive);f.destroy();
+}
+// Repeated hits replace the old tween with a fresh one-second flight, retaining the landing ground.
+{
+  const f=fixture(),groundY=f.e.y;f.s.combatSystem.applyKnockback(f.e,{knockback:72});
+  const old=f.e.knockbackTween;old.config.targets.t=.5;f.s.now=500;old.config.onUpdate();
+  f.s.combatSystem.applyKnockback(f.e,{knockback:36});
+  assert(old.stopped&&old.removed);assert.equal(f.e.knockbackTween.config.duration,1000);
+  assert.equal(f.e.knockbackUntil,1500);assert.equal(f.e.landingRecoveryUntil||0,0);
+  f.s.now=1500;f.finish();assert.equal(f.e.y,groundY);assert.equal(f.e.landingRecoveryUntil,1700);f.destroy();
 }
 // Airborne control lasts until the actual new landing time, then exactly 200ms more.
 {
@@ -121,4 +131,4 @@ for(const x of [3950,3966]) {
   f.s.combatSystem.updateEnemyAttack(f.e,f.s.now);assert.equal(f.s.playerData.hp,1000);
   f.s.now++;f.s.combatSystem.updateEnemyAttack(f.e,f.s.now);assert(f.s.playerData.hp<1000);f.destroy();
 }
-console.log('PASS 01153: actual Phaser easing produces constant flight at release-time movement speed; 20 ordinary/elite/boss mode paths; distance/time, 60→90 movement, slows, boundaries, zero speed, airborne and 200ms landing control.');
+console.log('PASS fixed flight: real Phaser easing; 20 ordinary/elite/boss mode paths; fixed 1000ms across distance/speed/slow/freeze/boundary/relaunch; movement remains 90px/s; legacy test mode and 200ms landing control preserved.');

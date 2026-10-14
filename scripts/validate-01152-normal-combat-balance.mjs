@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import CombatSystem,{NORMAL_ATTACK_KNOCKBACK_DURATION_MS,NORMAL_ATTACK_KNOCKBACK_LIFT_PX,ENEMY_LANDING_STUN_MS,TEST_ENEMY_LANDING_STUN_MS,isEnemyLandingStunned,isAttackRecovering,ATTACK_RECOVERY_RATIO,MIN_PLAYER_ATTACK_INTERVAL_MS} from '../src/systems/CombatSystem.js';
+import CombatSystem,{NORMAL_ATTACK_KNOCKBACK_DURATION_MS,NORMAL_MODE_KNOCKBACK_DURATION_MS,NORMAL_ATTACK_KNOCKBACK_LIFT_PX,ENEMY_LANDING_STUN_MS,TEST_ENEMY_LANDING_STUN_MS,isEnemyLandingStunned,isAttackRecovering,ATTACK_RECOVERY_RATIO,MIN_PLAYER_ATTACK_INTERVAL_MS} from '../src/systems/CombatSystem.js';
 import { applyEnemyGravity, getEnemyAttackDelay, getEnemyMoveSpeed } from '../src/systems/EnemyGravityControl.js';
 import StageSystem from '../src/systems/StageSystem.js';
 import TargetingSystem from '../src/systems/TargetingSystem.js';
@@ -133,7 +133,7 @@ for(const mode of ['normal','test']) {
 // Extra outgoing distance is applied after resistance/caps, and never to incoming displacement.
 for(const mode of ['normal','test']) {
   const f=fixture(mode);f.s.combatSystem.applyKnockback(f.e,{knockback:72});
-  assert.equal(f.e.knockbackTween.config.duration,mode==='normal'?288*1000/getEnemyMoveSpeed(f.e,f.e.speed,0):NORMAL_ATTACK_KNOCKBACK_DURATION_MS);
+  assert.equal(f.e.knockbackTween.config.duration,mode==='normal'?NORMAL_MODE_KNOCKBACK_DURATION_MS:NORMAL_ATTACK_KNOCKBACK_DURATION_MS);
   f.finish();assert.equal(f.e.x,500+(mode==='normal'?288:72));
   assert.equal(f.e.landingRecoveryUntil,mode==='normal'?200:100);
   const x=f.s.player.x;f.s.combatSystem.damagePlayer({x:500},6,{source:'emperorKick',knockbackDistance:96});
