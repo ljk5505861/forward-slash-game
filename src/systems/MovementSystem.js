@@ -37,10 +37,10 @@ export default class MovementSystem {
       if(d<=stopDistance){
         s.player.body.setVelocityX(0);
       } else {
-        const multiplier=Math.max(0.4,1+sumBonuses(s.playerData.moveSpeedMultiplierBonuses));
+        const multiplier=Math.max(0.4,1+sumBonuses(s.playerData.moveSpeedMultiplierBonuses))*(s.runMode==='normal'?0.7:1);
         s.player.body.setVelocityX((d>weapon.attackRange ? s.balance.player.speedX : s.balance.player.pressSpeedX)*multiplier);
       }
-    } else { const multiplier=Math.max(0.4,1+sumBonuses(s.playerData.moveSpeedMultiplierBonuses)); s.player.body.setVelocityX(s.balance.player.speedX*multiplier); }
+    } else { const multiplier=Math.max(0.4,1+sumBonuses(s.playerData.moveSpeedMultiplierBonuses))*(s.runMode==='normal'?0.7:1); s.player.body.setVelocityX(s.balance.player.speedX*multiplier); }
     this.clampPlayerToCameraRight();
   }
 }

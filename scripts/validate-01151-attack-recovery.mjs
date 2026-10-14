@@ -69,7 +69,7 @@ for(const multiplier of [.1,.5,1,1.5,2,1000]) {
   if(multiplier===1000)assert.equal(interval,MIN_PLAYER_ATTACK_INTERVAL_MS,'existing attack-speed limit');
   f.finish();const movement=new MovementSystem(f.s);
   f.s.now=c.playerAttackRecoveryUntil-.01;movement.update(f.s.now);assert.equal(f.s.player.body.velocity.x,0);
-  f.s.now=c.playerAttackRecoveryUntil;movement.update(f.s.now);assert(f.s.player.body.velocity.x>0);
+  f.s.now=c.playerAttackRecoveryUntil;movement.update(f.s.now);assert.equal(f.s.player.body.velocity.x,129.5,'normal pursuit resumes at 70% of the old 185px/s speed');
   f.s.cameras.main.worldView.x=Math.max(0,f.e.x-500);closeToEnemy(f);f.s.now=cycle-.01;c.update(f.s.now);assert.equal(playerHits(f),1);
   f.s.now=cycle;c.update(f.s.now);assert.equal(playerHits(f),2,'recovery overlaps the interval, not added a second time');
   f.destroy();
@@ -102,7 +102,7 @@ for(const multiplier of [.1,.5,1,1.5,2,1000]) {
   closeToEnemy(f);c.nextPlayerAttackAt=0;c.update(499);
   assert.equal(playerHits(f),1,'an early-ready clock cannot bypass recovery');
   f.s.now=500;f.finish();assert.equal(f.e.landingRecoveryUntil,700);
-  movement.update(500);assert(f.s.player.body.velocity.x>0,'chasing resumes at exactly 500ms');
+  movement.update(500);assert.equal(f.s.player.body.velocity.x,129.5,'chasing resumes at exactly 500ms with 30% less speed');
   closeToEnemy(f);c.update(500);assert.equal(playerHits(f),2,'next attack allowed after half a second');f.destroy();
 }
 // Attack speed changes during recovery affect the next swing, not the already committed pause.
@@ -126,6 +126,8 @@ for(const replacement of [false,true]) {
   f.s.now=499;new MovementSystem(f.s).update(499);f.s.combatSystem.update(499);
   assert.equal(f.s.player.body.velocity.x,0);assert.equal(playerHits(f),1);
   assert.equal(f.s.combatSystem.playerAttackRecoveryUntil,500,'target death/replacement preserves the full pause');
+  f.s.now=500;new MovementSystem(f.s).update(500);
+  assert.equal(f.s.player.body.velocity.x,replacement?0:129.5,'no-target forward travel uses the same reduction; nearby replacement still stops movement');
   f.destroy();
 }
 // Missing targets spend neither an attack nor recovery; test mode retains its previous movement.
@@ -135,7 +137,7 @@ for(const mode of ['normal','test']) {
   if(mode==='test') {
     closeToEnemy(f);f.s.combatSystem.update(0);f.finish();
     assert.equal(f.s.combatSystem.playerAttackRecoveryUntil,0);
-    new MovementSystem(f.s).update(1);assert(f.s.player.body.velocity.x>0);
+    new MovementSystem(f.s).update(1);assert.equal(f.s.player.body.velocity.x,185,'test-mode pursuit speed is unchanged');
     closeToEnemy(f);f.s.now=WEAPONS.short_sword.attackIntervalMs;
     f.s.combatSystem.update(f.s.now);assert.equal(playerHits(f),2,'test mode retains its 333ms opening attack cycle');
   }
