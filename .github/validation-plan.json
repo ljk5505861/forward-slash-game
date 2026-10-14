@@ -1,5 +1,5 @@
 {
-  "reason": "v0.11.53 普通模式怪物最终移速倍率0.5→0.75（当前增加50%），击退水平飞行采用受击时实际移速和Linear缓动，实际边界距离/移速决定时长，冻结/零速有限回落，保留原距离/抗性/免疫/抬升及200ms落地僵直。仅执行新01153真实Phaser缓动和20种模式路径、01149击退回归、01151后摇/暂停回归、01152角色攻击/怪物伤害和104个生成组合，以及01100版本、build/diff与范围规则。测试模式旧固定时长和缓动保留；不运行无关全量/浏览器。",
+  "reason": "v0.11.54 普通模式击飞固定1000ms，与移速、减速、冻结、击退距离和边界无关；保留Linear缓动、原距离/抗性/免疫/抬升及200ms落地僵直，移速倍率仍0.75。执行01153真实Phaser缓动、20种模式路径和固定时长/重复击飞回归，01149击退、01151后摇/暂停、01152既有伤害/移速平衡及01100版本，build/diff与范围规则。测试模式旧时长和缓动不变，不运行无关全量/浏览器。",
   "files": [
     ".github/validation-plan.json",
     "package-lock.json",
@@ -8,12 +8,10 @@
     "scripts/validate-01100-version.mjs",
     "scripts/validate-01115-game-speed.mjs",
     "scripts/validate-01149-knockback-distance.mjs",
-    "scripts/validate-01151-attack-recovery.mjs",
     "scripts/validate-01152-normal-combat-balance.mjs",
     "scripts/validate-01153-knockback-flight.mjs",
     "src/config/version.js",
-    "src/systems/CombatSystem.js",
-    "src/systems/EnemyGravityControl.js"
+    "src/systems/CombatSystem.js"
   ],
   "tests": [
     "scripts/validate-01153-knockback-flight.mjs",
