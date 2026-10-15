@@ -50,9 +50,16 @@ export default class ShopSystem {
         if(skill) slots[free[Math.floor(this.random()*free.length)]]=skill;
       }
       const used=new Set(slots.filter(Boolean).map(o=>o.itemId));
-      const pool=this.shuffle(SHOP_ITEMS.filter(item=>!used.has(item.id)));
+      const pool=this.shuffle(SHOP_ITEMS.filter(item=>!used.has(item.id)&&(item.minVisit||1)<=Math.max(1,this.visits)));
+      let basicNeeded=Math.min(slots.filter(o=>!o).length,Math.max(0,2-slots.filter(o=>o?.kind==='item'&&o.price<=16).length));
+      let hasStarter=slots.some(o=>o?.kind==='item'&&o.price<=12);
       this.currentItems=slots.map(offer=>offer||(()=>{
-        const item=pool.pop();
+        // Reserve affordable choices where locks leave room; never replace a player lock.
+        const limit=hasStarter?16:12;
+        const basicIndex=basicNeeded>0?pool.findLastIndex(item=>item.price<=limit):-1;
+        const item=basicIndex>=0?pool.splice(basicIndex,1)[0]:pool.pop();
+        if(basicNeeded>0)basicNeeded--;
+        if(item.price<=12)hasStarter=true;
         return {...item,itemId:item.id,id:'offer_'+(++this.serial),locked:false};
       })());
     }

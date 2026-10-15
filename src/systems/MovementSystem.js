@@ -3,8 +3,8 @@ import { isForeseerBound } from './ForeseerBindingControl.js';
 
 const sumBonuses = bonuses => Object.values(bonuses||{}).reduce((sum,value)=>sum+(Number(value)||0),0);
 
-const getStopDistance = (_scene, _target, weapon) => {
-  return weapon.attackRange;
+const getStopDistance = (scene, _target, weapon) => {
+  return weapon.attackRange*(scene.runMode==='normal'?1+sumBonuses(scene.playerData.attackRangeMultiplierBonuses):1);
 };
 
 export default class MovementSystem {

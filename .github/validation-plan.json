@@ -1,18 +1,30 @@
 {
-  "reason": "v0.11.57 仅将普通模式角色实际移动速度乘0.7：无目标前进与有目标追击一致减少30%，已有移速加成及最低倍率先计算后统一缩放；测试模式不变。只改MovementSystem和版本配置。执行01151真实移动/后摇回归，核对129.5px/s追击与无目标前进、测试模式185px/s、500ms后摇/暂停/停止距离等现有路径，01100版本，build/diff及范围规则。不运行无关怪物/伤害平衡专项、全量或浏览器。",
+  "reason": "v0.11.58 普通模式40件属性商品（20基础+4强化+16贵价），按商店1/2/3/5次开放，保留锁货、四格、技能交易、半价出售和测试模式旧商品；接入物理固定破甲、自然回血和吸血小数累计/治疗加成、升级射程停步、20种图形及3页角色信息。执行新01158实际交易/投放/恢复/破甲/移动/射程/面板专项，01124相关交易回归，01061相关面板/遮挡/清理，01151后摇/移动，01152既有伤害/移速隔离及01100版本，build/diff与范围规则。无无关全量/整套浏览器；环境缺少浏览器二进制，视觉与真机手感交手机验收。",
   "files": [
     ".github/validation-plan.json",
     "package-lock.json",
     "package.json",
     "scripts/validate-01043-boss-knockback.mjs",
+    "scripts/validate-01061-player-info-panel.mjs",
     "scripts/validate-01100-version.mjs",
     "scripts/validate-01115-game-speed.mjs",
-    "scripts/validate-01151-attack-recovery.mjs",
+    "scripts/validate-01124-growth-shop.mjs",
+    "scripts/validate-01158-attribute-shop.mjs",
+    "src/config/shopItems.js",
     "src/config/version.js",
-    "src/systems/MovementSystem.js"
+    "src/scenes/GameScene.js",
+    "src/systems/CombatSystem.js",
+    "src/systems/MovementSystem.js",
+    "src/systems/ShopSystem.js",
+    "src/ui/PlayerInfoPanel.js",
+    "src/ui/shopIcons.js"
   ],
   "tests": [
+    "scripts/validate-01158-attribute-shop.mjs",
+    "scripts/validate-01124-growth-shop.mjs",
+    "scripts/validate-01061-player-info-panel.mjs",
     "scripts/validate-01151-attack-recovery.mjs",
+    "scripts/validate-01152-normal-combat-balance.mjs",
     "scripts/validate-01100-version.mjs"
   ]
 }

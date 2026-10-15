@@ -7,6 +7,28 @@ export function drawShopIcon(scene,x,y,icon,color=0x8dd7ed,size=76) {
   const line=(points,width=4,fill=0xeef7ff)=>{g.lineStyle(width,fill,1);g.strokePoints(points.map(([x,y])=>({x,y})),false);};
   const dark=0x324f65,light=0xf0f7ff;
   switch(icon) {
+    case 'boot':
+      poly([[-22,-30],[7,-30],[7,7],[30,17],[32,31],[-24,31]],color);
+      rect(-27,25,62,10,dark);line([[-15,-14],[1,-14],[-15,-1],[1,-1]],3,light);break;
+    case 'drop':
+      poly([[0,-36],[-22,-2],[22,-2]],color);circle(0,9,24,color);
+      line([[-13,5],[-13,14],[-6,20]],4,light);break;
+    case 'pierce':
+      poly([[-30,-22],[24,-22],[20,12],[-3,32],[-26,12]],dark);
+      line([[-30,30],[23,-24]],7,color);poly([[33,-34],[27,-8],[8,-27]],light);break;
+    case 'sprout':
+      line([[0,33],[0,-6]],6,0x5b9b6a);
+      poly([[0,9],[-29,2],[-30,-20],[-8,-13]],color);
+      poly([[0,-1],[8,-26],[31,-33],[27,-9]],color);circle(0,30,8,dark);break;
+    case 'range':
+      line([[-33,21],[33,21]],4,color);line([[-32,13],[-32,29]],4,light);line([[32,13],[32,29]],4,light);
+      poly([[-27,-11],[22,-28],[33,-24],[25,-13],[-20,3]],color);line([[-27,-20],[-17,9]],6,dark);break;
+    case 'leaf':
+      poly([[-27,26],[-30,-5],[-4,-30],[29,-31],[27,5],[3,30]],color);
+      line([[-19,20],[18,-18]],4,dark);line([[7,-20],[7,2]],5,light);line([[-4,-9],[18,-9]],5,light);break;
+    case 'scale':
+      for(const [x,y] of [[-15,-14],[15,-14],[0,14]])poly([[x-16,y-15],[x+16,y-15],[x+14,y+6],[x,y+21],[x-14,y+6]],color);
+      line([[-30,-30],[30,-30]],4,light);break;
     case 'blade':
       poly([[-13,15],[21,-29],[30,-32],[29,-20],[0,24]],color);
       line([[-4,12],[23,-23]],3,light); line([[-20,10],[7,30]],7,0xe9bb67); line([[-13,26],[-24,39]],9,dark); break;
