@@ -40,9 +40,13 @@ const stats=p=>[
   getEffectiveDefense(p),sumRuntimeBonuses(p.dodgeChanceBonuses),p.critChance,
   getEffectiveCritMultiplier(p),p.skillDamageMultiplier,sumRuntimeBonuses(p.normalAttackDamageBonuses),
   p.cooldownReduction+sumRuntimeBonuses(p.cooldownReductionBonuses),sumRuntimeBonuses(p.manaRegenPerSecondBonuses),
+  sumRuntimeBonuses(p.moveSpeedMultiplierBonuses),sumRuntimeBonuses(p.lifeStealBonuses),
+  sumRuntimeBonuses(p.armorPenetrationBonuses),sumRuntimeBonuses(p.healthRegenPerSecondBonuses),
+  sumRuntimeBonuses(p.attackRangeMultiplierBonuses),sumRuntimeBonuses(p.healingReceivedMultiplierBonuses),
+  sumRuntimeBonuses(p.damageReductionBonuses),
 ];
-assert.equal(SHOP_ITEMS.length,13);
-assert.equal(new Set(SHOP_ITEMS.map(item=>item.icon)).size,13);
+assert.equal(SHOP_ITEMS.length,40);
+assert.equal(new Set(SHOP_ITEMS.map(item=>item.icon)).size,20);
 for(const item of SHOP_ITEMS) {
   const s=harness(),p=s.playerData;
   // Independent source contributions must survive buying and selling.
@@ -157,9 +161,10 @@ const ShopPanel=vm.runInNewContext(panelSource,{DESIGN_WIDTH:720,DESIGN_HEIGHT:1
   assert.equal(panel.nodes.filter(n=>n.kind==='text'&&n.text==='铁刃').length,2);
   panel.buy(entry.id);panel.mode='sell';panel.selectedId='iron_blade';panel.render();
   assert(panel.nodes.some(n=>n.text==='出售一件 · 4 金币'));
-  for(const item of SHOP_ITEMS)if(item.id!=='iron_blade')s.shopSystem.buy(offer(s,item.id).id);
-  panel.page=3;panel.selectedId=null;panel.render();assert.equal(panel.page,3);
+  s.playerData.gold=100000;
+  for(const item of SHOP_ITEMS)if(item.id!=='iron_blade')assert(s.shopSystem.buy(offer(s,item.id).id).ok);
+  panel.page=9;panel.selectedId=null;panel.render();assert.equal(panel.page,9);
   panel.hide();panel.hide();assert.equal(s.closed,1);assert.equal(panel.nodes.length,0);
   for(const item of SHOP_ITEMS)assert.doesNotThrow(()=>drawShopIcon(s,0,0,item.icon,item.color));
 }
-console.log('v0.11.24 growth shop: 13 reversible stats, prices, locks, refunds, skills, six-slot replacement, probabilities, legacy and UI lifecycle PASS');
+console.log('growth shop: 40 reversible items / 20 attribute icons, prices, locks, refunds, skills, six-slot replacement, probabilities, legacy and 10-page inventory lifecycle PASS');

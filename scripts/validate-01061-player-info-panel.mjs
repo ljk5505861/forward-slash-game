@@ -24,12 +24,12 @@ const [
   import('../src/config/balance.js'),
   import('../src/config/version.js')
 ]);
-assert.equal(GAME_VERSION,'0.11.49');
+assert.equal(GAME_VERSION,'0.11.58');
 assert.equal(new SelectionState().selectedIndex,-1,'SelectionState is instantiated through the real class');
 
 const src = readFileSync(new URL('../src/ui/PlayerInfoPanel.js', import.meta.url),'utf8');
-assert.doesNotMatch(src,/SKILLS/,'PlayerInfoPanel no longer imports/reads SKILLS');
-assert.doesNotMatch(src,/playerData\.skills|p\.skills/,'second page no longer reads playerData.skills');
+assert.match(src,/getSummonCreatureContract/,'current contract display keeps its skill lookup');
+assert.doesNotMatch(src,/p\.skills\.map|playerData\.skills\.map/,'build page does not list all skills');
 assert.match(src,/setInteractive\(\)/,'full-screen mask is interactive');
 assert.match(src,/REFRESH_INTERVAL_MS=100/,'refresh interval is 100ms');
 
@@ -72,29 +72,33 @@ p.critMultiplier=1.5; p.physicalCritMultiplierBonuses.last_stand=1.5;
 p.physicalLifeStealBonuses.bloodthirst=.12;
 p.attackSpeedMultiplierBonuses={}; p.defenseBonuses={}; p.dodgeChanceBonuses={};
 p.attackSpeedMultiplierBonuses.swift=.25; p.defenseBonuses.armor=7; p.dodgeChanceBonuses.dodge=.2;
+panel.render();
+assert.equal(panel.valueNodes.get('critChance').text,'暴击率：55%');
+assert.equal(panel.valueNodes.get('critMultiplier').text,'暴击伤害：300%');
+assert.equal(panel.valueNodes.get('attackSpeed').text,'攻击速度：125%');
+assert.equal(panel.valueNodes.get('defense').text,'护甲：7');
+assert.equal(panel.valueNodes.get('dodge').text,'闪避率：20%');
+const firstPageNodeCount=panel.nodes.length;
+panel.flip(1);
 p.hp=77; p.mana=33; const hpNode=panel.valueNodes.get('hp'); const count=panel.nodes.length; const contentCount=panel.content.length;
 panel.update(99); assert.equal(hpNode.text,'当前生命：500','does not refresh before interval');
 panel.update(101);
 assert.equal(hpNode.text,'当前生命：77');
-assert.equal(panel.valueNodes.get('critChance').text,'暴击率：55%');
-assert.equal(panel.valueNodes.get('critMultiplier').text,'暴击伤害：300%');
 assert.equal(panel.valueNodes.get('lifeSteal').text,'吸血：12%');
-assert.equal(panel.valueNodes.get('attackSpeed').text,'攻击速度：125%');
-assert.equal(panel.valueNodes.get('defense').text,'护甲：7');
-assert.equal(panel.valueNodes.get('dodge').text,'闪避率：20%');
 assert.equal(panel.valueNodes.get('hp'),hpNode,'text node object is reused');
 assert.equal(panel.nodes.length,count); assert.equal(panel.content.length,contentCount);
 for(let i=0;i<100;i++) panel.update(202+i);
 assert.equal(panel.nodes.length,count,'unchanged data does not rebuild nodes');
 
-const firstPageNodeCount=panel.nodes.length;
+const resourcePageNodeCount=panel.nodes.length;
+for(const n of panel.content)assert.ok((n.y??442)<850,'resource rows fit above navigation');
 panel.flip(1); const secondPageNodeCount=panel.nodes.length;
 const page2Text=panel.valueNodes.get('buildText').text;
 assert.notEqual(page2Text[0],'：','second page does not start with an extra colon');
 assert.ok(page2Text.startsWith('当前阶段：'),'second page starts with current phase');
 assert.match(page2Text,/职业：/); assert.match(page2Text,/法宝：/); assert.doesNotMatch(page2Text,/技能：|fireball|last_stand/);
 for(let i=0;i<100;i++) panel.flip(i%2?1:-1);
-assert.ok([firstPageNodeCount,secondPageNodeCount].includes(panel.nodes.length),'nodes count remains at a stable page size after repeated flips');
+assert.ok([firstPageNodeCount,resourcePageNodeCount,secondPageNodeCount].includes(panel.nodes.length),'nodes count remains at a stable page size after repeated flips');
 assert.equal(panel.nodes.some(n=>n.destroyed),false,'destroyed page nodes are removed from nodes');
 panel.hide();
 assert.equal(new Set(s.createdNodes.filter(n=>n.destroyed)).size,s.createdNodes.filter(n=>n.destroyed).length,'hide does not duplicate-destroy retained nodes');
