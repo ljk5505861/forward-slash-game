@@ -1,33 +1,20 @@
 {
-  "reason": "v0.11.59 普通模式近战同帧出手：先用真实AI与控制/冷却判定收集已释放普攻，再结算角色与怪物命中；近战对玩家统一横向射程，五处独立复查同步。保持原击飞/落地/后摇/伤害/移速数值及测试模式；远程、AOE、召唤物仍用原几何。新01159覆盖真实场景帧、13种近战AI、86边界、死亡互换、反伤/暂停/重置/目标替换与三倍速；执行直接关联01151后摇、01152平衡、01043击退、01115倍速、01075目标锁定、01126生成、01100版本，build/diff/范围检查。01126基线旧生成伤害断言同步既有普通模式0.5倍伤害；旧版本断言只随本次版本升级。无无关全量/浏览器套件，手机手感待验收。",
+  "reason": "v0.11.60 普通模式开局基础生命恢复1HP/游戏秒，肉怪基础HP128→64并保留18%线性等级成长；仅改GameScene开局、普通肉怪配置与版本三个运行文件。01160使用实际startRun/healPlayer/Combat恢复、商品效果、信息面板和Stage.spawn验证基础恢复、道具叠加出售、禁疗/满血/死亡、商店前/商店/暂停/不补回、倍速与跨模式/肉怪实际hp/maxHp；01131肉怪攻击/刀刃/控制/死亡回归，01152既有平衡隔离/实际生成，01100版本。同步01131旧VM夹具缺失的现有公共控制函数引用，保留全部断言。执行build/diff与范围规则，不跑无关全量或浏览器套件，体感交手机验收。",
   "files": [
     ".github/validation-plan.json",
     "package-lock.json",
     "package.json",
-    "scripts/validate-01043-boss-knockback.mjs",
-    "scripts/validate-01075-wolf-knockback-target-lock.mjs",
     "scripts/validate-01100-version.mjs",
-    "scripts/validate-01115-game-speed.mjs",
-    "scripts/validate-01126-normal-enemies.mjs",
-    "scripts/validate-01159-same-frame-melee.mjs",
+    "scripts/validate-01131-meat-monster.mjs",
+    "scripts/validate-01160-base-regen-meat-hp.mjs",
+    "src/config/enemies.js",
     "src/config/version.js",
-    "src/enemies/behaviors/EliteBerserkerBehavior.js",
-    "src/enemies/behaviors/EnemyBehaviorManager.js",
-    "src/enemies/behaviors/GoldenHallGuardBehavior.js",
-    "src/enemies/behaviors/MountainGeneralBehavior.js",
-    "src/enemies/behaviors/ThornlessRoseBehavior.js",
-    "src/enemies/behaviors/UncrownedKingBehavior.js",
-    "src/systems/CombatSystem.js",
-    "src/systems/StageSystem.js"
+    "src/scenes/GameScene.js"
   ],
   "tests": [
-    "scripts/validate-01159-same-frame-melee.mjs",
-    "scripts/validate-01151-attack-recovery.mjs",
+    "scripts/validate-01160-base-regen-meat-hp.mjs",
+    "scripts/validate-01131-meat-monster.mjs",
     "scripts/validate-01152-normal-combat-balance.mjs",
-    "scripts/validate-01043-boss-knockback.mjs",
-    "scripts/validate-01115-game-speed.mjs",
-    "scripts/validate-01075-wolf-knockback-target-lock.mjs",
-    "scripts/validate-01126-normal-enemies.mjs",
     "scripts/validate-01100-version.mjs"
   ]
 }
