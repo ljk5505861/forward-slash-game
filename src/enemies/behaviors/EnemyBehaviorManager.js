@@ -18,16 +18,12 @@ import EmperorBehavior from './EmperorBehavior.js';
 import AbyssApostleBehavior from './AbyssApostleBehavior.js';
 import { getEnemyMoveSpeed, getEnemyAttackDelay, updateGravityPull, isGravityReversalControlled } from '../../systems/EnemyGravityControl.js';
 import { isEnemyFrozen, shiftEnemyColdTimers } from '../../systems/EnemyColdControl.js';
-import { isAttackRecovering, isEnemyLandingStunned } from '../../systems/CombatSystem.js';
+import { isAttackRecovering, isEnemyLandingStunned, NORMAL_ENEMY_ATTACK_SOURCES } from '../../systems/CombatSystem.js';
 
 const alive = e => e?.active && !e.isDefeated;
 const knockbackActive = e => !!e?.isKnockbackActive;
 const frozenActive = (scene, e) => isEnemyFrozen(e, scene.getGameplayTime?.() || 0);
 const syncBossSkillState = (scene, enemy, state) => { if(!enemy) return; const charging=state==='charge'; enemy.charging=charging; enemy.isCharging=charging; enemy.dashing=charging; enemy.isDashing=charging; if(!enemy.isBoss) return; const previous=enemy.behaviorState; enemy.behaviorState=state; enemy.attackState=state; enemy.casting=['windup','slamWind','skillActive','recovery','cool'].includes(state); enemy.isCasting=enemy.casting; enemy.skillActive=['charge','slamWind','skillActive','recovery','cool'].includes(state); if(previous!==state && state!=='idle') scene.combatSystem?.clearKnockback?.(enemy); };
-const NORMAL_ATTACK_SOURCES = new Set(['enemyMelee','archerArrow','healerFallback','meatMelee','doctorMelee',
-  'masterMelee','shieldGuardMelee','warDrumMelee','eliteBerserkerMelee','hellEnvoyMelee',
-  'goldenGuardThrust','goldenGuardHeavyThrust','mountainGeneralPunch','thornlessRoseStab',
-  'uncrownedKingStab','foreseerBeam','foreseerOrbBeam','emperorSword','abyssTentacle']);
 const NORMAL_RECOVERY_STATES = new Set(['recovery','attackRecovery','shadowAttackRecovery','punchRecovery']);
 const startAttackRecovery = (scene, enemy, time=scene.getGameplayTime?.()??0) => {
   const behavior=scene.enemyBehaviors?.items?.get(enemy);
@@ -38,7 +34,7 @@ const startAttackRecovery = (scene, enemy, time=scene.getGameplayTime?.()??0) =>
   return duration;
 };
 const targetDamage = (scene, target, enemy, amount, meta={}) => {
-  if(target?.isAlive?.()&&meta.attackType!=='charge'&&NORMAL_ATTACK_SOURCES.has(meta.source||'enemyMelee')) startAttackRecovery(scene,enemy);
+  if(target?.isAlive?.()&&meta.attackType!=='charge'&&NORMAL_ENEMY_ATTACK_SOURCES.has(meta.source||'enemyMelee')) startAttackRecovery(scene,enemy);
   return scene.combatSystem?.damageAttackTarget?.(target, amount, { enemy, source:'enemyMelee', attackType:'melee', dodgeable:true, singleTarget:true, ...meta });
 };
 const chooseTarget = (scene, enemy, range=enemy.attackRange, options={}) => isAttackRecovering(enemy,scene.getGameplayTime?.()??0)?null:scene.combatSystem?.chooseEnemyAttackTarget?.(enemy, range, options);
@@ -53,7 +49,7 @@ const chargeHit = (scene, enemy, lock, radius, amount) => {
   targetDamage(scene,lock.target,enemy,amount,{attackType:'charge'});
   return true;
 };
-export const approach = (scene, enemy, min=enemy.attackRange, max=null) => { if(!alive(enemy)||!enemy.body||knockbackActive(enemy)||isEnemyLandingStunned(enemy,scene.getGameplayTime?.()??0)||isAttackRecovering(enemy,scene.getGameplayTime?.()??0)||isGravityReversalControlled(enemy)) return; const target=chooseAnyTarget(scene,enemy,Infinity)||scene.combatSystem?.getPlayerAttackTarget?.(); const dx=(target?.x??scene.player.x)-enemy.x; const dy=(target?.y??scene.player.y??enemy.y)-enemy.y; const d=Math.hypot(dx,dy); const sp=getEnemyMoveSpeed(enemy, enemy.speed||40, scene.getGameplayTime?.()||0); const buffer=enemy.rangeBuffer ?? scene.balance.enemies?.rangeBuffer ?? 24; if(max){ if(d>max+buffer) enemy.body.setVelocityX(Math.sign(dx||1)*sp); else if(d<max-buffer) enemy.body.setVelocityX(-Math.sign(dx||1)*sp); else enemy.body.setVelocityX(0); return; } if(d>min) enemy.body.setVelocityX(Math.sign(dx||1)*sp); else enemy.body.setVelocityX(0); };
+export const approach = (scene, enemy, min=enemy.attackRange, max=null) => { if(!alive(enemy)||!enemy.body||knockbackActive(enemy)||isEnemyLandingStunned(enemy,scene.getGameplayTime?.()??0)||isAttackRecovering(enemy,scene.getGameplayTime?.()??0)||isGravityReversalControlled(enemy)) return; const target=chooseAnyTarget(scene,enemy,Infinity)||scene.combatSystem?.getPlayerAttackTarget?.(); const dx=(target?.x??scene.player.x)-enemy.x; const dy=(target?.y??scene.player.y??enemy.y)-enemy.y; const d=scene.combatSystem?.getEnemyAttackDistance?.(enemy,target)??Math.hypot(dx,dy); const sp=getEnemyMoveSpeed(enemy, enemy.speed||40, scene.getGameplayTime?.()||0); const buffer=enemy.rangeBuffer ?? scene.balance.enemies?.rangeBuffer ?? 24; if(max){ if(d>max+buffer) enemy.body.setVelocityX(Math.sign(dx||1)*sp); else if(d<max-buffer) enemy.body.setVelocityX(-Math.sign(dx||1)*sp); else enemy.body.setVelocityX(0); return; } if(d>min) enemy.body.setVelocityX(Math.sign(dx||1)*sp); else enemy.body.setVelocityX(0); };
 export const entryMove = (_scene, enemy) => { if(alive(enemy)&&enemy.body&&!knockbackActive(enemy)&&!isEnemyLandingStunned(enemy,_scene.getGameplayTime?.()??0)&&!isAttackRecovering(enemy,_scene.getGameplayTime?.()??0)&&!isGravityReversalControlled(enemy)) enemy.body.setVelocityX(-getEnemyMoveSpeed(enemy, enemy.speed||40, _scene.getGameplayTime?.()||0)); };
 export const resetBodyPosition = (enemy,x,y=enemy.y) => { if(enemy.body?.reset) enemy.body.reset(x,y); else { enemy.x=x; enemy.y=y; } enemy.body?.setVelocityX?.(0); };
 

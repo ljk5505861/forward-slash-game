@@ -1,30 +1,33 @@
 {
-  "reason": "v0.11.58 普通模式40件属性商品（20基础+4强化+16贵价），按商店1/2/3/5次开放，保留锁货、四格、技能交易、半价出售和测试模式旧商品；接入物理固定破甲、自然回血和吸血小数累计/治疗加成、升级射程停步、20种图形及3页角色信息。执行新01158实际交易/投放/恢复/破甲/移动/射程/面板专项，01124相关交易回归，01061相关面板/遮挡/清理，01151后摇/移动，01152既有伤害/移速隔离及01100版本，build/diff与范围规则。无无关全量/整套浏览器；环境缺少浏览器二进制，视觉与真机手感交手机验收。",
+  "reason": "v0.11.59 普通模式近战同帧出手：先用真实AI与控制/冷却判定收集已释放普攻，再结算角色与怪物命中；近战对玩家统一横向射程，五处独立复查同步。保持原击飞/落地/后摇/伤害/移速数值及测试模式；远程、AOE、召唤物仍用原几何。新01159覆盖真实场景帧、13种近战AI、86边界、死亡互换、反伤/暂停/重置/目标替换与三倍速；执行直接关联01151后摇、01152平衡、01043击退、01115倍速、01075目标锁定、01126生成、01100版本，build/diff/范围检查。01126基线旧生成伤害断言同步既有普通模式0.5倍伤害；旧版本断言只随本次版本升级。无无关全量/浏览器套件，手机手感待验收。",
   "files": [
     ".github/validation-plan.json",
     "package-lock.json",
     "package.json",
     "scripts/validate-01043-boss-knockback.mjs",
-    "scripts/validate-01061-player-info-panel.mjs",
+    "scripts/validate-01075-wolf-knockback-target-lock.mjs",
     "scripts/validate-01100-version.mjs",
     "scripts/validate-01115-game-speed.mjs",
-    "scripts/validate-01124-growth-shop.mjs",
-    "scripts/validate-01158-attribute-shop.mjs",
-    "src/config/shopItems.js",
+    "scripts/validate-01126-normal-enemies.mjs",
+    "scripts/validate-01159-same-frame-melee.mjs",
     "src/config/version.js",
-    "src/scenes/GameScene.js",
+    "src/enemies/behaviors/EliteBerserkerBehavior.js",
+    "src/enemies/behaviors/EnemyBehaviorManager.js",
+    "src/enemies/behaviors/GoldenHallGuardBehavior.js",
+    "src/enemies/behaviors/MountainGeneralBehavior.js",
+    "src/enemies/behaviors/ThornlessRoseBehavior.js",
+    "src/enemies/behaviors/UncrownedKingBehavior.js",
     "src/systems/CombatSystem.js",
-    "src/systems/MovementSystem.js",
-    "src/systems/ShopSystem.js",
-    "src/ui/PlayerInfoPanel.js",
-    "src/ui/shopIcons.js"
+    "src/systems/StageSystem.js"
   ],
   "tests": [
-    "scripts/validate-01158-attribute-shop.mjs",
-    "scripts/validate-01124-growth-shop.mjs",
-    "scripts/validate-01061-player-info-panel.mjs",
+    "scripts/validate-01159-same-frame-melee.mjs",
     "scripts/validate-01151-attack-recovery.mjs",
     "scripts/validate-01152-normal-combat-balance.mjs",
+    "scripts/validate-01043-boss-knockback.mjs",
+    "scripts/validate-01115-game-speed.mjs",
+    "scripts/validate-01075-wolf-knockback-target-lock.mjs",
+    "scripts/validate-01126-normal-enemies.mjs",
     "scripts/validate-01100-version.mjs"
   ]
 }
