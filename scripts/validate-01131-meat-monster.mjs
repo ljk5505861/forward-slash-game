@@ -4,13 +4,14 @@ import vm from 'node:vm';
 import MeatBehavior from '../src/enemies/behaviors/MeatBehavior.js';
 import StageSystem from '../src/systems/StageSystem.js';
 import { ENEMIES } from '../src/config/enemies.js';
+import { isAttackRecovering, isEnemyLandingStunned, NORMAL_ENEMY_ATTACK_SOURCES } from '../src/systems/CombatSystem.js';
 
 const scene={runMode:'normal'}, stage=new StageSystem(scene);
 for(const level of [1,10,19]){
   stage.currentEnemyLevel=level;
   const meat=stage.tunedEnemy('armored_guard');
   assert.equal(meat.name,'肉怪'); assert.equal(meat.behavior,'meat');
-  assert.equal(meat.hp,Math.round(128*(1+(level-1)*0.18)));
+  assert.equal(meat.hp,Math.round(64*(1+(level-1)*0.18)));
   assert.equal(meat.damage,Math.round(3*(1+(level-1)*0.03)));
   assert.equal(stage.tunedEnemy('grunt').speed,120,'warrior unchanged');
 }
@@ -77,6 +78,7 @@ console.log('PASS meat profile/growth/mode isolation, melee, windup, swept hit, 
 const managerSource=fs.readFileSync('src/enemies/behaviors/EnemyBehaviorManager.js','utf8')
   .replace(/^import .*;\n/gm,'').replace(/export const /g,'const ').replace('export default class EnemyBehaviorManager','class EnemyBehaviorManager');
 const Manager=vm.runInNewContext(managerSource+'\nEnemyBehaviorManager',{
+  isAttackRecovering,isEnemyLandingStunned,NORMAL_ENEMY_ATTACK_SOURCES,
   MeatBehavior,ShieldGuardBehavior:class {},Phaser:{},getEnemyMoveSpeed:(_e,v)=>v,getEnemyAttackDelay:(_e,v)=>v,
   updateGravityPull:()=>false,isGravityReversalControlled:()=>false,isEnemyFrozen:(_e)=>!!_e.frozen,shiftEnemyColdTimers(){}
 });
@@ -115,6 +117,7 @@ const Damage=vm.runInNewContext('(class {'+damageMethod+'})',{
 }
 const genericMethod=combatSource.slice(combatSource.indexOf('  updateEnemyAttack('),combatSource.indexOf('\n',combatSource.indexOf('  updateEnemyAttack(')));
 const Generic=vm.runInNewContext('(class {'+genericMethod+'})',{
+  isAttackRecovering,isEnemyLandingStunned,
   BEHAVIOR_ATTACKERS:new Set(['meat']),isGravityReversalControlled:()=>false,isEnemyFrozen:()=>false
 });
 const generic=new Generic();generic.scene={targeting:{valid:()=>true}};

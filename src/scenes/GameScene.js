@@ -115,7 +115,7 @@ export default class GameScene extends Phaser.Scene {
   startRun(mode){
     if(this.runMode!==null||!['normal','test'].includes(mode)) return false;
     this.runMode=mode;
-    if(mode==='normal'){ this.playerData.attack*=2; this.playerData.baseAttack*=2; }
+    if(mode==='normal'){ this.playerData.attack*=2; this.playerData.baseAttack*=2; this.playerData.healthRegenPerSecond=1; }
     this.startMenu?.destroy(true);
     this.startMenu=null;
     this.stageSystem.start();
