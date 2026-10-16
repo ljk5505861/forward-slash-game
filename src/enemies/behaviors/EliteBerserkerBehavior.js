@@ -19,7 +19,7 @@ export default class EliteBerserkerBehavior {
   slash(t,first=false) {
     // Re-select and range-check every strike. Leaving range can dodge later cuts.
     const target=this.h.chooseTarget(this.scene,this.e,AXE.range);
-    const victim=target?.isAlive?.()&&Math.hypot(this.e.x-target.x,this.e.y-target.y)<=AXE.range?target:null;
+    const victim=target?.isAlive?.()&&(this.scene.combatSystem?.getEnemyAttackDistance?.(this.e,target)??Math.hypot(this.e.x-target.x,this.e.y-target.y))<=AXE.range?target:null;
     if(first&&!victim) { this.state='idle'; return; } // No strike released: cooldown stays available.
     if(victim)this.direction=Math.sign(victim.x-this.e.x)||this.direction;
     this.swings+=1; this.effectUntil=t+AXE.effectMs;

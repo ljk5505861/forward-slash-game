@@ -15,6 +15,11 @@ import { getEffectiveAttack, getEffectiveDefense, getEffectiveDamageReduction, g
 const Phaser = globalThis.Phaser || { Math:{ Distance:{ Between:(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1) } } };
 
 const BEHAVIOR_ATTACKERS = new Set(['abyssApostle', 'emperor', 'foreseer', 'foreseerOrb', 'uncrownedKing', 'thornlessRose', 'mountainGeneral', 'goldenHallGuard', 'hellEnvoy', 'eliteBerserker', 'shieldGuard', 'meat', 'charger', 'archer', 'bomber', 'healer', 'midBoss', 'berserkerBoss']);
+const RANGED_ATTACKERS = new Set(['archer','bomber','foreseer','foreseerOrb']);
+export const NORMAL_ENEMY_ATTACK_SOURCES = new Set(['enemyMelee','archerArrow','healerFallback','meatMelee','doctorMelee',
+  'masterMelee','shieldGuardMelee','warDrumMelee','eliteBerserkerMelee','hellEnvoyMelee',
+  'goldenGuardThrust','goldenGuardHeavyThrust','mountainGeneralPunch','thornlessRoseStab',
+  'uncrownedKingStab','foreseerBeam','foreseerOrbBeam','emperorSword','abyssTentacle']);
 const NON_LIFESTEAL_SOURCES = new Set(['burn','poison','burn_burst','reflect','shield_break','afterimage']);
 const NON_DIRECT_PLAYER_DAMAGE_TYPES = new Set(['dot','ground','environment','burn','poison','bomb']);
 const sumBonuses = sumRuntimeBonuses;
@@ -47,7 +52,7 @@ const isDirectEnemyAttack=(enemy,meta={})=>{
 export default class CombatSystem {
   constructor(scene){ this.scene=scene; this.nextPlayerAttackAt=0; this.playerAttackRecoveryUntil=0; this.lastHealthRegenAt=scene.getGameplayTime?.()??0; this.healthRegenRemainder=0; this.lifeStealRemainder=0; this.knockbackTargets=new Set(); this.ensureBuildRuntime(); }
   ensureBuildRuntime(){ const p=this.scene.playerData; p.dodgeChance??=0; p.heavyHitEvery??=0; p.heavyHitCounter??=0; p.heavyHitMultiplier??=1.8; p.heavyHitLifeSteal??=0; p.nextAttackIsHeavy??=false; p.attackDamageBonuses??={}; p.normalAttackDamageBonuses??={}; p.heavyHitDamageBonuses??={}; p.attackSpeedMultiplierBonuses??={}; p.lifeStealBonuses??={}; p.heavyHitLifeStealBonuses??={}; p.defenseBonuses??={}; p.damageReductionBonuses??={}; p.healingReceivedMultiplierBonuses??={}; p.moveSpeedMultiplierBonuses??={}; p.dodgeChanceBonuses??={}; p.afterimageDamageBonuses??={}; }
-  reset(){ this.nextPlayerAttackAt=0; this.playerAttackRecoveryUntil=0; this.lastHealthRegenAt=this.scene.getGameplayTime?.()??0; this.healthRegenRemainder=0; this.lifeStealRemainder=0; this.clearAllKnockbacks(); this.scene.enemies?.forEach(e=>{ e.lockedAttackTarget=null; e.attackRecoveryUntil=0; }); const p=this.scene.playerData; if(p){ p.heavyHitCounter=0; p.nextAttackIsHeavy=false; ['combat_temporary','combat_runtime'].forEach(key=>{ delete p.defenseBonuses?.[key]; delete p.damageReductionBonuses?.[key]; delete p.healingReceivedMultiplierBonuses?.[key]; }); } }
+  reset(){ this.pendingEnemyAttacks?.splice(0); this.pendingEnemyAttacks=null; this.nextPlayerAttackAt=0; this.playerAttackRecoveryUntil=0; this.lastHealthRegenAt=this.scene.getGameplayTime?.()??0; this.healthRegenRemainder=0; this.lifeStealRemainder=0; this.clearAllKnockbacks(); this.scene.enemies?.forEach(e=>{ e.lockedAttackTarget=null; e.attackRecoveryUntil=0; }); const p=this.scene.playerData; if(p){ p.heavyHitCounter=0; p.nextAttackIsHeavy=false; ['combat_temporary','combat_runtime'].forEach(key=>{ delete p.defenseBonuses?.[key]; delete p.damageReductionBonuses?.[key]; delete p.healingReceivedMultiplierBonuses?.[key]; }); } }
   shiftTimers(pausedDuration, pausedAt){ if(this.lastHealthRegenAt<=pausedAt)this.lastHealthRegenAt+=pausedDuration; for(const key of ['nextPlayerAttackAt','playerAttackRecoveryUntil']) if(this[key]>pausedAt) this[key]+=pausedDuration; this.scene.enemies?.forEach(e=>{ if(!e.isDefeated) for(const key of ['nextAttackAt','attackRecoveryUntil','landingRecoveryUntil']) if(e[key]>pausedAt) e[key]+=pausedDuration; }); }
   healWithRemainder(amount,field,source){
     const s=this.scene,p=s.playerData;
@@ -85,7 +90,39 @@ export default class CombatSystem {
     enemy.body?.setVelocityX?.(0);
     return duration;
   }
-  update(time){ const s=this.scene; this.updateHealthRegen(time); if(s.isGameplayPaused?.()||s.playerData.hp<=0) return; const enemies=s.targeting.all(); const weapon=getWeapon(s.playerData.weaponId); const range=weapon.attackRange*(1+sumBonuses(s.playerData.attackRangeMultiplierBonuses)); const target=s.targeting.nearestAhead(range); if(target && time>=this.nextPlayerAttackAt&&!this.isPlayerAttackRecovering(time)){ const interval=this.getPlayerAttackInterval(weapon); const recovery=s.runMode==='normal'?this.getPlayerAttackRecoveryDuration():0; this.nextPlayerAttackAt=time+Math.max(interval,recovery); if(s.runMode==='normal'){ this.playerAttackRecoveryUntil=time+recovery; s.player?.body?.setVelocityX?.(0); } this.prepareHeavyHit(); this.performAttack(target, weapon); } enemies.forEach(e=>this.updateEnemyAttack(e,time)); }
+  update(time){
+    const s=this.scene; this.updateHealthRegen(time);
+    if(s.isGameplayPaused?.()||s.playerData.hp<=0) return;
+    const enemies=s.targeting.all(),weapon=getWeapon(s.playerData.weaponId);
+    const range=weapon.attackRange*(1+sumBonuses(s.playerData.attackRangeMultiplierBonuses));
+    const target=s.targeting.nearestAhead(range),releases=[];
+    this.pendingEnemyAttacks=s.runMode==='normal'?releases:null;
+    try {
+      if(s.runMode==='normal') {
+        // Run the actual release checks before either side's basic hit can interrupt them.
+        this.collectingEnemyAttacks=true;
+        try {
+          enemies.forEach(e=>this.updateEnemyAttack(e,time));
+          s.enemyBehaviors?.update(time);
+        } finally { this.collectingEnemyAttacks=false; }
+        if(this.pendingEnemyAttacks!==releases) return; // A callback reset/ended the run.
+      }
+      if(s.isGameplayPaused?.()||s.playerData.hp<=0) return;
+      if(target&&s.targeting.valid(target)&&time>=this.nextPlayerAttackAt&&!this.isPlayerAttackRecovering(time)) {
+        const interval=this.getPlayerAttackInterval(weapon);
+        const recovery=s.runMode==='normal'?this.getPlayerAttackRecoveryDuration():0;
+        this.nextPlayerAttackAt=time+Math.max(interval,recovery);
+        if(s.runMode==='normal'){ this.playerAttackRecoveryUntil=time+recovery; s.player?.body?.setVelocityX?.(0); }
+        this.prepareHeavyHit(); this.performAttack(target,weapon);
+      }
+      for(const hit of releases) {
+        if(s.isGameplayPaused?.()||s.playerData.hp<=0) break;
+        // The strike was already released while alive/in range. New knockback cannot retract it.
+        this.damageAttackTarget(hit.target,hit.amount,hit.meta,true);
+      }
+      if(s.runMode!=='normal') enemies.forEach(e=>this.updateEnemyAttack(e,time));
+    } finally { this.pendingEnemyAttacks=null; this.collectingEnemyAttacks=false; }
+  }
   prepareHeavyHit(){ const p=this.scene.playerData; const every=Math.max(0,Math.floor(p.heavyHitEvery||0)); p.nextAttackIsHeavy=false; if(every<=0) return false; p.heavyHitCounter=(p.heavyHitCounter||0)+1; if(p.heavyHitCounter<every) return false; p.heavyHitCounter=0; p.nextAttackIsHeavy=true; return true; }
   consumeHeavyHit(){ const p=this.scene.playerData; const heavy=!!p.nextAttackIsHeavy; p.nextAttackIsHeavy=false; return heavy; }
   getPlayerAttackSpeedMultiplier(){ const p=this.scene.playerData; return Math.max(0.2,(p.attackSpeedMultiplier||1)+sumBonuses(p.attackSpeedMultiplierBonuses)); }
@@ -207,10 +244,18 @@ export default class CombatSystem {
   getSelectableEnemyAttackTargets(enemy, options={}){ return this.getAttackableTargets(enemy,options).filter(target=>this.isValidEnemyAttackTarget(target)); }
   getFrontmostEnemyAttackTarget(enemy, options={}){ return this.getSelectableEnemyAttackTargets(enemy,options).map((target,index)=>({target,index})).sort((a,b)=>(b.target.x-a.target.x)||((Math.hypot((enemy?.x||0)-a.target.x,(enemy?.y||0)-a.target.y))-(Math.hypot((enemy?.x||0)-b.target.x,(enemy?.y||0)-b.target.y)))||(a.index-b.index))[0]?.target||null; }
   getOrLockEnemyTarget(enemy, options={}){ if(!enemy) return null; const candidate=this.getFrontmostEnemyAttackTarget(enemy,options); const locked=enemy.lockedAttackTarget; if(!this.isValidEnemyAttackTarget(locked)){ enemy.lockedAttackTarget=candidate; return candidate; } if(!candidate){ enemy.lockedAttackTarget=null; return null; } if(candidate===locked) return locked; if(candidate.x>locked.x+FRONTLINE_SWITCH_THRESHOLD){ enemy.lockedAttackTarget=candidate; return candidate; } return locked; }
-  chooseEnemyAttackTarget(enemy, range=enemy?.attackRange||0, options={}){ const target=this.getOrLockEnemyTarget(enemy,options); if(!target?.isAlive?.()) return null; const distance=Math.hypot((enemy?.x||0)-target.x,(enemy?.y||0)-target.y); return distance<=range?target:null; }
-  damageAttackTarget(target, amount, meta={}){
-    if(isGravityReversalControlled(meta.enemy)||isEnemyFrozen(meta.enemy,this.scene.getGameplayTime?.()||0)) return 0;
+  getEnemyAttackDistance(enemy,target,melee=!RANGED_ATTACKERS.has(enemy?.behavior)){
+    const dx=(enemy?.x||0)-target.x,dy=(enemy?.y||0)-target.y;
+    return this.scene.runMode==='normal'&&melee&&target.type==='player'?Math.abs(dx):Math.hypot(dx,dy);
+  }
+  chooseEnemyAttackTarget(enemy, range=enemy?.attackRange||0, options={}){ const target=this.getOrLockEnemyTarget(enemy,options); if(!target?.isAlive?.()) return null; return this.getEnemyAttackDistance(enemy,target,options.melee)<=range?target:null; }
+  damageAttackTarget(target, amount, meta={},released=false){
+    if(!released&&(isGravityReversalControlled(meta.enemy)||isEnemyFrozen(meta.enemy,this.scene.getGameplayTime?.()||0))) return 0;
     if(!target?.isAlive?.()) return 0;
+    if(this.collectingEnemyAttacks&&this.pendingEnemyAttacks&&meta.attackType==='melee'&&NORMAL_ENEMY_ATTACK_SOURCES.has(meta.source)) {
+      this.pendingEnemyAttacks.push({target,amount,meta:{...meta}});
+      return 0;
+    }
     // Emperor's kick uses the wolves' existing queued slide, not an additional instant displacement.
     const displaces=['mountainGeneralSweep','thornlessRoseDash','uncrownedKingCleave','emperorKick'].includes(meta.source)&&target.type!=='player'
       &&!(meta.source==='emperorKick'&&target.type==='spiritWolf');

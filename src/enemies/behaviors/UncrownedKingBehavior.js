@@ -53,7 +53,7 @@ export default class UncrownedKingBehavior {
   }
   stab(t,shadow=false) {
     const e=this.e,target=this.h.chooseTarget(this.scene,e,e.attackRange);
-    if(!valid(target)||Math.hypot(target.x-e.x,target.y-e.y)>e.attackRange) {
+    if(!valid(target)||(this.scene.combatSystem?.getEnemyAttackDistance?.(e,target)??Math.hypot(target.x-e.x,target.y-e.y))>e.attackRange) {
       this.setState(shadow?'shadow':'idle');this.until=0;return;
     }
     this.direction=Math.sign(target.x-e.x)||this.direction;this.effectUntil=t+KING.effectMs;
@@ -64,7 +64,7 @@ export default class UncrownedKingBehavior {
   }
   thrust(t,first=false) {
     const e=this.e,target=this.h.chooseTarget(this.scene,e,KING.thrustRange);
-    const legal=valid(target)&&Math.hypot(target.x-e.x,target.y-e.y)<=KING.thrustRange;
+    const legal=valid(target)&&(this.scene.combatSystem?.getEnemyAttackDistance?.(e,target)??Math.hypot(target.x-e.x,target.y-e.y))<=KING.thrustRange;
     if(first&&!legal){this.setState('idle');this.until=0;return;} // Failed first cast spends no cooldown.
     if(first){this.strikes=0;this.nextThrust=t+this.delay(KING.thrustCooldown,t);}
     this.strikes++;this.nextStrike=t+KING.thrustInterval; // Never catch up several melee hits in one frame.

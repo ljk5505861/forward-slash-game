@@ -54,7 +54,7 @@ for(const mode of ['normal','test']) for(const level of [1,10,19]){
   scene.runMode=mode;stage.currentEnemyLevel=level;
   for(const id of ['grunt','archer']){
     scene.enemies=[];const expected=stage.tunedEnemy(id), enemy=stage.spawn(id,600);
-    for(const field of ['name','hp','damage','attackRange','attackIntervalMs','speed','level']) assert.equal(enemy[field],expected[field]);
+    for(const field of ['name','hp','damage','attackRange','attackIntervalMs','speed','level']) assert.equal(enemy[field],field==='damage'&&mode==='normal'?expected[field]*0.5:expected[field]);
     assert.equal(enemy.maxHp,expected.hp);assert.equal(enemy.baseAttackIntervalMs,expected.attackIntervalMs);assert(enemy.attached);
   }
 }

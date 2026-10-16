@@ -13,7 +13,7 @@ export default class GoldenHallGuardBehavior {
   nextIsHeavy() { return (this.thrusts+1)%SPEAR.heavyEvery===0; }
   strike(t) {
     const e=this.e,target=this.h.chooseTarget(this.scene,e,e.attackRange);
-    if(!target?.isAlive?.()||Math.hypot(e.x-target.x,e.y-target.y)>e.attackRange) {
+    if(!target?.isAlive?.()||(this.scene.combatSystem?.getEnemyAttackDistance?.(e,target)??Math.hypot(e.x-target.x,e.y-target.y))>e.attackRange) {
       this.state='idle'; this.until=0; return; // No release: no count or attack interval consumed.
     }
     this.direction=Math.sign(target.x-e.x)||this.direction;

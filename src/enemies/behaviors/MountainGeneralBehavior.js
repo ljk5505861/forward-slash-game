@@ -88,7 +88,7 @@ export default class MountainGeneralBehavior {
   }
   punch(t) {
     const e=this.e,target=this.h.chooseTarget(this.scene,e,e.attackRange);
-    if(!valid(target)||Math.hypot(e.x-target.x,e.y-target.y)>e.attackRange) {
+    if(!valid(target)||(this.scene.combatSystem?.getEnemyAttackDistance?.(e,target)??Math.hypot(e.x-target.x,e.y-target.y))>e.attackRange) {
       this.setState('idle'); this.until=0; return;
     }
     this.direction=Math.sign(target.x-e.x)||this.direction;

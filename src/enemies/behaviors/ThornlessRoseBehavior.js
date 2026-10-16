@@ -101,7 +101,7 @@ export default class ThornlessRoseBehavior {
   stab(t,drain=false) {
     const e=this.e,range=drain?ROSE.drainRange:e.attackRange;
     const target=this.h.chooseTarget(this.scene,e,range);
-    if(!valid(target)||Math.hypot(e.x-target.x,e.y-target.y)>range) {
+    if(!valid(target)||(this.scene.combatSystem?.getEnemyAttackDistance?.(e,target)??Math.hypot(e.x-target.x,e.y-target.y))>range) {
       this.setState('idle'); this.until=0; return; // No hit released: no attack/skill cooldown.
     }
     this.direction=Math.sign(target.x-e.x)||this.direction;
