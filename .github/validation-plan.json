@@ -1,20 +1,25 @@
 {
-  "reason": "v0.11.60 普通模式开局基础生命恢复1HP/游戏秒，肉怪基础HP128→64并保留18%线性等级成长；仅改GameScene开局、普通肉怪配置与版本三个运行文件。01160使用实际startRun/healPlayer/Combat恢复、商品效果、信息面板和Stage.spawn验证基础恢复、道具叠加出售、禁疗/满血/死亡、商店前/商店/暂停/不补回、倍速与跨模式/肉怪实际hp/maxHp；01131肉怪攻击/刀刃/控制/死亡回归，01152既有平衡隔离/实际生成，01100版本。同步01131旧VM夹具缺失的现有公共控制函数引用，保留全部断言。执行build/diff与范围规则，不跑无关全量或浏览器套件，体感交手机验收。",
+  "reason": "v0.11.61 仅普通模式镭射眼各级基础伤害减半；施法与UI使用同一只读模式数据解析，保证快照仅减半一次且不污染测试模式，保留射程/贯穿/双束/焦点/持续/延时/动能/冷却与耗蓝。同步技能详情、下一等级、三选一、商店说明的模式参数，共6个运行文件含版本。新01161验证9级×3模式×普通/精英/Boss的真实SkillSystem/CombatSystem伤害与取整、增伤/职业归因/复制/自动强制施法、动能/穿透/死亡/换目标/延时/暂停/倍速/清理及真实UI入口；执行现有01098运行、01099视觉、01100动能、01103主动增伤、01100版本及build/diff/范围规则。01103基线旧版本断言已复现，只同步版本，不削弱有效检查；不跑无关全量/浏览器套件，真机视觉手感待验收。",
   "files": [
     ".github/validation-plan.json",
     "package-lock.json",
     "package.json",
     "scripts/validate-01100-version.mjs",
-    "scripts/validate-01131-meat-monster.mjs",
-    "scripts/validate-01160-base-regen-meat-hp.mjs",
-    "src/config/enemies.js",
+    "scripts/validate-01103-active-skill-modifiers.mjs",
+    "scripts/validate-01161-laser-eyes-damage.mjs",
     "src/config/version.js",
-    "src/scenes/GameScene.js"
+    "src/skills/handlers/SuperheroFlowSkills.js",
+    "src/ui/ShopPanel.js",
+    "src/ui/UpgradePanel.js",
+    "src/ui/selectionFormatters.js",
+    "src/ui/skillDetailContent.js"
   ],
   "tests": [
-    "scripts/validate-01160-base-regen-meat-hp.mjs",
-    "scripts/validate-01131-meat-monster.mjs",
-    "scripts/validate-01152-normal-combat-balance.mjs",
+    "scripts/validate-01161-laser-eyes-damage.mjs",
+    "scripts/validate-01098-superhero-runtime.mjs",
+    "scripts/validate-01099-superhero-visual-follow.mjs",
+    "scripts/validate-01100-superhero-kinetic.mjs",
+    "scripts/validate-01103-active-skill-modifiers.mjs",
     "scripts/validate-01100-version.mjs"
   ]
 }

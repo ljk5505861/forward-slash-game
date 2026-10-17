@@ -56,6 +56,20 @@ const LASER_LEVELS = [18, 20, 22, 24, 26, 22, 24, 26, 28].map((damage, index) =>
   desc: `自动向前方最近敌人发射${index >= 5 ? '两道平行' : '一道'}红色贯穿光束，持续${index >= 8 ? '1.8' : '1.2'}秒，每${index >= 8 ? '0.2秒（满焦点后0.15秒）' : '0.2秒'}造成${damage}点技能伤害${index >= 5 ? '，每道为原单道70%伤害，可分别命中同一敌人' : ''}${index >= 2 ? '；连续命中锁定目标每跳使后续对其伤害+10%，最多5层/50%' : ''}${index >= 8 ? '；击杀自动换前方目标、焦点减少2层，每杀延长0.3秒，最多延长1.2秒' : ''}。`
 }));
 
+export function getLaserEyesDataForMode(data, runMode) {
+  if (!data || runMode !== 'normal' || data.normalLaserDamageApplied) return data;
+  const damage = data.damage * 0.5;
+  return {
+    ...data, damage, normalLaserDamageApplied: true,
+    desc: data.desc?.replace(/造成[\d.]+点技能伤害/, `造成${damage}点技能伤害`)
+  };
+}
+
+export function getLaserEyesConfigForMode(cfg, runMode) {
+  if (cfg?.id !== 'laser_eyes' || runMode !== 'normal') return cfg;
+  return { ...cfg, levels: cfg.levels.map(data => getLaserEyesDataForMode(data, runMode)) };
+}
+
 const BREATH_LEVELS = [10, 11, 12, 13, 14, 15, 16, 17, 18].map((damage, index) => ({
   damage,
   cooldownMs: 6800 - index * 80,
@@ -249,6 +263,7 @@ export const LaserEyesSkill = {
   },
   cast(system, cfg, data, level, ctx) {
     const scene = system.scene;
+    data = getLaserEyesDataForMode(data, scene.runMode);
     const target = scene.targeting.nearestAhead(data.range);
     if (!validEnemy(scene, target)) return { failed: true };
     const origin = eyePoint(scene);
