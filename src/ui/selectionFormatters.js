@@ -1,4 +1,5 @@
 import { SKILLS } from '../config/skills.js';
+import { getLaserEyesConfigForMode } from '../skills/handlers/SuperheroFlowSkills.js';
 import { getRarity } from '../config/rarities.js';
 import { ARTIFACTS, ARTIFACT_CATEGORIES } from '../config/artifacts.js';
 import { PROFESSIONS } from '../config/professions.js';
@@ -15,8 +16,8 @@ const meaningfulKeys=['新增','传播','穿透','击退','护盾','治疗','召
 export const isMeaningfulMilestoneChange=(changeText='')=>meaningfulKeys.some(key=>text(changeText).includes(key));
 export const extractMilestoneChanges=(skill={},fromLevel=0)=>{ const max=skill.maxLevel||skill.levels?.length||0,out=[]; for(let level=Math.max(1,fromLevel+1);level<=max;level+=1){ const data=skill.levels?.[level-1]; const explicit=lines(data?.milestoneText||data?.milestones); const inferred=explicit.length?explicit:(data?.milestone===false?[]:lines(data?.changes).filter(isMeaningfulMilestoneChange)); unique(inferred).forEach(change=>out.push(`Lv.${level}：${change.replace(/^新增：?/,'')}`)); } return out; };
 const attrLabels={attack_15:['攻击强化','属性升级','攻击力 +15%'],hp_20:['生命强化','属性升级','最大生命 +20'],as_10:['速度强化','属性升级','攻击速度 +10%'],skill_15:['技能强化','属性升级','技能伤害 +15%'],cdr_8:['冷却强化','属性升级','冷却缩减 +8%'],crit_5:['暴击强化','属性升级','暴击率 +5%']};
-export function formatSkillSelectionOption(option={},playerData={}){
-  const skill=option.skillId?SKILLS[option.skillId]:null;
+export function formatSkillSelectionOption(option={},playerData={},runMode=null){
+  const skill=getLaserEyesConfigForMode(option.skillId?SKILLS[option.skillId]:null,runMode);
   const isCopyChoice=option.type==='myriadCopySkill';
   if(!skill&&isCopyChoice){ const title=lines(option.title)[0]||'普通攻击'; const currentMark=title.includes('（当前）'); const details=lines(option.title).slice(1); return {...option,kind:'skill',title,subtitle:currentMark?'当前':'普通攻击',iconText:title[0]||'普',iconColor:0xd8ccff,rarity:'普通攻击',rarityId:'COMMON',rarityColor:0x5278c8,levelText:currentMark?'当前':'可复制',optionLines:[currentMark?'当前':'普通攻击','可复制'],detailLines:unique([title,...details,'锁定玩家普通攻击供残影复制']),confirmText:''}; }
   if(!skill){ const fallback=attrLabels[option.id]||[text(option.title,'属性提升').split('\n')[0]||'属性提升','属性升级',lines(option.title).slice(1).join(' / ')||'属性提升']; return {...option,kind:'attribute',title:fallback[0],subtitle:fallback[1],iconText:fallback[0][0],rarity:'属性',rarityColor:0x62e883,levelText:'',optionLines:[fallback[1]],detailLines:[fallback[0],fallback[2]],confirmText:''}; }

@@ -1,5 +1,6 @@
 import '../skills/handlers/index.js';
 import { SKILLS } from '../config/skills.js';
+import { getLaserEyesConfigForMode } from '../skills/handlers/SuperheroFlowSkills.js';
 import { NINEFOLD_DAO_ID, CULTIVATION_REALMS, CULTIVATION_THRESHOLDS, CULTIVATION_REALM_STATS, getCultivationSnapshot, getCultivationSpellModifiers, getCultivationUniversalModifiers } from '../skills/handlers/CultivationCoreSkill.js';
 import { ALCHEMY_ID, MATERIAL_MULTIPLIERS, getAlchemyState, getAlchemyRecipe, getAlchemyDaoBuffModifiers } from '../skills/handlers/CultivationAlchemySkill.js';
 import { SOUL_THRESHOLDS, SWORD_MYTHIC, getSwordFlowReadSnapshot, mainSwordStatsReadOnly, tombStatsReadOnly } from '../skills/handlers/SwordFlowState.js';
@@ -137,7 +138,7 @@ function humanGodDetail(cfg, level, context = {}) {
 }
 
 export function getSkillDetailData(skillId,context={}){
-  const cfg=SKILLS[skillId]; if(!cfg) return null;
+  const cfg=getLaserEyesConfigForMode(SKILLS[skillId],context.scene?.runMode); if(!cfg) return null;
   const owned=context.scene?.playerData?.skills?.find(s=>s.id===skillId)||context.skill||{level:1};
   const level=Math.max(1,Math.min(cfg.maxLevel||1,owned.level||1));
   if(skillId===NINEFOLD_DAO_ID) return cultivationDetail(cfg,level,context);

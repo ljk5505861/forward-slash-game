@@ -90,7 +90,7 @@ export default class ShopPanel {
   details(item,selling) {
     const system=this.scene.shopSystem;
     if(item.kind==='skill') system.syncSkillOffer(item);
-    const formatted=item.kind==='skill'?formatSkillSelectionOption(item,this.scene.playerData):null;
+    const formatted=item.kind==='skill'?formatSkillSelectionOption(item,this.scene.playerData,this.scene.runMode):null;
     const heading=item.name+(formatted?'  '+formatted.levelText:'');
     this.text(42,616,heading,{fontSize:'27px',fontStyle:'bold'});
     const main=formatted?(formatted.purposeLines||[]).join('；'):item.description;
