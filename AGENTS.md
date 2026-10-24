@@ -9,6 +9,7 @@
 - The user tests and merges pull requests manually.
 - Do not begin implementation until the requested gameplay rules are clear.
 - Treat the user's stated design as authoritative. Do not infer intended design from existing code.
+- For subsequent programming tasks, use the `stop-that-shit` skill by default. Avoid excessive defensive programming, unnecessary abstractions, and redundant verification; retain necessary validation and required checks, and reuse still-valid verification results.
 
 ## Scope
 
