@@ -1,23 +1,27 @@
 {
-  "reason": "v0.11.62 普通商店新增3件经济道具：普通击杀+1、精英+8、Boss+30金币，价格80/36/48，可叠加出售。商品从第2店开放，普通/精英道具第5店后停止新生成，Boss契约第4店后停止；保留原价锁定商品。新增3个图标，将额外金币接入真实击杀和收入账本；无金币召唤物、深渊未结算分身与重复死亡不给额外金币，测试模式保持原规则。涉及商品配置、商店生成、击杀结算、图标和版本5个运行文件。执行新01162经济验证、现有01124买卖/技能/图标生命周期、01158商品生成与属性运行验证、01100版本，以及build与diff；不跑无关全量或浏览器套件。",
+  "reason": "v0.11.63 新增4件唯一持有经济道具：招灾战旗160金币，后续波次总怪量+20%（含精英及Boss前怪潮，小数跨波累计，Boss本体保持原流程）；贪欲血印64，击杀金币含赏金+25%且受伤+10%；鎏金存钱罐60，下次新店起携带金币10%利息、每店最多30；行商金卡70，新刷商品九折含技能、锁定原价。6个运行文件涉及商品、交易、战斗、刷怪、图标和版本。加怪会触及在场上限，队列需保留等待而非丢掉敌人，此直接相关修复适用于两种模式。新01163覆盖四件效果、真实交易/伤害/金币/队列、唯一持有/出售/重置/模式及利息去重和折扣锁价；执行现有01162经济、01124商店、01158属性商品、01128整局节点与波数、01100版本，以及build/diff。保留原职业流程，不跑无关全量或浏览器套件。",
   "files": [
     ".github/validation-plan.json",
     "package-lock.json",
     "package.json",
     "scripts/validate-01100-version.mjs",
     "scripts/validate-01124-growth-shop.mjs",
+    "scripts/validate-01128-three-wave-growth.mjs",
     "scripts/validate-01158-attribute-shop.mjs",
-    "scripts/validate-01162-economy-shop.mjs",
+    "scripts/validate-01163-economy-builds.mjs",
     "src/config/shopItems.js",
     "src/config/version.js",
     "src/systems/CombatSystem.js",
     "src/systems/ShopSystem.js",
+    "src/systems/StageSystem.js",
     "src/ui/shopIcons.js"
   ],
   "tests": [
+    "scripts/validate-01163-economy-builds.mjs",
     "scripts/validate-01162-economy-shop.mjs",
     "scripts/validate-01124-growth-shop.mjs",
     "scripts/validate-01158-attribute-shop.mjs",
+    "scripts/validate-01128-three-wave-growth.mjs",
     "scripts/validate-01100-version.mjs"
   ]
 }

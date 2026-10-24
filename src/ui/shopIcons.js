@@ -7,6 +7,19 @@ export function drawShopIcon(scene,x,y,icon,color=0x8dd7ed,size=76) {
   const line=(points,width=4,fill=0xeef7ff)=>{g.lineStyle(width,fill,1);g.strokePoints(points.map(([x,y])=>({x,y})),false);};
   const dark=0x324f65,light=0xf0f7ff;
   switch(icon) {
+    case 'banner':
+      line([[-25,35],[-25,-34]],7,dark);poly([[-22,-30],[30,-30],[19,-9],[30,10],[-22,10]],color);
+      circle(3,-10,10,light);circle(-1,-12,2,dark);circle(7,-12,2,dark);line([[0,-3],[6,-3]],3,dark);break;
+    case 'greed':
+      poly([[0,-35],[30,-18],[27,18],[0,35],[-27,18],[-30,-18]],color);
+      circle(0,-3,18,dark);circle(0,-3,12,0xf2d17b);rect(-4,-7,8,8,dark);
+      poly([[0,14],[-8,25],[0,31],[8,25]],0xab354e);break;
+    case 'bank':
+      rect(-29,-19,58,47,color);rect(-15,-32,30,18,dark);line([[-8,-27],[8,-27]],4,light);
+      circle(0,5,15,dark);circle(0,5,10,0xf8e3a1);rect(-22,25,12,9,dark);rect(10,25,12,9,dark);break;
+    case 'card':
+      rect(-35,-24,70,48,color);rect(-35,-12,70,11,dark);
+      circle(-19,13,7,light);line([[-1,10],[24,10]],3,dark);line([[-1,18],[14,18]],3,dark);break;
     case 'coin':
       circle(0,0,32,dark);circle(0,-2,27,color);
       g.lineStyle(3,light,1).strokeCircle(0,-2,21);rect(-7,-9,14,14,dark);
