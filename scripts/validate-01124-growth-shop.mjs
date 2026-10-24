@@ -44,9 +44,10 @@ const stats=p=>[
   sumRuntimeBonuses(p.armorPenetrationBonuses),sumRuntimeBonuses(p.healthRegenPerSecondBonuses),
   sumRuntimeBonuses(p.attackRangeMultiplierBonuses),sumRuntimeBonuses(p.healingReceivedMultiplierBonuses),
   sumRuntimeBonuses(p.damageReductionBonuses),
+  p.normalKillGoldBonus||0,p.eliteKillGoldBonus||0,p.bossKillGoldBonus||0,
 ];
-assert.equal(SHOP_ITEMS.length,40);
-assert.equal(new Set(SHOP_ITEMS.map(item=>item.icon)).size,20);
+assert.equal(SHOP_ITEMS.length,43);
+assert.equal(new Set(SHOP_ITEMS.map(item=>item.icon)).size,23);
 for(const item of SHOP_ITEMS) {
   const s=harness(),p=s.playerData;
   // Independent source contributions must survive buying and selling.
@@ -163,8 +164,8 @@ const ShopPanel=vm.runInNewContext(panelSource,{DESIGN_WIDTH:720,DESIGN_HEIGHT:1
   assert(panel.nodes.some(n=>n.text==='出售一件 · 4 金币'));
   s.playerData.gold=100000;
   for(const item of SHOP_ITEMS)if(item.id!=='iron_blade')assert(s.shopSystem.buy(offer(s,item.id).id).ok);
-  panel.page=9;panel.selectedId=null;panel.render();assert.equal(panel.page,9);
+  panel.page=10;panel.selectedId=null;panel.render();assert.equal(panel.page,10);
   panel.hide();panel.hide();assert.equal(s.closed,1);assert.equal(panel.nodes.length,0);
   for(const item of SHOP_ITEMS)assert.doesNotThrow(()=>drawShopIcon(s,0,0,item.icon,item.color));
 }
-console.log('growth shop: 40 reversible items / 20 attribute icons, prices, locks, refunds, skills, six-slot replacement, probabilities, legacy and 10-page inventory lifecycle PASS');
+console.log('growth shop: 43 reversible items / 23 icons, prices, locks, refunds, skills, six-slot replacement, probabilities, legacy and 11-page inventory lifecycle PASS');

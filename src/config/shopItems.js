@@ -1,4 +1,4 @@
-// Normal-mode attributes stack additively; later visits unlock larger purchases.
+// Normal-mode item bonuses stack additively; visits control availability.
 // Test mode retains its previous catalog below.
 const bonus = (p, bucket, id, amount) => {
   p[bucket] ||= {};
@@ -37,6 +37,9 @@ const attributeEffects = {
   damageReduction:(p,n)=>bonus(p,'damageReductionBonuses','shop_attributes',n),
   skillDamage:(p,n)=>scalar(p,'skillDamageMultiplier',n),
   cooldownReduction:(p,n)=>scalar(p,'cooldownReduction',n),
+  normalKillGold:(p,n)=>scalar(p,'normalKillGoldBonus',n),
+  eliteKillGold:(p,n)=>scalar(p,'eliteKillGoldBonus',n),
+  bossKillGold:(p,n)=>scalar(p,'bossKillGoldBonus',n),
 };
 const attributeItem = (id,name,description,price,icon,color,attributes,minVisit=1) => ({
   id,name,description,price,icon,color,attributes,minVisit,kind:'item',
@@ -86,6 +89,9 @@ export const SHOP_ITEMS = [
   attributeItem('blood_core','神血心核','最大生命 +1000并恢复1000生命；每秒生命恢复 +2',300,'heart',0xf371a5,{maxHp:1000,healthRegen:2},5),
   attributeItem('guardian_armor','守护重甲','最大生命 +800并恢复800生命；防御 +10；受到伤害减少5%',330,'shield',0xb19eff,{maxHp:800,defense:10,damageReduction:.05},5),
   attributeItem('eternal_mana_core','永恒魔核','最大法力 +200并恢复200法力；每秒回蓝 +3；技能伤害 +40%',360,'crystal',0xa7a1ff,{maxMana:200,manaRegen:3,skillDamage:.4},5),
+  {...attributeItem('fortune_coin','聚财铜钱','击杀普通敌人额外获得1金币；精英、Boss和无金币召唤物不计',80,'coin',0xf3c967,{normalKillGold:1},2),maxVisit:5},
+  {...attributeItem('bounty_badge','猎赏徽章','击杀精英敌人额外获得8金币；无金币召唤物不计',36,'bounty',0xe8b568,{eliteKillGold:8},2),maxVisit:5},
+  {...attributeItem('boss_contract','讨伐契约','击败Boss额外获得30金币；分身、无金币召唤物不计',48,'contract',0xd6bd91,{bossKillGold:30},2),maxVisit:4},
 ];
 export const SHOP_SKILL_CHANCE = 0.25;
 export const SHOP_SKILL_PRICES = Object.freeze({COMMON:20,FINE:28,RARE:40,EPIC:56,LEGENDARY:76,MYTHIC:100});

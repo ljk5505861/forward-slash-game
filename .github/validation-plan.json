@@ -1,25 +1,23 @@
 {
-  "reason": "v0.11.61 仅普通模式镭射眼各级基础伤害减半；施法与UI使用同一只读模式数据解析，保证快照仅减半一次且不污染测试模式，保留射程/贯穿/双束/焦点/持续/延时/动能/冷却与耗蓝。同步技能详情、下一等级、三选一、商店说明的模式参数，共6个运行文件含版本。新01161验证9级×3模式×普通/精英/Boss的真实SkillSystem/CombatSystem伤害与取整、增伤/职业归因/复制/自动强制施法、动能/穿透/死亡/换目标/延时/暂停/倍速/清理及真实UI入口；执行现有01098运行、01099视觉、01100动能、01103主动增伤、01100版本及build/diff/范围规则。01103基线旧版本断言已复现，只同步版本，不削弱有效检查；不跑无关全量/浏览器套件，真机视觉手感待验收。",
+  "reason": "v0.11.62 普通商店新增3件经济道具：普通击杀+1、精英+8、Boss+30金币，价格80/36/48，可叠加出售。商品从第2店开放，普通/精英道具第5店后停止新生成，Boss契约第4店后停止；保留原价锁定商品。新增3个图标，将额外金币接入真实击杀和收入账本；无金币召唤物、深渊未结算分身与重复死亡不给额外金币，测试模式保持原规则。涉及商品配置、商店生成、击杀结算、图标和版本5个运行文件。执行新01162经济验证、现有01124买卖/技能/图标生命周期、01158商品生成与属性运行验证、01100版本，以及build与diff；不跑无关全量或浏览器套件。",
   "files": [
     ".github/validation-plan.json",
     "package-lock.json",
     "package.json",
     "scripts/validate-01100-version.mjs",
-    "scripts/validate-01103-active-skill-modifiers.mjs",
-    "scripts/validate-01161-laser-eyes-damage.mjs",
+    "scripts/validate-01124-growth-shop.mjs",
+    "scripts/validate-01158-attribute-shop.mjs",
+    "scripts/validate-01162-economy-shop.mjs",
+    "src/config/shopItems.js",
     "src/config/version.js",
-    "src/skills/handlers/SuperheroFlowSkills.js",
-    "src/ui/ShopPanel.js",
-    "src/ui/UpgradePanel.js",
-    "src/ui/selectionFormatters.js",
-    "src/ui/skillDetailContent.js"
+    "src/systems/CombatSystem.js",
+    "src/systems/ShopSystem.js",
+    "src/ui/shopIcons.js"
   ],
   "tests": [
-    "scripts/validate-01161-laser-eyes-damage.mjs",
-    "scripts/validate-01098-superhero-runtime.mjs",
-    "scripts/validate-01099-superhero-visual-follow.mjs",
-    "scripts/validate-01100-superhero-kinetic.mjs",
-    "scripts/validate-01103-active-skill-modifiers.mjs",
+    "scripts/validate-01162-economy-shop.mjs",
+    "scripts/validate-01124-growth-shop.mjs",
+    "scripts/validate-01158-attribute-shop.mjs",
     "scripts/validate-01100-version.mjs"
   ]
 }
