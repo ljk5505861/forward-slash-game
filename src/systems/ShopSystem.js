@@ -50,7 +50,8 @@ export default class ShopSystem {
         if(skill) slots[free[Math.floor(this.random()*free.length)]]=skill;
       }
       const used=new Set(slots.filter(Boolean).map(o=>o.itemId));
-      const pool=this.shuffle(SHOP_ITEMS.filter(item=>!used.has(item.id)&&(item.minVisit||1)<=Math.max(1,this.visits)));
+      const visit=Math.max(1,this.visits);
+      const pool=this.shuffle(SHOP_ITEMS.filter(item=>!used.has(item.id)&&(item.minVisit||1)<=visit&&(!item.maxVisit||visit<=item.maxVisit)));
       let basicNeeded=Math.min(slots.filter(o=>!o).length,Math.max(0,2-slots.filter(o=>o?.kind==='item'&&o.price<=16).length));
       let hasStarter=slots.some(o=>o?.kind==='item'&&o.price<=12);
       this.currentItems=slots.map(offer=>offer||(()=>{

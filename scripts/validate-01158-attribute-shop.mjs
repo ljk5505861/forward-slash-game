@@ -57,12 +57,12 @@ function give(f,id){
 }
 function sell(f,unit){const sys=f.s.shopSystem,prior=sys.currentShopReason;sys.currentShopReason='fixture';assert(sys.sell(unit).ok);sys.currentShopReason=prior;}
 
-assert.equal(SHOP_ITEMS.length,40);assert.equal(new Set(SHOP_ITEMS.map(x=>x.id)).size,40);
+assert.equal(SHOP_ITEMS.length,43);assert.equal(new Set(SHOP_ITEMS.map(x=>x.id)).size,43);
 assert.equal(SHOP_ITEMS.filter(x=>(x.minVisit||1)===1).length,24);
-assert.equal(SHOP_ITEMS.filter(x=>x.minVisit===2).length,8);
+assert.equal(SHOP_ITEMS.filter(x=>x.minVisit===2).length,11);
 assert.equal(SHOP_ITEMS.filter(x=>x.minVisit===3).length,4);
 assert.equal(SHOP_ITEMS.filter(x=>x.minVisit===5).length,4);
-assert.deepEqual(SHOP_ITEMS.slice(24).map(x=>x.price),[58,64,54,76,50,58,56,54,110,148,150,250,300,300,330,360]);
+assert.deepEqual(SHOP_ITEMS.slice(24).map(x=>x.price),[58,64,54,76,50,58,56,54,110,148,150,250,300,300,330,360,80,36,48]);
 
 // The real generator retains four slots, 25% skill rolls, low-price choices and visit gating.
 {
@@ -74,12 +74,12 @@ assert.deepEqual(SHOP_ITEMS.slice(24).map(x=>x.price),[58,64,54,76,50,58,56,54,1
       sys.currentItems=[];sys.generateItems();assert.equal(sys.currentItems.length,4);
       assert.equal(new Set(sys.currentItems.map(x=>x.itemId)).size,4);
       const items=sys.currentItems.filter(x=>x.kind==='item');
-      assert(items.every(x=>(x.minVisit||1)<=visit));assert(items.filter(x=>x.price<=16).length>=2);
+      assert(items.every(x=>(x.minVisit||1)<=visit&&(!x.maxVisit||visit<=x.maxVisit)));assert(items.filter(x=>x.price<=16).length>=2);
       assert(items.some(x=>x.price<=12));assert(sys.currentItems.filter(x=>x.kind==='skill').length<=1);
       items.forEach(x=>seen.add(x.itemId));
     }
   }
-  assert.equal(seen.size,40,'every declared item can actually appear');
+  assert.equal(seen.size,43,'every declared item can actually appear');
   sys.visits=5;sys.currentItems=[];
   for(let i=0;!sys.currentItems.some(x=>x.price>=300)&&i<100;i++){sys.currentItems=[];sys.generateItems();}
   const rare=sys.currentItems.find(x=>x.price>=300);assert(rare);assert(sys.toggleLock(rare.id));
@@ -197,4 +197,4 @@ for(const id of ['grunt','elite','boss']){
   for(const n of panel.content)assert((n.y??442)<850,'new resource page fits before the buttons');
   panel.flip(1);assert.equal(panel.pageText.text,'3/3');panel.flip(1);assert.equal(panel.pageText.text,'1/3');panel.hide();assert.equal(panel.nodes.length,0);f.destroy();
 }
-console.log('PASS 01158: all 40 items reachable at visits 1/2/3/5; locks and budget choices; fractional regen/life steal, healing modifiers, no pre-shop heal, pause/speed/death/reset; normal/elite/boss penetration; actual range/movement/strength/mana and 3-page panel.');
+console.log('PASS 01158: all 43 items reachable within visit limits; locks and budget choices; fractional regen/life steal, healing modifiers, no pre-shop heal, pause/speed/death/reset; normal/elite/boss penetration; actual range/movement/strength/mana and 3-page panel.');

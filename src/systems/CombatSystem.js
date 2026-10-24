@@ -234,7 +234,37 @@ export default class CombatSystem {
     s.hud?.update();
     if(s.playerData.hp<=0) s.finishRun(false);
   }
-  killEnemy(enemy, meta={}){ if(!enemy||enemy.isDefeated) return; const s=this.scene; enemy.isDefeated=true; const settleBoss=!(s.runMode==='normal'&&enemy.behavior==='abyssApostle')||claimAbyssVictory(enemy); enemy.lockedAttackTarget=null; enemy.attackRecoveryUntil=0; this.clearKnockback(enemy); if(['thornlessRose','uncrownedKing','foreseer','foreseerOrb','emperor','abyssApostle'].includes(enemy.behavior)) s.enemyBehaviors?.destroyEnemy?.(enemy); s.statusEffects?.clearTarget(enemy); destroyEnemyStatusIndicators(enemy); enemy.body&&(enemy.body.enable=false); s.enemies=s.enemies.filter(e=>e!==enemy); s.killCount += enemy.isBoss ? 0 : 1; splitHellHead(s,enemy); const gold=enemy.noGoldReward?0:enemy.isMidBoss?40:enemy.isElite?15:(enemy.isBoss?0:1); if(gold) s.awardGold?.(gold, enemy.isMidBoss?'midBoss':enemy.isElite?'eliteEnemy':'normalEnemy'); s.eventBus.emit(CombatEvents.ENEMY_KILLED,{ enemy, ...meta, canGrantGold:!enemy.noGoldReward }); if(enemy.isBoss&&settleBoss){ const flowBossType=enemy.flowBossType||(enemy.enemyId==='berserker_boss'?'boss1':(enemy.isMidBoss?'boss2':'boss3')); const bossType=enemy.isFinalBoss?'final':(enemy.isMidBoss?'mid':flowBossType); s.eventBus.emit(CombatEvents.BOSS_KILLED,{ enemy, bossType, flowBossType }); s.stageSystem?.clearBossMinions?.(); s.stageSystem?.onBossKilled?.(flowBossType); if(enemy.isMidBoss) s.runStats?.endMidBossFight?.(); } [enemy.hpBarBg, enemy.hpBar, enemy.nameText, enemy.levelText].forEach(o=>o?.destroy()); s.tweens.add({ targets:enemy, alpha:0, duration:s.balance.enemyFadeMs, onComplete:()=>enemy.destroy() }); }
+  killEnemy(enemy, meta={}){
+    if(!enemy||enemy.isDefeated) return;
+    const s=this.scene;
+    enemy.isDefeated=true;
+    const settleBoss=!(s.runMode==='normal'&&enemy.behavior==='abyssApostle')||claimAbyssVictory(enemy);
+    enemy.lockedAttackTarget=null; enemy.attackRecoveryUntil=0; this.clearKnockback(enemy);
+    if(['thornlessRose','uncrownedKing','foreseer','foreseerOrb','emperor','abyssApostle'].includes(enemy.behavior)) s.enemyBehaviors?.destroyEnemy?.(enemy);
+    s.statusEffects?.clearTarget(enemy); destroyEnemyStatusIndicators(enemy);
+    enemy.body&&(enemy.body.enable=false);
+    s.enemies=s.enemies.filter(e=>e!==enemy);
+    s.killCount += enemy.isBoss ? 0 : 1;
+    splitHellHead(s,enemy);
+    const gold=enemy.noGoldReward?0:enemy.isMidBoss?40:enemy.isElite?15:(enemy.isBoss?0:1);
+    if(gold) s.awardGold?.(gold, enemy.isMidBoss?'midBoss':enemy.isElite?'eliteEnemy':'normalEnemy');
+    if(s.runMode==='normal'&&!enemy.noGoldReward){
+      const p=s.playerData;
+      const extra=enemy.isBoss?(settleBoss?(p.bossKillGoldBonus||0):0)
+        :enemy.isElite?(p.eliteKillGoldBonus||0):(p.normalKillGoldBonus||0);
+      if(extra) s.awardGold?.(extra,'shopBounty');
+    }
+    s.eventBus.emit(CombatEvents.ENEMY_KILLED,{ enemy, ...meta, canGrantGold:!enemy.noGoldReward });
+    if(enemy.isBoss&&settleBoss){
+      const flowBossType=enemy.flowBossType||(enemy.enemyId==='berserker_boss'?'boss1':(enemy.isMidBoss?'boss2':'boss3'));
+      const bossType=enemy.isFinalBoss?'final':(enemy.isMidBoss?'mid':flowBossType);
+      s.eventBus.emit(CombatEvents.BOSS_KILLED,{ enemy, bossType, flowBossType });
+      s.stageSystem?.clearBossMinions?.(); s.stageSystem?.onBossKilled?.(flowBossType);
+      if(enemy.isMidBoss) s.runStats?.endMidBossFight?.();
+    }
+    [enemy.hpBarBg, enemy.hpBar, enemy.nameText, enemy.levelText].forEach(o=>o?.destroy());
+    s.tweens.add({ targets:enemy, alpha:0, duration:s.balance.enemyFadeMs, onComplete:()=>enemy.destroy() });
+  }
   handleDeathReactions(enemy, meta={}){ const s=this.scene; if(enemy._deathReacted) return; enemy._deathReacted=true; const all=s.targeting.all().filter(e=>e!==enemy); if(s.statusEffects?.has(enemy,'BURN')&&!meta.noDeathExplosion){ all.filter(e=>Phaser.Math.Distance.Between(e.x,e.y,enemy.x,enemy.y)<=95).forEach(e=>this.damageEnemy(e,8,{source:'burn_burst',tags:[TAGS.FIRE,TAGS.DOT],noDeathExplosion:true})); } const spreadingPoison=s.statusEffects?.getEffects(enemy,'POISON').find(e=>e.canSpread); if(spreadingPoison&&!meta.noPoisonSpread){ const r=spreadingPoison.spreadRadius||105; all.filter(e=>Phaser.Math.Distance.Between(e.x,e.y,enemy.x,enemy.y)<=r).forEach(e=>s.statusEffects.add('POISON',e,{durationMs:spreadingPoison.spreadDurationMs||2200,intervalMs:650,value:spreadingPoison.spreadDamage||5,sourceId:'poison_spread',canSpread:false,damageMultiplier:spreadingPoison.damageMultiplier||1,baseDamageMultiplierWithoutProfession:spreadingPoison.baseDamageMultiplierWithoutProfession||spreadingPoison.damageMultiplier||1,professionMultiplier:spreadingPoison.professionMultiplier||1,professionApplied:!!spreadingPoison.professionApplied})); } }
   getPlayerAttackTarget(){ const s=this.scene; return { type:'player', get x(){ return s.player.x; }, get y(){ return s.player.y; }, isAlive:()=>s.playerData.hp>0, takeDamage:(amount,meta={})=>this.damagePlayer(meta.enemy||null,amount,meta) }; }
   getSpiritBirdAttackTarget(){ const bird=this.scene.spiritBirdRuntime?.getAttackTarget?.(); if(!bird||!bird.isAlive?.()) return null; return bird; }

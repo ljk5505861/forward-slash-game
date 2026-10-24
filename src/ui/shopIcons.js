@@ -7,6 +7,18 @@ export function drawShopIcon(scene,x,y,icon,color=0x8dd7ed,size=76) {
   const line=(points,width=4,fill=0xeef7ff)=>{g.lineStyle(width,fill,1);g.strokePoints(points.map(([x,y])=>({x,y})),false);};
   const dark=0x324f65,light=0xf0f7ff;
   switch(icon) {
+    case 'coin':
+      circle(0,0,32,dark);circle(0,-2,27,color);
+      g.lineStyle(3,light,1).strokeCircle(0,-2,21);rect(-7,-9,14,14,dark);
+      line([[-31,23],[-20,32]],3,color);line([[25,-29],[34,-20]],3,color);break;
+    case 'bounty':
+      poly([[-17,10],[-23,35],[0,25],[23,35],[17,10]],dark);
+      circle(0,-5,27,color);circle(0,-5,20,dark);
+      poly([[0,-22],[5,-11],[18,-9],[9,0],[11,12],[0,6],[-11,12],[-9,0],[-18,-9],[-5,-11]],light);break;
+    case 'contract':
+      rect(-26,-32,52,64,color);rect(-20,-24,40,48,0xf1e3bc);
+      line([[-12,-15],[12,-15]],3,dark);line([[-12,-4],[8,-4]],3,dark);
+      circle(9,17,11,0xb85d5d);poly([[9,9],[13,17],[9,25],[5,17]],light);break;
     case 'boot':
       poly([[-22,-30],[7,-30],[7,7],[30,17],[32,31],[-24,31]],color);
       rect(-27,25,62,10,dark);line([[-15,-14],[1,-14],[-15,-1],[1,-1]],3,light);break;
