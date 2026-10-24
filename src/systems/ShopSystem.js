@@ -18,7 +18,10 @@ export default class ShopSystem {
     return result;
   }
   ownedSkill(id) { return (this.scene.playerData.skills||[]).find(skill=>skill.id===id); }
+  hasItem(id) { return this.inventory.some(entry=>entry.itemId===id); }
+  discountPrice(price) { return this.normal?Math.max(1,Math.floor(price*(1-(this.scene.playerData.shopDiscount||0)))):price; }
   syncSkillOffer(offer) {
+    if(offer?.unique&&this.hasItem(offer.itemId||offer.id)) return null;
     if(offer?.kind!=='skill') return offer;
     const cfg=SKILLS[offer.skillId], owned=this.ownedSkill(offer.skillId);
     if(!cfg || (owned?.level||0)>=cfg.maxLevel) return null;
@@ -34,7 +37,7 @@ export default class ShopSystem {
     const cfg=SKILLS[choice.skillId], current=this.ownedSkill(cfg.id)?.level||0;
     return {id:'offer_'+(++this.serial),itemId:cfg.id,skillId:cfg.id,kind:'skill',name:cfg.name,
       rarity:cfg.rarity,color:cfg.color,icon:cfg.short||cfg.name[0],description:cfg.description,
-      price:SHOP_SKILL_PRICES[cfg.rarity]+current*2,locked:false,...choice,fromLevel:current,toLevel:current+1};
+      price:this.discountPrice(SHOP_SKILL_PRICES[cfg.rarity]+current*2),locked:false,...choice,fromLevel:current,toLevel:current+1};
   }
   generateItems(count=4) {
     if(!this.normal) {
@@ -51,7 +54,7 @@ export default class ShopSystem {
       }
       const used=new Set(slots.filter(Boolean).map(o=>o.itemId));
       const visit=Math.max(1,this.visits);
-      const pool=this.shuffle(SHOP_ITEMS.filter(item=>!used.has(item.id)&&(item.minVisit||1)<=visit&&(!item.maxVisit||visit<=item.maxVisit)));
+      const pool=this.shuffle(SHOP_ITEMS.filter(item=>!used.has(item.id)&&(item.minVisit||1)<=visit&&(!item.maxVisit||visit<=item.maxVisit)&&(!item.unique||!this.hasItem(item.id))));
       let basicNeeded=Math.min(slots.filter(o=>!o).length,Math.max(0,2-slots.filter(o=>o?.kind==='item'&&o.price<=16).length));
       let hasStarter=slots.some(o=>o?.kind==='item'&&o.price<=12);
       this.currentItems=slots.map(offer=>offer||(()=>{
@@ -61,7 +64,7 @@ export default class ShopSystem {
         const item=basicIndex>=0?pool.splice(basicIndex,1)[0]:pool.pop();
         if(basicNeeded>0)basicNeeded--;
         if(item.price<=12)hasStarter=true;
-        return {...item,itemId:item.id,id:'offer_'+(++this.serial),locked:false};
+        return {...item,itemId:item.id,id:'offer_'+(++this.serial),price:this.discountPrice(item.price),locked:false};
       })());
     }
     this.purchased.clear();
@@ -70,6 +73,9 @@ export default class ShopSystem {
   open(reason='stage') {
     if(this.currentShopReason || this.openedReasons.has(reason)) return false;
     this.visits++; this.openedReasons.add(reason); this.currentShopReason=reason;
+    const p=this.scene.playerData;
+    const interest=this.normal?Math.min(p.shopInterestCap||0,Math.floor((p.gold||0)*(p.shopInterestRate||0))):0;
+    if(interest>0) this.scene.awardGold(interest,'shopInterest');
     this.refreshCount=0; this.generateItems(4);
     this.scene.shopPanel?.show({reason,items:this.currentItems});
     return true;
@@ -88,7 +94,7 @@ export default class ShopSystem {
     if(!item||this.purchased.has(offerId)) return {ok:false,reason:'已售出'};
     if(this.normal && !this.currentShopReason) return {ok:false,reason:'商店已关闭'};
     if(this.trading) return {ok:false,reason:'交易处理中'};
-    if(!this.syncSkillOffer(item)) return {ok:false,reason:'技能已满级，请刷新'};
+    if(!this.syncSkillOffer(item)) return {ok:false,reason:item.kind==='skill'?'技能已满级，请刷新':'道具已持有，请刷新'};
     const p=this.scene.playerData;
     if((p.gold||0)<item.price) return {ok:false,reason:'金币不足'};
     if(item.kind==='skill' && !this.ownedSkill(item.skillId) && p.skills.length>=6 && replaceIndex===null)

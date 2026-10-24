@@ -40,6 +40,12 @@ const attributeEffects = {
   normalKillGold:(p,n)=>scalar(p,'normalKillGoldBonus',n),
   eliteKillGold:(p,n)=>scalar(p,'eliteKillGoldBonus',n),
   bossKillGold:(p,n)=>scalar(p,'bossKillGoldBonus',n),
+  enemyCount:(p,n)=>scalar(p,'enemyCountBonus',n),
+  killGoldRate:(p,n)=>{scalar(p,'killGoldBonusRate',n);if(!p.killGoldBonusRate)p.killGoldRemainder=0;},
+  damageTaken:(p,n)=>scalar(p,'damageTakenBonus',n),
+  shopInterestRate:(p,n)=>scalar(p,'shopInterestRate',n),
+  shopInterestCap:(p,n)=>scalar(p,'shopInterestCap',n),
+  shopDiscount:(p,n)=>scalar(p,'shopDiscount',n),
 };
 const attributeItem = (id,name,description,price,icon,color,attributes,minVisit=1) => ({
   id,name,description,price,icon,color,attributes,minVisit,kind:'item',
@@ -92,6 +98,10 @@ export const SHOP_ITEMS = [
   {...attributeItem('fortune_coin','聚财铜钱','击杀普通敌人额外获得1金币；精英、Boss和无金币召唤物不计',80,'coin',0xf3c967,{normalKillGold:1},2),maxVisit:5},
   {...attributeItem('bounty_badge','猎赏徽章','击杀精英敌人额外获得8金币；无金币召唤物不计',36,'bounty',0xe8b568,{eliteKillGold:8},2),maxVisit:5},
   {...attributeItem('boss_contract','讨伐契约','击败Boss额外获得30金币；分身、无金币召唤物不计',48,'contract',0xd6bd91,{bossKillGold:30},2),maxVisit:4},
+  {...attributeItem('calamity_banner','招灾战旗','后续波次怪量 +20%（含精英和Boss前怪潮，小数累计）；Boss本体不增加；唯一持有',160,'banner',0xd87964,{enemyCount:.2},2),maxVisit:4,unique:true},
+  {...attributeItem('greed_seal','贪欲血印','击杀金币 +25%，含赏金，小数累计；受到伤害 +10%；唯一持有',64,'greed',0xc87090,{killGoldRate:.25,damageTaken:.1},2),maxVisit:5,unique:true},
+  {...attributeItem('golden_piggy_bank','鎏金存钱罐','下次新店起按携带金币收息10%，每店最多30金币；唯一持有',60,'bank',0xf0c76d,{shopInterestRate:.1,shopInterestCap:30},2),maxVisit:4,unique:true},
+  {...attributeItem('merchant_gold_card','行商金卡','新刷出的商品九折，含技能；锁定原价、刷新费不变；唯一持有',70,'card',0xe5c36d,{shopDiscount:.1},2),maxVisit:5,unique:true},
 ];
 export const SHOP_SKILL_CHANCE = 0.25;
 export const SHOP_SKILL_PRICES = Object.freeze({COMMON:20,FINE:28,RARE:40,EPIC:56,LEGENDARY:76,MYTHIC:100});

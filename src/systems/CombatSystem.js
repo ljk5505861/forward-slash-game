@@ -177,7 +177,8 @@ export default class CombatSystem {
     const totalDefense=getEffectiveDefense(s.playerData);
     const totalDamageReduction=getEffectiveDamageReduction(s.playerData);
     const base=Math.max(1,Math.round(rawDamage*(1-totalDamageReduction)-totalDefense));
-    const damage=Math.max(1,Math.round(base*(1-(s.playerData.temporaryDamageReduction||0))));
+    const damageTakenMultiplier=s.runMode==='normal'?1+(s.playerData.damageTakenBonus||0):1;
+    const damage=Math.max(1,Math.round(base*(1-(s.playerData.temporaryDamageReduction||0))*damageTakenMultiplier));
     const intercepted=s.skillSystem?.beforePlayerDamage({ enemy, damage, rawDamage, directAttack, ...meta });
     if(intercepted?.blocked){
       const blocked=intercepted.absorbed||damage;
@@ -253,6 +254,12 @@ export default class CombatSystem {
       const extra=enemy.isBoss?(settleBoss?(p.bossKillGoldBonus||0):0)
         :enemy.isElite?(p.eliteKillGoldBonus||0):(p.normalKillGoldBonus||0);
       if(extra) s.awardGold?.(extra,'shopBounty');
+      if(p.killGoldBonusRate>0){
+        const total=(gold+extra)*p.killGoldBonusRate+(p.killGoldRemainder||0);
+        const gain=Math.floor(total);
+        p.killGoldRemainder=total-gain;
+        if(gain) s.awardGold?.(gain,'greed');
+      }
     }
     s.eventBus.emit(CombatEvents.ENEMY_KILLED,{ enemy, ...meta, canGrantGold:!enemy.noGoldReward });
     if(enemy.isBoss&&settleBoss){

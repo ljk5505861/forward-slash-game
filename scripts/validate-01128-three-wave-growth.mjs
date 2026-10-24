@@ -63,8 +63,13 @@ for(let group=1;group<=18;group++){
     if(group===9){assert.equal(stage.flowState,F.ADVANCED_PROFESSION_STATUE);stage.onAdvancedProfessionChosen();assert.equal(stage.flowState,F.CAMPFIRE);stage.onCampfireClosed('advanced');}
     assert.equal(stage.flowState,F.BOSS_RUSH);assert.equal(stage.activeRush,boss);
     stage.update(time);assert(stage.waveQueue.length>0,'boss rush is retained');
-    time+=100000;stage.update(time);assert(scene.enemies.length>0);assert.equal(stage.flowState,F.BOSS_RUSH);
-    scene.enemies=[];stage.update(time);assert.equal(stage.flowState,F.BOSS_FIGHT);
+    const rushSize=stage.waveQueue.length;
+    for(let remaining=rushSize;remaining>0;){
+      time+=100000;stage.update(time);assert.equal(stage.flowState,F.BOSS_RUSH);
+      assert(scene.enemies.length>0&&scene.enemies.length<=BALANCE.enemyPopulation.hardCap);
+      remaining-=scene.enemies.length;assert(remaining>=0,'rush enemies are neither lost nor duplicated');scene.enemies=[];
+    }
+    stage.update(++time);assert.equal(stage.flowState,F.BOSS_FIGHT);
     assert.equal(shops.length,group/3,'no duplicated pre-boss shop');
     scene.enemies=[];stage.onBossKilled(boss);stage.onBossKilled(boss);
     if(group===18){assert.equal(stage.flowState,F.VICTORY);break;}
